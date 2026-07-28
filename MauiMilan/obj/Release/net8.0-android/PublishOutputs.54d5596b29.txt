@@ -1,0 +1,4 @@
+C:\Users\Administrator\Downloads\work\milan\MauiMilan\bin\Release\net8.0-android\publish\com.milan.game-Signed.aab
+C:\Users\Administrator\Downloads\work\milan\MauiMilan\bin\Release\net8.0-android\publish\com.milan.game.aab
+C:\Users\Administrator\Downloads\work\milan\MauiMilan\bin\Release\net8.0-android\publish\com.milan.game-Signed.apk
+C:\Users\Administrator\Downloads\work\milan\MauiMilan\bin\Release\net8.0-android\publish\_Microsoft.Android.Resource.Designer.dll
