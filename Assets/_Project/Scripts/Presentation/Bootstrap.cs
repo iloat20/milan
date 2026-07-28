@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using Milan.Infrastructure.Save;
 using Milan.Infrastructure.ServiceLocator;
 using Milan.Services;
@@ -22,11 +23,16 @@ namespace Milan.Presentation
             locator.Register(new ProgressionService(save));
             locator.Register(new BattleService(save));
             locator.Register(new CollectionService(save));
+
+            // I-6: 场景卸载时清理本场景发布中的事件，避免分发到已销毁对象
+            SceneManager.sceneUnloaded += OnSceneUnloaded;
         }
 
-        void Update()
+        void OnSceneUnloaded(Scene scene) => Infrastructure.EventBus.EventBus.ClearQueue();
+
+        void OnDestroy()
         {
-            Infrastructure.EventBus.EventBus.Dispatch();
+            SceneManager.sceneUnloaded -= OnSceneUnloaded;
         }
     }
 }

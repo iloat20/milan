@@ -31,5 +31,29 @@ namespace Milan.Infrastructure.EventBus
             }
         }
         public static void Clear() { _subs.Clear(); _q.Clear(); }
+
+        // I-6: 仅清空队列（场景卸载时调用），保留订阅者
+        public static void ClearQueue() { _q.Clear(); }
+
+        // I-6: 取消某个目标对象的所有订阅（在 MonoBehaviour.OnDestroy 中调用）
+        public static void UnsubscribeAll(object target)
+        {
+            if (target == null) return;
+            var types = new List<Type>(_subs.Keys);
+            foreach (var t in types)
+            {
+                if (_subs.TryGetValue(t, out var del) && del != null)
+                {
+                    var removed = del;
+                    foreach (var handler in del.GetInvocationList())
+                    {
+                        if (handler.Target == target)
+                            removed = Delegate.Remove(removed, handler);
+                    }
+                    if (removed == null) _subs.Remove(t);
+                    else if (!ReferenceEquals(removed, del)) _subs[t] = removed;
+                }
+            }
+        }
     }
 }
