@@ -1,0 +1,39 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>MauiMilan</name>
+    </assembly>
+    <members>
+        <member name="T:Milan.Maui.DataProviders.JsonDataProvider">
+            <summary>
+            数据提供器：从 JSON 文件加载角色和卡池数据（替代 Unity Resources.LoadAll）。
+            </summary>
+        </member>
+        <member name="T:Milan.Maui.GachaPage">
+            <summary>
+            抽卡页面：使用 MAUI 内置控件 + 动画（无需 SkiaSharp）。
+            </summary>
+        </member>
+        <member name="T:Milan.Maui.MainPage">
+            <summary>
+            主页面：纯 C# 构建（无需 XAML）。
+            </summary>
+        </member>
+        <member name="T:Milan.Maui.Services.GameService">
+            <summary>
+            MAUI 游戏服务：复用现有 Domain 引擎（GachaEngine/PityCounter/ProgressionEngine），
+            连接 JSON 数据提供器和本地存档。
+            </summary>
+        </member>
+        <member name="T:Milan.Infrastructure.Save.LocalSaveProvider">
+            <summary>
+            MAUI 版本地存档提供器（替代 Unity 版，使用 MAUI 文件系统替代 Application.persistentDataPath）。
+            </summary>
+        </member>
+        <member name="T:Milan.Infrastructure.Save.SaveData">
+            <summary>
+            MAUI 版存档数据模型（替代 Unity 版，使用 System.Text.Json 替代 UnityEngine.JsonUtility）。
+            </summary>
+        </member>
+    </members>
+</doc>
