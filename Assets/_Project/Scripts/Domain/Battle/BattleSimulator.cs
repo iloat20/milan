@@ -27,7 +27,7 @@ namespace Milan.Domain.Battle
                     if (actor.Hp <= 0) continue;
                     var enemies = actor.A ? b : a;
                     var target = enemies.Where(e => e.Hp > 0).OrderBy(e => e.Hp).FirstOrDefault();
-                    if (target.Hp <= 0) continue;
+                    if (target == null || target.Hp <= 0) continue;
                     int dmg = Math.Max(1, actor.Stats.Atk - target.Stats.Def / 2);
                     target.Hp -= dmg;
                 }
