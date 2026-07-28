@@ -33,6 +33,8 @@ namespace Milan.Infrastructure.Save
     {
         public string CharacterId;
         public int Level = 1, Stage = 1, Stars = 1;
+        public int TotalExp = 0;          // 累计经验值（I-4）
+        public int UnspentPoints = 0;     // 未消耗的天赋点（I-5）
         public List<string> TalentPoints = new();
     }
     [System.Serializable] public class ItemSaveState { public string ItemId; public int Count; }
