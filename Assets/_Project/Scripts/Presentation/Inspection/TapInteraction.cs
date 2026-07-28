@@ -1,12 +1,9 @@
 using UnityEngine;
-using Milan.Infrastructure.EventBus;
 
 namespace Milan.Presentation.Inspection
 {
     public class TapInteraction : MonoBehaviour
     {
-        [SerializeField] string hitPartName = "body";
-
         void Update()
         {
             if (Input.touchCount == 1 && Input.GetTouch(0).phase == TouchPhase.Began)
