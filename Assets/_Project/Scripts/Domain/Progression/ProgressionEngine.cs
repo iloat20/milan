@@ -2,7 +2,7 @@ namespace Milan.Domain.Progression
 {
     public class ProgressionEngine
     {
-        // Simple curve: level N requires N*100 cumulative exp.
+        // Incremental cost to advance from level k to k+1 is k*100 exp.
         public int ExpToLevel(int totalExp)
         {
             int level = 1;

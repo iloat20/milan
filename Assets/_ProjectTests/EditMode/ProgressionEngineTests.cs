@@ -34,4 +34,14 @@ public class ProgressionEngineTests
         var costs = new Dictionary<string, int> { ["n1"] = 1, ["n2"] = 2, ["n3"] = 3 };
         Assert.AreEqual(6, engine.TotalPoints(costs));
     }
+
+    [Test]
+    public void StatAtLevel_Scales()
+    {
+        var engine = new ProgressionEngine();
+        Assert.AreEqual(100, engine.StatAtLevel(100, 1, 1, 1.0f));   // base case, no scaling
+        Assert.AreEqual(200, engine.StatAtLevel(100, 11, 1, 1.0f));  // level 11: 1 + 10*0.1 = 2x
+        Assert.AreEqual(200, engine.StatAtLevel(100, 1, 2, 1.0f));   // stage 2 doubles
+        Assert.AreEqual(150, engine.StatAtLevel(100, 1, 1, 1.5f));   // multiplier 1.5x
+    }
 }
