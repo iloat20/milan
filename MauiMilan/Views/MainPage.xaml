@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/x"
+             x:Class="Milan.Maui.Views.MainPage"
+             Title="Milan"
+             BackgroundColor="{DynamicResource DarkBg}">
+
+    <Grid RowDefinitions="*,Auto,Auto,*" Padding="20" RowSpacing="15">
+
+        <!-- 标题 -->
+        <Label Grid.Row="0"
+               Text="MILAN"
+               FontSize="48"
+               HorizontalOptions="Center"
+               VerticalOptions="Center"
+               TextColor="{DynamicResource Primary}"
+               FontAttributes="Bold" />
+
+        <Label Grid.Row="0"
+               Text="次 元 裂 缝 · 抽 卡"
+               FontSize="16"
+               HorizontalOptions="Center"
+               VerticalOptions="End"
+               TextColor="{DynamicResource Accent}"
+               Margin="0,0,0,40" />
+
+        <!-- 货币显示 -->
+        <Frame Grid.Row="1" BackgroundColor="#2d1b69" Padding="15" CornerRadius="10">
+            <HorizontalStackLayout Spacing="20" HorizontalOptions="Center">
+                <Label x:Name="CurrencyLabel"
+                       Text="星尘: 1000"
+                       TextColor="White"
+                       FontSize="18" />
+                <Label x:Name="OwnedLabel"
+                       Text="角色: 0"
+                       TextColor="{DynamicResource Accent}"
+                       FontSize="18" />
+            </HorizontalStackLayout>
+        </Frame>
+
+        <!-- 按钮 -->
+        <VerticalStackLayout Grid.Row="2" Spacing="12">
+            <Button Text="抽 卡"
+                    Clicked="OnGachaClicked"
+                    BackgroundColor="{DynamicResource Primary}"
+                    TextColor="White"
+                    FontSize="20"
+                    HeightRequest="56"
+                    CornerRadius="12" />
+
+            <Button Text="角 色"
+                    Clicked="OnCharactersClicked"
+                    BackgroundColor="#302b63"
+                    TextColor="White"
+                    FontSize="18"
+                    HeightRequest="48"
+                    CornerRadius="10" />
+
+            <Button Text="战 斗"
+                    Clicked="OnBattleClicked"
+                    BackgroundColor="#302b63"
+                    TextColor="White"
+                    FontSize="18"
+                    HeightRequest="48"
+                    CornerRadius="10" />
+        </VerticalStackLayout>
+
+    </Grid>
+
+</ContentPage>

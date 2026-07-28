@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/x"
+             xmlns:skia="clr-namespace:SkiaSharp.Views.Maui.Controls;assembly=SkiaSharp.Views.Maui.Controls"
+             x:Class="Milan.Maui.Views.GachaPage"
+             Title="抽卡"
+             BackgroundColor="{DynamicResource DarkBg}">
+
+    <Grid RowDefinitions="Auto,*,Auto">
+
+        <!-- 顶部状态 -->
+        <HorizontalStackLayout Grid.Row="0" Padding="15" Spacing="20" HorizontalOptions="Center">
+            <Label x:Name="CurrencyLabel" Text="星尘: 0" TextColor="White" FontSize="16" />
+            <Button Text="返回" Clicked="OnBackClicked" BackgroundColor="#302b63" TextColor="White" />
+        </HorizontalStackLayout>
+
+        <!-- 抽卡展示区（SkiaSharp 绘制卡牌 + 触摸旋转） -->
+        <Grid Grid.Row="1" x:Name="CardArea">
+            <skia:SKCanvasView x:Name="CardCanvas"
+                               PaintSurface="OnCardPaint"
+                               EnableTouchEvents="True"
+                               Touch="OnCardTouch" />
+            <Label x:Name="ResultLabel"
+                   Text=""
+                   FontSize="20"
+                   TextColor="{DynamicResource Accent}"
+                   HorizontalOptions="Center"
+                   VerticalOptions="End"
+                   Margin="0,0,0,30" />
+        </Grid>
+
+        <!-- 抽卡按钮 -->
+        <HorizontalStackLayout Grid.Row="2" Padding="20" Spacing="15" HorizontalOptions="Center">
+            <Button x:Name="SinglePullButton"
+                    Text="单 抽"
+                    Clicked="OnSinglePullClicked"
+                    BackgroundColor="{DynamicResource Primary}"
+                    TextColor="White"
+                    FontSize="18"
+                    WidthRequest="140"
+                    HeightRequest="50"
+                    CornerRadius="10" />
+            <Button x:Name="TenPullButton"
+                    Text="十 连"
+                    Clicked="OnTenPullClicked"
+                    BackgroundColor="#00d2ff"
+                    TextColor="Black"
+                    FontSize="18"
+                    WidthRequest="140"
+                    HeightRequest="50"
+                    CornerRadius="10" />
+        </HorizontalStackLayout>
+
+    </Grid>
+
+</ContentPage>

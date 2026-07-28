@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>net8.0-android</TargetFramework>
+		<OutputType>Exe</OutputType>
+		<RootNamespace>Milan.Maui</RootNamespace>
+		<ApplicationId>com.milan.game</ApplicationId>
+		<ApplicationVersion>1</ApplicationVersion>
+		<ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
+
+		<SupportedOSPlatformVersion>21.0</SupportedOSPlatformVersion>
+		<Nullable>enable</Nullable>
+		<ImplicitUsings>enable</ImplicitUsings>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Microsoft.Maui.Controls" Version="8.0.40" />
+		<PackageReference Include="Microsoft.Maui.Controls.Compatibility" Version="8.0.40" />
+		<PackageReference Include="SkiaSharp.Views.Maui.Controls" Version="2.88.6" />
+		<PackageReference Include="CommunityToolkit.Maui" Version="7.0.0" />
+	</ItemGroup>
+
+	<!-- 链接纯 C# 核心层（Domain / Infrastructure / Services），排除 Unity 依赖 -->
+	<ItemGroup>
+		<Compile Include="..\Assets\_Project\Scripts\Domain\**\*.cs" Link="Core\Domain\%(RecursiveDir)%(Filename)%(Extension)" />
+		<Compile Include="..\Assets\_Project\Scripts\Infrastructure\EventBus\**\*.cs" Link="Core\Infrastructure\EventBus\%(RecursiveDir)%(Filename)%(Extension)" />
+		<Compile Include="..\Assets\_Project\Scripts\Infrastructure\Save\**\*.cs" Link="Core\Infrastructure\Save\%(RecursiveDir)%(Filename)%(Extension)" />
+		<Compile Include="..\Assets\_Project\Scripts\Data\Enums.cs" Link="Core\Data\Enums.cs" />
+	</ItemGroup>
+
+</Project>
