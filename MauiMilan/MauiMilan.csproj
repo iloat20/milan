@@ -27,4 +27,9 @@
 		<Compile Include="..\Assets\_Project\Scripts\Data\Enums.cs" Link="Core\Data\Enums.cs" />
 	</ItemGroup>
 
+	<!-- Android 图标资源 -->
+	<ItemGroup>
+		<MauiIcon Include="Resources\mipmap-mdpi\appicon.png" ForegroundFile="Resources\mipmap-mdpi\appicon_foreground.png" />
+	</ItemGroup>
+
 </Project>
