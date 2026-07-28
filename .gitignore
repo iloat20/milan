@@ -1,0 +1,6 @@
+# Brainstorm session scratch artifacts (server state, mockups, events)
+.superpowers/brainstorm/
+
+# OS
+.DS_Store
+Thumbs.db
