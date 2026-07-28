@@ -39,12 +39,18 @@ namespace Milan.Services
                 var rarity = pity.RollWithPity(_rng, pool.RarityWeights, 3);
                 var id = _engine.PickWeighted(characterIds, weights);
                 if (i == count - 1) resultId = id;
+                bool isNew = !OwnsCharacter(id);
                 GrantItem(id);
+                EventBus.Publish(new GachaResultEvent { ItemId = id, IsNew = isNew, Rarity = (int)rarity });
             }
             data.SetGachaCounter(pool.PoolId, pity.Counter);
             _save.Save();
-            EventBus.Publish(new GachaResultEvent { ItemId = resultId, IsNew = true, Rarity = 4 });
             return resultId;
+        }
+
+        bool OwnsCharacter(string id)
+        {
+            return _save.Current.OwnedCharacters.Exists(c => c.CharacterId == id);
         }
 
         void GrantItem(string id)
