@@ -1,0 +1,11 @@
+{
+  "name": "Milan.Domain",
+  "references": [
+    "Milan.Data"
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "autoReferenced": true,
+  "noEngineReferences": false
+}
