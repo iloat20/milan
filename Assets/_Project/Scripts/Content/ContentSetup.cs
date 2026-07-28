@@ -89,7 +89,7 @@ namespace Milan.Content
 
         static void EnsureDir(string name)
         {
-            var path = "Assets/_Project/Scripts/Content/" + name;
+            var path = "Assets/_Project/Resources/Content/" + name;
             if (!AssetDatabase.IsValidFolder(path))
             {
                 var parent = Path.GetDirectoryName(path).Replace("\\", "/");
@@ -101,7 +101,7 @@ namespace Milan.Content
         {
             var asset = ScriptableObject.CreateInstance<T>();
             init(asset);
-            var fullPath = "Assets/_Project/Scripts/Content/" + path + ".asset";
+            var fullPath = "Assets/_Project/Resources/Content/" + path + ".asset";
             AssetDatabase.CreateAsset(asset, fullPath);
         }
     }
