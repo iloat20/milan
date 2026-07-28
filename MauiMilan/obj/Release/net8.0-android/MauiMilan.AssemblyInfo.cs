@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("MauiMilan")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Release")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0+43c7ffdcf07e46a62fdbfe0acc6d177cfe7396e7")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0+28062ef3e177534585ee7bad08f65166c82064ae")]
 [assembly: System.Reflection.AssemblyProductAttribute("MauiMilan")]
 [assembly: System.Reflection.AssemblyTitleAttribute("MauiMilan")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

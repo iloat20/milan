@@ -1,86 +1,132 @@
+using Android.Content;
 using Milan.Domain.Gacha;
 using Milan.Domain.Progression;
 using Milan.Infrastructure.Save;
-using Milan.Maui.DataProviders;
+using System.Text.Json;
 
 namespace Milan.Maui.Services;
 
 /// <summary>
-/// MAUI 游戏服务：复用现有 Domain 引擎（GachaEngine/PityCounter/ProgressionEngine），
-/// 连接 JSON 数据提供器和本地存档。
+/// 游戏服务：连接 Domain 引擎、存档和 JSON 数据（不依赖 MAUI）。
 /// </summary>
 public class GameService
 {
     private readonly SaveManager _save;
-    private readonly JsonDataProvider _data;
     private readonly GachaEngine _gacha;
-    private readonly Random _rng = new();
     private readonly ProgressionEngine _progression = new();
+    private readonly Random _rng = new();
 
     public SaveData SaveData => _save.Current;
-    public JsonDataProvider Data => _data;
+    public List<CharacterDataEntry> Characters { get; } = new();
+    public List<GachaPoolDataEntry> Pools { get; } = new();
 
     public GameService()
     {
         _save = new SaveManager(new LocalSaveProvider("milan_save.json"));
         _save.Load();
-        _data = new JsonDataProvider();
         _gacha = new GachaEngine(_rng);
     }
 
-    public async Task InitializeAsync() => await _data.LoadAsync();
+    public async Task InitializeAsync(Context context)
+    {
+        try
+        {
+            using var stream = context.Assets.Open("data.json");
+            using var reader = new StreamReader(stream);
+            var json = await reader.ReadToEndAsync();
+            var root = JsonSerializer.Deserialize<RootData>(json);
+            if (root != null)
+            {
+                Characters.Clear();
+                Characters.AddRange(root.Characters);
+                Pools.Clear();
+                Pools.AddRange(root.Pools);
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[Milan] data load failed: {ex.Message}");
+            LoadFallback();
+        }
+    }
 
-    // ---- 抽卡 ----
+    void LoadFallback()
+    {
+        Characters.Clear();
+        Characters.Add(new CharacterDataEntry
+        {
+            CharacterId = "char_kasai", DisplayName = "烬 Kasai", World = "Shinwa",
+            BaseRarity = 3, BaseStats = new[] { 120, 80, 1000, 15 },
+            MaxStage = 4, MaxStars = 6, CanBreakthrough = true
+        });
+        Characters.Add(new CharacterDataEntry
+        {
+            CharacterId = "char_hikari", DisplayName = "光 Hikari", World = "Aether",
+            BaseRarity = 2, BaseStats = new[] { 90, 70, 900, 12 },
+            MaxStage = 4, MaxStars = 5, CanBreakthrough = false
+        });
+        Pools.Clear();
+        Pools.Add(new GachaPoolDataEntry
+        {
+            PoolId = "pool_main", DisplayName = "次元裂缝",
+            RarityWeights = new[] { 820, 150, 29, 1 }, HardPity = 90,
+            SingleCost = 160, TenCost = 1600,
+            Entries = new List<GachaPoolEntry>
+            {
+                new() { CharacterId = "char_kasai", RarityIndex = 3, Weight = 50 },
+                new() { CharacterId = "char_hikari", RarityIndex = 2, Weight = 100 }
+            }
+        });
+    }
+
     public class PullResult
     {
         public bool Success;
         public string? CharacterId;
         public string CharacterName = "";
-        public int Rarity; // 1=R 2=SR 3=SSR 4=UR
+        public int Rarity;
         public bool IsNew;
     }
 
     public List<PullResult> Pull(string poolId, bool tenPull)
     {
         var results = new List<PullResult>();
-        var pool = _data.Pools.FirstOrDefault(p => p.PoolId == poolId);
+        var pool = Pools.FirstOrDefault(p => p.PoolId == poolId);
         if (pool == null) return results;
 
         int count = tenPull ? 10 : 1;
         int cost = tenPull ? pool.TenCost : pool.SingleCost;
-        if (_save.Current.SoftCurrency < cost) return results;
-        _save.Current.SoftCurrency -= cost;
+        if (SaveData.SoftCurrency < cost) return results;
+        SaveData.SoftCurrency -= cost;
 
         var pity = new PityCounter(pool.HardPity)
         {
-            Counter = _save.Current.GetGachaCounter(poolId)
+            Counter = SaveData.GetGachaCounter(poolId)
         };
 
         for (int i = 0; i < count; i++)
         {
             var rarity = pity.RollWithPity(_rng, pool.RarityWeights, 3);
-            var entries = _data.GetEntriesForRarity(poolId, (int)rarity);
+            var entries = GetEntriesForRarity(poolId, (int)rarity);
             string? id = PickFromEntries(entries);
-            if (string.IsNullOrEmpty(id))
-                id = PickFromAll(pool);
+            if (string.IsNullOrEmpty(id)) id = PickFromPool(pool);
 
             if (!string.IsNullOrEmpty(id))
             {
-                bool isNew = !_save.Current.OwnedCharacters.Exists(c => c.CharacterId == id);
-                GrantCharacter(id);
-                var ch = _data.GetCharacter(id);
+                bool isNew = !SaveData.OwnedCharacters.Exists(c => c.CharacterId == id);
+                if (isNew)
+                    SaveData.OwnedCharacters.Add(new CharacterSaveState { CharacterId = id });
+                var ch = Characters.FirstOrDefault(c => c.CharacterId == id);
                 results.Add(new PullResult
                 {
-                    Success = true,
-                    CharacterId = id,
+                    Success = true, CharacterId = id,
                     CharacterName = ch?.DisplayName ?? id,
-                    Rarity = (int)rarity,
-                    IsNew = isNew
+                    Rarity = (int)rarity, IsNew = isNew
                 });
             }
         }
 
-        _save.Current.SetGachaCounter(poolId, pity.Counter);
+        SaveData.SetGachaCounter(poolId, pity.Counter);
         _save.Save();
         return results;
     }
@@ -88,77 +134,55 @@ public class GameService
     private string? PickFromEntries(List<GachaPoolEntry> entries)
     {
         if (entries.Count == 0) return null;
-        var ids = entries.Select(e => e.CharacterId).ToArray();
-        var weights = entries.Select(e => e.Weight).ToArray();
-        return _gacha.PickWeighted(ids, weights);
+        return _gacha.PickWeighted(entries.Select(e => e.CharacterId).ToArray(), entries.Select(e => e.Weight).ToArray());
     }
 
-    private string? PickFromAll(GachaPoolDataEntry pool)
+    private string? PickFromPool(GachaPoolDataEntry pool)
     {
         if (pool.Entries.Count == 0) return null;
-        var ids = pool.Entries.Select(e => e.CharacterId).ToArray();
-        var weights = pool.Entries.Select(e => e.Weight).ToArray();
-        return _gacha.PickWeighted(ids, weights);
+        return _gacha.PickWeighted(pool.Entries.Select(e => e.CharacterId).ToArray(), pool.Entries.Select(e => e.Weight).ToArray());
     }
 
-    private void GrantCharacter(string id)
+    private List<GachaPoolEntry> GetEntriesForRarity(string poolId, int rarity)
     {
-        if (!_save.Current.OwnedCharacters.Exists(c => c.CharacterId == id))
-            _save.Current.OwnedCharacters.Add(new CharacterSaveState { CharacterId = id });
+        var pool = Pools.FirstOrDefault(p => p.PoolId == poolId);
+        if (pool == null) return new List<GachaPoolEntry>();
+        return pool.Entries.Where(e => e.RarityIndex == rarity).ToList();
     }
+}
 
-    // ---- 培养 ----
-    public void AddExp(string characterId, int exp)
-    {
-        var ch = _save.Current.OwnedCharacters.Find(c => c.CharacterId == characterId);
-        if (ch == null) return;
-        ch.TotalExp += exp;
-        int newLevel = _progression.ExpToLevel(ch.TotalExp);
-        if (newLevel != ch.Level)
-        {
-            ch.UnspentPoints += newLevel - ch.Level;
-            ch.Level = newLevel;
-        }
-        _save.Save();
-    }
+public class CharacterDataEntry
+{
+    public string CharacterId = "";
+    public string DisplayName = "";
+    public string World = "Shinwa";
+    public int BaseRarity = 1;
+    public int[] BaseStats = { 100, 80, 1000, 12 };
+    public int MaxStage = 4;
+    public int MaxStars = 5;
+    public bool CanBreakthrough;
+}
 
-    // ---- 战斗 ----
-    public BattleRunResult RunStage(string stageId)
-    {
-        var owned = _save.Current.OwnedCharacters;
-        int totalAtk = 0, totalHp = 0;
-        foreach (var ch in owned)
-        {
-            var data = _data.GetCharacter(ch.CharacterId);
-            if (data == null) continue;
-            int s = Math.Max(1, ch.Stage);
-            totalAtk += _progression.StatAtLevel(data.BaseStats[0], ch.Level, s, 1f);
-            totalHp += _progression.StatAtLevel(data.BaseStats[2], ch.Level, s, 1f);
-        }
-        // 简化战斗：玩家总属性 vs 敌人固定属性
-        int enemyAtk = 50, enemyHp = 500;
-        int playerTurns = (int)Math.Ceiling((double)enemyHp / Math.Max(1, totalAtk));
-        int enemyTurns = (int)Math.Ceiling((double)Math.Max(1, totalHp) / Math.Max(1, enemyAtk));
-        bool victory = playerTurns <= enemyTurns;
-        if (victory)
-        {
-            _save.Current.SoftCurrency += 100;
-            _save.Save();
-        }
-        return new BattleRunResult
-        {
-            Victory = victory,
-            OwnedCount = owned.Count,
-            TotalAtk = totalAtk,
-            TotalHp = totalHp
-        };
-    }
+public class GachaPoolEntry
+{
+    public string CharacterId = "";
+    public int RarityIndex = 1;
+    public int Weight = 100;
+}
 
-    public class BattleRunResult
-    {
-        public bool Victory;
-        public int OwnedCount;
-        public int TotalAtk;
-        public int TotalHp;
-    }
+public class GachaPoolDataEntry
+{
+    public string PoolId = "";
+    public string DisplayName = "";
+    public int[] RarityWeights = { 820, 150, 29, 1 };
+    public int HardPity = 90;
+    public int SingleCost = 100;
+    public int TenCost = 1000;
+    public List<GachaPoolEntry> Entries = new();
+}
+
+class RootData
+{
+    public List<CharacterDataEntry> Characters { get; set; } = new();
+    public List<GachaPoolDataEntry> Pools { get; set; } = new();
 }

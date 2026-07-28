@@ -1,7 +1,7 @@
 namespace Milan.Infrastructure.Save;
 
 /// <summary>
-/// MAUI 版本地存档提供器（替代 Unity 版，使用 MAUI 文件系统替代 Application.persistentDataPath）。
+/// 本地存档提供器（使用 Android 内部存储）。
 /// </summary>
 public class LocalSaveProvider : ISaveProvider
 {
@@ -9,8 +9,8 @@ public class LocalSaveProvider : ISaveProvider
 
     public LocalSaveProvider(string filename = "save.json")
     {
-        // MAUI 专用数据目录
-        var dir = FileSystem.AppDataDirectory;
+        // 使用应用内部存储目录
+        var dir = System.Environment.GetFolderPath(System.Environment.SpecialFolder.Personal);
         _path = Path.Combine(dir, filename);
     }
 

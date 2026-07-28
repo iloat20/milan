@@ -9,8 +9,7 @@
   <uses-sdk android:minSdkVersion="21" android:targetSdkVersion="34" />
   <uses-permission android:name="android.permission.INTERNET" />
   <application android:allowBackup="true" android:icon="@mipmap/appicon" android:roundIcon="@mipmap/appicon_round" android:supportsRtl="true" android:label="Milan" android:name="android.app.Application" android:extractNativeLibs="true">
-    <receiver android:enabled="true" android:exported="false" android:label="Essentials Energy Saver Broadcast Receiver" android:name="crc640a8d9a12ddbf2cf2.EnergySaverBroadcastReceiver" />
-    <activity android:configChanges="density|orientation|smallestScreenSize|screenLayout|screenSize|uiMode" android:theme="@style/Maui.SplashTheme" android:name="crc649583191db32357d4.MainActivity" android:exported="true">
+    <activity android:label="Milan" android:theme="@android:style/Theme.Material.NoActionBar" android:name="crc649583191db32357d4.MainActivity" android:exported="true">
       <intent-filter>
         <action android:name="android.intent.action.MAIN" />
         <category android:name="android.intent.category.LAUNCHER" />

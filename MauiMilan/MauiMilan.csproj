@@ -9,27 +9,21 @@
 		<ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
 		<ApplicationTitle>Milan</ApplicationTitle>
 		<AndroidManifest>Platforms\Android\AndroidManifest.xml</AndroidManifest>
-
 		<SupportedOSPlatformVersion>21.0</SupportedOSPlatformVersion>
 		<Nullable>enable</Nullable>
 		<ImplicitUsings>enable</ImplicitUsings>
 	</PropertyGroup>
 
-	<ItemGroup>
-		<PackageReference Include="Microsoft.Maui.Controls" Version="8.0.40" />
-		<PackageReference Include="Microsoft.Maui.Controls.Compatibility" Version="8.0.40" />
-	</ItemGroup>
-
-	<!-- 链接纯 C# 核心层（Domain / EventBus），排除 Unity 依赖 -->
+	<!-- 链接纯 C# 核心层（Domain / EventBus / Enums），排除 Unity 依赖 -->
 	<ItemGroup>
 		<Compile Include="..\Assets\_Project\Scripts\Domain\**\*.cs" Link="Core\Domain\%(RecursiveDir)%(Filename)%(Extension)" />
 		<Compile Include="..\Assets\_Project\Scripts\Infrastructure\EventBus\**\*.cs" Link="Core\Infrastructure\EventBus\%(RecursiveDir)%(Filename)%(Extension)" />
 		<Compile Include="..\Assets\_Project\Scripts\Data\Enums.cs" Link="Core\Data\Enums.cs" />
 	</ItemGroup>
 
-	<!-- Android 图标资源 -->
+	<!-- Android Assets -->
 	<ItemGroup>
-		<MauiIcon Include="Resources\mipmap-mdpi\appicon.png" ForegroundFile="Resources\mipmap-mdpi\appicon_foreground.png" />
+		<AndroidAsset Include="Platforms\Android\Assets\**\*" />
 	</ItemGroup>
 
 </Project>
