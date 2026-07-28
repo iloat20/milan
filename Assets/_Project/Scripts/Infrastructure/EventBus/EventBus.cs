@@ -27,7 +27,7 @@ namespace Milan.Infrastructure.EventBus
             while (_q.Count > 0)
             {
                 var (t, e) = _q.Dequeue();
-                if (_subs.TryGetValue(t, out var h)) ((Action<object>)h)?.Invoke(e);
+                if (_subs.TryGetValue(t, out var h)) h.DynamicInvoke(e);
             }
         }
         public static void Clear() { _subs.Clear(); _q.Clear(); }
