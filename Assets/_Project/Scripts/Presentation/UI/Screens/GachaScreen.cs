@@ -19,14 +19,14 @@ namespace Milan.Presentation.UI.Screens
             {
                 var pools = gacha.GetAllPools();
                 if (pools.Length == 0) { resultText.text = "No pools"; return; }
-                var id = gacha.Pull(pools[0], false, new[] { "char_kasai", "char_hikari" }, new[] { 50, 50 });
+                var id = gacha.Pull(pools[0], false);
                 resultText.text = id != null ? "获得: " + id : "货币不足";
             });
             pullTenButton.onClick.AddListener(() =>
             {
                 var pools = gacha.GetAllPools();
                 if (pools.Length == 0) { resultText.text = "No pools"; return; }
-                var id = gacha.Pull(pools[0], true, new[] { "char_kasai", "char_hikari" }, new[] { 50, 50 });
+                var id = gacha.Pull(pools[0], true);
                 resultText.text = id != null ? "十连获得: " + id : "货币不足";
             });
             backButton.onClick.AddListener(() => UnityEngine.SceneManagement.SceneManager.LoadScene("Main"));

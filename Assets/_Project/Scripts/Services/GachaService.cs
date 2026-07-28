@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using Milan.Data;
 using Milan.Data.ScriptableObjects;
@@ -24,7 +25,7 @@ namespace Milan.Services
             return Resources.LoadAll<GachaPoolData>("Content/GachaPools");
         }
 
-        public string Pull(GachaPoolData pool, bool tenPull, string[] characterIds, int[] weights)
+        public string Pull(GachaPoolData pool, bool tenPull)
         {
             var data = _save.Current;
             int count = tenPull ? 10 : 1;
@@ -36,16 +37,46 @@ namespace Milan.Services
             string resultId = null;
             for (int i = 0; i < count; i++)
             {
-                var rarity = pity.RollWithPity(_rng, pool.RarityWeights, 3);
-                var id = _engine.PickWeighted(characterIds, weights);
+                // 先掷稀有度（含保底）
+                Rarity rarity = pity.RollWithPity(_rng, pool.RarityWeights, 3);
+                // 再在该稀有度内按权重抽角色
+                var entries = pool.GetEntriesForRarity(rarity);
+                string id = PickFromEntries(entries);
+                if (string.IsNullOrEmpty(id) && entries.Count == 0)
+                {
+                    // 该稀有度无角色时，回退到任意稀有度的角色
+                    id = PickFromAllEntries(pool);
+                }
                 if (i == count - 1) resultId = id;
-                bool isNew = !OwnsCharacter(id);
-                GrantItem(id);
-                EventBus.Publish(new GachaResultEvent { ItemId = id, IsNew = isNew, Rarity = (int)rarity });
+                bool isNew = !string.IsNullOrEmpty(id) && !OwnsCharacter(id);
+                if (!string.IsNullOrEmpty(id))
+                {
+                    GrantItem(id);
+                    EventBus.Publish(new GachaResultEvent { ItemId = id, IsNew = isNew, Rarity = (int)rarity });
+                }
             }
             data.SetGachaCounter(pool.PoolId, pity.Counter);
             _save.Save();
             return resultId;
+        }
+
+        string PickFromEntries(List<GachaPoolEntry> entries)
+        {
+            if (entries == null || entries.Count == 0) return null;
+            var ids = new List<string>();
+            var weights = new List<int>();
+            foreach (var e in entries) { ids.Add(e.CharacterId); weights.Add(e.Weight); }
+            if (ids.Count == 0) return null;
+            return _engine.PickWeighted(ids.ToArray(), weights.ToArray());
+        }
+
+        string PickFromAllEntries(GachaPoolData pool)
+        {
+            if (pool.Entries == null || pool.Entries.Length == 0) return null;
+            var ids = new List<string>();
+            var weights = new List<int>();
+            foreach (var e in pool.Entries) { ids.Add(e.CharacterId); weights.Add(e.Weight); }
+            return _engine.PickWeighted(ids.ToArray(), weights.ToArray());
         }
 
         bool OwnsCharacter(string id)

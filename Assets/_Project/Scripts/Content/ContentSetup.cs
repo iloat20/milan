@@ -72,6 +72,11 @@ namespace Milan.Content
                 p.CostItemId = "item_soft_currency";
                 p.SingleCost = 160;
                 p.TenCost = 1600;
+                p.Entries = new GachaPoolEntry[]
+                {
+                    new GachaPoolEntry { CharacterId = "char_kasai", RarityIndex = 3, Weight = 50 },
+                    new GachaPoolEntry { CharacterId = "char_hikari", RarityIndex = 2, Weight = 100 },
+                };
             });
 
             CreateSO<ItemData>("Items/Item_SoftCurrency", i =>
