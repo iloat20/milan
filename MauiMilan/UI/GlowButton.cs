@@ -50,15 +50,25 @@ public class GlowButton : Button
                 _pressed = true;
                 UpdateBackground(true);
                 Animate().ScaleX(0.96f).ScaleY(0.96f).SetDuration(80).Start();
-                break;
+                return true;
             case MotionEventActions.Up:
+                _pressed = false;
+                UpdateBackground(false);
+                Animate().ScaleX(1f).ScaleY(1f).SetDuration(80).Start();
+                PerformClick();
+                return true;
             case MotionEventActions.Cancel:
                 _pressed = false;
                 UpdateBackground(false);
                 Animate().ScaleX(1f).ScaleY(1f).SetDuration(80).Start();
-                break;
+                return true;
         }
         return base.OnTouchEvent(e);
+    }
+
+    public override bool PerformClick()
+    {
+        return base.PerformClick();
     }
 
     private int Dp(int v) => (int)(v * Resources.DisplayMetrics.Density);
