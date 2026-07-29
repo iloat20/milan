@@ -19,16 +19,26 @@ public class CharacterListActivity : Activity
     {
         base.OnCreate(savedInstanceState);
         GameState.EnsureInitialized(this);
-        SetContentView(Build());
+        SetContentView(BuildLayout());
+        RefreshOwned();
     }
 
     protected override void OnResume()
     {
         base.OnResume();
-        SetContentView(Build());
+        // Refresh the owned grid only — don't rebuild layout.
+        RefreshOwned();
     }
 
-    LinearLayout Build()
+    void RefreshOwned()
+    {
+        if (_gridRoot == null) return;
+        _gridRoot.RemoveAllViews();
+        if (_currency != null) _currency.Text = GameState.CurrencyLabel;
+        RebuildGrid(_gridRoot);
+    }
+
+    LinearLayout BuildLayout()
     {
         var density = Resources.DisplayMetrics.Density;
         int Dp(int v) => (int)(v * density);
