@@ -124,44 +124,11 @@ public class GachaActivity : Activity
                 row.LayoutParameters = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MatchParent, ViewGroup.LayoutParams.WrapContent);
                 _resultsRoot.AddView(row);
             }
-            row!.AddView(ResultChip(results[i]));
+            row!.AddView(CharacterCard.GachaChip(this, results[i]));
         }
 
         // summary line
         int ssr = results.Count(r => r.Rarity >= 3);
         _summary.Text = $"共 {results.Count} 抽  ·  SSR+ {ssr}  ✦  最新: {results.Last().CharacterName}";
-    }
-
-    View ResultChip(PullResult r)
-    {
-        var density = Resources.DisplayMetrics.Density;
-        int Dp(int v) => (int)(v * density);
-
-        var color = AppTheme.RarityColor(r.Rarity);
-
-        var chip = UI.VBox();
-        var lp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WrapContent, 1f);
-        lp.SetMargins(Dp(3), Dp(3), Dp(3), Dp(3));
-        chip.LayoutParameters = lp;
-        chip.Background = UI.RoundRect(AppTheme.Surface, 12, 1, color);
-        chip.SetPadding(Dp(6), Dp(10), Dp(6), Dp(10));
-
-        // rarity tag
-        var tag = UI.Text(AppTheme.RarityName(r.Rarity), 11, color, bold: true);
-        tag.Gravity = GravityFlags.CenterHorizontal;
-        // character name (clamped to 2 lines)
-        var name = UI.Text(r.CharacterName, 12, AppTheme.TextPrimary);
-        name.Gravity = GravityFlags.CenterHorizontal;
-        name.SetMaxLines(2);
-        name.Ellipsize = TextUtils.TruncateAt.End;
-
-        var initial = r.CharacterName.Length > 0 ? r.CharacterName.Trim()[0].ToString() : "?";
-        var av = UI.Avatar(initial, r.Rarity, 34);
-        av.SetPadding(0, 0, 0, Dp(4));
-
-        chip.AddView(av);
-        chip.AddView(tag);
-        chip.AddView(name);
-        return chip;
     }
 }

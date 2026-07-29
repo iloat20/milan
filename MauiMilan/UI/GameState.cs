@@ -1,4 +1,5 @@
 using Android.Content;
+using Milan.Domain.Battle;
 using Milan.Domain.Progression;
 using Milan.Infrastructure.Save;
 using Milan.Maui.Services;
@@ -87,7 +88,11 @@ public class OwnedCharacterView
     public CharacterSaveState Save = null!;
     public CharacterDataEntry? Def;
     public string Name => Def?.DisplayName ?? Save.CharacterId;
+    public string Title => Def?.Title ?? "";
     public int Rarity => Def?.BaseRarity ?? 1;
     public string World => Def?.World ?? "Shinwa";
+    public string Element => Def?.Element ?? "Flame";
+    public string Lore => Def?.Lore ?? "";
     public bool CanBreakthrough => Def?.CanBreakthrough ?? false;
+    public TalentTreeData? Talent => GameState.Service.TalentTrees.FirstOrDefault(t => t.TreeId == Def?.TalentTreeId);
 }

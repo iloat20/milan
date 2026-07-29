@@ -53,21 +53,33 @@ public class CharacterDetailActivity : Activity
         banner.Background = UI.RoundRect(AppTheme.Surface, 18, 2, color);
         banner.SetPadding(Dp(18), Dp(18), Dp(18), Dp(18));
 
-        var initial = ch.Name.Length > 0 ? ch.Name.Trim()[0].ToString() : "?";
-        var av = UI.Avatar(initial, ch.Rarity, 64);
+        var av = CharacterCard.DetailPortrait(this, ch, 80);
         av.SetPadding(0, 0, Dp(16), 0);
 
         var info = UI.VBox();
         var name = UI.Text(ch.Name, 22, AppTheme.TextPrimary, bold: true);
-        var rarity = UI.Text($"{AppTheme.RarityName(ch.Rarity)}  ·  {ch.World}", 14, color, bold: true);
+        var title = UI.Text(ch.Title, 13, color);
+        title.SetPadding(0, Dp(2), 0, 0);
+        var rarity = UI.Text($"{AppTheme.RarityName(ch.Rarity)}  ·  {ch.World}  ·  {ch.Element}", 12, AppTheme.TextSecondary, bold: true);
         rarity.SetPadding(0, Dp(4), 0, 0);
         var level = UI.Text($"Lv.{ch.Save.Level}   {new string('★', ch.Save.Stars)}   天赋点 {ch.Save.UnspentPoints}", 13, AppTheme.TextSecondary);
         level.SetPadding(0, Dp(6), 0, 0);
-        info.AddView(name); info.AddView(rarity); info.AddView(level);
+        info.AddView(name); info.AddView(title); info.AddView(rarity); info.AddView(level);
 
         banner.AddView(av);
         banner.AddView(info);
         root.AddView(banner);
+        root.AddView(Spacer(12));
+
+        // Lore
+        root.AddView(SectionTitle("背 景 故 事"));
+        var loreBox = UI.VBox();
+        loreBox.Background = UI.RoundRect(AppTheme.Surface, 14);
+        loreBox.SetPadding(Dp(16), Dp(14), Dp(16), Dp(14));
+        var lore = UI.Text(ch.Lore, 14, AppTheme.TextSecondary);
+        lore.SetLineSpacing(Dp(4), 1f);
+        loreBox.AddView(lore);
+        root.AddView(loreBox);
         root.AddView(Spacer(16));
 
         // stats
@@ -82,14 +94,9 @@ public class CharacterDetailActivity : Activity
         root.AddView(statsBox);
         root.AddView(Spacer(16));
 
-        // talent placeholder
+        // talents
         root.AddView(SectionTitle("天 赋"));
-        var talent = UI.VBox();
-        talent.Background = UI.RoundRect(AppTheme.Surface, 14);
-        talent.SetPadding(Dp(16), Dp(16), Dp(16), Dp(16));
-        var talentHint = UI.Text("背景驱动的天赋树（占位）", 14, AppTheme.TextSecondary);
-        talent.AddView(talentHint);
-        root.AddView(talent);
+        root.AddView(TalentPreview(this, ch));
         root.AddView(Spacer(16));
 
         // inspect button
@@ -98,6 +105,36 @@ public class CharacterDetailActivity : Activity
         root.AddView(inspect);
 
         return root;
+    }
+
+    View TalentPreview(Activity activity, OwnedCharacterView ch)
+    {
+        var density = activity.Resources.DisplayMetrics.Density;
+        int Dp(int v) => (int)(v * density);
+        var tree = ch.Talent;
+        var box = UI.VBox();
+        box.Background = UI.RoundRect(AppTheme.Surface, 14);
+        box.SetPadding(Dp(16), Dp(14), Dp(16), Dp(14));
+        if (tree == null) { box.AddView(UI.Text("暂无天赋", 14, AppTheme.TextMuted)); return box; }
+
+        foreach (var branch in tree.BranchIds)
+        {
+            var nodes = tree.Nodes.Where(n => n.BranchId == branch).ToList();
+            if (nodes.Count == 0) continue;
+            var branchName = branch switch { "branch_power" => "强攻", "branch_defense" => "防御", "branch_utility" => "通用", _ => branch };
+            var bh = UI.Text("■ " + branchName, 13, AppTheme.Gold, bold: true);
+            bh.SetPadding(0, Dp(6), 0, Dp(2));
+            box.AddView(bh);
+            foreach (var n in nodes)
+            {
+                var allocated = ch.Save.TalentPoints.Contains(n.NodeId);
+                var nc = allocated ? AppTheme.TextPrimary : AppTheme.TextMuted;
+                var nt = UI.Text($"{(allocated ? "●" : "○")} {n.DisplayName}  —  {n.Description}", 12, nc);
+                nt.SetPadding(Dp(8), Dp(2), 0, Dp(2));
+                box.AddView(nt);
+            }
+        }
+        return box;
     }
 
     TextView SectionTitle(string s)

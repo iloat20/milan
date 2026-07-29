@@ -1,38 +1,28 @@
 {
   "Characters": [
-    {
-      "CharacterId": "char_kasai",
-      "DisplayName": "烬 Kasai",
-      "World": "Shinwa",
-      "BaseRarity": 3,
-      "BaseStats": [120, 80, 1000, 15],
-      "MaxStage": 4,
-      "MaxStars": 6,
-      "CanBreakthrough": true
-    },
-    {
-      "CharacterId": "char_hikari",
-      "DisplayName": "光 Hikari",
-      "World": "Aether",
-      "BaseRarity": 2,
-      "BaseStats": [90, 70, 900, 12],
-      "MaxStage": 4,
-      "MaxStars": 5,
-      "CanBreakthrough": false
-    }
+    { "CharacterId": "char_ur_yan", "DisplayName": "焱 Yan", "Title": "业火之蛇", "World": "Shinwa", "Element": "Flame", "BaseRarity": 4, "BaseStats": [160,100,1200,18], "MaxStars": 7, "CanBreakthrough": true, "Lore": "相传为忍宗始祖封印的业火化身，觉醒之日，焚尽八荒。", "TalentTreeId": "tree_yan" },
+    { "CharacterId": "char_ur_xu", "DisplayName": "墟 Xu", "Title": "虚空领主", "World": "Aether", "Element": "Void", "BaseRarity": 4, "BaseStats": [150,120,1100,16], "MaxStars": 7, "CanBreakthrough": true, "Lore": "来自维度裂隙的观察者，以星辰为食，以虚空为巢。", "TalentTreeId": "tree_xu" },
+    { "CharacterId": "char_ur_shu", "DisplayName": "枢 Shu", "Title": "天枢核心", "World": "Ironveil", "Element": "Metal", "BaseRarity": 4, "BaseStats": [140,160,1400,14], "MaxStars": 7, "CanBreakthrough": true, "Lore": "铁帷纪元最古老的人工智能，觉醒自我意识后选择守护人类。", "TalentTreeId": "tree_shu" },
+    { "CharacterId": "char_ur_yasha", "DisplayName": "夜叉 Yasha", "Title": "暗夜夜叉王", "World": "Shinwa", "Element": "Shadow", "BaseRarity": 4, "BaseStats": [170,90,1150,20], "MaxStars": 7, "CanBreakthrough": true, "Lore": "统御暗夜百鬼的王者，其一笑可令万物失色。", "TalentTreeId": "tree_yasha" },
+    { "CharacterId": "char_ur_xinghuang", "DisplayName": "星煌 Xinghuang", "Title": "星穹编织者", "World": "Aether", "Element": "Star", "BaseRarity": 4, "BaseStats": [155,110,1250,17], "MaxStars": 7, "CanBreakthrough": true, "Lore": "以引力为丝、以星芒为线，编织命运之网的星界使徒。", "TalentTreeId": "tree_xinghuang" },
+    { "CharacterId": "char_ssr_kasai", "DisplayName": "烬 Kasai", "Title": "残烬之刃", "World": "Shinwa", "Element": "Flame", "BaseRarity": 3, "BaseStats": [120,80,1000,15], "MaxStars": 6, "CanBreakthrough": true, "Lore": "灭族之夜唯一幸存者，以残烬之火重塑忍道。", "TalentTreeId": "tree_kasai" },
+    { "CharacterId": "char_ssr_hui", "DisplayName": "辉 Hui", "Title": "圣光使者", "World": "Aether", "Element": "Light", "BaseRarity": 3, "BaseStats": [110,90,1050,14], "MaxStars": 6, "CanBreakthrough": false, "Lore": "来自星灵殿的治愈之光，所至之处，伤痛消散。", "TalentTreeId": "tree_hui" },
+    { "CharacterId": "char_ssr_maichong", "DisplayName": "脉冲 MaiChong", "Title": "电磁幽灵", "World": "Ironveil", "Element": "Thunder", "BaseRarity": 3, "BaseStats": [130,85,950,18], "MaxStars": 6, "CanBreakthrough": false, "Lore": "电磁风暴中觉醒的AI幽灵，以雷霆之势贯穿战场。", "TalentTreeId": "tree_maichong" },
+    { "CharacterId": "char_ssr_jifeng", "DisplayName": "疾风 Jifeng", "Title": "风魔忍者", "World": "Shinwa", "Element": "Wind", "BaseRarity": 3, "BaseStats": [125,75,900,22], "MaxStars": 6, "CanBreakthrough": false, "Lore": "风魔一族最后的传人，身法如风，来去无踪。", "TalentTreeId": "tree_jifeng" },
+    { "CharacterId": "char_ssr_xingshuang", "DisplayName": "星霜 Xingshuang", "Title": "深空冰晶", "World": "Aether", "Element": "Frost", "BaseRarity": 3, "BaseStats": [115,100,1100,13], "MaxStars": 6, "CanBreakthrough": false, "Lore": "深空探测中觉醒的冰晶生命体，触碰之物皆凝霜华。", "TalentTreeId": "tree_xingshuang" },
+    { "CharacterId": "char_sr_deng", "DisplayName": "灯 Deng", "Title": "灯火忍者", "World": "Shinwa", "Element": "Flame", "BaseRarity": 2, "BaseStats": [90,70,850,13], "MaxStars": 5, "CanBreakthrough": false, "Lore": "忍宗灯影部的中坚，以灯火为号，传递情报。", "TalentTreeId": "tree_deng" },
+    { "CharacterId": "char_sr_xingchen", "DisplayName": "星尘 Xingchen", "Title": "星尘观测者", "World": "Aether", "Element": "Light", "BaseRarity": 2, "BaseStats": [85,75,900,12], "MaxStars": 5, "CanBreakthrough": false, "Lore": "默默记录星象变化的观测者，知晓诸多秘密。", "TalentTreeId": "tree_xingchen" },
+    { "CharacterId": "char_sr_luoshuan", "DisplayName": "螺栓 Luoshuan", "Title": "机械修理工", "World": "Ironveil", "Element": "Metal", "BaseRarity": 2, "BaseStats": [95,90,1000,10], "MaxStars": 5, "CanBreakthrough": false, "Lore": "铁帷下层的老修理工，能修好任何机械。", "TalentTreeId": "tree_luoshuan" },
+    { "CharacterId": "char_sr_yanwu", "DisplayName": "岩武 Yanwu", "Title": "岩石武士", "World": "Shinwa", "Element": "Earth", "BaseRarity": 2, "BaseStats": [100,110,1100,9], "MaxStars": 5, "CanBreakthrough": false, "Lore": "以岩遁术守护忍宗要塞的忠诚武士。", "TalentTreeId": "tree_yanwu" },
+    { "CharacterId": "char_sr_qiliu", "DisplayName": "气流 Qiliu", "Title": "以太信使", "World": "Aether", "Element": "Wind", "BaseRarity": 2, "BaseStats": [88,72,820,16], "MaxStars": 5, "CanBreakthrough": false, "Lore": "在以太风暴中穿梭的信使，传递跨次元讯息。", "TalentTreeId": "tree_qiliu" },
+    { "CharacterId": "char_r_aoi", "DisplayName": "葵 Aoi", "Title": "见习忍者", "World": "Shinwa", "Element": "Wind", "BaseRarity": 1, "BaseStats": [70,60,700,12], "MaxStars": 4, "CanBreakthrough": false, "Lore": "刚刚通过试炼的年轻忍者，梦想成为传说中的强者。", "TalentTreeId": "tree_aoi" },
+    { "CharacterId": "char_r_li", "DisplayName": "砾 Li", "Title": "星砾采集者", "World": "Aether", "Element": "Earth", "BaseRarity": 1, "BaseStats": [75,70,750,10], "MaxStars": 4, "CanBreakthrough": false, "Lore": "在星带中采集星砾的勤劳工人。", "TalentTreeId": "tree_li" },
+    { "CharacterId": "char_r_ding", "DisplayName": "钉 Ding", "Title": "废铁机器人", "World": "Ironveil", "Element": "Metal", "BaseRarity": 1, "BaseStats": [80,80,800,8], "MaxStars": 4, "CanBreakthrough": false, "Lore": "被丢弃在废铁堆中的小型机器人，依然努力生存。", "TalentTreeId": "tree_ding" },
+    { "CharacterId": "char_r_snow", "DisplayName": "雪 Snow", "Title": "雪童子", "World": "Shinwa", "Element": "Frost", "BaseRarity": 1, "BaseStats": [65,65,680,11], "MaxStars": 4, "CanBreakthrough": false, "Lore": "雪山上的神秘雪童，据说见到它会有好运。", "TalentTreeId": "tree_snow" },
+    { "CharacterId": "char_r_ying", "DisplayName": "萤 Ying", "Title": "萤火", "World": "Aether", "Element": "Flame", "BaseRarity": 1, "BaseStats": [68,58,650,14], "MaxStars": 4, "CanBreakthrough": false, "Lore": "星灵界最微小的光点，却永不熄灭。", "TalentTreeId": "tree_ying" }
   ],
   "Pools": [
-    {
-      "PoolId": "pool_main",
-      "DisplayName": "次元裂缝 · 常驻",
-      "RarityWeights": [820, 150, 29, 1],
-      "HardPity": 90,
-      "SingleCost": 160,
-      "TenCost": 1600,
-      "Entries": [
-        { "CharacterId": "char_kasai", "RarityIndex": 3, "Weight": 50 },
-        { "CharacterId": "char_hikari", "RarityIndex": 2, "Weight": 100 }
-      ]
-    }
-  ]
+    { "PoolId": "pool_main", "DisplayName": "次元裂缝 · 常驻", "RarityWeights": [820,150,29,1], "HardPity": 90, "SingleCost": 160, "TenCost": 1600, "Entries": [ { "CharacterId": "char_ur_yan", "RarityIndex": 4, "Weight": 1 }, { "CharacterId": "char_ur_xu", "RarityIndex": 4, "Weight": 1 }, { "CharacterId": "char_ur_shu", "RarityIndex": 4, "Weight": 1 }, { "CharacterId": "char_ur_yasha", "RarityIndex": 4, "Weight": 1 }, { "CharacterId": "char_ur_xinghuang", "RarityIndex": 4, "Weight": 1 }, { "CharacterId": "char_ssr_kasai", "RarityIndex": 3, "Weight": 8 }, { "CharacterId": "char_ssr_hui", "RarityIndex": 3, "Weight": 8 }, { "CharacterId": "char_ssr_maichong", "RarityIndex": 3, "Weight": 8 }, { "CharacterId": "char_ssr_jifeng", "RarityIndex": 3, "Weight": 8 }, { "CharacterId": "char_ssr_xingshuang", "RarityIndex": 3, "Weight": 8 }, { "CharacterId": "char_sr_deng", "RarityIndex": 2, "Weight": 40 }, { "CharacterId": "char_sr_xingchen", "RarityIndex": 2, "Weight": 40 }, { "CharacterId": "char_sr_luoshuan", "RarityIndex": 2, "Weight": 40 }, { "CharacterId": "char_sr_yanwu", "RarityIndex": 2, "Weight": 40 }, { "CharacterId": "char_sr_qiliu", "RarityIndex": 2, "Weight": 40 }, { "CharacterId": "char_r_aoi", "RarityIndex": 1, "Weight": 100 }, { "CharacterId": "char_r_li", "RarityIndex": 1, "Weight": 100 }, { "CharacterId": "char_r_ding", "RarityIndex": 1, "Weight": 100 }, { "CharacterId": "char_r_snow", "RarityIndex": 1, "Weight": 100 }, { "CharacterId": "char_r_ying", "RarityIndex": 1, "Weight": 100 } ] }
+  ],
+  "TalentTrees": []
 }

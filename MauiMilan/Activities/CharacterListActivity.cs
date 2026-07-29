@@ -88,45 +88,9 @@ public class CharacterListActivity : Activity
                 row.LayoutParameters = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MatchParent, ViewGroup.LayoutParams.WrapContent);
                 grid.AddView(row);
             }
-            row!.AddView(CharacterCard(owned[i]));
+            var ch = owned[i];
+            row!.AddView(CharacterCard.ListCard(this, ch, () => OpenDetail(ch)));
         }
-    }
-
-    View CharacterCard(OwnedCharacterView ch)
-    {
-        var density = Resources.DisplayMetrics.Density;
-        int Dp(int v) => (int)(v * density);
-        var color = AppTheme.RarityColor(ch.Rarity);
-
-        var card = UI.VBox();
-        var lp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WrapContent, 1f);
-        lp.SetMargins(Dp(5), Dp(5), Dp(5), Dp(5));
-        card.LayoutParameters = lp;
-        card.Background = UI.RoundRect(AppTheme.Surface, 16, 2, color);
-        card.SetPadding(Dp(14), Dp(14), Dp(14), Dp(14));
-        card.Focusable = true; card.Clickable = true;
-        card.Click += (s, e) => OpenDetail(ch);
-
-        // avatar row
-        var avatarRow = UI.HBox();
-        var initial = ch.Name.Length > 0 ? ch.Name.Trim()[0].ToString() : "?";
-        var av = UI.Avatar(initial, ch.Rarity, 40);
-        av.SetPadding(0, 0, Dp(10), 0);
-        var nameCol = UI.VBox();
-        var name = UI.Text(ch.Name, 16, AppTheme.TextPrimary, bold: true);
-        name.SetMaxLines(1); name.Ellipsize = TextUtils.TruncateAt.End;
-        var rarity = UI.Text(AppTheme.RarityName(ch.Rarity) + " · " + ch.World, 11, color);
-        nameCol.AddView(name); nameCol.AddView(rarity);
-        avatarRow.AddView(av);
-        avatarRow.AddView(nameCol);
-
-        // level + stars
-        var lvl = UI.Text($"Lv.{ch.Save.Level}    {new string('★', ch.Save.Stars)}", 12, AppTheme.TextSecondary);
-        lvl.SetPadding(0, Dp(8), 0, 0);
-
-        card.AddView(avatarRow);
-        card.AddView(lvl);
-        return card;
     }
 
     void OpenDetail(OwnedCharacterView ch)
