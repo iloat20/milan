@@ -186,6 +186,7 @@ public class GachaActivity : Activity
             var def = GameState.Service.Characters.FirstOrDefault(c => c.CharacterId == results[i].CharacterId);
             var card = new ResultCard(this, results[i], def);
             row!.AddView(card);
+            // Pop-in animation
             card.Alpha = 0f;
             card.ScaleX = 0.5f; card.ScaleY = 0.5f;
             card.Animate().Alpha(1f).ScaleX(1f).ScaleY(1f).SetDuration(250).SetStartDelay(i * 50).Start();

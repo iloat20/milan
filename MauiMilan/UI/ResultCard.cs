@@ -9,109 +9,81 @@ using Milan.Maui.Services;
 namespace Milan.Maui;
 
 /// <summary>
-/// Gacha result card with flip animation. Shows starfield back, flips to
-/// reveal character portrait + name. High rarity cards glow.
+/// Gacha result card — shows character portrait, name, rarity immediately.
+/// High rarity cards have a glowing border.
 /// </summary>
 public class ResultCard : FrameLayout
 {
     private readonly PullResult _result;
     private readonly CharacterDataEntry? _def;
-    private readonly string _element;
-    private readonly Color _rarityCol;
-    private bool _flipped;
-    private View _face = null!;
-    private View _back = null!;
 
     public ResultCard(Context context, PullResult result, CharacterDataEntry? def) : base(context)
     {
         _result = result; _def = def;
-        _element = def?.Element ?? "Flame";
-        _rarityCol = AppTheme.RarityColor(result.Rarity);
 
         var density = context.Resources.DisplayMetrics.Density;
-        // Minimum width so cards are always visible even in 5-card rows
+        int Dp(int v) => (int)(v * density);
+
         var minW = (int)(Resources.DisplayMetrics.WidthPixels / density / 5.5f);
-        var lp = new LinearLayout.LayoutParams(Math.Max(minW, Dp(60)), ViewGroup.LayoutParams.WrapContent, 0f);
-        lp.SetMargins((int)(3 * density), (int)(3 * density), (int)(3 * density), (int)(3 * density));
+        var lp = new LinearLayout.LayoutParams(Math.Max(minW, Dp(64)), ViewGroup.LayoutParams.WrapContent, 0f);
+        lp.SetMargins(Dp(3), Dp(3), Dp(3), Dp(3));
         LayoutParameters = lp;
 
-        _back = BuildBack();
-        _face = BuildFace();
-        _face.Alpha = 0f;
-        AddView(_back);
-        AddView(_face);
-
-        Clickable = true;
-        Click += (_, _) => Flip();
-    }
-
-    private View BuildBack()
-    {
-        var v = new View(Context);
-        v.LayoutParameters = new LayoutParams(ViewGroup.LayoutParams.MatchParent, Dp(90));
+        // Card background with rarity border
+        var borderCol = AppTheme.RarityColor(result.Rarity);
         var bg = new GradientDrawable();
-        bg.SetCornerRadius(Dp(8));
-        bg.SetColors(new int[] { AppTheme.CosmicBgDeep.ToArgb(), AppTheme.CosmicBgMid.ToArgb() });
-        bg.SetStroke(Dp(1), Color.Argb(80, 124, 77, 255));
-        v.Background = bg;
-        return v;
-    }
+        bg.SetCornerRadius(Dp(10));
+        bg.SetColor(Color.Argb(255, 20, 10, 30));
+        bg.SetStroke(result.Rarity >= 3 ? Dp(3) : Dp(1), borderCol);
+        Background = bg;
+        SetPadding(Dp(6), Dp(6), Dp(6), Dp(6));
 
-    private View BuildFace()
-    {
-        var box = new LinearLayout(Context) { Orientation = Orientation.Vertical };
-        box.LayoutParameters = new LayoutParams(ViewGroup.LayoutParams.MatchParent, Dp(90));
-        
+        // Content
+        var col = new LinearLayout(context) { Orientation = Orientation.Vertical };
+        col.LayoutParameters = new LayoutParams(ViewGroup.LayoutParams.MatchParent, ViewGroup.LayoutParams.WrapContent);
 
-        var density = Context.Resources.DisplayMetrics.Density;
-        var bg = new GradientDrawable();
-        bg.SetCornerRadius(Dp(8));
-        var (from, to, _, glyph) = ElementTheme.For(_element);
-        bg.SetColors(new int[] { from.ToArgb(), to.ToArgb() });
-        var borderAlpha = _result.Rarity >= 3 ? 220 : 120;
-        bg.SetStroke(Dp(2), Color.Argb(borderAlpha, _rarityCol.R, _rarityCol.G, _rarityCol.B));
-        box.Background = bg;
+        // Portrait (mini FullBodyCharacter)
+        var portrait = new FullBodyCharacter(context, def ?? GameState.Service.Characters.First());
+        var portLp = new LinearLayout.LayoutParams(Dp(56), Dp(70));
+        portLp.Gravity = GravityFlags.CenterHorizontal;
+        portrait.LayoutParameters = portLp;
+        col.AddView(portrait);
 
-        // glow for high rarity — use view layer shadow
-        if (_result.Rarity >= 3)
-        {
-            box.SetLayerType(LayerType.Software, null);
-            // box glow via background border
-        }
-
-        var g = new TextView(Context) { Text = glyph };
-        g.SetTextColor(Color.White);
-        g.SetTextSize(ComplexUnitType.Sp, 22);
-        g.SetTypeface(null, TypefaceStyle.Bold);
-        g.SetPadding(0, Dp(6), 0, 0);
-        box.AddView(g);
-
-        var tag = new TextView(Context) { Text = AppTheme.RarityName(_result.Rarity) };
-        tag.SetTextColor(_rarityCol);
+        // Rarity tag
+        var tag = new TextView(context) { Text = AppTheme.RarityName(result.Rarity) };
+        tag.SetTextColor(borderCol);
         tag.SetTextSize(ComplexUnitType.Sp, 9);
         tag.SetTypeface(null, TypefaceStyle.Bold);
-        tag.SetPadding(0, 2, 0, 0);
-        box.AddView(tag);
+        tag.Gravity = GravityFlags.CenterHorizontal;
+        tag.SetPadding(0, Dp(2), 0, 0);
+        col.AddView(tag);
 
-        var nm = new TextView(Context) { Text = _result.CharacterName };
-        nm.SetTextColor(Color.White);
-        nm.SetTextSize(ComplexUnitType.Sp, 8);
-        nm.Gravity = GravityFlags.CenterHorizontal;
-        nm.SetMaxLines(1);
-        nm.SetPadding(0, 1, 0, 2);
-        box.AddView(nm);
+        // Name
+        var name = new TextView(context) { Text = result.CharacterName };
+        name.SetTextColor(Color.White);
+        name.SetTextSize(ComplexUnitType.Sp, 9);
+        name.SetMaxLines(1);
+        name.Gravity = GravityFlags.CenterHorizontal;
+        name.SetPadding(0, 0, 0, Dp(2));
+        col.AddView(name);
 
-        return box;
+        // New indicator
+        if (result.IsNew)
+        {
+            var nw = new TextView(context) { Text = "NEW" };
+            nw.SetTextColor(Color.Argb(255, 255, 215, 0));
+            nw.SetTextSize(ComplexUnitType.Sp, 7);
+            nw.SetTypeface(null, TypefaceStyle.Bold);
+            nw.Gravity = GravityFlags.CenterHorizontal;
+            col.AddView(nw);
+        }
+
+        AddView(col);
+
+        // Glow for high rarity via border thickness (SetShadowLayer unreliable in containers)
+        if (result.Rarity >= 3)
+        {
+            bg.SetStroke(Dp(3), borderCol);
+        }
     }
-
-    public void Flip()
-    {
-        if (_flipped) return;
-        _flipped = true;
-        Animate().RotationYBy(180).SetDuration(350).Start();
-        _back.Animate().Alpha(0f).SetDuration(175).Start();
-        _face.Animate().Alpha(1f).SetDuration(175).SetStartDelay(175).Start();
-    }
-
-    private int Dp(int v) => (int)(v * Resources.DisplayMetrics.Density);
 }
