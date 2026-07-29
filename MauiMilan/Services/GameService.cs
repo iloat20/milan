@@ -57,43 +57,206 @@ public class GameService
     // ------------------------------------------------------------------ characters
 
     private void Add(string id, string name, string title, string world, string element,
-        int rarity, int[] stats, int stars, bool breakthrough, string lore, string treeId)
+        int rarity, int[] stats, int stars, bool breakthrough, string lore, string treeId, List<SkillData> skills)
     {
         Characters.Add(new CharacterDataEntry
         {
             CharacterId = id, DisplayName = name, Title = title, World = world, Element = element,
             BaseRarity = rarity, BaseStats = stats, MaxStage = 4, MaxStars = stars,
-            CanBreakthrough = breakthrough, Lore = lore, TalentTreeId = treeId
+            CanBreakthrough = breakthrough, Lore = lore, TalentTreeId = treeId, Skills = skills
         });
     }
+
+    private static SkillData Sk(string id, string name, string desc, string element, string type, int power) =>
+        new() { SkillId = id, DisplayName = name, Description = desc, Element = element, Type = type, Power = power };
 
     private void BuildCharacters()
     {
         Characters.Clear();
         // ========== UR 4★ ==========
-        Add("char_ur_yan", "焱 Yan", "业火之蛇", "Shinwa", "Flame", 4, new[] { 160, 100, 1200, 18 }, 7, true, "相传为忍宗始祖封印的业火化身，觉醒之日，焚尽八荒。", "tree_yan");
-        Add("char_ur_xu", "墟 Xu", "虚空领主", "Aether", "Void", 4, new[] { 150, 120, 1100, 16 }, 7, true, "来自维度裂隙的观察者，以星辰为食，以虚空为巢。", "tree_xu");
-        Add("char_ur_shu", "枢 Shu", "天枢核心", "Ironveil", "Metal", 4, new[] { 140, 160, 1400, 14 }, 7, true, "铁帷纪元最古老的人工智能，觉醒自我意识后选择守护人类。", "tree_shu");
-        Add("char_ur_yasha", "夜叉 Yasha", "暗夜夜叉王", "Shinwa", "Shadow", 4, new[] { 170, 90, 1150, 20 }, 7, true, "统御暗夜百鬼的王者，其一笑可令万物失色。", "tree_yasha");
-        Add("char_ur_xinghuang", "星煌 Xinghuang", "星穹编织者", "Aether", "Star", 4, new[] { 155, 110, 1250, 17 }, 7, true, "以引力为丝、以星芒为线，编织命运之网的星界使徒。", "tree_xinghuang");
+        // 烛龙 Zhulong - 山海经"烛龙"，睁眼为昼闭眼为夜，漫威凤凰之力+DC火神
+        Add("char_ur_zhulong", "烛龙 Zhulong", "昼夜之主", "Shinwa", "Flame", 4,
+            new[] { 165, 95, 1250, 19 }, 7, true,
+            "上古山海经所载烛龙，睁眼为白昼、闭眼为长夜，吐息化为天火。漫威凤凰之力与DC火神之威在其体内共鸣，觉醒之日，星辰为之焚尽。",
+            "tree_zhulong", new() {
+                Sk("zhulong_1", "烛照八荒", "以烛龙真火焚烧全体敌人，造成巨额火焰伤害", "Flame", "Ultimate", 95),
+                Sk("zhulong_2", "昼夜轮转", "切换昼夜：昼间攻速+30%，夜间暴击+25%", "Flame", "Active", 70),
+                Sk("zhulong_3", "不灭之焰", "受到致命伤害时保留1点生命并回复30%血量（每场一次）", "Flame", "Passive", 60),
+            });
+        // 虚无 Wuxu - 山海经"混沌"+漫威湮灭(DC反物质)
+        Add("char_ur_wuxu", "虚无 Wuxu", "万象终焉", "Aether", "Void", 4,
+            new[] { 155, 125, 1150, 17 }, 7, true,
+            "山海经所载混沌之形，无面无相，万物归虚。漫威湮灭与DC反监视者的力量在此交汇，它来自维度裂隙深处，以星辰为食，所余唯有虚无。",
+            "tree_wuxu", new() {
+                Sk("wuxu_1", "湮灭奇点", "在敌阵制造黑洞，持续吸引并撕裂范围内所有目标", "Void", "Ultimate", 92),
+                Sk("wuxu_2", "虚化", "进入虚无形态，闪避下一次攻击并回复能量", "Void", "Active", 68),
+                Sk("wuxu_3", "存在抹消", "普攻有15%概率直接削减目标15%当前生命", "Void", "Passive", 65),
+            });
+        // 刑天 Xingtian - 山海经"刑天"，漫威金刚狼+DC毁灭日
+        Add("ur_xingtian", "刑天 Xingtian", "不死战神", "Ironveil", "Metal", 4,
+            new[] { 170, 155, 1500, 13 }, 7, true,
+            "山海经刑天，断首仍以乳为目、以脐为口，执干戚而舞。漫威金刚狼的不愈与DC毁灭日的进化在其合金躯壳中重生，铁帷纪元最不屈的战士。",
+            "tree_xingtian", new() {
+                Sk("xingtian_1", "干戚狂舞", "挥舞巨斧横扫前方，造成范围伤害并击退", "Metal", "Ultimate", 90),
+                Sk("xingtian_2", "不死之躯", "受到伤害时叠加狂暴层数，每层+8%攻击", "Metal", "Passive", 72),
+                Sk("xingtian_3", "断首重生", "阵亡后复活一次，回复50%生命并获得霸体", "Metal", "Passive", 75),
+            });
+        // 九尾 Jiowei - 山海经"九尾狐"，漫威洛基+DC神奇女侠
+        Add("char_ur_jiowei", "九尾 Jiowei", "幻惑妖姬", "Shinwa", "Shadow", 4,
+            new[] { 150, 100, 1100, 22 }, 7, true,
+            "山海经九尾狐，九尾九命，善幻化惑心。漫威洛基的诡计与DC神奇女侠的魅惑在其血脉中流淌，以幻术操控战场，以魅惑瓦解敌心。",
+            "tree_jiowei", new() {
+                Sk("jiowei_1", "九尾天劫", "释放九道妖狐真火，随机追踪并灼烧所有敌人", "Shadow", "Ultimate", 88),
+                Sk("jiowei_2", "魅惑之瞳", "凝视单体敌人，使其混乱攻击同伴3秒", "Shadow", "Active", 70),
+                Sk("jiowei3", "九尾替身", "受到致命伤害时断尾替死并瞬移，每场最多触发3次", "Shadow", "Passive", 68),
+            });
+        // 应龙 Yinglong - 山海经"应龙"，漫威雷神+DC沙赞
+        Add("char_ur_yinglong", "应龙 Yinglong", "雷霆天龙", "Aether", "Thunder", 4,
+            new[] { 160, 115, 1300, 18 }, 7, true,
+            "山海经应龙，背生双翼、司掌雷霆，助黄帝战蚩尤。漫威雷神之锤与DC沙赞的闪电在其龙躯中咆哮，振翅则雷霆万钧。",
+            "tree_yinglong", new() {
+                Sk("yinglong_1", "天雷寂灭", "召唤九天神雷轰击全体敌人，附带麻痹", "Thunder", "Ultimate", 93),
+                Sk("yinglong_2", "龙翼风暴", "振翅掀起雷暴旋风，击退周围敌人并造成伤害", "Thunder", "Active", 72),
+                Sk("yinglong3", "龙鳞护体", "受到攻击时30%概率释放护体雷电反伤敌人", "Thunder", "Passive", 64),
+            });
         // ========== SSR 3★ ==========
-        Add("char_ssr_kasai", "烬 Kasai", "残烬之刃", "Shinwa", "Flame", 3, new[] { 120, 80, 1000, 15 }, 6, true, "灭族之夜唯一幸存者，以残烬之火重塑忍道。", "tree_kasai");
-        Add("char_ssr_hui", "辉 Hui", "圣光使者", "Aether", "Light", 3, new[] { 110, 90, 1050, 14 }, 6, false, "来自星灵殿的治愈之光，所至之处，伤痛消散。", "tree_hui");
-        Add("char_ssr_maichong", "脉冲 MaiChong", "电磁幽灵", "Ironveil", "Thunder", 3, new[] { 130, 85, 950, 18 }, 6, false, "电磁风暴中觉醒的AI幽灵，以雷霆之势贯穿战场。", "tree_maichong");
-        Add("char_ssr_jifeng", "疾风 Jifeng", "风魔忍者", "Shinwa", "Wind", 3, new[] { 125, 75, 900, 22 }, 6, false, "风魔一族最后的传人，身法如风，来去无踪。", "tree_jifeng");
-        Add("char_ssr_xingshuang", "星霜 Xingshuang", "深空冰晶", "Aether", "Frost", 3, new[] { 115, 100, 1100, 13 }, 6, false, "深空探测中觉醒的冰晶生命体，触碰之物皆凝霜华。", "tree_xingshuang");
+        // 凤凰 Fenghuang - 山海经"凤凰"，漫威凤凰女+DC火星猎人
+        Add("char_ssr_fenghuang", "凤凰 Fenghuang", "涅槃圣禽", "Shinwa", "Flame", 3,
+            new[] { 125, 85, 1050, 16 }, 6, true,
+            "山海经凤凰，五色而文，德义礼仁信。漫威凤凰女琴·葛蕾的念力与DC火星猎人的火焰在其羽翼中涅槃，浴火重生，不死不灭。",
+            "tree_fenghuang", new() {
+                Sk("fenghuang_1", "涅槃之火", "以凤凰真火焚烧全体，命中目标灼烧5秒", "Flame", "Ultimate", 82),
+                Sk("fenghuang_2", "浴火重生", "阵亡时化为火卵，3秒后复活并回复40%生命", "Flame", "Passive", 70),
+                Sk("fenghuang_3", "凤鸣朝阳", "鸣叫提升全队20%攻击力，持续8秒", "Flame", "Active", 60),
+            });
+        // 相柳 Xiangliu - 山海经"相柳"，漫威毒液+DC小丑
+        Add("char_ssr_xiangliu", "相柳 Xiangliu", "九首毒厄", "Aether", "Void", 3,
+            new[] { 118, 95, 1100, 14 }, 6, false,
+            "山海经相柳，九首蛇身，所到之处化为毒泽。漫威毒液的共生体与小丑的剧毒在其血液中流淌，吐息即瘟疫，触碰即腐蚀。",
+            "tree_xiangliu", new() {
+                Sk("xiangliu_1", "九首噬天", "九首齐出撕咬前方，造成多段伤害并叠加中毒", "Void", "Ultimate", 80),
+                Sk("xiangliu_2", "毒泽万里", "在地面制造毒沼，踏入的敌人持续掉血减速", "Void", "Active", 65),
+                Sk("xiangliu_3", "腐蚀之血", "攻击附带中毒，中毒目标受到治疗量降低50%", "Void", "Passive", 58),
+            });
+        // 雷神 Leishen - 山海经"雷兽"，漫威雷神索尔+DC宙斯
+        Add("char_ssr_leishen", "雷神 Leishen", "雷霆裁决", "Ironveil", "Thunder", 3,
+            new[] { 130, 90, 1000, 17 }, 6, false,
+            "山海经雷兽，龙身人头，腹中雷鸣。漫威雷神索尔的妙尔尼尔与DC宙斯的雷霆在其机械核心中锻造，以闪电审判一切。",
+            "tree_leishen", new() {
+                Sk("leishen_1", "雷霆万钧", "召唤巨型闪电劈向敌阵，主目标伤害翻倍", "Thunder", "Ultimate", 84),
+                Sk("leishen2", "雷神之锤", "投掷雷霆之锤，命中后弹射至多3个敌人", "Thunder", "Active", 66),
+                Sk("leishen_3", "静电充能", "每次受到攻击积累静电，下次技能伤害+25%", "Thunder", "Passive", 56),
+            });
+        // 飞廉 Feilian - 山海经"飞廉"，漫威快银+DC闪电侠
+        Add("char_ssr_feilian", "飞廉 Feilian", "风驰电掣", "Shinwa", "Wind", 3,
+            new[] { 122, 70, 880, 24 }, 6, false,
+            "山海经飞廉，鹿身雀首，司掌风伯。漫威快银的神速与DC闪电侠的神速力在其血脉中奔袭，疾风迅雷，唯快不破。",
+            "tree_feilian", new() {
+                Sk("feilian_1", "神速连斩", "以超越视觉的速度连续斩击单体12次", "Wind", "Ultimate", 78),
+                Sk("feilian_2", "疾风步", "瞬移至敌人身后发动背刺，必定暴击", "Wind", "Active", 62),
+                Sk("feilian_3", "风之残影", "闪避后留下残影，残影爆炸对周围造成伤害", "Wind", "Passive", 55),
+            });
+        // 商羊 Shangyang - 山海经"商羊"，漫威X教授+DC命运博士
+        Add("char_ssr_shangyang", "商羊 Shangyang", "预知神鸟", "Aether", "Star", 3,
+            new[] { 115, 100, 1080, 15 }, 6, false,
+            "山海经商羊，一足鸟身，预知风雨。漫威X教授的精神力与DC命运博士的纳布神盔赋予其预知未来的能力，以星象指引命运。",
+            "tree_shangyang", new() {
+                Sk("shangyang_1", "星轨预言", "揭示敌方弱点，全队暴击率+30%持续6秒", "Star", "Ultimate", 76),
+                Sk("shangyang_2", "预知闪避", "预判下一次攻击，必定闪避并反击", "Star", "Active", 60),
+                Sk("shangyang3", "命运织网", "战斗开始时随机标记一名敌人，其受到伤害+20%", "Star", "Passive", 54),
+            });
         // ========== SR 2★ ==========
-        Add("char_sr_deng", "灯 Deng", "灯火忍者", "Shinwa", "Flame", 2, new[] { 90, 70, 850, 13 }, 5, false, "忍宗灯影部的中坚，以灯火为号，传递情报。", "tree_deng");
-        Add("char_sr_xingchen", "星尘 Xingchen", "星尘观测者", "Aether", "Light", 2, new[] { 85, 75, 900, 12 }, 5, false, "默默记录星象变化的观测者，知晓诸多秘密。", "tree_xingchen");
-        Add("char_sr_luoshuan", "螺栓 Luoshuan", "机械修理工", "Ironveil", "Metal", 2, new[] { 95, 90, 1000, 10 }, 5, false, "铁帷下层的老修理工，能修好任何机械。", "tree_luoshuan");
-        Add("char_sr_yanwu", "岩武 Yanwu", "岩石武士", "Shinwa", "Earth", 2, new[] { 100, 110, 1100, 9 }, 5, false, "以岩遁术守护忍宗要塞的忠诚武士。", "tree_yanwu");
-        Add("char_sr_qiliu", "气流 Qiliu", "以太信使", "Aether", "Wind", 2, new[] { 88, 72, 820, 16 }, 5, false, "在以太风暴中穿梭的信使，传递跨次元讯息。", "tree_qiliu");
+        // 狻猊 Suanni - 山海经"狻猊"，漫威黑豹+DC蝙蝠侠
+        Add("char_sr_suanni", "狻猊 Suanni", "狮吼震魂", "Shinwa", "Flame", 2,
+            new[] { 95, 75, 900, 14 }, 5, false,
+            "山海经狻猊，狮形豹步，食虎豹。漫威黑豹的振金战甲与DC蝙蝠侠的战术智慧在其血脉中传承，以狮吼震慑敌魂。",
+            "tree_suanni", new() {
+                Sk("suanni_1", "狮王怒吼", "狮吼震慑前方敌人，造成伤害并降低其攻击", "Flame", "Active", 55),
+                Sk("suanni_2", "烈焰扑击", "扑向目标撕咬，造成单体高额伤害", "Flame", "Active", 50),
+                Sk("suanni_3", "兽王威严", "生命低于40%时攻击+25%", "Flame", "Passive", 40),
+            });
+        // 精卫 Jingwei - 山海经"精卫"，漫威黑寡妇+DC猫女
+        Add("char_sr_jingwei", "精卫 Jingwei", "衔石填海", "Aether", "Wind", 2,
+            new[] { 88, 72, 850, 16 }, 5, false,
+            "山海经精卫，炎帝之女溺于东海，化为神鸟衔石填海。漫威黑寡妇的坚韧与DC猫女的敏捷赋予其不屈意志，以柔克刚。",
+            "tree_jingwei", new() {
+                Sk("jingwei_1", "衔石连射", "连续发射碎石攻击单体，每次伤害递增", "Wind", "Active", 52),
+                Sk("jingwei_2", "填海之志", "每回合结束时未死亡则回复5%最大生命", "Wind", "Passive", 42),
+                Sk("jingwei_3", "风翼庇护", "闪避后制造风盾，吸收下一次伤害", "Wind", "Passive", 38),
+            });
+        // 穷奇 Qiongqi - 山海经"穷奇"，漫威死侍+DC丧钟
+        Add("char_sr_qiongqi", "穷奇 Qiongqi", "噬罪凶兽", "Ironveil", "Metal", 2,
+            new[] { 100, 88, 980, 11 }, 5, false,
+            "山海经穷奇，状如牛蝟毛，性噬恶人。漫威死侍的再生与DC丧钟的精准射击在其机械兽躯中融合，以暴制暴。",
+            "tree_qiongqi", new() {
+                Sk("qiongqi_1", "噬罪撕咬", "撕咬单体造成真实伤害，无视防御", "Metal", "Active", 56),
+                Sk("qiongqi_2", "凶兽再生", "每次击杀回复20%最大生命", "Metal", "Passive", 44),
+                Sk("qiongqi_3", "蝟毛反击", "受到普攻时反弹30%伤害", "Metal", "Passive", 40),
+            });
+        // 旋龟 Xuanwu - 山海经"旋龟"，漫威钢力士+DC钢骨
+        Add("char_sr_xuanwu", "旋龟 Xuanwu", "玄甲守护", "Shinwa", "Earth", 2,
+            new[] { 92, 115, 1100, 9 }, 5, false,
+            "山海经旋龟，鸟首虺尾，其音如判木。漫威钢力士的钢躯与DC钢骨的机械防护化为玄龟坚甲，以守为攻。",
+            "tree_xuanwu", new() {
+                Sk("xuanwu_1", "玄甲护体", "为全队施加护盾，吸收伤害持续6秒", "Earth", "Active", 54),
+                Sk("xuanwu_2", "龟缩防御", "进入龟壳形态，减伤60%但无法攻击", "Earth", "Active", 46),
+                Sk("xuanwu3", "大地之根", "站立不动3秒后每秒回复4%生命", "Earth", "Passive", 38),
+            });
+        // 毕方 Bifang - 山海经"毕方"，漫威猎鹰+DC鹰女
+        Add("char_sr_bifang", "毕方 Bifang", "焚羽烈鸟", "Aether", "Thunder", 2,
+            new[] { 90, 70, 820, 18 }, 5, false,
+            "山海经毕方，一足鹤身，见则讹火。漫威猎鹰的翼装与DC鹰女的 N金属羽翼化为雷电之翼，所过之处雷火交加。",
+            "tree_bifang", new() {
+                Sk("bifang_1", "焚羽俯冲", "自高空俯冲，对路径上敌人造成雷电伤害", "Thunder", "Active", 53),
+                Sk("bifang_2", "雷羽散射", "散射雷电羽毛攻击随机3个敌人", "Thunder", "Active", 48),
+                Sk("bifang3", "闪电之翼", "每次闪避后下次攻击附加雷电伤害", "Thunder", "Passive", 36),
+            });
         // ========== R 1★ ==========
-        Add("char_r_aoi", "葵 Aoi", "见习忍者", "Shinwa", "Wind", 1, new[] { 70, 60, 700, 12 }, 4, false, "刚刚通过试炼的年轻忍者，梦想成为传说中的强者。", "tree_aoi");
-        Add("char_r_li", "砾 Li", "星砾采集者", "Aether", "Earth", 1, new[] { 75, 70, 750, 10 }, 4, false, "在星带中采集星砾的勤劳工人。", "tree_li");
-        Add("char_r_ding", "钉 Ding", "废铁机器人", "Ironveil", "Metal", 1, new[] { 80, 80, 800, 8 }, 4, false, "被丢弃在废铁堆中的小型机器人，依然努力生存。", "tree_ding");
-        Add("char_r_snow", "雪 Snow", "雪童子", "Shinwa", "Frost", 1, new[] { 65, 65, 680, 11 }, 4, false, "雪山上的神秘雪童，据说见到它会有好运。", "tree_snow");
-        Add("char_r_ying", "萤 Ying", "萤火", "Aether", "Flame", 1, new[] { 68, 58, 650, 14 }, 4, false, "星灵界最微小的光点，却永不熄灭。", "tree_ying");
+        // 狸力 LiLi - 山海经"狸力"，漫威蚁人+DC原子侠
+        Add("char_r_lili", "狸力 LiLi", "遁地灵兽", "Shinwa", "Earth", 1,
+            new[] { 72, 65, 750, 12 }, 4, false,
+            "山海经狸力，状如豚有距，其音如狗吠。漫威蚁人的缩放与DC原子侠的原子操控赋予其遁地穿土之能，身形虽小，来去无踪。",
+            "tree_lili", new() {
+                Sk("lili_1", "遁地突袭", "潜入地下后从敌人脚下突袭，必定暴击", "Earth", "Active", 40),
+                Sk("lili_2", "土遁闪避", "受到攻击时有25%概率遁地闪避", "Earth", "Passive", 30),
+                Sk("lili_3", "掘地之爪", "普攻附带破甲，降低目标10%防御", "Earth", "Passive", 25),
+            });
+        // 钦原 Qinyuan - 山海经"钦原"，漫威黄蜂女+DC黑金丝雀
+        Add("char_r_qinyuan", "钦原 Qinyuan", "毒蜂刺羽", "Aether", "Metal", 1,
+            new[] { 76, 60, 700, 15 }, 4, false,
+            "山海经钦原，蛰鸟兽则死，蛰木则枯。黄蜂女的蜂群战衣与黑金丝雀的声波在其机械蜂翼中融合，以毒针刺穿敌阵。",
+            "tree_qinyuan", new() {
+                Sk("qinyuan_1", "毒蜂连射", "连续发射毒针攻击单体3次", "Metal", "Active", 42),
+                Sk("qinyuan_2", "蜂毒侵蚀", "毒针附带中毒，每秒掉血持续4秒", "Metal", "Passive", 32),
+                Sk("qinyuan_3", "蜂翼振翅", "攻击有20%概率额外攻击一次", "Metal", "Passive", 28),
+            });
+        // 商羊 SiShu - 山海经"蟋蟀/跂踵"，漫威蜘蛛侠+DC夜翼
+        Add("char_r_sishu", "跂踵 SiShu", "夜行游侠", "Ironveil", "Shadow", 1,
+            new[] { 74, 62, 720, 16 }, 4, false,
+            "山海经跂踵，状如鹊而九尾，见则其国多疫。蜘蛛侠的蛛丝感应与DC夜翼的杂技格斗在其暗影战衣中觉醒，夜行无声。",
+            "tree_sishu", new() {
+                Sk("sishu_1", "蛛丝束缚", "发射蛛丝缠绕单体，使其无法行动2秒", "Shadow", "Active", 41),
+                Sk("sishu_2", "蜘蛛感应", "受到攻击前摇时自动闪避", "Shadow", "Passive", 30),
+                Sk("sishu_3", "暗影打击", "从暗处攻击额外造成50%伤害", "Shadow", "Passive", 26),
+            });
+        // 蠃鱼 Luoyu - 山海经"蠃鱼"，漫威海王纳摩+DC水行侠
+        Add("char_r_luoyu", "蠃鱼 Luoyu", "渊海游灵", "Shinwa", "Frost", 1,
+            new[] { 70, 68, 780, 13 }, 4, false,
+            "山海经蠃鱼，鱼身鸟翼，音如鸳鸯。漫威纳摩的深海之力与DC水行侠的亚特兰蒂斯之能在其鳞翼中流淌，御水而行。",
+            "tree_luoyu", new() {
+                Sk("luoyu_1", "寒流冲击", "喷射寒流造成伤害并减速目标30%", "Frost", "Active", 44),
+                Sk("luoyu_2", "鳞甲水护", "受到攻击时生成水盾吸收伤害", "Frost", "Passive", 33),
+                Sk("luoyu_3", "深渊低语", "生命低于50%时技能冷却-20%", "Frost", "Passive", 27),
+            });
+        // 当康 Dangang - 山海经"当康"，漫威野兽+DC火星猎人
+        Add("char_r_dangang", "当康 Dangang", "丰穗瑞兽", "Aether", "Wind", 1,
+            new[] { 78, 72, 820, 11 }, 4, false,
+            "山海经当康，状如豚而有牙，其鸣自叫，见则天下大穰。漫威野兽的蛮力与DC火星猎人的兽性在其瑞兽之躯中苏醒，以丰收之名为战。",
+            "tree_dangang", new() {
+                Sk("dangang_1", "丰穗冲撞", "蓄力冲撞单体，造成伤害并击退", "Wind", "Active", 43),
+                Sk("dangang_2", "瑞兽庇佑", "战斗开始时为全队施加5%生命护盾", "Wind", "Passive", 31),
+                Sk("dangang_3", "丰收之愈", "每次击杀回复10%最大生命", "Wind", "Passive", 29),
+            });
     }
 
     // ------------------------------------------------------------------ pools
@@ -236,6 +399,17 @@ public class CharacterDataEntry
     public bool CanBreakthrough;
     public string Lore = "";
     public string TalentTreeId = "";
+    public List<SkillData> Skills = new();
+}
+
+public class SkillData
+{
+    public string SkillId = "";
+    public string DisplayName = "";
+    public string Description = "";
+    public string Element = "";
+    public string Type = ""; // Active / Passive / Ultimate
+    public int Power = 0;
 }
 
 public class GachaPoolEntry

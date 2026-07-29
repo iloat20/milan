@@ -82,6 +82,11 @@ public class CharacterDetailActivity : Activity
         root.AddView(loreBox);
         root.AddView(Spacer(16));
 
+        // skills
+        root.AddView(SectionTitle("技 能"));
+        root.AddView(SkillList(this, ch));
+        root.AddView(Spacer(16));
+
         // stats
         root.AddView(SectionTitle("属 性"));
         var statsBox = UI.VBox();
@@ -133,6 +138,38 @@ public class CharacterDetailActivity : Activity
                 nt.SetPadding(Dp(8), Dp(2), 0, Dp(2));
                 box.AddView(nt);
             }
+        }
+        return box;
+    }
+
+    View SkillList(Activity activity, OwnedCharacterView ch)
+    {
+        var density = activity.Resources.DisplayMetrics.Density;
+        int Dp(int v) => (int)(v * density);
+        var box = UI.VBox();
+        box.Background = UI.RoundRect(AppTheme.Surface, 14);
+        box.SetPadding(Dp(16), Dp(14), Dp(16), Dp(14));
+        if (ch.Def == null || ch.Def.Skills.Count == 0)
+        {
+            box.AddView(UI.Text("暂无技能", 14, AppTheme.TextMuted));
+            return box;
+        }
+        foreach (var sk in ch.Def.Skills)
+        {
+            var (from, to, glow, _) = ElementTheme.For(sk.Element);
+            var typeColor = sk.Type == "Ultimate" ? Color.ParseColor("#FF6B00")
+                : sk.Type == "Active" ? from : AppTheme.TextSecondary;
+            var row = new LinearLayout(activity) { Orientation = Orientation.Horizontal };
+            row.SetPadding(0, Dp(5), 0, Dp(5));
+            var typeTag = UI.Text("[" + sk.Type + "]", 10, typeColor, bold: true);
+            typeTag.SetPadding(0, 0, Dp(8), 0);
+            var name = UI.Text(sk.DisplayName, 14, AppTheme.TextPrimary, bold: true);
+            row.AddView(typeTag);
+            row.AddView(name);
+            box.AddView(row);
+            var desc = UI.Text(sk.Description, 12, AppTheme.TextSecondary);
+            desc.SetPadding(Dp(16), Dp(2), 0, Dp(4));
+            box.AddView(desc);
         }
         return box;
     }
