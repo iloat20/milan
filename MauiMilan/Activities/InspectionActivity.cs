@@ -59,8 +59,7 @@ public class InspectionActivity : Activity
 
         // Portrait area (touch to rotate)
         var portraitArea = new FrameLayout(this) { LayoutParameters = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MatchParent, 0, 1f) };
-        _portrait = new FullBodyCharacter(this);
-        _portrait.Bind(_ch.Def!);
+        _portrait = new FullBodyCharacter(this, _ch.Def!);
         var portLp = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MatchParent, ViewGroup.LayoutParams.MatchParent);
         _portrait.LayoutParameters = portLp;
         portraitArea.AddView(_portrait);

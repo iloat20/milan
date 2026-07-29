@@ -53,10 +53,9 @@ public class CharacterDetailActivity : Activity
         banner.Background = UI.RoundRect(AppTheme.Surface, 18, 2, color);
         banner.SetPadding(Dp(18), Dp(18), Dp(18), Dp(18));
 
-        var portrait = new FullBodyCharacter(this);
+        var portrait = new FullBodyCharacter(this, ch.Def!);
         _portrait = portrait;
-        portrait.Bind(ch.Def!);
-        var portraitLp = new LinearLayout.LayoutParams(Dp(120), Dp(160));
+        var portraitLp = new LinearLayout.LayoutParams(Dp(150), Dp(200));
         portrait.LayoutParameters = portraitLp;
         portrait.SetPadding(0, 0, Dp(16), 0);
 
