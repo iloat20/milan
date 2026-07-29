@@ -24,6 +24,23 @@ public class CosmicBackground : View
 
     public CosmicBackground(Context context) : base(context) { SetWillNotDraw(false); }
 
+    private void InitStars()
+    {
+        if (_stars != null) return;
+        _stars = new Star[18];
+        for (int i = 0; i < _stars.Length; i++)
+        {
+            _stars[i] = new Star
+            {
+                X = _rng.Next(Math.Max(1, Width)),
+                Y = _rng.Next(Math.Max(1, Height)),
+                Speed = 0.2f + _rng.Next(3) * 0.3f,
+                Size = 1 + _rng.Next(3),
+                Alpha = 80 + _rng.Next(100)
+            };
+        }
+    }
+
     protected override void OnSizeChanged(int w, int h, int oldw, int oldh)
     {
         base.OnSizeChanged(w, h, oldw, oldh);
@@ -49,10 +66,11 @@ public class CosmicBackground : View
         if (_paint == null) _paint = new Paint { AntiAlias = true };
         var w = Width; var h = Height;
         if (w == 0 || h == 0) return;
+        InitStars();
 
         // Deep purple vertical gradient via LinearGradient shader
         var shader = new LinearGradient(0, 0, 0, h,
-            AppTheme.CosmicBgDeep.ToArgb(), AppTheme.CosmicBgLight.ToArgb(), Shader.TileMode.Clamp);
+            Color.Argb(255, 13, 2, 33), Color.Argb(255, 26, 5, 51), Shader.TileMode.Clamp);
         _paint!.SetShader(shader);
         canvas.DrawRect(0, 0, w, h, _paint);
         _paint.SetShader(null);

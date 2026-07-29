@@ -18,7 +18,15 @@ public class HomeActivity : Activity
     {
         base.OnCreate(savedInstanceState);
         GameState.EnsureInitialized(this);
-        SetContentView(BuildLayout());
+        try
+        {
+            SetContentView(BuildLayout());
+        }
+        catch (System.Exception ex)
+        {
+            Android.Util.Log.Error("[Milan]", $"Home crash: {ex}");
+            SetContentView(UI.Text("加载失败: " + ex.Message, 16, Color.Red));
+        }
     }
 
     protected override void OnResume()
