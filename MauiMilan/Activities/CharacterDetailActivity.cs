@@ -53,9 +53,10 @@ public class CharacterDetailActivity : Activity
         banner.Background = UI.RoundRect(AppTheme.Surface, 18, 2, color);
         banner.SetPadding(Dp(18), Dp(18), Dp(18), Dp(18));
 
-        var portrait = new CharacterPortrait(this);
+        var portrait = new FullBodyCharacter(this);
+        _portrait = portrait;
         portrait.Bind(ch.Def!);
-        var portraitLp = new LinearLayout.LayoutParams(Dp(100), Dp(120));
+        var portraitLp = new LinearLayout.LayoutParams(Dp(120), Dp(160));
         portrait.LayoutParameters = portraitLp;
         portrait.SetPadding(0, 0, Dp(16), 0);
 
@@ -111,9 +112,17 @@ public class CharacterDetailActivity : Activity
         var inspect = UI.Button("360° 检 视", Color.ParseColor("#7b2ff7"), Color.White, 14);
         inspect.Click += (s, e) => Toast.MakeText(this, "3D 检视（占位）", ToastLength.Short)?.Show();
         root.AddView(inspect);
+        root.AddView(Spacer(12));
+
+        // Burst demo button
+        var burstBtn = UI.Button("释 放 终 极", Color.ParseColor("#FF6B00"), Color.White, 14);
+        burstBtn.Click += (s, e) => { _portrait?.TriggerBurst(); };
+        root.AddView(burstBtn);
 
         return root;
     }
+
+    private FullBodyCharacter? _portrait;
 
     View TalentPreview(Activity activity, OwnedCharacterView ch)
     {

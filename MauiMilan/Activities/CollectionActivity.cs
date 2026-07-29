@@ -112,9 +112,9 @@ public class CollectionActivity : Activity
         cell.Click += (_, _) => OpenDetail(ch);
 
         // Portrait
-        var portrait = new CharacterPortrait(this);
+        var portrait = new FullBodyCharacter(this);
         portrait.Bind(ch);
-        var portraitLp = new LinearLayout.LayoutParams(Dp(90), Dp(110));
+        var portraitLp = new LinearLayout.LayoutParams(Dp(100), Dp(140));
         portrait.LayoutParameters = portraitLp;
         cell.AddView(portrait);
 
