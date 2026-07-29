@@ -115,12 +115,13 @@ public class GachaActivity : Activity
 
         root.AddView(content);
 
-        // Flash overlay (hidden)
+        // Flash overlay (hidden) — enabled only during flash
         _flash = new FrameLayout(this);
         _flash.LayoutParameters = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MatchParent, ViewGroup.LayoutParams.MatchParent);
         _flash.SetBackgroundColor(Color.White);
         _flash.Alpha = 0f;
-        _flash.Clickable = true;
+        _flash.Clickable = false; // don't block touches when hidden
+        _flash.Enabled = false;
         root.AddView(_flash);
 
         return root;
@@ -150,8 +151,11 @@ public class GachaActivity : Activity
         _rift.Animate().ScaleX(1.3f).ScaleY(1.3f).SetDuration(200).Start();
 
         // Flash
+        _flash.Clickable = true;
+        _flash.Enabled = true;
         _flash.Alpha = 1f;
         _flash.Animate().Alpha(0f).SetDuration(400).Start();
+        new Handler(Looper.MainLooper).PostDelayed(() => { _flash.Clickable = false; _flash.Enabled = false; }, 450);
 
         var results = GameState.Service.Pull(pool.PoolId, tenPull);
         _currency.Text = GameState.CurrencyLabel;
