@@ -3,13 +3,13 @@ using System.Text.Json;
 namespace Milan.Infrastructure.Save;
 
 /// <summary>
-/// MAUI 版存档数据模型（替代 Unity 版，使用 System.Text.Json 替代 UnityEngine.JsonUtility）。
+/// Save data model (serialized with System.Text.Json).
 /// </summary>
 [System.Serializable]
 public class SaveData
 {
     public int Version = 1;
-    public int SoftCurrency = 1000;
+    public int SoftCurrency = 999999;
     public int HardCurrency = 0;
     public List<CharacterSaveState> OwnedCharacters = new();
     public List<string> OwnedSkins = new();

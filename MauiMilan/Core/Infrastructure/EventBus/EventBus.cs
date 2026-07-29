@@ -27,7 +27,16 @@ namespace Milan.Infrastructure.EventBus
             while (_q.Count > 0)
             {
                 var (t, e) = _q.Dequeue();
-                if (_subs.TryGetValue(t, out var h)) h.DynamicInvoke(e);
+                if (!_subs.TryGetValue(t, out var h)) continue;
+                foreach (var handler in h.GetInvocationList())
+                {
+                    try { handler.DynamicInvoke(e); }
+                    catch (System.Exception ex)
+                    {
+                        // One failing handler must not break the multicast chain or lose later events.
+                        System.Diagnostics.Debug.WriteLine($"[Milan] EventBus handler threw for {t.Name}: {ex}");
+                    }
+                }
             }
         }
         public static void Clear() { _subs.Clear(); _q.Clear(); }

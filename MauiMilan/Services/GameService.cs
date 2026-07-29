@@ -50,7 +50,7 @@ public class GameService
         }
     }
 
-    void LoadFallback()
+    public void LoadFallback()
     {
         Characters.Clear();
         Characters.Add(new CharacterDataEntry
@@ -77,15 +77,6 @@ public class GameService
                 new() { CharacterId = "char_hikari", RarityIndex = 2, Weight = 100 }
             }
         });
-    }
-
-    public class PullResult
-    {
-        public bool Success;
-        public string? CharacterId;
-        public string CharacterName = "";
-        public int Rarity;
-        public bool IsNew;
     }
 
     public List<PullResult> Pull(string poolId, bool tenPull)
@@ -179,6 +170,15 @@ public class GachaPoolDataEntry
     public int SingleCost = 100;
     public int TenCost = 1000;
     public List<GachaPoolEntry> Entries = new();
+}
+
+public class PullResult
+{
+    public bool Success;
+    public string? CharacterId;
+    public string CharacterName = "";
+    public int Rarity;
+    public bool IsNew;
 }
 
 class RootData

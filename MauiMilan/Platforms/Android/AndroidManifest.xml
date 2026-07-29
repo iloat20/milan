@@ -3,11 +3,19 @@
     package="com.milan.game"
     android:versionCode="1"
     android:versionName="1.0">
+    <!--
+        Activities are registered via [Activity] attributes on each class
+        (MainLauncher, exported, etc. are set there). Do NOT redeclare them
+        here or the build produces duplicate <activity> entries.
+        The custom Application class IS declared here so its OnCreate runs
+        and initializes the global Context used by the UI helpers.
+    -->
     <application
         android:allowBackup="true"
         android:icon="@mipmap/appicon"
         android:roundIcon="@mipmap/appicon_round"
         android:supportsRtl="true"
-        android:label="Milan" />
+        android:label="Milan"
+        android:name="Milan.Maui.MauiApp" />
     <uses-permission android:name="android.permission.INTERNET" />
 </manifest>

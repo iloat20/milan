@@ -4,3 +4,13 @@
 # OS
 .DS_Store
 Thumbs.db
+
+# Build outputs
+bin/
+obj/
+*.apk
+*.ap_
+
+# Temporary logs / installers
+*.log
+dotnet-install.ps1

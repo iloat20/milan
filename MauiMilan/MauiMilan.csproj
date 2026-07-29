@@ -14,12 +14,8 @@
 		<ImplicitUsings>enable</ImplicitUsings>
 	</PropertyGroup>
 
-	<!-- 链接纯 C# 核心层（Domain / EventBus / Enums），排除 Unity 依赖 -->
-	<ItemGroup>
-		<Compile Include="..\Assets\_Project\Scripts\Domain\**\*.cs" Link="Core\Domain\%(RecursiveDir)%(Filename)%(Extension)" />
-		<Compile Include="..\Assets\_Project\Scripts\Infrastructure\EventBus\**\*.cs" Link="Core\Infrastructure\EventBus\%(RecursiveDir)%(Filename)%(Extension)" />
-		<Compile Include="..\Assets\_Project\Scripts\Data\Enums.cs" Link="Core\Data\Enums.cs" />
-	</ItemGroup>
+	<!-- Pure .net core layer (Domain engines, EventBus, Enums) — no UnityEngine dependency.
+	     Lives under Core/ and is picked up automatically by the SDK default Compile glob. -->
 
 	<!-- Android Assets -->
 	<ItemGroup>
