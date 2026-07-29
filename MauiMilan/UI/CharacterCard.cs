@@ -85,7 +85,7 @@ public static class CharacterCard
         inner.AddView(stars);
 
         card.AddView(inner);
-        return card;
+        return CardEffects.Apply(context, card, ch.Rarity, rarityCol);
     }
 
     // ------------------------------------------------------------------ gacha result chip
@@ -122,61 +122,16 @@ public static class CharacterCard
         chip.AddView(portrait);
         chip.AddView(tag);
         chip.AddView(nm);
-        return chip;
+        return CardEffects.Apply(context, chip, r.Rarity, rarityCol);
     }
 
     // ------------------------------------------------------------------ large portrait (detail)
 
     public static View DetailPortrait(Context context, OwnedCharacterView ch, int sizeDp = 120)
     {
-        var density = context.Resources.DisplayMetrics.Density;
-        int Dp(int v) => (int)(v * density);
         var (from, to, glow, glyph) = ElementTheme.For(ch.Element);
-        var rarityCol = RarityColor(ch.Rarity);
-
-        var box = new FrameLayout(context);
-        box.LayoutParameters = new LinearLayout.LayoutParams(Dp(sizeDp), Dp(sizeDp));
-
-        // Outer rotating-ish ring via layered rarity border
-        var ring = new View(context);
-        ring.LayoutParameters = new FrameLayout.LayoutParams(Dp(sizeDp), Dp(sizeDp));
-        ring.Background = RarityRing(context, ch.Rarity, rarityCol, Dp(sizeDp));
-
-        // Inner gradient circle
-        var innerSize = Dp(sizeDp - 10);
-        var inner = new View(context);
-        var innerLp = new FrameLayout.LayoutParams(innerSize, innerSize);
-        innerLp.Gravity = GravityFlags.Center;
-        inner.LayoutParameters = innerLp;
-        inner.Background = ElementTheme.Gradient(ch.Element);
-        ((GradientDrawable)inner.Background).SetCornerRadius(innerSize / 2f);
-
-        // Glow overlay
-        var glowView = new View(context);
-        var glowLp = new FrameLayout.LayoutParams(Dp(sizeDp), Dp(sizeDp));
-        glowLp.Gravity = GravityFlags.Center;
-        glowView.LayoutParameters = glowLp;
-        glowView.Background = ElementTheme.Glow(ch.Element);
-        ((GradientDrawable)glowView.Background).SetCornerRadius(Dp(sizeDp) / 2f);
-
-        // Glyph
-        var g = new TextView(context)
-        {
-            Text = glyph,
-            Gravity = GravityFlags.Center
-        };
-        g.SetTextColor(Color.White);
-        g.SetTextSize(ComplexUnitType.Sp, sizeDp * 0.40f);
-        g.SetTypeface(null, TypefaceStyle.Bold);
-        var gLp = new FrameLayout.LayoutParams(Dp(sizeDp), Dp(sizeDp));
-        gLp.Gravity = GravityFlags.Center;
-        g.LayoutParameters = gLp;
-
-        box.AddView(ring);
-        box.AddView(glowView);
-        box.AddView(inner);
-        box.AddView(g);
-        return box;
+        var portrait = new AnimatedPortrait(context, ch.Element, ch.Rarity, glyph, sizeDp);
+        return portrait;
     }
 
     // ------------------------------------------------------------------ helpers
