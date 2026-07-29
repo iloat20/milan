@@ -28,7 +28,15 @@ public class FullBodyCharacter : View
     // Burst state
     private bool _bursting; private float _burstPhase; private float _shakeX, _shakeY;
 
-    public FullBodyCharacter(Context context) : base(context) { SetWillNotDraw(false); }
+    public FullBodyCharacter(Context context) : base(context)
+    {
+        SetWillNotDraw(false);
+        // Ensure a minimum visible size
+        SetMinimumWidth(Dp(120));
+        SetMinimumHeight(Dp(160));
+    }
+
+    private int Dp(int v) => (int)(v * Resources.DisplayMetrics.Density);
 
     public FullBodyCharacter Bind(CharacterDataEntry ch)
     {

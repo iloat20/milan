@@ -28,8 +28,10 @@ public class ResultCard : FrameLayout
         _element = def?.Element ?? "Flame";
         _rarityCol = AppTheme.RarityColor(result.Rarity);
 
-        var lp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WrapContent, 1f);
         var density = context.Resources.DisplayMetrics.Density;
+        // Minimum width so cards are always visible even in 5-card rows
+        var minW = (int)(Resources.DisplayMetrics.WidthPixels / density / 5.5f);
+        var lp = new LinearLayout.LayoutParams(Math.Max(minW, Dp(60)), ViewGroup.LayoutParams.WrapContent, 0f);
         lp.SetMargins((int)(3 * density), (int)(3 * density), (int)(3 * density), (int)(3 * density));
         LayoutParameters = lp;
 
@@ -46,7 +48,7 @@ public class ResultCard : FrameLayout
     private View BuildBack()
     {
         var v = new View(Context);
-        v.LayoutParameters = new LayoutParams(ViewGroup.LayoutParams.MatchParent, Dp(80));
+        v.LayoutParameters = new LayoutParams(ViewGroup.LayoutParams.MatchParent, Dp(90));
         var bg = new GradientDrawable();
         bg.SetCornerRadius(Dp(8));
         bg.SetColors(new int[] { AppTheme.CosmicBgDeep.ToArgb(), AppTheme.CosmicBgMid.ToArgb() });
@@ -58,7 +60,7 @@ public class ResultCard : FrameLayout
     private View BuildFace()
     {
         var box = new LinearLayout(Context) { Orientation = Orientation.Vertical };
-        box.LayoutParameters = new LayoutParams(ViewGroup.LayoutParams.MatchParent, Dp(80));
+        box.LayoutParameters = new LayoutParams(ViewGroup.LayoutParams.MatchParent, Dp(90));
         
 
         var density = Context.Resources.DisplayMetrics.Density;
