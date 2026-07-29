@@ -53,8 +53,11 @@ public class CharacterDetailActivity : Activity
         banner.Background = UI.RoundRect(AppTheme.Surface, 18, 2, color);
         banner.SetPadding(Dp(18), Dp(18), Dp(18), Dp(18));
 
-        var av = CharacterCard.DetailPortrait(this, ch, 80);
-        av.SetPadding(0, 0, Dp(16), 0);
+        var portrait = new CharacterPortrait(this);
+        portrait.Bind(ch.Def!);
+        var portraitLp = new LinearLayout.LayoutParams(Dp(100), Dp(120));
+        portrait.LayoutParameters = portraitLp;
+        portrait.SetPadding(0, 0, Dp(16), 0);
 
         var info = UI.VBox();
         var name = UI.Text(ch.Name, 22, AppTheme.TextPrimary, bold: true);
@@ -66,7 +69,7 @@ public class CharacterDetailActivity : Activity
         level.SetPadding(0, Dp(6), 0, 0);
         info.AddView(name); info.AddView(title); info.AddView(rarity); info.AddView(level);
 
-        banner.AddView(av);
+        banner.AddView(portrait);
         banner.AddView(info);
         root.AddView(banner);
         root.AddView(Spacer(12));

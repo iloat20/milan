@@ -3,19 +3,29 @@ using Android.Content;
 using Android.Graphics;
 using Android.OS;
 using Android.Text;
+using Android.Util;
 using Android.Views;
 using Android.Widget;
-using Milan.Maui;
+using Milan.Maui.Services;
+using Milan.Domain.Battle;
 
 namespace Milan.Maui.Activities;
 
 [Activity(Label = "图鉴")]
 public class CollectionActivity : Activity
 {
+    LinearLayout _gridRoot = null!;
+
     protected override void OnCreate(Bundle? savedInstanceState)
     {
         base.OnCreate(savedInstanceState);
         GameState.EnsureInitialized(this);
+        SetContentView(Build());
+    }
+
+    protected override void OnResume()
+    {
+        base.OnResume();
         SetContentView(Build());
     }
 
@@ -26,89 +36,113 @@ public class CollectionActivity : Activity
 
         var root = new LinearLayout(this) { Orientation = Orientation.Vertical };
         root.LayoutParameters = new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MatchParent, ViewGroup.LayoutParams.MatchParent);
-        root.SetPadding(Dp(20), Dp(40), Dp(20), Dp(24));
+        root.SetPadding(Dp(16), Dp(40), Dp(16), Dp(16));
         root.SetBackgroundDrawable(UI.Gradient(AppTheme.Background, Color.ParseColor("#12112a")));
 
-        var top = UI.HBox();
-        var back = UI.Text("‹ 返回", 16, AppTheme.AccentAlt);
+        // top bar
+        var top = new LinearLayout(this) { Orientation = Orientation.Horizontal };
+        
+        var back = new TextView(this) { Text = "‹ 返回" };
+        back.SetTextColor(AppTheme.AccentAlt);
+        back.SetTextSize(ComplexUnitType.Sp, 16);
         back.Clickable = true; back.Focusable = true;
-        back.Click += (s, e) => Finish();
-        var title = UI.Text("图 鉴", 24, AppTheme.TextPrimary, bold: true);
+        back.Click += (_, _) => Finish();
+        var title = new TextView(this) { Text = "角 色 图 鉴" };
+        title.SetTextColor(AppTheme.TextPrimary);
+        title.SetTextSize(ComplexUnitType.Sp, 24);
+        title.SetTypeface(null, TypefaceStyle.Bold);
         title.LetterSpacing = 0.1f;
-        var spacer = new View(this) { LayoutParameters = new LinearLayout.LayoutParams(0, 0, 1f) };
+        var spacer = new View(this);
+        spacer.LayoutParameters = new LinearLayout.LayoutParams(0, 0, 1f);
         top.AddView(back); top.AddView(title); top.AddView(spacer);
         root.AddView(top);
-        root.AddView(Spacer(16));
+        root.AddView(Spacer(14));
 
-        var all = GameState.Service.Characters;
-        var owned = GameState.Owned();
-        var ownedIds = new System.Collections.Generic.HashSet<string>(owned.Select(c => c.Save.CharacterId));
+        var hint = new TextView(this) { Text = "共 20 位角色  ·  点击立绘查看详情" };
+        hint.SetTextColor(AppTheme.TextSecondary);
+        hint.SetTextSize(ComplexUnitType.Sp, 12);
+        root.AddView(hint);
+        root.AddView(Spacer(10));
 
-        // progress card
-        var progress = UI.VBox();
-        progress.Background = UI.RoundRect(AppTheme.Surface, 16);
-        progress.SetPadding(Dp(18), Dp(16), Dp(18), Dp(16));
-        int have = ownedIds.Count, total = all.Count;
-        int pct = total > 0 ? (have * 100 / total) : 0;
-        var pTitle = UI.Text("收 集 度", 15, AppTheme.TextSecondary, bold: true);
-        var pVal = UI.Text($"{have} / {total}   ({pct}%)", 26, AppTheme.Gold, bold: true);
-        pVal.SetPadding(0, Dp(4), 0, Dp(10));
-        // progress bar (fill over a track, inside a frame)
-        var barFrame = new FrameLayout(this) { LayoutParameters = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MatchParent, Dp(12)) };
-        barFrame.Background = UI.RoundRect(AppTheme.SurfaceRaised, 6);
-        var fill = new View(this) { LayoutParameters = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MatchParent, Dp(12)) };
-        var fillGd = new Android.Graphics.Drawables.GradientDrawable();
-        fillGd.SetCornerRadius(Dp(6));
-        fillGd.SetColors(new[] { AppTheme.Accent.ToArgb(), Color.ParseColor("#7b2ff7").ToArgb() });
-        fill.Background = fillGd;
-        barFrame.AddView(fill);
-        progress.AddView(pTitle); progress.AddView(pVal); progress.AddView(barFrame);
-        root.AddView(progress);
-        root.AddView(Spacer(16));
-
-        // full roster (owned shown bright, missing as silhouettes)
+        // grid of portraits
         var scroll = new ScrollView(this) { LayoutParameters = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MatchParent, 0, 1f) };
-        var grid = UI.VBox();
-        LinearLayout? row = null;
-        for (int i = 0; i < all.Count; i++)
-        {
-            if (i % 2 == 0) { row = UI.HBox(); row.LayoutParameters = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MatchParent, ViewGroup.LayoutParams.WrapContent); grid.AddView(row); }
-            bool isOwned = ownedIds.Contains(all[i].CharacterId);
-            row!.AddView(RosterCell(all[i].DisplayName, all[i].BaseRarity, isOwned));
-        }
-        scroll.AddView(grid);
+        _gridRoot = new LinearLayout(this) { Orientation = Orientation.Vertical };
+        BuildGrid(_gridRoot);
+        scroll.AddView(_gridRoot);
         root.AddView(scroll);
 
         return root;
     }
 
-    View RosterCell(string name, int rarity, bool owned)
+    void BuildGrid(LinearLayout grid)
+    {
+        grid.RemoveAllViews();
+        var chars = GameState.Service.Characters;
+        int perRow = 3;
+        LinearLayout? row = null;
+        for (int i = 0; i < chars.Count; i++)
+        {
+            if (i % perRow == 0)
+            {
+                row = new LinearLayout(this) { Orientation = Orientation.Horizontal };
+                row.LayoutParameters = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MatchParent, ViewGroup.LayoutParams.WrapContent);
+                grid.AddView(row);
+            }
+            row!.AddView(PortraitCell(chars[i]));
+        }
+    }
+
+    View PortraitCell(CharacterDataEntry ch)
     {
         var density = Resources.DisplayMetrics.Density;
         int Dp(int v) => (int)(v * density);
-        var color = AppTheme.RarityColor(rarity);
+        var (from, to, glow, _) = ElementTheme.For(ch.Element);
+        var rarityCol = ch.BaseRarity == 4 ? Color.ParseColor("#FF6B00")
+            : ch.BaseRarity == 3 ? Color.ParseColor("#D070FF")
+            : ch.BaseRarity == 2 ? Color.ParseColor("#3AA0FF") : Color.ParseColor("#9E9E9E");
 
-        var cell = UI.VBox();
+        var cell = new LinearLayout(this) { Orientation = Orientation.Vertical };
         var lp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WrapContent, 1f);
         lp.SetMargins(Dp(5), Dp(5), Dp(5), Dp(5));
         cell.LayoutParameters = lp;
-        cell.Background = UI.RoundRect(owned ? AppTheme.Surface : AppTheme.SurfaceRaised, 14, 1, owned ? color : AppTheme.Stroke);
-        cell.SetPadding(Dp(10), Dp(12), Dp(10), Dp(12));
+        
+        cell.SetPadding(Dp(6), Dp(6), Dp(6), Dp(6));
+        cell.Background = UI.RoundRect(AppTheme.Surface, 14, 1, rarityCol);
+        cell.Focusable = true; cell.Clickable = true;
+        cell.Click += (_, _) => OpenDetail(ch);
 
-        var initial = name.Length > 0 ? name.Trim()[0].ToString() : "?";
-        var av = UI.Avatar(initial, rarity, 36);
-        av.SetPadding(0, 0, 0, Dp(6));
-        var alpha = owned ? 1f : 0.35f;
-        av.Alpha = alpha;
+        // Portrait
+        var portrait = new CharacterPortrait(this);
+        portrait.Bind(ch);
+        var portraitLp = new LinearLayout.LayoutParams(Dp(90), Dp(110));
+        portrait.LayoutParameters = portraitLp;
+        cell.AddView(portrait);
 
-        var n = UI.Text(owned ? name : "???", owned ? 13 : 12, owned ? AppTheme.TextPrimary : AppTheme.TextMuted);
-        n.Gravity = GravityFlags.CenterHorizontal;
-        n.Alpha = alpha;
-        n.SetMaxLines(1); n.Ellipsize = TextUtils.TruncateAt.End;
+        // Name
+        var name = new TextView(this) { Text = ch.DisplayName };
+        name.SetTextColor(AppTheme.TextPrimary);
+        name.SetTextSize(ComplexUnitType.Sp, 11);
+        name.SetTypeface(null, TypefaceStyle.Bold);
+        name.Gravity = GravityFlags.CenterHorizontal;
+        name.SetMaxLines(1); name.Ellipsize = TextUtils.TruncateAt.End;
+        name.SetPadding(0, Dp(4), 0, 0);
+        cell.AddView(name);
 
-        cell.AddView(av);
-        cell.AddView(n);
+        // Rarity stars
+        var stars = new TextView(this) { Text = new string('★', ch.BaseRarity) };
+        stars.SetTextColor(rarityCol);
+        stars.SetTextSize(ComplexUnitType.Sp, 10);
+        stars.Gravity = GravityFlags.CenterHorizontal;
+        cell.AddView(stars);
+
         return cell;
+    }
+
+    void OpenDetail(CharacterDataEntry ch)
+    {
+        var intent = new Intent(this, typeof(CharacterDetailActivity));
+        intent.PutExtra("characterId", ch.CharacterId);
+        StartActivity(intent);
     }
 
     View Spacer(int h)
