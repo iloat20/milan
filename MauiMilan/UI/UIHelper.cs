@@ -28,13 +28,25 @@ public static class AppTheme
     public static Color TextMuted => Color.ParseColor("#7a7a99");
     public static Color Stroke => Color.ParseColor("#2e2e52");
 
+    // ── Cosmic Nebula palette (宇宙星穹) ──
+    public static Color CosmicBgDeep => Color.ParseColor("#0d0221");
+    public static Color CosmicBgLight => Color.ParseColor("#1a0533");
+    public static Color CosmicBgMid => Color.ParseColor("#2a0a4a");
+    public static Color CosmicPrimary => Color.ParseColor("#7c4dff");
+    public static Color CosmicPrimarySoft => Color.ParseColor("#b388ff");
+    public static Color CosmicGold => Color.ParseColor("#ffd75a");
+    public static Color CosmicTextPrimary => Color.ParseColor("#ffffff");
+    public static Color CosmicTextSecondary => Color.ParseColor("#b8b8d0");
+    public static Color CosmicTextMuted => Color.ParseColor("#7a7a99");
+    public static Color CosmicSurface => Color.ParseColor("#1a0533");
+
     // Rarity palette (index matches Rarity enum: 1=R .. 4=UR)
     public static Color RarityColor(int rarity) => rarity switch
     {
         1 => Color.ParseColor("#8e8e93"),   // R  - gray
         2 => Color.ParseColor("#3aa0ff"),   // SR - blue
-        3 => Color.ParseColor("#ffb300"),   // SSR - gold
-        4 => Color.ParseColor("#ff2d75"),   // UR - crimson
+        3 => Color.ParseColor("#d070ff"),   // SSR - purple (cosmic)
+        4 => Color.ParseColor("#ff6b00"),   // UR - orange-gold (cosmic)
         _ => TextMuted
     };
 
