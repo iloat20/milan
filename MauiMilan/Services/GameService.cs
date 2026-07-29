@@ -274,13 +274,13 @@ public class GameService
         Pools.Add(new GachaPoolDataEntry
         {
             PoolId = "pool_main", DisplayName = "次元裂缝 · 常驻",
-            RarityWeights = new[] { 820, 150, 29, 1 }, HardPity = 90,
+            RarityWeights = new[] { 400, 300, 200, 100 }, HardPity = 90,
             SingleCost = 160, TenCost = 1600, Entries = all
         });
         Pools.Add(new GachaPoolDataEntry
         {
             PoolId = "pool_flame", DisplayName = "业火轮盘 · UP",
-            RarityWeights = new[] { 820, 150, 29, 1 }, HardPity = 80,
+            RarityWeights = new[] { 400, 300, 200, 100 }, HardPity = 80,
             SingleCost = 160, TenCost = 1600,
             Entries = Characters.Where(c => c.Element == "Flame" || c.BaseRarity >= 3).Select(EntryFor).ToList()
         });
@@ -423,7 +423,7 @@ public class GachaPoolDataEntry
 {
     public string PoolId = "";
     public string DisplayName = "";
-    public int[] RarityWeights = { 820, 150, 29, 1 };
+    public int[] RarityWeights = { 400, 300, 200, 100 };
     public int HardPity = 90;
     public int SingleCost = 100;
     public int TenCost = 1000;
