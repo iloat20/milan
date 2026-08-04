@@ -1,164 +1,118 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sci-Fi 科幻卡背 · 预览</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>卡背 · 黑客帝国数字雨预览</title>
 <style>
   :root{
-    --bg-deepest:#0B0612;
-    --bg-mid:#160A26;
-    --gold:#E8B84B;
-    --gold-hi:#FFC857;
-    --frost:#7FC4FF;
-    --frost-soft:rgba(127,196,255,.26);
-    --violet:#9A6BFF;
+    --green:#00ff5a;
+    --green-dim:rgba(0,255,90,.7);
+    --green-faint:rgba(0,255,90,.55);
+    --bg:#020a05;
   }
-  *{box-sizing:border-box;margin:0;padding:0;}
+  *{box-sizing:border-box;}
   body{
-    background:radial-gradient(120% 120% at 50% -10%, #160c2c 0%, var(--bg-deepest) 60%);
-    color:#cfc6e6;font-family:"PingFang SC","Microsoft YaHei",system-ui,sans-serif;
-    min-height:100vh;display:flex;flex-direction:column;align-items:center;
-    padding:48px 16px;gap:36px;
+    margin:0; min-height:100vh;
+    background:radial-gradient(120% 120% at 50% 0%, #0a0f0c 0%, #000 70%);
+    color:#cfe; font-family:"SFMono-Regular",ui-monospace,Menlo,Consolas,monospace;
+    display:flex; flex-direction:column; align-items:center; gap:22px; padding:34px 16px 50px;
   }
-  h1{font-size:20px;font-weight:600;letter-spacing:.18em;color:var(--frost);
-     text-shadow:0 0 16px rgba(127,196,255,.5);}
-  .sub{font-size:12px;color:#8a7fb0;letter-spacing:.1em;margin-top:-24px;}
-  .row{display:flex;gap:40px;flex-wrap:wrap;justify-content:center;align-items:flex-end;}
-
-  /* 通用科幻卡背 */
+  h1{font-size:15px; letter-spacing:.32em; color:var(--green-dim); font-weight:600; margin:0;}
+  .row{display:flex; gap:34px; flex-wrap:wrap; justify-content:center;}
   .card{
-    position:relative;border-radius:14px;overflow:hidden;
-    background:linear-gradient(160deg, var(--bg-mid) 0%, var(--bg-deepest) 100%);
-    border:2px solid var(--frost);
-    box-shadow:0 14px 38px rgba(0,0,0,.55), 0 0 22px rgba(127,196,255,.18);
+    position:relative; width:300px; height:420px; border-radius:16px; overflow:hidden;
+    background:var(--bg); border:2px solid rgba(0,255,90,.85);
+    box-shadow:0 0 22px rgba(0,255,90,.35), inset 0 0 26px rgba(0,255,90,.12);
   }
-  .card::before{ /* 霜蓝内框 */
-    content:"";position:absolute;inset:6px;border-radius:10px;
-    border:1px solid rgba(127,196,255,.35);pointer-events:none;z-index:6;
-  }
-  /* 等距网格 */
-  .grid{
-    position:absolute;inset:0;z-index:1;pointer-events:none;
-    background-image:
-      linear-gradient(var(--frost-soft) 1px, transparent 1px),
-      linear-gradient(90deg, var(--frost-soft) 1px, transparent 1px);
-    background-size:18px 18px;
-  }
-  /* 暮紫底辉光 */
-  .halo{
-    position:absolute;left:50%;top:40%;width:160%;height:80%;
-    transform:translate(-50%,-50%);z-index:0;pointer-events:none;
-    background:radial-gradient(closest-side, rgba(127,90,200,.42) 0%, rgba(90,55,150,.14) 45%, rgba(11,6,18,0) 72%);
-  }
-  /* 旋转六边形雷达 + 内侧圆 */
-  .radar{
-    position:absolute;left:50%;top:40%;transform:translate(-50%,-50%);
-    width:62%;aspect-ratio:1/1;z-index:2;pointer-events:none;
-    border:1.5px solid rgba(127,196,255,.6);border-radius:4px;
-    animation:spin 14s linear infinite;
-    box-shadow:0 0 14px rgba(127,196,255,.25);
-  }
-  .radar::after{
-    content:"";position:absolute;inset:32%;border:1.5px solid rgba(127,196,255,.45);
-    border-radius:50%;
-  }
-  .radar2{
-    position:absolute;left:50%;top:40%;transform:translate(-50%,-50%);
-    width:37%;aspect-ratio:1/1;z-index:2;pointer-events:none;
-    border:1.5px solid rgba(127,196,255,.45);border-radius:4px;
-    animation:spin 9s linear infinite reverse;
-  }
-  /* 扫描线 */
-  .scan{
-    position:absolute;left:0;right:0;height:14px;z-index:3;pointer-events:none;
-    background:linear-gradient(180deg, rgba(127,196,255,0) 0%, rgba(127,196,255,.55) 50%, rgba(127,196,255,0) 100%);
-  }
-  .scan::after{ /* 中段熔金高光 */
-    content:"";position:absolute;left:34%;right:34%;top:6px;height:2px;
-    background:var(--gold-hi);box-shadow:0 0 8px var(--gold-hi);
-  }
-  .scan.gacha{animation:scan 5.2s linear infinite;}
-  .scan.hand{animation:scan 5.2s linear infinite;}
+  .card.small{width:180px; height:252px;}
+  .card canvas{position:absolute; inset:0; width:100%; height:100%;}
+  .top{position:absolute; top:16px; left:0; right:0; text-align:center; font-size:9px;
+    letter-spacing:.3em; color:var(--green-dim); z-index:2;}
+  .milan{position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); z-index:2;
+    font-size:22px; font-weight:700; letter-spacing:.12em; color:var(--green);
+    text-shadow:0 0 12px var(--green); background:rgba(0,10,4,.62);
+    padding:8px 20px; border-radius:10px;}
+  .small .milan{font-size:15px; padding:6px 13px;}
+  .bottom{position:absolute; bottom:14px; left:0; right:0; text-align:center; font-size:8px;
+    letter-spacing:.16em; color:var(--green-faint); z-index:2;}
   /* 四角 HUD 角标 */
-  .corner{position:absolute;width:12px;height:12px;border:2px solid rgba(127,196,255,.75);z-index:5;}
-  .c-tl{top:10px;left:10px;border-right:none;border-bottom:none;}
-  .c-tr{top:10px;right:10px;border-left:none;border-bottom:none;}
-  .c-bl{bottom:10px;left:10px;border-right:none;border-top:none;}
-  .c-br{bottom:10px;right:10px;border-left:none;border-top:none;}
-  /* 中心克制金点 */
-  .core{position:absolute;left:50%;top:40%;width:6px;height:6px;border-radius:50%;
-    transform:translate(-50%,-50%);background:var(--gold-hi);
-    box-shadow:0 0 10px var(--gold-hi);z-index:4;}
-
-  /* 文字层 */
-  .top{position:absolute;top:15px;left:0;right:0;text-align:center;z-index:7;
-    font-size:8px;letter-spacing:.28em;color:rgba(127,196,255,.75);}
-  .milan{position:absolute;top:40%;left:0;right:0;transform:translateY(-50%);
-    text-align:center;z-index:7;font-size:18px;font-weight:700;letter-spacing:.18em;
-    color:var(--frost);text-shadow:0 0 14px rgba(127,196,255,.7);
-    font-variant-numeric:tabular-nums;font-family:ui-monospace,Menlo,Consolas,monospace;}
-  .foot{position:absolute;bottom:13px;left:0;right:0;text-align:center;z-index:7;
-    font-size:8px;letter-spacing:.18em;color:rgba(127,196,255,.55);
-    font-variant-numeric:tabular-nums;font-family:ui-monospace,Menlo,Consolas,monospace;}
-
-  /* 抽卡卡背（竖） */
-  .gacha{width:260px;height:364px;}
-  .gacha .milan{font-size:24px;}
-  .gacha .top,.gacha .foot{font-size:9px;}
-
-  /* 手牌卡背（小） */
-  .hand{width:120px;height:168px;}
-  .hand .milan{font-size:13px;}
-  .hand .top,.hand .foot{font-size:6px;letter-spacing:.2em;}
-  .hand .corner{width:8px;height:8px;}
-  .hand .c-tl,.hand .c-tr{top:7px;} .hand .c-bl,.hand .c-br{bottom:7px;}
-  .hand .c-tl,.hand .c-bl{left:7px;} .hand .c-tr,.hand .c-br{right:7px;}
-
-  .cap{font-size:12px;color:#8a7fb0;letter-spacing:.08em;text-align:center;margin-top:6px;}
-
-  @keyframes spin{to{transform:translate(-50%,-50%) rotate(360deg);}}
-  @keyframes scan{0%{top:-14px;}100%{top:100%;}}
+  .corner{position:absolute; width:15px; height:15px; border:2px solid var(--green); z-index:3; opacity:.92;}
+  .tl{top:9px; left:9px; border-right:none; border-bottom:none;}
+  .tr{top:9px; right:9px; border-left:none; border-bottom:none;}
+  .bl{bottom:9px; left:9px; border-right:none; border-top:none;}
+  .br{bottom:9px; right:9px; border-left:none; border-top:none;}
+  .cap{font-size:11px; color:#7fd9a0; letter-spacing:.12em; opacity:.7;}
 </style>
 </head>
 <body>
-  <h1>科幻风 · 统一卡背</h1>
-  <div class="sub">SCI-FI CARD BACK · 2D · 霜蓝霓虹 + HUD几何 + 克制熔金</div>
-
+  <h1>M A T R I X &nbsp; C A R D &nbsp; B A C K</h1>
   <div class="row">
-    <div>
-      <div class="card gacha">
-        <div class="halo"></div>
-        <div class="grid"></div>
-        <div class="radar"></div>
-        <div class="radar2"></div>
-        <div class="scan gacha"></div>
-        <div class="core"></div>
-        <div class="corner c-tl"></div><div class="corner c-tr"></div>
-        <div class="corner c-bl"></div><div class="corner c-br"></div>
-        <div class="top">TACTICAL UNIT</div>
-        <div class="milan">MILAN</div>
-        <div class="foot">STANDBY · 0x4F2A</div>
-      </div>
-      <div class="cap">抽卡翻转卡背</div>
+    <div class="card">
+      <canvas></canvas>
+      <div class="corner tl"></div><div class="corner tr"></div>
+      <div class="corner bl"></div><div class="corner br"></div>
+      <div class="top">SYSTEM ONLINE</div>
+      <div class="milan">MILAN</div>
+      <div class="bottom">WAKE UP · 0101</div>
     </div>
-
-    <div>
-      <div class="card hand">
-        <div class="halo"></div>
-        <div class="grid"></div>
-        <div class="radar"></div>
-        <div class="radar2"></div>
-        <div class="scan hand"></div>
-        <div class="core"></div>
-        <div class="corner c-tl"></div><div class="corner c-tr"></div>
-        <div class="corner c-bl"></div><div class="corner c-br"></div>
-        <div class="top">TACTICAL UNIT</div>
-        <div class="milan">MILAN</div>
-        <div class="foot">STANDBY · 0x4F2A</div>
-      </div>
-      <div class="cap">Battle 手牌卡背</div>
+    <div class="card small">
+      <canvas></canvas>
+      <div class="corner tl"></div><div class="corner tr"></div>
+      <div class="corner bl"></div><div class="corner br"></div>
+      <div class="top">SYS</div>
+      <div class="milan">MILAN</div>
+      <div class="bottom">0101</div>
     </div>
   </div>
+  <div class="cap">抽卡竖卡背（左） · Battle 手牌卡背（右）— 数字雨为实时动画</div>
+
+<script>
+const GLYPHS = (() => {
+  let s = '';
+  for (let c = 0x30A0; c <= 0x30FF; c++) s += String.fromCharCode(c); // 片假名
+  s += '0123456789ABCDEFZ:.=*+<>|';
+  return s;
+})();
+
+function rain(canvas){
+  const ctx = canvas.getContext('2d');
+  let W, H, cols, head, speed, colW = 13;
+  function resize(){
+    const dpr = window.devicePixelRatio || 1;
+    const r = canvas.getBoundingClientRect();
+    W = canvas.width = r.width * dpr;
+    H = canvas.height = r.height * dpr;
+    colW = 13 * dpr;
+    const n = Math.ceil(W / colW) + 1;
+    cols = new Array(n); head = new Array(n); speed = new Array(n);
+    for (let i = 0; i < n; i++){
+      cols[i] = i * colW + colW / 2;
+      head[i] = -Math.random() * H;
+      speed[i] = (1.4 + Math.random() * 3.2) * dpr;
+    }
+    ctx.fillStyle = '#000'; ctx.fillRect(0,0,W,H);
+  }
+  resize();
+  window.addEventListener('resize', resize);
+  function frame(){
+    ctx.fillStyle = 'rgba(0,0,0,0.165)';     // 拖尾渐隐
+    ctx.fillRect(0,0,W,H);
+    ctx.font = (13 * (window.devicePixelRatio||1)) + 'px monospace';
+    ctx.textAlign = 'center';
+    for (let i = 0; i < head.length; i++){
+      head[i] += speed[i];
+      if (head[i] > H + 40) { head[i] = -Math.random()*H*0.4; speed[i] = (1.4+Math.random()*3.2)*(window.devicePixelRatio||1); }
+      const y = head[i];
+      if (y < -20) continue;
+      ctx.fillStyle = 'rgba(205,255,215,0.95)';     // 亮白头
+      ctx.fillText(GLYPHS[(Math.random()*GLYPHS.length)|0], cols[i], y);
+    }
+    requestAnimationFrame(frame);
+  }
+  frame();
+}
+document.querySelectorAll('.card canvas').forEach(rain);
+</script>
 </body>
 </html>

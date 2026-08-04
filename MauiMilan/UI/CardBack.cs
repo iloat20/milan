@@ -4,16 +4,23 @@ using Android.Graphics.Drawables;
 using Android.OS;
 using Android.Views;
 using Android.Widget;
+using System.Collections.Generic;
 
 namespace Milan.Maui;
 
 /// <summary>
-/// 统一科幻风卡背（2D）：暮紫夜底 + 霜蓝霓虹主框 + HUD 几何（等距网格 / 旋转六边形雷达环 /
-/// 扫描线 / 四角角标）+ 克制熔金中心高光。抽卡翻转卡与 Battle 手牌卡背共用。
-/// 视觉语言仍属暗夜神性·诸神黄昏调色板：金只做中心高光点（克的金），面用深紫黑玻璃 + 霜蓝科技光。
+/// 统一卡背（2D）— 黑客帝国（The Matrix）数字雨风格：纯黑底 + 下落的绿色片假名/数字符文 +
+/// 亮白头部与渐隐拖尾 + 绿光圆角边框 + 四角 HUD 角标 + 终端文字层。抽卡翻转卡与 Battle 手牌卡背共用。
+/// 此元素刻意脱离暗夜神性 twilight 调色板，走 Matrix 绿光语汇（用户明确指定）。
 /// </summary>
 public static class CardBack
 {
+    // Matrix 绿光语汇（internal：供并列的 MatrixBackView 复用）
+    internal static readonly Color Green = Color.Rgb(0, 255, 90);
+    internal static readonly Color GreenDim = Color.Argb(180, 0, 255, 90);
+    internal static readonly Color GreenFaint = Color.Argb(140, 0, 255, 90);
+    internal static readonly Color Head = Color.Rgb(205, 255, 215); // 雨滴头部：亮白绿
+
     public static FrameLayout Build(Context ctx, int w, int h)
     {
         int dp(int v) => UI.Dp(v);
@@ -24,59 +31,55 @@ public static class CardBack
                 : new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MatchParent, ViewGroup.LayoutParams.MatchParent)
         };
 
-        // 背景：深紫黑玻璃 + 霜蓝霓虹外框（科幻主调，替代神性金框）+ 霜蓝内框
+        // 背景：近黑底（数字雨会覆盖，此处仅防首帧闪烁）+ 圆角
         var outer = new GradientDrawable();
-        outer.SetColor(AppTheme.BgDeepest.ToArgb());
+        outer.SetColor(Color.Rgb(2, 10, 5).ToArgb());
         outer.SetCornerRadius(dp(14));
-        outer.SetStroke(dp(2), AppTheme.Frost);            // 霜蓝霓虹主框
+        fr.Background = outer;
 
-        var inner = new GradientDrawable();
-        inner.SetColor(Color.Argb(0, 0, 0, 0).ToArgb());
-        inner.SetCornerRadius(dp(10));
-        inner.SetStroke(dp(1), Color.Argb(80, AppTheme.Frost.R, AppTheme.Frost.G, AppTheme.Frost.B));
-
-        var bg = new LayerDrawable(new Drawable[] { outer, inner });
-        bg.SetLayerInset(1, dp(6), dp(6), dp(6), dp(6));
-        fr.Background = bg;
-
-        // 科幻几何层（网格 + 六边形雷达 + 扫描线 + 角标，带动画）
-        var sci = new SciFiBackView(ctx)
+        // 数字雨层（带离屏缓冲拖尾，动画由 AnimatedEffectView 管理）
+        var rain = new MatrixBackView(ctx)
         {
             LayoutParameters = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MatchParent, ViewGroup.LayoutParams.MatchParent)
         };
-        fr.AddView(sci);
+        fr.AddView(rain);
 
-        // 顶部数据条：TACTICAL UNIT
-        var topTag = UI.Text("TACTICAL UNIT", dp(8), Color.Argb(190, AppTheme.Frost.R, AppTheme.Frost.G, AppTheme.Frost.B));
-        topTag.LetterSpacing = 0.28f;
+        // 顶部终端条：SYSTEM ONLINE
+        var topTag = UI.Text("SYSTEM ONLINE", dp(8), GreenDim);
+        topTag.LetterSpacing = 0.30f;
         topTag.Gravity = GravityFlags.CenterHorizontal;
         topTag.LayoutParameters = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MatchParent, ViewGroup.LayoutParams.WrapContent)
         {
             Gravity = GravityFlags.Top,
-            TopMargin = dp(15)
+            TopMargin = dp(16)
         };
         fr.AddView(topTag);
 
-        // 中央徽记：MILAN（等宽霜蓝 + 发光）
-        var milan = UI.Text("MILAN", dp(18), AppTheme.Frost, bold: true);
+        // 中央徽记：MILAN（等宽绿光，深底药丸保证雨幕上可读）
+        var milan = UI.Text("MILAN", dp(20), Green, bold: true);
         UI.Tabular(milan);
-        milan.SetShadowLayer(dp(8), 0, 0, AppTheme.Frost);
+        milan.SetShadowLayer(dp(10), 0, 0, Green);
         milan.Gravity = GravityFlags.Center;
-        milan.LayoutParameters = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MatchParent, ViewGroup.LayoutParams.WrapContent)
+        var pill = new GradientDrawable();
+        pill.SetColor(Color.Argb(160, 0, 10, 4).ToArgb());
+        pill.SetCornerRadius(dp(10));
+        milan.Background = pill;
+        milan.SetPadding(dp(20), dp(8), dp(20), dp(8));
+        milan.LayoutParameters = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.WrapContent, ViewGroup.LayoutParams.WrapContent)
         {
             Gravity = GravityFlags.Center
         };
         fr.AddView(milan);
 
-        // 底部状态码：STANDBY · 0x4F2A
-        var sub = UI.Text("STANDBY · 0x4F2A", dp(8), Color.Argb(140, AppTheme.Frost.R, AppTheme.Frost.G, AppTheme.Frost.B));
+        // 底部状态码：WAKE UP · 0101
+        var sub = UI.Text("WAKE UP · 0101", dp(8), GreenFaint);
         UI.Tabular(sub);
         sub.LetterSpacing = 0.18f;
         sub.Gravity = GravityFlags.CenterHorizontal;
         sub.LayoutParameters = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MatchParent, ViewGroup.LayoutParams.WrapContent)
         {
             Gravity = GravityFlags.Bottom,
-            BottomMargin = dp(13)
+            BottomMargin = dp(14)
         };
         fr.AddView(sub);
 
@@ -85,110 +88,132 @@ public static class CardBack
 }
 
 /// <summary>
-/// 卡背科幻几何层（自绘 + 动画）。继承 AnimatedEffectView：不可见/脱离窗口自动停帧。
-/// 绘制：暮紫底辉光 → 霜蓝等距网格 → 旋转六边形雷达双环 → 自上而下扫描线（中段熔金高光）
-/// → 四角 HUD 角标 → 中心克制金高光点。遵循 ColorLong 铁律，复用 Paint/Path/Gradient 降低 GC。
+/// 卡背数字雨层（自绘 + 动画）。继承 AnimatedEffectView：不可见/脱离窗口自动停帧。
+/// 离屏 Bitmap 缓冲做拖尾：每帧半透明黑覆盖整图（渐隐），再在每列头部位置画一颗亮白绿字符；
+/// 旧头部留在缓冲里被逐帧压暗 → 形成下落拖尾。复用单一 Paint 与 Bitmap，OnDraw 空尺寸保护，
+/// Dispose 释放 native 资源（遵守项目铁律）。
 /// </summary>
-internal sealed class SciFiBackView : AnimatedEffectView
+internal sealed class MatrixBackView : AnimatedEffectView
 {
     private readonly Paint _p = new() { AntiAlias = true };
-    private Android.Graphics.Path? _grid;
-    private Android.Graphics.Path? _hex;
-    private Android.Graphics.Path? _hex2;
-    private RadialGradient? _glow;
+    private readonly Paint _fade = new() { Color = Color.Black, Alpha = 42 }; // 拖尾渐隐强度
+    private readonly System.Random _rnd = new();
+
+    private Bitmap? _buf;
+    private Canvas? _bufCanvas;
+    private float[]? _colX;     // 每列 x 中心（px）
+    private float[]? _head;     // 每列头部 y（px）
+    private float[]? _speed;    // 每列下落速度（px/帧）
     private int _gw, _gh;
 
-    // 颜色（遵循 ColorLong 铁律：渐变用 long[]）
-    private static readonly Color CGrid = Color.Argb(26, 0x7F, 0xC4, 0xFF);   // 霜蓝网格
-    private static readonly Color CHex = Color.Argb(150, 0x7F, 0xC4, 0xFF);   // 霜蓝雷达环
-    private static readonly Color CFrame = Color.Argb(190, 0x7F, 0xC4, 0xFF); // 霜蓝角标
-    private static readonly Color CScan = Color.Argb(180, 0x9F, 0xD8, 0xFF);  // 霜蓝扫描线
-    private static readonly Color CGold = AppTheme.GoldHi;                    // 克制金高光
+    private static readonly char[] Glyphs = BuildGlyphs();
+    private static char[] BuildGlyphs()
+    {
+        var list = new List<char>();
+        for (int c = 0x30A0; c <= 0x30FF; c++) list.Add((char)c);          // 片假名
+        foreach (var ch in "0123456789ABCDEFZ:.=*+<>|") list.Add(ch);      // 数字 / 拉丁 / 符号
+        return list.ToArray();
+    }
 
-    public SciFiBackView(Context ctx) : base(ctx) => SetWillNotDraw(false);
+    public MatrixBackView(Context ctx) : base(ctx) => SetWillNotDraw(false);
+
+    protected override void OnSizeChanged(int w, int h, int oldw, int oldh)
+    {
+        base.OnSizeChanged(w, h, oldw, oldh);
+        Rebuild(w, h);
+    }
+
+    private void Rebuild(int w, int h)
+    {
+        if (w <= 0 || h <= 0) return;
+        _buf?.Dispose();
+        _buf = Bitmap.CreateBitmap(w, h, Bitmap.Config.Argb8888);
+        _buf.EraseColor(0xFF000000);                 // 纯黑底
+        _bufCanvas = new Canvas(_buf);
+
+        int colW = UI.Dp(13);
+        int n = (int)System.Math.Ceiling((float)w / colW) + 1;
+        float density = Resources?.DisplayMetrics?.Density ?? 1f;
+        _colX = new float[n];
+        _head = new float[n];
+        _speed = new float[n];
+        for (int i = 0; i < n; i++)
+        {
+            _colX[i] = i * colW + colW / 2f;
+            _head[i] = -_rnd.Next(0, h);
+            _speed[i] = (1.4f + (float)_rnd.NextDouble() * 3.2f) * density;
+        }
+        _gw = w; _gh = h;
+    }
 
     protected override void OnDraw(Canvas canvas)
     {
         int w = Width, h = Height;
         if (w <= 0 || h <= 0) return;
-        if (_grid == null || _gw != w || _gh != h) BuildCache(w, h);
+        if (_buf == null || _gw != w || _gh != h) Rebuild(w, h);
+        if (_buf == null || _bufCanvas == null || _head == null || _speed == null || _colX == null) return;
 
-        long now = SystemClock.ElapsedRealtime();
-        float scanT = (now % 5200) / 5200f;       // 扫描线周期 5.2s
-        float spin = (now % 14000) / 14000f;      // 主环 14s 一圈
-        float spin2 = (now % 9000) / 9000f;       // 副环 9s 反向
+        float density = Resources?.DisplayMetrics?.Density ?? 1f;
+        int colH = UI.Dp(13);
 
-        // 暮紫底辉光
-        if (_glow != null)
+        // 1) 整图压暗 → 旧头部渐隐成拖尾
+        _bufCanvas.DrawRect(0, 0, w, h, _fade);
+
+        // 2) 推进每列并在头部画亮白绿字符
+        _p.SetStyle(Paint.Style.Fill);
+        _p.TextSize = UI.Dp(13);
+        _p.TextAlign = Paint.Align.Center;
+        _p.Color = CardBack.Head;
+        for (int i = 0; i < _head.Length; i++)
         {
-            _p.SetShader(_glow);
-            _p.Alpha = 255;
-            canvas.DrawRect(0, 0, w, h, _p);
-            _p.SetShader(null);
+            _head[i] += _speed[i];
+            if (_head[i] > h + UI.Dp(40))
+            {
+                _head[i] = -_rnd.Next(0, (int)(h * 0.4f));
+                _speed[i] = (1.4f + (float)_rnd.NextDouble() * 3.2f) * density;
+            }
+            float y = _head[i];
+            if (y < -UI.Dp(20)) continue;
+            char g = Glyphs[_rnd.Next(Glyphs.Length)];
+            _bufCanvas.DrawText(g.ToString(), _colX[i], y, _p);
         }
 
-        // 等距网格
+        // 3) 合成雨幕
+        canvas.DrawBitmap(_buf, 0, 0, null);
+
+        // 4) CRT 扫描线（极淡绿）
         _p.SetStyle(Paint.Style.Stroke);
         _p.StrokeWidth = UI.Dp(1);
-        _p.Color = CGrid;
-        canvas.DrawPath(_grid!, _p);
+        _p.Color = Color.Argb(16, 0, 255, 90);
+        for (int y2 = 0; y2 < h; y2 += UI.Dp(3))
+            canvas.DrawLine(0, y2, w, y2, _p);
 
-        float cx = w / 2f, cy = h * 0.40f;
-
-        // 旋转六边形雷达双环
-        _p.Color = CHex;
-        _p.StrokeWidth = UI.Dp(1.5f);
-        DrawHex(canvas, cx, cy, spin * 360f);
-        DrawHex(canvas, cx, cy, -(spin2 * 360f), _hex2!);
-
-        // 中心同心圆（随主环呼吸）
-        float breathe = 0.5f + 0.5f * (float)System.Math.Sin(now / 900.0);
-        float ir = (_hexR * 0.46f) * (0.9f + 0.1f * breathe);
-        canvas.DrawCircle(cx, cy, ir, _p);
-
-        // 扫描线（自上而下，中段叠熔金高光——克制的金）
-        float sy = scanT * h;
-        float soft = UI.Dp(7);
-        _p.Color = CScan;
-        _p.Alpha = 60;
-        canvas.DrawRect(0, sy - soft, w, sy - soft + UI.Dp(1), _p);
-        canvas.DrawRect(0, sy + soft, w, sy + soft + UI.Dp(1), _p);
-        _p.Alpha = 255;
-        canvas.DrawRect(0, sy, w, sy + UI.Dp(1.5f), _p);
-        // 中段熔金高光点
-        _p.Color = CGold;
-        float gw = w * 0.32f;
-        canvas.DrawRect(cx - gw / 2, sy, cx + gw / 2, sy + UI.Dp(1.5f), _p);
-
-        // 四角 HUD 角标
-        DrawCorners(canvas, w, h);
-
-        // 中心克制金高光点
-        _p.Color = CGold;
-        _p.SetStyle(Paint.Style.Fill);
-        canvas.DrawCircle(cx, cy, UI.Dp(2.5f), _p);
+        // 5) 绿光圆角边框 + 四角 HUD 角标
+        DrawFrame(canvas, w, h);
 
         NextFrame();
     }
 
-    private float _hexR, _hexR2;
-
-    private void DrawHex(Canvas canvas, float cx, float cy, float deg, Android.Graphics.Path? hexOverride = null)
+    private void DrawFrame(Canvas canvas, int w, int h)
     {
-        var hex = hexOverride ?? _hex!;
-        canvas.Save();
-        canvas.Translate(cx, cy);
-        canvas.Rotate(deg);
-        canvas.DrawPath(hex, _p);
-        canvas.Restore();
-    }
+        float inset = UI.Dp(4);
+        float r = UI.Dp(12);
+        var rect = new RectF(inset, inset, w - inset, h - inset);
 
-    private void DrawCorners(Canvas canvas, int w, int h)
-    {
         _p.SetStyle(Paint.Style.Stroke);
+        // 外发光
+        _p.StrokeWidth = UI.Dp(4);
+        _p.Color = Color.Argb(60, 0, 255, 90);
+        canvas.DrawRoundRect(rect, r, r, _p);
+        // 内清晰线
+        _p.StrokeWidth = UI.Dp(1.5f);
+        _p.Color = Color.Argb(230, 0, 255, 90);
+        canvas.DrawRoundRect(rect, r, r, _p);
+
+        // 四角 HUD 角标
         _p.StrokeWidth = UI.Dp(2);
-        _p.Color = CFrame;
-        float m = UI.Dp(10), len = UI.Dp(12);
+        _p.Color = Color.Argb(240, 0, 255, 90);
+        float m = UI.Dp(9), len = UI.Dp(15);
         // 左上
         canvas.DrawLine(m, m + len, m, m, _p);
         canvas.DrawLine(m, m, m + len, m, _p);
@@ -203,69 +228,14 @@ internal sealed class SciFiBackView : AnimatedEffectView
         canvas.DrawLine(w - m, h - m - len, w - m, h - m, _p);
     }
 
-    private void BuildCache(int w, int h)
-    {
-        _gw = w; _gh = h;
-
-        // 暮紫底辉光（缓存 RadialGradient）
-        _glow?.Dispose();
-        float gcx = w / 2f, gcy = h * 0.40f;
-        float gr = System.Math.Min(w, h) * 0.75f;
-        if (gr > 0)
-        {
-            var core = Color.Argb(70, 90, 55, 150);     // 暮紫核心
-            var mid = Color.Argb(28, 58, 37, 96);
-            var edge = Color.Argb(0, AppTheme.BgDeepest.R, AppTheme.BgDeepest.G, AppTheme.BgDeepest.B);
-            _glow = new RadialGradient(gcx, gcy, gr,
-                new long[] { UI.ColorLong(core), UI.ColorLong(mid), UI.ColorLong(edge) },
-                null, Shader.TileMode.Clamp);
-        }
-
-        // 等距网格（缓存 Path）
-        _grid?.Dispose();
-        _grid = new Android.Graphics.Path();
-        int step = UI.Dp(18);
-        for (int x = step; x < w; x += step)
-        {
-            _grid.MoveTo(x, 0); _grid.LineTo(x, h);
-        }
-        for (int y = step; y < h; y += step)
-        {
-            _grid.MoveTo(0, y); _grid.LineTo(w, y);
-        }
-
-        // 六边形（缓存 Path，随尺寸）
-        _hexR = System.Math.Min(w, h) * 0.32f;
-        _hexR2 = _hexR * 0.6f;
-        _hex?.Dispose();
-        _hex = MakeHex(_hexR);
-        _hex2?.Dispose();
-        _hex2 = MakeHex(_hexR2);
-    }
-
-    private static Android.Graphics.Path MakeHex(float r)
-    {
-        var p = new Android.Graphics.Path();
-        for (int i = 0; i < 6; i++)
-        {
-            double a = System.Math.PI / 6 + i * System.Math.PI / 3;  // 顶点朝上
-            float x = (float)(r * System.Math.Cos(a));
-            float y = (float)(r * System.Math.Sin(a));
-            if (i == 0) p.MoveTo(x, y); else p.LineTo(x, y);
-        }
-        p.Close();
-        return p;
-    }
-
     protected override void Dispose(bool disposing)
     {
         if (disposing)
         {
             _p?.Dispose();
-            _grid?.Dispose();
-            _hex?.Dispose();
-            _hex2?.Dispose();
-            _glow?.Dispose();
+            _fade?.Dispose();
+            _buf?.Dispose();
+            _bufCanvas = null;
         }
         base.Dispose(disposing);
     }
