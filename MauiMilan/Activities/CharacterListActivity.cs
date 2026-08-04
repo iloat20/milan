@@ -1,6 +1,7 @@
 using Android.App;
 using Android.Content;
 using Android.Graphics;
+using Android.Graphics.Drawables;
 using Android.OS;
 using Android.Text;
 using Android.Views;
@@ -13,29 +14,46 @@ namespace Milan.Maui.Activities;
 public class CharacterListActivity : Activity
 {
     LinearLayout _gridRoot = null!;
-    TextView _currency = null!;
+    ScrollView _scroll = null!;
+    TextView _countLabel = null!;
+    ListFilterBar? _filter;
 
     protected override void OnCreate(Bundle? savedInstanceState)
     {
         base.OnCreate(savedInstanceState);
         GameState.EnsureInitialized(this);
-        SetContentView(BuildLayout());
-        RefreshOwned();
+        var rootView = BuildLayout();
+        SetContentView(rootView);
+        ApplyAndRebuild();
+        rootView.Post(() => PlayEntrance(rootView));
+    }
+
+    void PlayEntrance(ViewGroup root)
+    {
+        try
+        {
+            var decel = new Android.Views.Animations.DecelerateInterpolator();
+            root.Alpha = 0f;
+            root.Animate()?.Alpha(1f)?.SetDuration(320)?.SetInterpolator(decel)?.Start();
+            if (_gridRoot != null)
+            {
+                for (int i = 0; i < _gridRoot.ChildCount; i++)
+                {
+                    var c = _gridRoot.GetChildAt(i);
+                    if (c == null) continue;
+                    c.Alpha = 0f;
+                    c.TranslationY = UI.Dp(14);
+                    c.Animate()?.Alpha(1f)?.TranslationY(0)?.SetDuration(380)?.SetStartDelay(140 + i * 60)?.SetInterpolator(decel)?.Start();
+                }
+            }
+        }
+        catch (System.Exception) { }
     }
 
     protected override void OnResume()
     {
         base.OnResume();
-        // Refresh the owned grid only — don't rebuild layout.
-        RefreshOwned();
-    }
-
-    void RefreshOwned()
-    {
-        if (_gridRoot == null) return;
-        _gridRoot.RemoveAllViews();
-        if (_currency != null) _currency.Text = GameState.CurrencyLabel;
-        RebuildGrid(_gridRoot);
+        ApplyAndRebuild();
     }
 
     LinearLayout BuildLayout()
@@ -46,45 +64,71 @@ public class CharacterListActivity : Activity
         var root = new LinearLayout(this) { Orientation = Orientation.Vertical };
         root.LayoutParameters = new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MatchParent, ViewGroup.LayoutParams.MatchParent);
         root.SetPadding(Dp(18), Dp(40), Dp(18), Dp(18));
-        root.SetBackgroundDrawable(UI.Gradient(AppTheme.Background, Color.ParseColor("#12112a")));
 
-        // top bar
-        var top = UI.HBox();
-        var back = UI.Text("‹ 返回", 16, AppTheme.AccentAlt);
-        back.Clickable = true; back.Focusable = true;
-        back.Click += (s, e) => Finish();
-        var title = UI.Text("我 的 角 色", 24, AppTheme.TextPrimary, bold: true);
-        title.LetterSpacing = 0.1f;
-        var spacer = new View(this) { LayoutParameters = new LinearLayout.LayoutParams(0, 0, 1f) };
-        _currency = UI.Text(GameState.CurrencyLabel, 14, AppTheme.Gold);
-        top.AddView(back); top.AddView(title); top.AddView(spacer); top.AddView(_currency);
-        root.AddView(top);
+        // Obsidian 深色渐变背景
+        var bgGrad = new GradientDrawable();
+        bgGrad.SetColors(new[] {
+            AppTheme.BgDeepest.ToArgb(),
+            AppTheme.BgMid.ToArgb(),
+            AppTheme.BgDeepest.ToArgb()
+        });
+        bgGrad.SetOrientation(GradientDrawable.Orientation.TlBr);
+        root.Background = (bgGrad);
+
+        // ═══ TOP BAR ═══
+        root.AddView(AppChrome.AppTopBar(this, "我 的 角 色", Finish));
         root.AddView(Spacer(14));
 
-        var count = UI.Text($"已拥有  {GameState.OwnedCount}", 13, AppTheme.TextSecondary);
-        root.AddView(count);
+        // 数量（筛选后实时更新）
+        _countLabel = UI.Text("", 14, AppTheme.Text2);
+        root.AddView(_countLabel);
         root.AddView(Spacer(12));
 
-        // grid inside a scroll
-        var scroll = new ScrollView(this) { LayoutParameters = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MatchParent, 0, 1f) };
+        // ═══ 筛选条 ═══
+        _filter = new ListFilterBar(this, GameState.Owned().Select(o => o.Element).Distinct());
+        _filter.Changed += () => ApplyAndRebuild();
+        root.AddView(_filter.View);
+        root.AddView(Spacer(8));
+
+        // ═══ GRID ═══
+        _scroll = new ScrollView(this) { LayoutParameters = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MatchParent, 0, 1f) };
         _gridRoot = UI.VBox();
-        RebuildGrid(_gridRoot);
-        scroll.AddView(_gridRoot);
-        root.AddView(scroll);
+        _scroll.AddView(_gridRoot);
+        root.AddView(_scroll);
 
         return root;
     }
 
-    void RebuildGrid(LinearLayout grid)
+    /// <summary>
+    /// 按当前筛选条件重建网格，并保留滚动位置（A1：OnResume 全量重建不再丢失滚动）。
+    /// 重建前记录 ScrollY，重建后 Post 回滚，避免键盘/筛选抖动。
+    /// </summary>
+    void ApplyAndRebuild()
     {
-        grid.RemoveAllViews();
-        var owned = GameState.Owned();
+        if (_gridRoot == null) return;
+
+        var owned = _filter == null
+            ? GameState.Owned()
+            : _filter.FilterSort(GameState.Owned(),
+                getName: o => o.Name,
+                getRarity: o => o.Rarity,
+                getElement: o => o.Element,
+                getGroupKey: o => o.World);
+
+        int total = GameState.OwnedCount;
+        _countLabel.Text = owned.Count == total
+            ? $"已拥有  {total}  位角色"
+            : $"已显示  {owned.Count} / 已拥有 {total}  位角色";
+
+        int savedY = _scroll.ScrollY;
+        _gridRoot.RemoveAllViews();
+
         if (owned.Count == 0)
         {
-            var empty = UI.Text("还没有角色 — 去抽卡吧 ✦", 15, AppTheme.TextMuted);
+            var empty = UI.Text("没有符合条件的角色", 14, AppTheme.Text3);
             empty.Gravity = GravityFlags.Center;
             empty.SetPadding(0, 80, 0, 0);
-            grid.AddView(empty);
+            _gridRoot.AddView(empty);
             return;
         }
 
@@ -96,11 +140,14 @@ public class CharacterListActivity : Activity
             {
                 row = UI.HBox();
                 row.LayoutParameters = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MatchParent, ViewGroup.LayoutParams.WrapContent);
-                grid.AddView(row);
+                _gridRoot.AddView(row);
             }
             var ch = owned[i];
             row!.AddView(CharacterCard.ListCard(this, ch, () => OpenDetail(ch)));
         }
+
+        // 回滚滚动位置（布局完成后）
+        _scroll.Post(() => _scroll.ScrollTo(0, savedY));
     }
 
     void OpenDetail(OwnedCharacterView ch)
