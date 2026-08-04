@@ -18,7 +18,9 @@ public class CharacterDetailActivity : Activity
     private CharacterDataEntry _def = null!;
     private OwnedCharacterView _view = null!;
     private bool _owned;
-    private LinearLayout? _detailContent;
+    private ScrollView? _page;
+    private View? _heroView;
+    private View[]? _staged;
     private readonly Handler _handler = new(Looper.MainLooper!);
 
     protected override void OnCreate(Bundle? savedInstanceState)
@@ -36,9 +38,9 @@ public class CharacterDetailActivity : Activity
 
     void PlayEntrance()
     {
-        if (_detailContent == null) return;
-        try { Motion.Rise(_detailContent, Motion.Trans, 0, 12); }
-        catch (System.Exception) { }
+        // 错落入场：根淡入 → hero 淡入（不位移，避免与立绘漂浮冲突）→ 各内容区块上浮。
+        if (_page != null && _heroView != null && _staged != null)
+            Motion.PlayEntrance(_page, _heroView, 70, _staged);
     }
 
     protected override void OnDestroy()
@@ -71,118 +73,193 @@ public class CharacterDetailActivity : Activity
     {
         var density = Resources.DisplayMetrics.Density;
         int Dp(int v) => (int)(v * density);
+        var screenH = Resources.DisplayMetrics.HeightPixels;
 
         var root = new ScrollView(this)
         {
             LayoutParameters = new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MatchParent, ViewGroup.LayoutParams.MatchParent),
             VerticalScrollBarEnabled = false
         };
-        root.SetBackgroundColor(AppTheme.BgDeepest);
+        // 顶部略亮（BgMid）→ 底部深（BgDeepest），单一背光源的纵深感。
+        root.Background = new GradientDrawable(
+            GradientDrawable.Orientation.TopBottom,
+            new[] { AppTheme.BgMid.ToArgb(), AppTheme.BgDeepest.ToArgb() });
 
         var content = new LinearLayout(this) { Orientation = Orientation.Vertical };
         content.LayoutParameters = new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MatchParent, ViewGroup.LayoutParams.WrapContent);
-        content.SetPadding(Dp(16), Dp(28), Dp(16), Dp(24));
+        content.SetPadding(0, 0, 0, 0);
 
-        // ═══ TOP BAR ═══
-        content.AddView(BuildTopBar());
-        content.AddView(Spacer(12));
+        // ═══ HERO（立绘全屏 + 浮层铭牌）═══
+        var hero = BuildHeroRegion((int)(screenH * 0.56));
+        content.AddView(hero);
+        content.AddView(Spacer(14));
 
-        // ═══ 立绘区 ═══
-        var portraitFrame = new FrameLayout(this);
-        portraitFrame.LayoutParameters = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MatchParent, Dp(420));
-        portraitFrame.Background = (UI.GlassPanel(18, gold: _owned));
-        portraitFrame.SetPadding(Dp(6), Dp(6), Dp(6), Dp(6));
+        // ═══ 内容区（玻璃面板卡，左右留白）═══
+        var inner = new LinearLayout(this) { Orientation = Orientation.Vertical };
+        inner.SetPadding(Dp(16), 0, Dp(16), Dp(8));
 
-        // 2D 立绘：视差景深 + 元素粒子（暗夜神性·诸神黄昏），不再用 3D 卡片
+        var staged = new System.Collections.Generic.List<View>();
+
+        if (!string.IsNullOrEmpty(_def.Weapon))
+        {
+            var s = BuildSection("专 属 武 器", BuildWeaponPanel());
+            inner.AddView(s); inner.AddView(Spacer(16));
+            staged.Add(s);
+        }
+
+        var sStats = BuildSection("基 本 属 性", BuildStatsPanel());
+        inner.AddView(sStats); inner.AddView(Spacer(16)); staged.Add(sStats);
+
+        var sSkill = BuildSection("技 能", BuildSkillPanel());
+        inner.AddView(sSkill); inner.AddView(Spacer(16)); staged.Add(sSkill);
+
+        var sStory = BuildSection("背 景 故 事", BuildStoryPanel());
+        inner.AddView(sStory); inner.AddView(Spacer(16)); staged.Add(sStory);
+
+        var sVoice = BuildSection("语 音 / 台 词", BuildVoicePanel());
+        inner.AddView(sVoice); staged.Add(sVoice);
+
+        inner.AddView(Spacer(24));
+        content.AddView(inner);
+
+        _page = root;
+        _heroView = hero;
+        _staged = staged.ToArray();
+        root.AddView(content);
+        return root;
+    }
+
+    // ── HERO 区：立绘铺满 + 渐隐融入 + 浮层铭牌 + 悬浮操作 ──
+    View BuildHeroRegion(int heightPx)
+    {
+        var density = Resources.DisplayMetrics.Density;
+        int Dp(int v) => (int)(v * density);
+        var rarityCol = AppTheme.RarityColor(_view.Rarity);
+
+        var frame = new FrameLayout(this);
+        frame.LayoutParameters = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MatchParent, heightPx);
+
+        // 立绘（2D 视差，暗夜神性·诸神黄昏）
         var portrait = new Parallax3DPortraitView(this).Bind(_view);
         portrait.LayoutParameters = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MatchParent, ViewGroup.LayoutParams.MatchParent);
-        portraitFrame.AddView(portrait);
+        frame.AddView(portrait);
+
+        // 底部渐隐遮罩：立绘下缘柔和融入背景
+        var fade = new View(this);
+        fade.LayoutParameters = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MatchParent, Dp(150))
+        {
+            Gravity = GravityFlags.Bottom
+        };
+        fade.Background = new GradientDrawable(
+            GradientDrawable.Orientation.TopBottom,
+            new[] { Color.Argb(0, 11, 6, 18).ToArgb(), AppTheme.BgDeepest.ToArgb() });
+        frame.AddView(fade);
 
         // 未拥有遮罩
         if (!_owned)
         {
             var lockOverlay = new View(this);
             lockOverlay.LayoutParameters = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MatchParent, ViewGroup.LayoutParams.MatchParent);
-            lockOverlay.SetBackgroundColor(Color.Argb(130, 0, 0, 0));
+            lockOverlay.SetBackgroundColor(Color.Argb(150, 0, 0, 0));
             var lockIcon = UI.Text("🔒 未获得", 18, AppTheme.Text2, bold: true);
             lockIcon.Gravity = GravityFlags.Center;
-            lockIcon.LayoutParameters = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MatchParent, ViewGroup.LayoutParams.WrapContent);
-            ((FrameLayout.LayoutParams)lockIcon.LayoutParameters).Gravity = GravityFlags.Center;
-            portraitFrame.AddView(lockOverlay);
-            portraitFrame.AddView(lockIcon);
+            lockIcon.LayoutParameters = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MatchParent, ViewGroup.LayoutParams.WrapContent)
+            {
+                Gravity = GravityFlags.Center
+            };
+            frame.AddView(lockOverlay);
+            frame.AddView(lockIcon);
         }
 
-        // 左右切换按钮悬浮在立绘两侧
+        // 底部浮层铭牌（名字 / 称号 / 稀有度 / 元素）
+        frame.AddView(BuildHeroNameplate());
+
+        // 悬浮操作：返回（左上）+ 左右切换（两侧）
+        var back = BuildBackButton();
+        frame.AddView(back);
         var prevBtn = BuildArrow("‹", true);
         var nextBtn = BuildArrow("›", false);
-        portraitFrame.AddView(prevBtn);
-        portraitFrame.AddView(nextBtn);
+        frame.AddView(prevBtn);
+        frame.AddView(nextBtn);
 
-        content.AddView(portraitFrame);
-        content.AddView(Spacer(16));
-
-        // ═══ 名字与称号 ═══
-        content.AddView(BuildNamePlate());
-        content.AddView(Spacer(18));
-
-        // ═══ 专属武器（UR 特色武器）═══
-        if (!string.IsNullOrEmpty(_def.Weapon))
-        {
-            content.AddView(SectionTitle("专 属 武 器"));
-            content.AddView(BuildWeaponPanel());
-            content.AddView(Spacer(16));
-        }
-
-        // ═══ 属性 ═══
-        content.AddView(SectionTitle("基 本 属 性"));
-        content.AddView(BuildStatsPanel());
-        content.AddView(Spacer(16));
-
-        // ═══ 技能 ═══
-        content.AddView(SectionTitle("技 能"));
-        content.AddView(BuildSkillPanel());
-        content.AddView(Spacer(16));
-
-        // ═══ 背景故事 ═══
-        content.AddView(SectionTitle("背 景 故 事"));
-        content.AddView(BuildStoryPanel());
-        content.AddView(Spacer(16));
-
-        // ═══ 语音 ═══
-        content.AddView(SectionTitle("语 音 / 台 词"));
-        content.AddView(BuildVoicePanel());
-        content.AddView(Spacer(24));
-
-        content.AddView(Spacer(12));
-
-        _detailContent = content;
-        root.AddView(content);
-        return root;
+        return frame;
     }
 
-    View BuildTopBar()
+    View BuildHeroNameplate()
+    {
+        var density = Resources.DisplayMetrics.Density;
+        int Dp(int v) => (int)(v * density);
+        var rarityCol = AppTheme.RarityColor(_view.Rarity);
+        var (eFrom, _, _, eGlyph) = ElementTheme.For(_view.Element);
+
+        var plate = new LinearLayout(this) { Orientation = Orientation.Vertical };
+        plate.LayoutParameters = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MatchParent, Dp(156))
+        {
+            Gravity = GravityFlags.Bottom
+        };
+        // 上透明 → 下微暗，保证文字可读且压在立绘下缘
+        plate.Background = new GradientDrawable(
+            GradientDrawable.Orientation.TopBottom,
+            new[] { Color.Argb(0, 11, 6, 18).ToArgb(), Color.Argb(190, 7, 4, 15).ToArgb() });
+        plate.SetPadding(Dp(20), 0, Dp(20), Dp(18));
+        plate.SetGravity(GravityFlags.Bottom);
+
+        // 第一行：稀有度徽章 + 名字（权重1）+ 元素图标
+        var row = new LinearLayout(this) { Orientation = Orientation.Horizontal };
+        row.SetGravity(GravityFlags.CenterVertical);
+        row.SetPadding(0, 0, 0, Dp(2));
+
+        var rarityBadge = UI.Text(AppTheme.RarityName(_view.Rarity), 13, rarityCol, bold: true);
+        var rBg = new GradientDrawable();
+        rBg.SetCornerRadius(Dp(7));
+        rBg.SetColor(Color.Argb(45, rarityCol.R, rarityCol.G, rarityCol.B));
+        rBg.SetStroke(Dp(1), Color.Argb(150, rarityCol.R, rarityCol.G, rarityCol.B));
+        rarityBadge.Background = rBg;
+        rarityBadge.SetPadding(Dp(10), Dp(4), Dp(10), Dp(4));
+        row.AddView(rarityBadge);
+
+        var name = UI.Text(_view.Name, 27, AppTheme.Text1, bold: true);
+        name.SetShadowLayer(8, 0, 2, Color.Argb(160, 0, 0, 0));
+        name.SetPadding(Dp(14), 0, Dp(14), 0);
+        name.LayoutParameters = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WrapContent, 1f);
+        row.AddView(name);
+
+        var elemIcon = UI.Text(eGlyph, 15, eFrom, bold: true);
+        elemIcon.Gravity = GravityFlags.Center;
+        elemIcon.Background = UI.RoundRect(Color.Argb(50, eFrom.R, eFrom.G, eFrom.B), 18);
+        elemIcon.LayoutParameters = new LinearLayout.LayoutParams(Dp(34), Dp(34));
+        row.AddView(elemIcon);
+
+        plate.AddView(row);
+
+        // 称号
+        if (!string.IsNullOrEmpty(_view.Title))
+        {
+            var title = UI.Text(_view.Title, 14, rarityCol);
+            title.SetPadding(Dp(2), Dp(6), 0, 0);
+            plate.AddView(title);
+        }
+
+        return plate;
+    }
+
+    View BuildBackButton()
     {
         var density = Resources.DisplayMetrics.Density;
         int Dp(int v) => (int)(v * density);
 
-        var top = new LinearLayout(this) { Orientation = Orientation.Horizontal };
-        top.SetGravity(GravityFlags.CenterVertical);
-
-        var back = UI.Text("‹ 返 回", 16, AppTheme.Gold);
-        back.Clickable = true; back.Focusable = true;
-        back.SetPadding(Dp(4), Dp(4), Dp(4), Dp(4));
-        UI.TapFeedback(back, Finish);
-
-        var title = UI.Text("角 色 档 案", 20, AppTheme.Text1, bold: true);
-        title.LetterSpacing = 0.12f;
-        title.SetPadding(Dp(12), 0, 0, 0);
-
-        var spacer = new View(this) { LayoutParameters = new LinearLayout.LayoutParams(0, 0, 1f) };
-
-        top.AddView(back);
-        top.AddView(title);
-        top.AddView(spacer);
-        return top;
+        var btn = UI.Text("‹ 返 回", 16, AppTheme.Gold, bold: true);
+        btn.SetPadding(Dp(12), Dp(8), Dp(12), Dp(8));
+        btn.Background = UI.GlassPanel(20, gold: true);
+        btn.Clickable = true; btn.Focusable = true;
+        UI.TapFeedback(btn, Finish);
+        btn.LayoutParameters = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.WrapContent, ViewGroup.LayoutParams.WrapContent)
+        {
+            Gravity = GravityFlags.Top | GravityFlags.Left,
+            TopMargin = Dp(40),
+            LeftMargin = Dp(14)
+        };
+        return btn;
     }
 
     View BuildArrow(string text, bool left)
@@ -222,46 +299,12 @@ public class CharacterDetailActivity : Activity
 #pragma warning restore CA1422
     }
 
-    View BuildNamePlate()
+    View BuildSection(string title, View panel)
     {
-        var density = Resources.DisplayMetrics.Density;
-        int Dp(int v) => (int)(v * density);
-        var rarityCol = AppTheme.RarityColor(_view.Rarity);
-
-        var box = new LinearLayout(this) { Orientation = Orientation.Vertical };
-        box.SetGravity(GravityFlags.CenterHorizontal);
-
-        var name = UI.Text(_view.Name, 24, AppTheme.Text1, bold: true);
-        name.SetShadowLayer(6, 0, 2, Color.Argb(120, 0, 0, 0));
-        name.Gravity = GravityFlags.CenterHorizontal;
-
-        var title = UI.Text(_view.Title, 14, rarityCol);
-        title.SetPadding(0, Dp(4), 0, 0);
-        title.Gravity = GravityFlags.CenterHorizontal;
-
-        var meta = new LinearLayout(this) { Orientation = Orientation.Horizontal };
-        meta.SetGravity(GravityFlags.CenterHorizontal);
-        meta.SetPadding(0, Dp(8), 0, 0);
-
-        var rarityBadge = UI.Text(AppTheme.RarityName(_view.Rarity), 12, rarityCol, bold: true);
-        var rBg = new GradientDrawable();
-        rBg.SetCornerRadius(Dp(6));
-        rBg.SetColor(Color.Argb(40, rarityCol.R, rarityCol.G, rarityCol.B));
-        rBg.SetStroke(1, Color.Argb(120, rarityCol.R, rarityCol.G, rarityCol.B));
-        rarityBadge.Background = rBg;
-        rarityBadge.SetPadding(Dp(8), Dp(3), Dp(8), Dp(3));
-
-        var (from, _, _, glyph) = ElementTheme.For(_view.Element);
-        var elemBadge = UI.Text($"{glyph} {_view.Element}", 12, from);
-        elemBadge.SetPadding(Dp(12), Dp(3), 0, Dp(3));
-
-        meta.AddView(rarityBadge);
-        meta.AddView(elemBadge);
-
-        box.AddView(name);
-        box.AddView(title);
-        box.AddView(meta);
-        return box;
+        var sec = new LinearLayout(this) { Orientation = Orientation.Vertical };
+        sec.AddView(SectionTitle(title));
+        sec.AddView(panel);
+        return sec;
     }
 
     // 武器舞台：圆角暗底 + 元素径向晕染 + 稀有度描边光环，居中绘制干净武器剪影
@@ -465,15 +508,24 @@ public class CharacterDetailActivity : Activity
 
         var box = new LinearLayout(this) { Orientation = Orientation.Vertical };
         box.Background = UI.GlassPanel(14);
-        box.SetPadding(Dp(16), Dp(14), Dp(16), Dp(14));
+        box.SetPadding(Dp(16), Dp(12), Dp(16), Dp(12));
 
-        box.AddView(StatRow("ATK", stats.Atk, AppTheme.Danger));
-        box.AddView(StatRow("DEF", stats.Def, AppTheme.Frost));
-        box.AddView(StatRow("HP", stats.Hp, AppTheme.Success));
-        box.AddView(StatRow("SPD", stats.Spd, AppTheme.Gold));
+        // 克制数据行：左标签 + 右等宽数值，行间细分隔线
+        var items = new (string label, int val, Color col)[]
+        {
+            ("ATK", stats.Atk, AppTheme.Danger),
+            ("DEF", stats.Def, AppTheme.Frost),
+            ("HP",  stats.Hp,  AppTheme.Success),
+            ("SPD", stats.Spd, AppTheme.Gold),
+        };
+        for (int i = 0; i < items.Length; i++)
+        {
+            box.AddView(StatRow(items[i].label, items[i].val, items[i].col));
+            if (i < items.Length - 1) box.AddView(ThinDivider());
+        }
 
         var extra = UI.Text($"等级 Lv.{_view.Save.Level}  ·  星级 {new string('★', _view.Save.Stars)}  ·  天赋点 {_view.Save.UnspentPoints}" + (_owned ? "" : "  ·  未拥有"), 12, world.TextSecondary);
-        extra.SetPadding(0, Dp(10), 0, 0);
+        extra.SetPadding(0, Dp(12), 0, 0);
         extra.Gravity = GravityFlags.CenterHorizontal;
         box.AddView(extra);
 
@@ -609,18 +661,24 @@ public class CharacterDetailActivity : Activity
     View StatRow(string label, int value, Color color)
     {
         var row = new LinearLayout(this) { Orientation = Orientation.Horizontal };
-        row.SetPadding(0, UI.Dp(5), 0, UI.Dp(5));
+        row.SetPadding(0, UI.Dp(7), 0, UI.Dp(7));
 
-        var dot = UI.Text("●", 12, color);
-        dot.SetPadding(0, 0, UI.Dp(8), 0);
-        var name = UI.Text(label, 16, AppTheme.Text1);
+        var name = UI.Text(label, 15, AppTheme.Text1);
         name.SetPadding(0, 0, UI.Dp(10), 0);
         var spacer = new View(this) { LayoutParameters = new LinearLayout.LayoutParams(0, 0, 1f) };
         var val = UI.Text(value.ToString("N0"), 16, color, bold: true);
         UI.Tabular(val);
 
-        row.AddView(dot); row.AddView(name); row.AddView(spacer); row.AddView(val);
+        row.AddView(name); row.AddView(spacer); row.AddView(val);
         return row;
+    }
+
+    View ThinDivider()
+    {
+        var v = new View(this);
+        v.LayoutParameters = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MatchParent, UI.Dp(1));
+        v.SetBackgroundColor(Color.Argb(22, 255, 255, 255));
+        return v;
     }
 
     View Spacer(int h)

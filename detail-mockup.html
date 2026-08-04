@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>角色详情页 · 重设计预览</title>
+<style>
+  :root{
+    --bg-deepest:#0B0612; --bg-mid:#160A26; --surface:rgba(30,14,51,.55);
+    --gold:#E8B84B; --gold-hi:#FFC857; --frost:#7FC4FF; --violet:#9A6BFF;
+    --text1:#F3ECFF; --text2:#B7A6CF; --text3:#6E5C8A;
+    --danger:#FF4D5E; --frost2:#4A90D9; --success:#35D07F; --warning:#FFB020;
+  }
+  *{box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent;}
+  body{
+    background:#05030a; font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;
+    display:flex; justify-content:center; padding:24px 12px; color:var(--text1);
+  }
+  .phone{
+    width:420px; max-width:100%; background:var(--bg-deepest);
+    border-radius:26px; overflow:hidden; position:relative;
+    box-shadow:0 30px 80px rgba(0,0,0,.6), 0 0 0 1px rgba(232,184,75,.12);
+  }
+  /* ── HERO ── */
+  .hero{
+    position:relative; height:58vh; min-height:430px;
+    background:
+      radial-gradient(120% 80% at 50% 18%, rgba(154,107,255,.22), transparent 60%),
+      radial-gradient(90% 70% at 70% 30%, rgba(127,196,255,.16), transparent 55%),
+      linear-gradient(160deg, #1a0c30 0%, #0d0718 45%, #08040f 100%);
+    overflow:hidden;
+  }
+  /* 占位立绘光晕 */
+  .portrait{
+    position:absolute; left:50%; top:44%; transform:translate(-50%,-50%);
+    width:62%; height:74%;
+    background:
+      radial-gradient(50% 50% at 50% 38%, rgba(255,255,255,.10), transparent 70%),
+      radial-gradient(60% 70% at 50% 60%, rgba(154,107,255,.30), transparent 70%),
+      radial-gradient(40% 50% at 50% 35%, rgba(255,200,87,.18), transparent 70%);
+    filter:blur(2px);
+    border-radius:50% 50% 46% 46%;
+  }
+  .vignette{position:absolute; inset:0; background:radial-gradient(75% 75% at 50% 45%, transparent 40%, rgba(0,0,0,.65) 100%);}
+  .hero-fade{
+    position:absolute; left:0; right:0; bottom:0; height:160px;
+    background:linear-gradient(to bottom, rgba(11,6,18,0), var(--bg-deepest));
+  }
+  .back{
+    position:absolute; top:42px; left:14px; padding:8px 14px; border-radius:20px;
+    background:rgba(30,14,51,.55); border:1px solid rgba(232,184,75,.45);
+    color:var(--gold); font-size:15px; font-weight:700; backdrop-filter:blur(6px);
+  }
+  .arrow{
+    position:absolute; top:50%; transform:translateY(-50%);
+    width:44px; height:44px; border-radius:22px; display:flex; align-items:center; justify-content:center;
+    background:rgba(30,14,51,.55); border:1px solid rgba(232,184,75,.45);
+    color:var(--gold); font-size:30px; line-height:1; text-shadow:0 0 12px rgba(255,200,87,.6);
+  }
+  .arrow.l{left:8px;} .arrow.r{right:8px;}
+  .nameplate{
+    position:absolute; left:0; right:0; bottom:0; padding:18px 20px 20px;
+    background:linear-gradient(to bottom, rgba(7,4,15,0), rgba(7,4,15,.78) 70%);
+  }
+  .np-top{display:flex; align-items:center; gap:12px;}
+  .rarity{
+    font-size:13px; font-weight:800; padding:4px 11px; border-radius:8px;
+    color:var(--gold-hi); background:rgba(255,200,87,.14); border:1px solid rgba(255,200,87,.55);
+  }
+  .cname{font-size:27px; font-weight:800; flex:1; text-shadow:0 2px 8px rgba(0,0,0,.7);}
+  .elem{
+    width:34px; height:34px; border-radius:18px; display:flex; align-items:center; justify-content:center;
+    font-size:15px; font-weight:800; color:var(--frost); background:rgba(127,196,255,.20);
+    border:1px solid rgba(127,196,255,.4);
+  }
+  .ctitle{margin-top:6px; font-size:14px; color:var(--gold-hi); letter-spacing:.04em;}
+  /* ── CONTENT ── */
+  .content{padding:14px 16px 28px; background:linear-gradient(to bottom, var(--bg-mid), var(--bg-deepest));}
+  .section{margin-bottom:16px;}
+  .sec-title{display:flex; align-items:center; gap:10px; margin-bottom:10px;}
+  .sec-bar{width:3px; height:16px; border-radius:2px; background:var(--gold);}
+  .sec-title span{font-size:14px; font-weight:800; letter-spacing:.18em; color:var(--text1);}
+  .panel{
+    background:var(--surface); border:1px solid rgba(255,255,255,.08);
+    border-top:1px solid rgba(255,255,255,.10); border-radius:14px; padding:14px 16px;
+  }
+  .elem-row{display:flex; align-items:center; gap:12px; margin-bottom:10px;}
+  .elem-row .ei{width:32px; height:32px; border-radius:16px; display:flex; align-items:center; justify-content:center;
+    font-weight:800; color:var(--frost); background:rgba(127,196,255,.18); font-size:16px;}
+  .wname{font-size:18px; font-weight:800; color:var(--gold); flex:1; text-shadow:0 1px 4px rgba(0,0,0,.5);}
+  .tag{font-size:10px; font-weight:800; color:var(--violet); padding:2px 8px; border-radius:6px;
+    background:rgba(154,107,255,.14); border:1px solid rgba(154,107,255,.5);}
+  .wfx{font-size:12px; color:var(--frost); margin:6px 0;}
+  .wdesc{font-size:14px; color:var(--text2); line-height:1.6;}
+  .stat{display:flex; align-items:center; padding:7px 0;}
+  .stat .l{font-size:15px; color:var(--text1); width:48px;}
+  .stat .v{margin-left:auto; font-family:ui-monospace,Menlo,Consolas,monospace; font-size:16px; font-weight:800;}
+  .divider{height:1px; background:rgba(255,255,255,.09);}
+  .meta{text-align:center; font-size:12px; color:var(--text2); padding-top:12px; line-height:1.6;}
+  .skill{margin-bottom:10px;}
+  .skill .st{font-size:10px; font-weight:800; color:var(--warning); margin-right:8px;}
+  .skill .sn{font-size:14px; font-weight:800; color:var(--text1);}
+  .skill .sd{font-size:12px; color:var(--text2); padding:2px 0 6px 16px; line-height:1.6;}
+  .lore{font-size:14px; color:var(--text1); line-height:1.7;}
+  .lore.sub{color:var(--text2); margin-top:10px;}
+  .voice{display:flex; gap:10px; padding:6px 0; align-items:flex-start; font-size:14px; color:var(--text2); line-height:1.6;}
+  .voice .b{color:var(--frost); font-weight:800;}
+  .hint{text-align:center; font-size:11px; color:var(--text3); margin-top:18px; letter-spacing:.05em;}
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="hero">
+    <div class="portrait"></div>
+    <div class="vignette"></div>
+    <div class="hero-fade"></div>
+    <div class="back">‹ 返 回</div>
+    <div class="arrow l">‹</div>
+    <div class="arrow r">›</div>
+    <div class="nameplate">
+      <div class="np-top">
+        <div class="rarity">SSR</div>
+        <div class="cname">烛 龙</div>
+        <div class="elem">☀</div>
+      </div>
+      <div class="ctitle">衔烛御昼 · 司昼夜之轮</div>
+    </div>
+  </div>
+
+  <div class="content">
+    <!-- 专属武器 -->
+    <div class="section">
+      <div class="sec-title"><div class="sec-bar"></div><span>专 属 武 器</span></div>
+      <div class="panel">
+        <div class="elem-row">
+          <div class="ei">☀</div>
+          <div class="wname">昼夜神瞳环</div>
+          <div class="tag">SSR 专属</div>
+        </div>
+        <div class="wfx">武器特效 · SolarCycle</div>
+        <div class="wdesc">一环悬于掌中，左半承夜之寂，右半孕昼之炎；轮转之间可令战场光阴错位半息。</div>
+      </div>
+    </div>
+
+    <!-- 基本属性 -->
+    <div class="section">
+      <div class="sec-title"><div class="sec-bar"></div><span>基 本 属 性</span></div>
+      <div class="panel">
+        <div class="stat"><div class="l">ATK</div><div class="v" style="color:var(--danger)">3,182</div></div>
+        <div class="divider"></div>
+        <div class="stat"><div class="l">DEF</div><div class="v" style="color:var(--frost)">1,946</div></div>
+        <div class="divider"></div>
+        <div class="stat"><div class="l">HP</div><div class="v" style="color:var(--success)">12,740</div></div>
+        <div class="divider"></div>
+        <div class="stat"><div class="l">SPD</div><div class="v" style="color:var(--gold)">118</div></div>
+        <div class="meta">等级 Lv.80 · 星级 ★★★★★ · 天赋点 3 · 已拥有</div>
+      </div>
+    </div>
+
+    <!-- 技能 -->
+    <div class="section">
+      <div class="sec-title"><div class="sec-bar"></div><span>技 能</span></div>
+      <div class="panel">
+        <div class="skill">
+          <div><span class="st">[Ultimate]</span><span class="sn">永夜黎明</span></div>
+          <div class="sd">召唤昼夜神瞳环横扫战场，对全体敌人造成 320% 光属性伤害并附加「蚀时」状态。</div>
+        </div>
+        <div class="skill">
+          <div><span class="st">[Active]</span><span class="sn">轮转</span></div>
+          <div class="sd">切换昼/夜相位，提升自身 18% 暴击率，持续 2 回合。</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 背景故事 -->
+    <div class="section">
+      <div class="sec-title"><div class="sec-bar"></div><span>背 景 故 事</span></div>
+      <div class="panel">
+        <div class="lore">钟山之神，名曰烛龙。睁眼为昼，闭眼为夜；吹气为冬，呼气为夏。</div>
+        <div class="lore sub">自诸神黄昏的灰烬里苏醒，它不再司掌天象，而执掌一族存续的最后火种。</div>
+        <div class="lore sub" style="color:var(--violet)">所属势力：钟山神庭</div>
+      </div>
+    </div>
+
+    <!-- 语音 -->
+    <div class="section">
+      <div class="sec-title"><div class="sec-bar"></div><span>语 音 / 台 词</span></div>
+      <div class="panel">
+        <div class="voice"><span class="b">▸</span><span>「天色，由我定。」</span></div>
+        <div class="voice"><span class="b">▸</span><span>「哪怕只剩半息光阴，也够照亮归途。」</span></div>
+      </div>
+    </div>
+
+    <div class="hint">暗夜神性 · 诸神黄昏 — 浏览器示意稿（立绘为占位光晕）</div>
+  </div>
+</div>
+</body>
+</html>
