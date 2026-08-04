@@ -535,43 +535,8 @@ public class GachaActivity : Activity
 
     View BuildFaceBack(int rarity)
     {
-        var density = Resources.DisplayMetrics.Density;
-        int Dp(int v) => (int)(v * density);
-        var rc = AppTheme.RarityColor(rarity);
-
-        var frame = new FrameLayout(this);
-        frame.LayoutParameters = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MatchParent, ViewGroup.LayoutParams.MatchParent);
-        var bg = new GradientDrawable();
-        bg.SetCornerRadius(Dp(18));
-        bg.SetColors(new[] { Color.Argb(255, 18, 16, 32).ToArgb(), Color.Argb(255, 8, 7, 16).ToArgb() });
-        bg.SetStroke(UI.Dp(2), AppTheme.Gold);
-        frame.Background = bg;
-
-        // 内框装饰
-        var inner = new View(this);
-        var ilp = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MatchParent, ViewGroup.LayoutParams.MatchParent);
-        ilp.SetMargins(Dp(10), Dp(10), Dp(10), Dp(10));
-        inner.LayoutParameters = ilp;
-        var ib = new GradientDrawable();
-        ib.SetCornerRadius(Dp(12));
-        ib.SetStroke(UI.Dp(1), Color.Argb(120, AppTheme.Gold.R, AppTheme.Gold.G, AppTheme.Gold.B));
-        inner.Background = ib;
-        frame.AddView(inner);
-
-        var emblem = UI.Text("✦", 52, AppTheme.Gold, bold: true);
-        emblem.Gravity = GravityFlags.Center;
-        emblem.LayoutParameters = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MatchParent, ViewGroup.LayoutParams.MatchParent);
-        frame.AddView(emblem);
-
-        var sub = UI.Text("M I L A N", 11, Color.Argb(170, AppTheme.Gold.R, AppTheme.Gold.G, AppTheme.Gold.B));
-        var slp = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MatchParent, ViewGroup.LayoutParams.WrapContent);
-        slp.Gravity = GravityFlags.Bottom;
-        sub.LayoutParameters = slp;
-        sub.SetPadding(0, 0, 0, Dp(22));
-        sub.Gravity = GravityFlags.CenterHorizontal;
-        frame.AddView(sub);
-
-        return frame;
+        // 统一 twilight 神性卡背（2D）。FlipCardView 会把它撑满 MatchParent。
+        return CardBack.Build(this, 0, 0);
     }
 
     void HideReveal()

@@ -165,7 +165,7 @@ public class BattleActivity : Activity
         foreach (var ch in picks)
         {
             var flip = new FlipCardView(this);
-            flip.SetFaces(BattleCardFace(ch, w, h), CardBack(w, h));
+            flip.SetFaces(BattleCardFace(ch, w, h), BuildCardBack(w, h));
             flip.LayoutParameters = new FrameLayout.LayoutParams(w, h)
             {
                 Gravity = GravityFlags.CenterHorizontal | GravityFlags.Bottom,
@@ -226,27 +226,10 @@ public class BattleActivity : Activity
         return box;
     }
 
-    private View CardBack(int w, int h)
+    private View BuildCardBack(int w, int h)
     {
-        var back = new FrameLayout(this);
-        back.LayoutParameters = new FrameLayout.LayoutParams(w, h);
-        back.Background = UI.RoundRect(AppTheme.BgDeepest, 12, 2, SetA(AppTheme.Gold, 180));
-
-        var dia = UI.Text("◆", 32, AppTheme.Gold, bold: true);
-        dia.Gravity = GravityFlags.Center;
-        dia.LayoutParameters = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MatchParent, ViewGroup.LayoutParams.MatchParent);
-        back.AddView(dia);
-
-        var title = UI.Text("MILAN", 10, SetA(AppTheme.Gold, 170));
-        title.Gravity = GravityFlags.CenterHorizontal;
-        var tl = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MatchParent, ViewGroup.LayoutParams.WrapContent)
-        {
-            Gravity = GravityFlags.Bottom
-        };
-        tl.SetMargins(0, 0, 0, Dp(10));
-        title.LayoutParameters = tl;
-        back.AddView(title);
-        return back;
+        // 统一 twilight 神性卡背（2D）
+        return CardBack.Build(this, w, h);
     }
 
     private void OnCardPlayed(View card)

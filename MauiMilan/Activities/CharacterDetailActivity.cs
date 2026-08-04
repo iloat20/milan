@@ -18,7 +18,6 @@ public class CharacterDetailActivity : Activity
     private CharacterDataEntry _def = null!;
     private OwnedCharacterView _view = null!;
     private bool _owned;
-    private CharacterTurntableView? _portrait;
     private LinearLayout? _detailContent;
     private readonly Handler _handler = new(Looper.MainLooper!);
 
@@ -88,17 +87,16 @@ public class CharacterDetailActivity : Activity
         content.AddView(BuildTopBar());
         content.AddView(Spacer(12));
 
-        // ═══ 3D 立绘区 ═══
+        // ═══ 立绘区 ═══
         var portraitFrame = new FrameLayout(this);
         portraitFrame.LayoutParameters = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MatchParent, Dp(420));
         portraitFrame.Background = (UI.GlassPanel(18, gold: _owned));
         portraitFrame.SetPadding(Dp(6), Dp(6), Dp(6), Dp(6));
 
-        // 真 3D：用 CharacterTurntableView（有厚度的 3D 卡片：绕轴旋转 + 厚度边条 + 卡背），
-        // 取代原来的 Parallax3D 视差（仅 2.5D）。自动旋转 + 手指拖拽控制角度。
-        _portrait = new CharacterTurntableView(this).Bind(_view);
-        _portrait.LayoutParameters = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MatchParent, ViewGroup.LayoutParams.MatchParent);
-        portraitFrame.AddView(_portrait);
+        // 2D 立绘：视差景深 + 元素粒子（暗夜神性·诸神黄昏），不再用 3D 卡片
+        var portrait = new Parallax3DPortraitView(this).Bind(_view);
+        portrait.LayoutParameters = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MatchParent, ViewGroup.LayoutParams.MatchParent);
+        portraitFrame.AddView(portrait);
 
         // 未拥有遮罩
         if (!_owned)
@@ -155,18 +153,7 @@ public class CharacterDetailActivity : Activity
         content.AddView(BuildVoicePanel());
         content.AddView(Spacer(24));
 
-        // ═══ 底部 360° 检视按钮 ═══
-        if (_owned)
-        {
-            var inspect = ThemeButtons.Neon(this, "360° 检 视");
-            inspect.Click += (s, e) =>
-            {
-                var intent = new Intent(this, typeof(InspectionActivity));
-                intent.PutExtra("characterId", _def.CharacterId);
-                StartActivity(intent);
-            };
-            content.AddView(inspect);
-        }
+        content.AddView(Spacer(12));
 
         _detailContent = content;
         root.AddView(content);

@@ -97,7 +97,7 @@ public abstract class AnimatedEffectView : View
     }
 }
 
-/// <summary>可被 <see cref="Card3DHost"/> 倾斜驱动的图层（全息箔随视角流动）。</summary>
+/// <summary>可被倾斜驱动的图层（全息箔随视角流动），由实现了 <see cref="ITiltAware"/> 的视图消费。</summary>
 public interface ITiltAware
 {
     /// <summary>nx / ny 为 -1..1 的归一化倾斜量。</summary>
