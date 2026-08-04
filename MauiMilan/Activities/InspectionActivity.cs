@@ -24,7 +24,9 @@ public class InspectionActivity : Activity
         var ch = GameState.Owned().FirstOrDefault(c => c.Save.CharacterId == id);
         if (ch == null) { Finish(); return; }
         _ch = ch;
-        SetContentView(BuildLayout());
+        var root = BuildLayout();
+        SetContentView(root);
+        root.Post(() => Motion.Fade(root, Motion.Trans));
     }
 
     FrameLayout BuildLayout()

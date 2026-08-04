@@ -562,30 +562,13 @@ public class HomeActivity : Activity
     {
         try
         {
-            var decel = new Android.Views.Animations.DecelerateInterpolator();
-            main.Alpha = 0f;
-            main.Animate()?.Alpha(1f)?.SetDuration(320)?.SetInterpolator(decel)?.Start();
-
-            // 立绘浮入（不动 translationY，避免与 Hero 漂浮动画冲突）
-            if (_featured != null)
-            {
-                _featured.Alpha = 0f;
-                _featured.Animate()?.Alpha(1f)?.SetDuration(440)?.SetInterpolator(decel)?.Start();
-            }
-
+            Motion.Fade(main, Motion.Trans);
+            // 立绘浮入（仅淡入，不动 translationY，避免与 Hero 漂浮动画冲突）
+            if (_featured != null) Motion.Fade(_featured, Motion.Emph);
             // 主体各区块错落上浮
             if (entranceRoot != null)
-            {
                 for (int i = 0; i < entranceRoot.ChildCount; i++)
-                {
-                    var c = entranceRoot.GetChildAt(i);
-                    if (c == null) continue;
-                    c.Alpha = 0f;
-                    c.TranslationY = UI.Dp(14);
-                    c.Animate()?.Alpha(1f)?.TranslationY(0)?.SetDuration(380)
-                        ?.SetStartDelay(140 + i * 60)?.SetInterpolator(decel)?.Start();
-                }
-            }
+                    Motion.Rise(entranceRoot.GetChildAt(i), Motion.Trans, 140 + i * 60, 14);
         }
         catch (System.Exception ex) { CrashReporter.Write("HomeActivity.PlayEntrance", ex); }
     }

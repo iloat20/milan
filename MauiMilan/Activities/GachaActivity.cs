@@ -285,25 +285,12 @@ public class GachaActivity : Activity
     {
         try
         {
-            var decel = new Android.Views.Animations.DecelerateInterpolator();
-            content.Alpha = 0f;
-            content.Animate()?.Alpha(1f)?.SetDuration(300)?.SetInterpolator(decel)?.Start();
-
+            Motion.Fade(content, Motion.Trans);
             // 法阵落位：缩放弹入 + 淡入
-            riftFrame.Alpha = 0f;
-            riftFrame.ScaleX = 0.85f; riftFrame.ScaleY = 0.85f;
-            riftFrame.Animate()?.Alpha(1f)?.ScaleX(1f)?.ScaleY(1f)?.SetDuration(460)?.SetInterpolator(decel)?.Start();
-
+            Motion.Pop(riftFrame, 460, 0, 0.85f);
             // 召唤按钮错落上浮
             for (int i = 0; i < buttons.ChildCount; i++)
-            {
-                var c = buttons.GetChildAt(i);
-                if (c == null) continue;
-                c.Alpha = 0f;
-                c.TranslationY = UI.Dp(12);
-                c.Animate()?.Alpha(1f)?.TranslationY(0)?.SetDuration(360)
-                    ?.SetStartDelay(160 + i * 60)?.SetInterpolator(decel)?.Start();
-            }
+                Motion.Rise(buttons.GetChildAt(i), 360, 160 + i * 60, 12);
         }
         catch (System.Exception ex) { CrashReporter.Write("GachaActivity.PlayEntrance", ex); }
     }

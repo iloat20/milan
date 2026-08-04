@@ -31,12 +31,7 @@ public class CollectionActivity : Activity
 
     void PlayEntrance(ViewGroup root)
     {
-        try
-        {
-            var decel = new Android.Views.Animations.DecelerateInterpolator();
-            root.Alpha = 0f;
-            root.Animate()?.Alpha(1f)?.SetDuration(360)?.SetInterpolator(decel)?.Start();
-        }
+        try { Motion.Fade(root, Motion.Trans); }
         catch (System.Exception) { }
     }
 

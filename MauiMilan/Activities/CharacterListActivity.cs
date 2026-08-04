@@ -32,20 +32,10 @@ public class CharacterListActivity : Activity
     {
         try
         {
-            var decel = new Android.Views.Animations.DecelerateInterpolator();
-            root.Alpha = 0f;
-            root.Animate()?.Alpha(1f)?.SetDuration(320)?.SetInterpolator(decel)?.Start();
+            Motion.Fade(root, Motion.Trans);
             if (_gridRoot != null)
-            {
                 for (int i = 0; i < _gridRoot.ChildCount; i++)
-                {
-                    var c = _gridRoot.GetChildAt(i);
-                    if (c == null) continue;
-                    c.Alpha = 0f;
-                    c.TranslationY = UI.Dp(14);
-                    c.Animate()?.Alpha(1f)?.TranslationY(0)?.SetDuration(380)?.SetStartDelay(140 + i * 60)?.SetInterpolator(decel)?.Start();
-                }
-            }
+                    Motion.Rise(_gridRoot.GetChildAt(i), Motion.Trans, 140 + i * 60, 14);
         }
         catch (System.Exception) { }
     }

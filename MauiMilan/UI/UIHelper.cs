@@ -5,6 +5,7 @@ using Android.Graphics.Drawables;
 using Android.Runtime;
 using Android.Util;
 using Android.Views;
+using Android.Views.Animations;
 using Android.Widget;
 
 namespace Milan.Maui;
@@ -318,26 +319,26 @@ public static class UI
             {
                 case MotionEventActions.Down:
                     pressed = true;
-                    v.Animate()?.ScaleX(0.95f)?.ScaleY(0.95f)?.SetDuration(80)?.Start();
+                    v.Animate()?.ScaleX(0.95f)?.ScaleY(0.95f)?.SetDuration(120)?.SetInterpolator(Motion.Ease)?.Start();
                     e.Handled = true;
                     break;
                 case MotionEventActions.Move:
                     if (pressed && !Inside())
                     {
                         pressed = false;
-                        v.Animate()?.ScaleX(1f)?.ScaleY(1f)?.SetDuration(120)?.Start();
+                        v.Animate()?.ScaleX(1f)?.ScaleY(1f)?.SetDuration(Motion.Micro)?.SetInterpolator(Motion.Ease)?.Start();
                     }
                     e.Handled = true;
                     break;
                 case MotionEventActions.Up:
-                    v.Animate()?.ScaleX(1f)?.ScaleY(1f)?.SetDuration(120)?.Start();
+                    v.Animate()?.ScaleX(1f)?.ScaleY(1f)?.SetDuration(Motion.Micro)?.SetInterpolator(Motion.Ease)?.Start();
                     if (pressed && Inside()) onTap();
                     pressed = false;
                     e.Handled = true;
                     break;
                 case MotionEventActions.Cancel:
                     pressed = false;
-                    v.Animate()?.ScaleX(1f)?.ScaleY(1f)?.SetDuration(120)?.Start();
+                    v.Animate()?.ScaleX(1f)?.ScaleY(1f)?.SetDuration(Motion.Micro)?.SetInterpolator(Motion.Ease)?.Start();
                     e.Handled = true;
                     break;
             }
@@ -439,6 +440,63 @@ public static class UI
     }
 
     }
+
+/// <summary>
+/// 统一动效语言（暗夜神性·诸神黄昏 设计文档 §6）：单一缓动 + 规范时长 + 入场编排。
+/// 顶层静态类，命名空间 Milan.Maui —— 全仓（含 namespace Milan.Maui.UI 的 UI 组件）直接用 `Motion.X` 引用，
+/// 避免与同名命名空间 Milan.Maui.UI 冲突导致嵌套类型无法解析。
+/// </summary>
+public static class Motion
+{
+    /// <summary>统一缓动 cubic-bezier(.2,.8,.2,1)（ease-out 快出）。PathInterpolator 需 API 21+，本项目达标。</summary>
+    public static readonly PathInterpolator Ease =
+        new PathInterpolator(0.2f, 0.8f, 0.2f, 1f);
+
+    // 时长规范（ms）：微交互 / 转场 / 强调 / 演出（设计文档 §6）
+    public const int Micro = 150;
+    public const int Trans = 300;
+    public const int Emph = 500;
+    public const int Show = 1500;
+
+    /// <summary>淡入（根/容器/单元素）。</summary>
+    public static void Fade(View? v, int dur = Trans, int delay = 0)
+    {
+        if (v == null) return;
+        v.Alpha = 0f;
+        v.Animate()?.Alpha(1f)?.SetDuration(dur)?.SetStartDelay(delay)?.SetInterpolator(Ease)?.Start();
+    }
+
+    /// <summary>淡入 + 上浮（UI 区块错落入场）。</summary>
+    public static void Rise(View? v, int dur = Trans, int delay = 0, int dyDp = 12)
+    {
+        if (v == null) return;
+        v.Alpha = 0f; v.TranslationY = UI.Dp(dyDp);
+        v.Animate()?.Alpha(1f)?.TranslationY(0)?.SetDuration(dur)?.SetStartDelay(delay)?.SetInterpolator(Ease)?.Start();
+    }
+
+    /// <summary>缩放弹入（法阵 / 焦点元素）。</summary>
+    public static void Pop(View? v, int dur = Emph, int delay = 0, float from = 0.85f)
+    {
+        if (v == null) return;
+        v.Alpha = 0f; v.ScaleX = from; v.ScaleY = from;
+        v.Animate()?.Alpha(1f)?.ScaleX(1f)?.ScaleY(1f)?.SetDuration(dur)?.SetStartDelay(delay)?.SetInterpolator(Ease)?.Start();
+    }
+
+    /// <summary>
+    /// 入场编排：根淡入 → hero 浮入（仅淡入，不位移以免与漂浮动画冲突）→ staged 子项错落上浮（stagger ms）。
+    /// 背景先于主体 ~80ms 落位（设计文档 §6）。仅做变换/透明，安全可重入（旋转屏重建后重播）。
+    /// </summary>
+    public static void PlayEntrance(View? root, View? hero, int stagger, params View[] staged)
+    {
+        Fade(root, Trans);
+        if (hero != null) Fade(hero, Emph);
+        for (int i = 0; i < staged.Length; i++)
+            Rise(staged[i], Trans, 140 + i * stagger);
+    }
+
+    public static void PlayEntrance(View root, params View[] staged)
+        => PlayEntrance(root, null, 60, staged);
+}
 
 /// <summary>
 /// Minimal Application subclass that gives every Activity a global Context

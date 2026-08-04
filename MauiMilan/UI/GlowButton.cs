@@ -14,10 +14,7 @@ namespace Milan.Maui;
 public class GlowButton : Button
 {
     private readonly Color _glowColor;
-    private readonly float _cornerDp;
-    private bool _pressed;
-
-    public GlowButton(Context context, string text, Color fillColor, Color textColor, float cornerDp = 14) : base(context)
+    private readonly float _cornerDp;    public GlowButton(Context context, string text, Color fillColor, Color textColor, float cornerDp = 14) : base(context)
     {
         _cornerDp = cornerDp;
         _glowColor = fillColor;
@@ -46,21 +43,15 @@ public class GlowButton : Button
     {
         switch (e.Action)
         {
-            case MotionEventActions.Down:
-                _pressed = true;
-                UpdateBackground(true);
-                Animate().ScaleX(0.96f).ScaleY(0.96f).SetDuration(80).Start();
+            case MotionEventActions.Down:                UpdateBackground(true);
+                Animate().ScaleX(0.96f).ScaleY(0.96f).SetDuration(120).SetInterpolator(Motion.Ease).Start();
                 return true;
-            case MotionEventActions.Up:
-                _pressed = false;
-                UpdateBackground(false);
-                Animate().ScaleX(1f).ScaleY(1f).SetDuration(80).Start();
+            case MotionEventActions.Up:                UpdateBackground(false);
+                Animate().ScaleX(1f).ScaleY(1f).SetDuration(Motion.Micro).SetInterpolator(Motion.Ease).Start();
                 PerformClick();
                 return true;
-            case MotionEventActions.Cancel:
-                _pressed = false;
-                UpdateBackground(false);
-                Animate().ScaleX(1f).ScaleY(1f).SetDuration(80).Start();
+            case MotionEventActions.Cancel:                UpdateBackground(false);
+                Animate().ScaleX(1f).ScaleY(1f).SetDuration(Motion.Micro).SetInterpolator(Motion.Ease).Start();
                 return true;
         }
         return base.OnTouchEvent(e);

@@ -38,13 +38,7 @@ public class CharacterDetailActivity : Activity
     void PlayEntrance()
     {
         if (_detailContent == null) return;
-        try
-        {
-            var decel = new Android.Views.Animations.DecelerateInterpolator();
-            _detailContent.Alpha = 0f;
-            _detailContent.TranslationY = UI.Dp(12);
-            _detailContent.Animate()?.Alpha(1f)?.TranslationY(0)?.SetDuration(380)?.SetInterpolator(decel)?.Start();
-        }
+        try { Motion.Rise(_detailContent, Motion.Trans, 0, 12); }
         catch (System.Exception) { }
     }
 
