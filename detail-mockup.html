@@ -92,11 +92,45 @@
     background:rgba(154,107,255,.14); border:1px solid rgba(154,107,255,.5);}
   .wfx{font-size:12px; color:var(--frost); margin:6px 0;}
   .wdesc{font-size:14px; color:var(--text2); line-height:1.6;}
-  .stat{display:flex; align-items:center; padding:7px 0;}
-  .stat .l{font-size:15px; color:var(--text1); width:48px;}
-  .stat .v{margin-left:auto; font-family:ui-monospace,Menlo,Consolas,monospace; font-size:16px; font-weight:800;}
-  .divider{height:1px; background:rgba(255,255,255,.09);}
-  .meta{text-align:center; font-size:12px; color:var(--text2); padding-top:12px; line-height:1.6;}
+  /* ── 魔兽世界风格属性面板 ── */
+  .wow-frame{
+    position:relative; border-radius:14px; padding:16px;
+    background:linear-gradient(to bottom, #16101C, #0B0712);
+    border:2px solid var(--gold);
+    box-shadow:0 0 0 1px rgba(255,255,255,.03), inset 0 0 24px rgba(0,0,0,.5);
+  }
+  .wow-frame::before{
+    content:""; position:absolute; inset:5px; border-radius:12px;
+    border:1px solid rgba(232,184,75,.45); pointer-events:none;
+  }
+  .wow-frame::after{
+    content:""; position:absolute; inset:0; border-radius:14px; pointer-events:none;
+    background:
+      radial-gradient(circle at 5px 5px, var(--gold-hi) 0 3px, transparent 3.5px),
+      radial-gradient(circle at calc(100% - 5px) 5px, var(--gold-hi) 0 3px, transparent 3.5px),
+      radial-gradient(circle at 5px calc(100% - 5px), var(--gold-hi) 0 3px, transparent 3.5px),
+      radial-gradient(circle at calc(100% - 5px) calc(100% - 5px), var(--gold-hi) 0 3px, transparent 3.5px);
+  }
+  .wow-sec{display:flex; align-items:center; gap:10px; margin:2px 0 4px;}
+  .wow-sec .ln{flex:1; height:1px; background:linear-gradient(to right, transparent, rgba(232,184,75,.55), transparent);}
+  .wow-sec .dia{color:var(--gold); font-size:10px;}
+  .wow-sec span{font-size:13px; font-weight:800; letter-spacing:.2em; color:var(--gold);}
+  .wow-row{display:flex; align-items:center; padding:9px 0;}
+  .wow-badge{
+    width:34px; height:34px; border-radius:50%; flex:none;
+    display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:800;
+  }
+  .wow-name{margin-left:12px; display:flex; flex-direction:column;}
+  .wow-name .cn{font-size:15px; font-weight:800; color:var(--text1);}
+  .wow-name .en{font-size:10px; color:var(--text3); letter-spacing:.08em;}
+  .wow-val{margin-left:auto; display:flex; align-items:center; font-family:ui-monospace,Menlo,Consolas,monospace;}
+  .wow-val .num{font-size:18px; font-weight:800; color:var(--text1);}
+  .wow-val .bon{font-size:13px; font-weight:800; color:#46FF82; margin-left:6px;}
+  .wow-div{height:1px; background:rgba(232,184,75,.10);}
+  .wow-gdiv{display:flex; align-items:center; margin:6px 0;}
+  .wow-gdiv .ln{flex:1; height:1px; background:linear-gradient(to right, transparent, rgba(232,184,75,.55), transparent);}
+  .wow-gdiv .dia{color:var(--gold); font-size:11px; padding:0 12px;}
+  .wow-foot{text-align:center; font-size:12px; color:var(--text2); margin-top:12px; letter-spacing:.02em;}
   .skill{margin-bottom:10px;}
   .skill .st{font-size:10px; font-weight:800; color:var(--warning); margin-right:8px;}
   .skill .sn{font-size:14px; font-weight:800; color:var(--text1);}
@@ -142,18 +176,66 @@
       </div>
     </div>
 
-    <!-- 基本属性 -->
+    <!-- 基本属性（魔兽世界风格） -->
     <div class="section">
       <div class="sec-title"><div class="sec-bar"></div><span>基 本 属 性</span></div>
-      <div class="panel">
-        <div class="stat"><div class="l">ATK</div><div class="v" style="color:var(--danger)">3,182</div></div>
-        <div class="divider"></div>
-        <div class="stat"><div class="l">DEF</div><div class="v" style="color:var(--frost)">1,946</div></div>
-        <div class="divider"></div>
-        <div class="stat"><div class="l">HP</div><div class="v" style="color:var(--success)">12,740</div></div>
-        <div class="divider"></div>
-        <div class="stat"><div class="l">SPD</div><div class="v" style="color:var(--gold)">118</div></div>
-        <div class="meta">等级 Lv.80 · 星级 ★★★★★ · 天赋点 3 · 已拥有</div>
+      <div class="wow-frame">
+        <div class="wow-sec"><div class="ln"></div><div class="dia">◆</div><span>主 属 性</span><div class="dia">◆</div><div class="ln"></div></div>
+
+        <div class="wow-row">
+          <div class="wow-badge" style="color:var(--danger); background:rgba(255,77,94,.18); border:1.5px solid rgba(255,77,94,.55)">攻</div>
+          <div class="wow-name"><div class="cn">攻击</div><div class="en">ATTACK</div></div>
+          <div class="wow-val"><div class="num">3,182</div><div class="bon">+1,540</div></div>
+        </div>
+        <div class="wow-div"></div>
+        <div class="wow-row">
+          <div class="wow-badge" style="color:var(--frost); background:rgba(127,196,255,.18); border:1.5px solid rgba(127,196,255,.55)">防</div>
+          <div class="wow-name"><div class="cn">防御</div><div class="en">DEFENSE</div></div>
+          <div class="wow-val"><div class="num">1,946</div><div class="bon">+880</div></div>
+        </div>
+        <div class="wow-div"></div>
+        <div class="wow-row">
+          <div class="wow-badge" style="color:var(--success); background:rgba(53,208,127,.18); border:1.5px solid rgba(53,208,127,.55)">命</div>
+          <div class="wow-name"><div class="cn">生命</div><div class="en">HEALTH</div></div>
+          <div class="wow-val"><div class="num">12,740</div><div class="bon">+6,200</div></div>
+        </div>
+        <div class="wow-div"></div>
+        <div class="wow-row">
+          <div class="wow-badge" style="color:var(--gold); background:rgba(232,184,75,.18); border:1.5px solid rgba(232,184,75,.55)">速</div>
+          <div class="wow-name"><div class="cn">速度</div><div class="en">SPEED</div></div>
+          <div class="wow-val"><div class="num">118</div><div class="bon">+64</div></div>
+        </div>
+
+        <div class="wow-gdiv"><div class="ln"></div><div class="dia">◆</div><div class="ln"></div></div>
+
+        <div class="wow-sec"><div class="ln"></div><div class="dia">◆</div><span>次 级 属 性</span><div class="dia">◆</div><div class="ln"></div></div>
+
+        <div class="wow-row">
+          <div class="wow-badge" style="color:var(--warning); background:rgba(255,176,32,.18); border:1.5px solid rgba(255,176,32,.55)">暴</div>
+          <div class="wow-name"><div class="cn">暴击</div><div class="en">CRITICAL</div></div>
+          <div class="wow-val"><div class="num">34%</div><div class="bon">+12%</div></div>
+        </div>
+        <div class="wow-div"></div>
+        <div class="wow-row">
+          <div class="wow-badge" style="color:var(--violet); background:rgba(154,107,255,.18); border:1.5px solid rgba(154,107,255,.55)">急</div>
+          <div class="wow-name"><div class="cn">急速</div><div class="en">HASTE</div></div>
+          <div class="wow-val"><div class="num">29%</div><div class="bon">+18%</div></div>
+        </div>
+        <div class="wow-div"></div>
+        <div class="wow-row">
+          <div class="wow-badge" style="color:var(--frost2); background:rgba(74,144,217,.18); border:1.5px solid rgba(74,144,217,.55)">甲</div>
+          <div class="wow-name"><div class="cn">护甲</div><div class="en">ARMOR</div></div>
+          <div class="wow-val"><div class="num">4,112</div><div class="bon">+1,980</div></div>
+        </div>
+        <div class="wow-div"></div>
+        <div class="wow-row">
+          <div class="wow-badge" style="color:var(--gold); background:rgba(201,150,46,.18); border:1.5px solid rgba(201,150,46,.55)">挡</div>
+          <div class="wow-name"><div class="cn">格挡</div><div class="en">BLOCK</div></div>
+          <div class="wow-val"><div class="num">13%</div><div class="bon">+7%</div></div>
+        </div>
+
+        <div class="wow-div"></div>
+        <div class="wow-foot">等级 Lv.80 · 星级 ★★★★★ · 天赋点 3 · 已拥有</div>
       </div>
     </div>
 

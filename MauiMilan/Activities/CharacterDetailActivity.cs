@@ -22,6 +22,8 @@ public class CharacterDetailActivity : Activity
     private View? _heroView;
     private View[]? _staged;
     private readonly Handler _handler = new(Looper.MainLooper!);
+    // 魔兽世界风格数值增长的绿色（属性加成 +N）
+    private static readonly Color WoWGreen = Color.Rgb(70, 255, 130);
 
     protected override void OnCreate(Bundle? savedInstanceState)
     {
@@ -504,32 +506,65 @@ public class CharacterDetailActivity : Activity
         var density = Resources.DisplayMetrics.Density;
         int Dp(int v) => (int)(v * density);
         var stats = GameState.ComputeStats(_view);
-        var world = AppTheme.World(_view.World);
+        var baseStats = ComputeBaseStats(_view);
 
-        var box = new LinearLayout(this) { Orientation = Orientation.Vertical };
-        box.Background = UI.GlassPanel(14);
-        box.SetPadding(Dp(16), Dp(12), Dp(16), Dp(12));
+        // 魔兽世界风格角色面板：暗色底 + 金色双描边 + 四角菱形饰钉；主/次级属性分组。
+        var frame = new WoWStatsFrame(this);
+        frame.LayoutParameters = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MatchParent, ViewGroup.LayoutParams.WrapContent);
+        frame.Background = new GradientDrawable(
+            GradientDrawable.Orientation.TopBottom,
+            new[] { Color.Argb(255, 0x16, 0x10, 0x1C).ToArgb(), Color.Argb(255, 0x0B, 0x07, 0x12).ToArgb() });
+        frame.SetPadding(Dp(16), Dp(16), Dp(16), Dp(14));
 
-        // 克制数据行：左标签 + 右等宽数值，行间细分隔线
-        var items = new (string label, int val, Color col)[]
+        var inner = new LinearLayout(this) { Orientation = Orientation.Vertical };
+        inner.LayoutParameters = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MatchParent, ViewGroup.LayoutParams.WrapContent);
+
+        // ── 主属性（对应魔兽 力量/敏捷/智力/耐力 四项基础属性）──
+        inner.AddView(WoWSectionHeader("主 属 性"));
+        inner.AddView(Spacer(4));
+
+        var primaries = new (string glyph, Color col, string cn, string en, int val, int bonus)[]
         {
-            ("ATK", stats.Atk, AppTheme.Danger),
-            ("DEF", stats.Def, AppTheme.Frost),
-            ("HP",  stats.Hp,  AppTheme.Success),
-            ("SPD", stats.Spd, AppTheme.Gold),
+            ("攻", AppTheme.Danger,  "攻击", "Attack",  stats.Atk,  stats.Atk  - baseStats.Atk),
+            ("防", AppTheme.Frost,   "防御", "Defense", stats.Def,  stats.Def  - baseStats.Def),
+            ("命", AppTheme.Success, "生命", "Health",  stats.Hp,   stats.Hp   - baseStats.Hp),
+            ("速", AppTheme.Gold,    "速度", "Speed",   stats.Spd,  stats.Spd  - baseStats.Spd),
         };
-        for (int i = 0; i < items.Length; i++)
+        for (int i = 0; i < primaries.Length; i++)
         {
-            box.AddView(StatRow(items[i].label, items[i].val, items[i].col));
-            if (i < items.Length - 1) box.AddView(ThinDivider());
+            inner.AddView(WoWStatRow(primaries[i].glyph, primaries[i].col, primaries[i].cn, primaries[i].en, primaries[i].val.ToString("N0"), primaries[i].bonus));
+            if (i < primaries.Length - 1) inner.AddView(WoWDivider());
         }
 
-        var extra = UI.Text($"等级 Lv.{_view.Save.Level}  ·  星级 {new string('★', _view.Save.Stars)}  ·  天赋点 {_view.Save.UnspentPoints}" + (_owned ? "" : "  ·  未拥有"), 12, world.TextSecondary);
-        extra.SetPadding(0, Dp(12), 0, 0);
-        extra.Gravity = GravityFlags.CenterHorizontal;
-        box.AddView(extra);
+        // ── 次级属性（派生战斗属性，对应魔兽 暴击/急速/护甲/格挡）──
+        inner.AddView(Spacer(6));
+        inner.AddView(WoWGroupDivider());
+        inner.AddView(Spacer(6));
+        inner.AddView(WoWSectionHeader("次 级 属 性"));
+        inner.AddView(Spacer(4));
 
-        return box;
+        var secCur = DeriveSecondary(stats);
+        var secBase = DeriveSecondary(baseStats);
+        var secondaries = new (string glyph, Color col, string cn, string en, string val, int bonus)[]
+        {
+            ("暴", AppTheme.Warning,   "暴击", "Critical", secCur.crit + "%",  secCur.crit  - secBase.crit),
+            ("急", AppTheme.Violet,    "急速", "Haste",    secCur.haste + "%", secCur.haste - secBase.haste),
+            ("甲", AppTheme.FrostDeep, "护甲", "Armor",    secCur.armor.ToString("N0"), secCur.armor - secBase.armor),
+            ("挡", AppTheme.GoldDeep,  "格挡", "Block",    secCur.block + "%", secCur.block - secBase.block),
+        };
+        for (int i = 0; i < secondaries.Length; i++)
+        {
+            inner.AddView(WoWStatRow(secondaries[i].glyph, secondaries[i].col, secondaries[i].cn, secondaries[i].en, secondaries[i].val, secondaries[i].bonus));
+            if (i < secondaries.Length - 1) inner.AddView(WoWDivider());
+        }
+
+        // 页脚：等级 / 星级 / 天赋点
+        inner.AddView(WoWDivider());
+        inner.AddView(Spacer(4));
+        inner.AddView(WoWFooter());
+
+        frame.AddView(inner);
+        return frame;
     }
 
     View BuildSkillPanel()
@@ -658,32 +693,208 @@ public class CharacterDetailActivity : Activity
         return row;
     }
 
-    View StatRow(string label, int value, Color color)
+    // 魔兽世界风格属性行：圆形角色徽章 + 中英名称 + 等宽数值 + 绿色加成。
+    View WoWStatRow(string glyph, Color col, string cn, string en, string valueText, int bonus)
     {
         var row = new LinearLayout(this) { Orientation = Orientation.Horizontal };
-        row.SetPadding(0, UI.Dp(7), 0, UI.Dp(7));
+        row.SetGravity(GravityFlags.CenterVertical);
+        row.SetPadding(0, UI.Dp(9), 0, UI.Dp(9));
 
-        var name = UI.Text(label, 15, AppTheme.Text1);
-        name.SetPadding(0, 0, UI.Dp(10), 0);
-        var spacer = new View(this) { LayoutParameters = new LinearLayout.LayoutParams(0, 0, 1f) };
-        var val = UI.Text(value.ToString("N0"), 16, color, bold: true);
-        UI.Tabular(val);
+        row.AddView(StatBadge(glyph, col));
 
-        row.AddView(name); row.AddView(spacer); row.AddView(val);
+        var nameBlock = new LinearLayout(this) { Orientation = Orientation.Vertical };
+        nameBlock.SetPadding(UI.Dp(12), 0, 0, 0);
+        nameBlock.AddView(UI.Text(cn, 15, AppTheme.Text1, bold: true));
+        var enTv = UI.Text(en, 10, AppTheme.Text3);
+        enTv.LetterSpacing = 0.08f;
+        nameBlock.AddView(enTv);
+        row.AddView(nameBlock);
+
+        row.AddView(new View(this) { LayoutParameters = new LinearLayout.LayoutParams(0, 0, 1f) });
+
+        var valBlock = new LinearLayout(this) { Orientation = Orientation.Horizontal };
+        valBlock.SetGravity(GravityFlags.CenterVertical);
+        var valTv = UI.Text(valueText, 18, AppTheme.Text1, bold: true);
+        UI.Tabular(valTv);
+        valBlock.AddView(valTv);
+        if (bonus > 0)
+        {
+            var bTv = UI.Text(" +" + bonus, 13, WoWGreen, bold: true);
+            UI.Tabular(bTv);
+            bTv.SetPadding(UI.Dp(6), 0, 0, 0);
+            valBlock.AddView(bTv);
+        }
+        row.AddView(valBlock);
         return row;
     }
 
-    View ThinDivider()
+    // 圆形角色徽章：暗底 + 角色色描边 + 中文单字字形
+    View StatBadge(string glyph, Color col)
+    {
+        var badge = new TextView(this) { Text = glyph, Gravity = GravityFlags.Center };
+        badge.SetTextColor(Color.Argb(255, col.R, col.G, col.B));
+        badge.SetTextSize(ComplexUnitType.Sp, 16);
+        badge.SetTypeface(Typeface.DefaultBold, TypefaceStyle.Bold);
+        var gd = new GradientDrawable();
+        gd.SetShape(Android.Graphics.Drawables.ShapeType.Oval);
+        gd.SetColor(Color.Argb(45, col.R, col.G, col.B).ToArgb());
+        gd.SetStroke(UI.Dp(1.5f), Color.Argb(195, col.R, col.G, col.B));
+        badge.Background = gd;
+        badge.LayoutParameters = new LinearLayout.LayoutParams(UI.Dp(34), UI.Dp(34));
+        return badge;
+    }
+
+    // 居中分组标题：两侧金色渐隐线 + ◆ + 标题
+    View WoWSectionHeader(string title)
+    {
+        var row = new LinearLayout(this) { Orientation = Orientation.Horizontal };
+        row.SetGravity(GravityFlags.CenterVertical);
+        var left = new View(this) { LayoutParameters = new LinearLayout.LayoutParams(0, UI.Dp(1), 1f) };
+        left.Background = LineGold();
+        var d1 = UI.Text("◆", 10, AppTheme.Gold);
+        d1.SetPadding(UI.Dp(10), 0, UI.Dp(6), 0);
+        var t = UI.Text(title, 13, AppTheme.Gold, bold: true);
+        t.LetterSpacing = 0.2f;
+        var d2 = UI.Text("◆", 10, AppTheme.Gold);
+        d2.SetPadding(UI.Dp(6), 0, UI.Dp(10), 0);
+        var right = new View(this) { LayoutParameters = new LinearLayout.LayoutParams(0, UI.Dp(1), 1f) };
+        right.Background = LineGold();
+        row.AddView(left); row.AddView(d1); row.AddView(t); row.AddView(d2); row.AddView(right);
+        return row;
+    }
+
+    // 行间细分隔（金 α 发丝线）
+    View WoWDivider()
     {
         var v = new View(this);
         v.LayoutParameters = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MatchParent, UI.Dp(1));
-        v.SetBackgroundColor(Color.Argb(22, 255, 255, 255));
+        v.SetBackgroundColor(Color.Argb(24, AppTheme.Gold.R, AppTheme.Gold.G, AppTheme.Gold.B));
         return v;
+    }
+
+    // 组间分隔：线 + 中心 ◆ + 线
+    View WoWGroupDivider()
+    {
+        var row = new LinearLayout(this) { Orientation = Orientation.Horizontal };
+        row.SetGravity(GravityFlags.CenterVertical);
+        var left = new View(this) { LayoutParameters = new LinearLayout.LayoutParams(0, UI.Dp(1), 1f) };
+        left.Background = LineGold();
+        var d = UI.Text("◆", 11, AppTheme.Gold);
+        d.SetPadding(UI.Dp(12), 0, UI.Dp(12), 0);
+        var right = new View(this) { LayoutParameters = new LinearLayout.LayoutParams(0, UI.Dp(1), 1f) };
+        right.Background = LineGold();
+        row.AddView(left); row.AddView(d); row.AddView(right);
+        return row;
+    }
+
+    View WoWFooter()
+    {
+        var wrap = new LinearLayout(this) { Orientation = Orientation.Horizontal };
+        wrap.SetGravity(GravityFlags.Center);
+        var txt = UI.Text(
+            $"等级 Lv.{_view.Save.Level}   ·   星级 {new string('★', _view.Save.Stars)}   ·   天赋点 {_view.Save.UnspentPoints}" + (_owned ? "" : "   ·   未拥有"),
+            12, AppTheme.Text2);
+        txt.Gravity = GravityFlags.CenterHorizontal;
+        wrap.AddView(txt);
+        return wrap;
+    }
+
+    Drawable LineGold()
+    {
+        return new GradientDrawable(
+            GradientDrawable.Orientation.LeftRight,
+            new[] {
+                Color.Argb(0, AppTheme.Gold.R, AppTheme.Gold.G, AppTheme.Gold.B).ToArgb(),
+                Color.Argb(130, AppTheme.Gold.R, AppTheme.Gold.G, AppTheme.Gold.B).ToArgb(),
+                Color.Argb(0, AppTheme.Gold.R, AppTheme.Gold.G, AppTheme.Gold.B).ToArgb()
+            });
+    }
+
+    // 由主属性派生次级战斗属性（透明公式，仅用于面板展示）
+    (int crit, int haste, int armor, int block) DeriveSecondary(Milan.Domain.Battle.UnitStats s)
+    {
+        int Clamp(int v, int lo, int hi) => System.Math.Max(lo, System.Math.Min(hi, v));
+        return (
+            Clamp(8 + s.Atk / 120, 8, 60),
+            Clamp(5 + s.Spd * 2, 5, 50),
+            (int)(s.Def * 1.6 + s.Hp * 0.05),
+            Clamp(3 + s.Def / 200, 3, 30)
+        );
+    }
+
+    // 1 级基准属性（用于绿色加成 = 当前 - 基准）
+    Milan.Domain.Battle.UnitStats ComputeBaseStats(OwnedCharacterView ch)
+    {
+        var engine = new Milan.Domain.Progression.ProgressionEngine();
+        int stg = System.Math.Max(1, ch.Save.Stage);
+        var bs = ch.Def?.BaseStats;
+        int Base(int i, int fb) => bs != null && i < bs.Length ? bs[i] : fb;
+        return new Milan.Domain.Battle.UnitStats
+        {
+            CharacterId = ch.Save.CharacterId,
+            Atk = engine.StatAtLevel(Base(0, 100), 1, stg, 1f),
+            Def = engine.StatAtLevel(Base(1, 80), 1, stg, 1f),
+            Hp = engine.StatAtLevel(Base(2, 1000), 1, stg, 1f),
+            Spd = engine.StatAtLevel(Base(3, 12), 1, stg, 1f),
+        };
     }
 
     View Spacer(int h)
     {
         var density = Resources.DisplayMetrics.Density;
         return new View(this) { LayoutParameters = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MatchParent, (int)(h * density)) };
+    }
+
+    // 魔兽世界风格面板外框：暗底 + 金色双描边 + 四角菱形饰钉。
+    // 复用 Paint/Path/RectF，OnDraw 空尺寸保护。
+    private sealed class WoWStatsFrame : FrameLayout
+    {
+        private readonly Paint _p = new() { AntiAlias = true };
+        private readonly Android.Graphics.Path _diamond = new();
+        private readonly RectF _r = new();
+
+        public WoWStatsFrame(Context ctx) : base(ctx) => SetWillNotDraw(false);
+
+        protected override void OnDraw(Canvas canvas)
+        {
+            base.OnDraw(canvas);
+            int w = Width, h = Height;
+            if (w == 0 || h == 0) return;
+            var density = Resources.DisplayMetrics.Density;
+            float Dp(float v) => v * density;
+            float rad = Dp(14);
+            _p.Reset(); _p.AntiAlias = true;
+
+            // 外描边（金）
+            _p.SetStyle(Paint.Style.Stroke);
+            _p.StrokeWidth = Dp(2);
+            _p.Color = AppTheme.Gold;
+            _r.Set(0, 0, w, h);
+            canvas.DrawRoundRect(_r, rad, rad, _p);
+
+            // 内描边（细金，低透明）
+            float inset = Dp(5);
+            _p.StrokeWidth = Dp(1);
+            _p.Color = Color.Argb(130, AppTheme.Gold.R, AppTheme.Gold.G, AppTheme.Gold.B);
+            _r.Set(inset, inset, w - inset, h - inset);
+            canvas.DrawRoundRect(_r, rad - Dp(2), rad - Dp(2), _p);
+
+            // 四角菱形饰钉
+            float d = Dp(4.5f);
+            DrawDiamond(canvas, inset, inset, d);
+            DrawDiamond(canvas, w - inset, inset, d);
+            DrawDiamond(canvas, inset, h - inset, d);
+            DrawDiamond(canvas, w - inset, h - inset, d);
+        }
+
+        private void DrawDiamond(Canvas c, float x, float y, float r)
+        {
+            _p.Reset(); _p.AntiAlias = true;
+            _p.SetStyle(Paint.Style.Fill);
+            _p.Color = AppTheme.GoldHi;
+            _diamond.Reset();
+            _diamond.MoveTo(x, y - r); _diamond.LineTo(x + r, y); _diamond.LineTo(x, y + r); _diamond.LineTo(x - r, y); _diamond.Close();
+            c.DrawPath(_diamond, _p);
+        }
     }
 }
