@@ -6,71 +6,47 @@
 <title>卡背 · 黑客帝国数字雨预览</title>
 <style>
   :root{
-    --green:#00ff5a;
+    --green:#00ff41;
     --green-dim:rgba(0,255,90,.7);
-    --green-faint:rgba(0,255,90,.55);
-    --bg:#020a05;
+    --bg:#020804;
   }
   *{box-sizing:border-box;}
   body{
     margin:0; min-height:100vh;
-    background:radial-gradient(120% 120% at 50% 0%, #0a0f0c 0%, #000 70%);
-    color:#cfe; font-family:"SFMono-Regular",ui-monospace,Menlo,Consolas,monospace;
+    background:#000; color:#cfe;
+    font-family:ui-monospace,Menlo,Consolas,monospace;
     display:flex; flex-direction:column; align-items:center; gap:22px; padding:34px 16px 50px;
   }
-  h1{font-size:15px; letter-spacing:.32em; color:var(--green-dim); font-weight:600; margin:0;}
+  h1{font-size:14px; letter-spacing:.34em; color:var(--green-dim); font-weight:600; margin:0;}
   .row{display:flex; gap:34px; flex-wrap:wrap; justify-content:center;}
   .card{
     position:relative; width:300px; height:420px; border-radius:16px; overflow:hidden;
     background:var(--bg); border:2px solid rgba(0,255,90,.85);
-    box-shadow:0 0 22px rgba(0,255,90,.35), inset 0 0 26px rgba(0,255,90,.12);
+    box-shadow:0 0 18px rgba(0,255,90,.3);
   }
   .card.small{width:180px; height:252px;}
   .card canvas{position:absolute; inset:0; width:100%; height:100%;}
-  .top{position:absolute; top:16px; left:0; right:0; text-align:center; font-size:9px;
-    letter-spacing:.3em; color:var(--green-dim); z-index:2;}
-  .milan{position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); z-index:2;
-    font-size:22px; font-weight:700; letter-spacing:.12em; color:var(--green);
-    text-shadow:0 0 12px var(--green); background:rgba(0,10,4,.62);
-    padding:8px 20px; border-radius:10px;}
-  .small .milan{font-size:15px; padding:6px 13px;}
-  .bottom{position:absolute; bottom:14px; left:0; right:0; text-align:center; font-size:8px;
-    letter-spacing:.16em; color:var(--green-faint); z-index:2;}
-  /* 四角 HUD 角标 */
-  .corner{position:absolute; width:15px; height:15px; border:2px solid var(--green); z-index:3; opacity:.92;}
-  .tl{top:9px; left:9px; border-right:none; border-bottom:none;}
-  .tr{top:9px; right:9px; border-left:none; border-bottom:none;}
-  .bl{bottom:9px; left:9px; border-right:none; border-top:none;}
-  .br{bottom:9px; right:9px; border-left:none; border-top:none;}
+  .milan{
+    position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); z-index:2;
+    font-size:20px; font-weight:700; letter-spacing:.12em; color:rgba(0,255,90,.55);
+    text-shadow:0 0 10px rgba(0,255,90,.5);
+  }
+  .small .milan{font-size:14px;}
   .cap{font-size:11px; color:#7fd9a0; letter-spacing:.12em; opacity:.7;}
 </style>
 </head>
 <body>
   <h1>M A T R I X &nbsp; C A R D &nbsp; B A C K</h1>
   <div class="row">
-    <div class="card">
-      <canvas></canvas>
-      <div class="corner tl"></div><div class="corner tr"></div>
-      <div class="corner bl"></div><div class="corner br"></div>
-      <div class="top">SYSTEM ONLINE</div>
-      <div class="milan">MILAN</div>
-      <div class="bottom">WAKE UP · 0101</div>
-    </div>
-    <div class="card small">
-      <canvas></canvas>
-      <div class="corner tl"></div><div class="corner tr"></div>
-      <div class="corner bl"></div><div class="corner br"></div>
-      <div class="top">SYS</div>
-      <div class="milan">MILAN</div>
-      <div class="bottom">0101</div>
-    </div>
+    <div class="card"><canvas></canvas><div class="milan">MILAN</div></div>
+    <div class="card small"><canvas></canvas><div class="milan">MILAN</div></div>
   </div>
   <div class="cap">抽卡竖卡背（左） · Battle 手牌卡背（右）— 数字雨为实时动画</div>
 
 <script>
 const GLYPHS = (() => {
   let s = '';
-  for (let c = 0x30A0; c <= 0x30FF; c++) s += String.fromCharCode(c); // 片假名
+  for (let c = 0x30A0; c <= 0x30FF; c++) s += String.fromCharCode(c); // 半角片假名
   s += '0123456789ABCDEFZ:.=*+<>|';
   return s;
 })();
@@ -89,24 +65,27 @@ function rain(canvas){
     for (let i = 0; i < n; i++){
       cols[i] = i * colW + colW / 2;
       head[i] = -Math.random() * H;
-      speed[i] = (1.4 + Math.random() * 3.2) * dpr;
+      speed[i] = (2.4 + Math.random() * 4) * dpr;
     }
     ctx.fillStyle = '#000'; ctx.fillRect(0,0,W,H);
   }
   resize();
   window.addEventListener('resize', resize);
   function frame(){
-    ctx.fillStyle = 'rgba(0,0,0,0.165)';     // 拖尾渐隐
+    ctx.fillStyle = 'rgba(0,0,0,0.086)';     // 长拖尾渐隐
     ctx.fillRect(0,0,W,H);
     ctx.font = (13 * (window.devicePixelRatio||1)) + 'px monospace';
     ctx.textAlign = 'center';
     for (let i = 0; i < head.length; i++){
       head[i] += speed[i];
-      if (head[i] > H + 40) { head[i] = -Math.random()*H*0.4; speed[i] = (1.4+Math.random()*3.2)*(window.devicePixelRatio||1); }
+      if (head[i] > H + 40){ head[i] = -Math.random()*H*0.4; speed[i] = (2.4+Math.random()*4)*(window.devicePixelRatio||1); }
       const y = head[i];
       if (y < -20) continue;
-      ctx.fillStyle = 'rgba(205,255,215,0.95)';     // 亮白头
-      ctx.fillText(GLYPHS[(Math.random()*GLYPHS.length)|0], cols[i], y);
+      const g = GLYPHS[(Math.random()*GLYPHS.length)|0];
+      ctx.fillStyle = '#00ff41';                 // 绿码主体
+      ctx.fillText(g, cols[i], y);
+      ctx.fillStyle = 'rgba(225,255,230,0.95)';  // 亮白头（雨滴尖端）
+      ctx.fillText(g, cols[i], y);
     }
     requestAnimationFrame(frame);
   }

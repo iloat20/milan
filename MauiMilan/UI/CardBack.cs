@@ -9,17 +9,17 @@ using System.Collections.Generic;
 namespace Milan.Maui;
 
 /// <summary>
-/// 统一卡背（2D）— 黑客帝国（The Matrix）数字雨风格：纯黑底 + 下落的绿色片假名/数字符文 +
-/// 亮白头部与渐隐拖尾 + 绿光圆角边框 + 四角 HUD 角标 + 终端文字层。抽卡翻转卡与 Battle 手牌卡背共用。
-/// 此元素刻意脱离暗夜神性 twilight 调色板，走 Matrix 绿光语汇（用户明确指定）。
+/// 统一卡背（2D）— 黑客帝国（The Matrix）数字雨风格：纯黑底 + 铺满整屏的绿色下落码字
+/// （片假名 / 数字 / 符号）+ 雨滴尖端亮白 + 长拖尾，MILAN 仅作半透明幽灵水印。
+/// 抽卡翻转卡与 Battle 手牌卡背共用。此元素刻意脱离暗夜神性 twilight 调色板，走 Matrix 绿光语汇。
 /// </summary>
 public static class CardBack
 {
     // Matrix 绿光语汇（internal：供并列的 MatrixBackView 复用）
-    internal static readonly Color Green = Color.Rgb(0, 255, 90);
-    internal static readonly Color GreenDim = Color.Argb(180, 0, 255, 90);
-    internal static readonly Color GreenFaint = Color.Argb(140, 0, 255, 90);
-    internal static readonly Color Head = Color.Rgb(205, 255, 215); // 雨滴头部：亮白绿
+    internal static readonly Color Green = Color.Rgb(0, 255, 65);   // 码字主绿
+    internal static readonly Color GreenDim = Color.Argb(170, 0, 255, 90);
+    internal static readonly Color GreenFaint = Color.Argb(120, 0, 255, 90);
+    internal static readonly Color Tip = Color.Rgb(225, 255, 230);  // 雨滴尖端：亮白绿
 
     public static FrameLayout Build(Context ctx, int w, int h)
     {
@@ -33,7 +33,7 @@ public static class CardBack
 
         // 背景：近黑底（数字雨会覆盖，此处仅防首帧闪烁）+ 圆角
         var outer = new GradientDrawable();
-        outer.SetColor(Color.Rgb(2, 10, 5).ToArgb());
+        outer.SetColor(Color.Rgb(2, 8, 4).ToArgb());
         outer.SetCornerRadius(dp(14));
         fr.Background = outer;
 
@@ -44,44 +44,16 @@ public static class CardBack
         };
         fr.AddView(rain);
 
-        // 顶部终端条：SYSTEM ONLINE
-        var topTag = UI.Text("SYSTEM ONLINE", dp(8), GreenDim);
-        topTag.LetterSpacing = 0.30f;
-        topTag.Gravity = GravityFlags.CenterHorizontal;
-        topTag.LayoutParameters = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MatchParent, ViewGroup.LayoutParams.WrapContent)
-        {
-            Gravity = GravityFlags.Top,
-            TopMargin = dp(16)
-        };
-        fr.AddView(topTag);
-
-        // 中央徽记：MILAN（等宽绿光，深底药丸保证雨幕上可读）
-        var milan = UI.Text("MILAN", dp(20), Green, bold: true);
+        // 幽灵水印：MILAN（半透明绿光，无药丸遮挡，让雨幕透出）
+        var milan = UI.Text("MILAN", dp(18), Color.Argb(150, 0, 255, 90));
         UI.Tabular(milan);
         milan.SetShadowLayer(dp(10), 0, 0, Green);
         milan.Gravity = GravityFlags.Center;
-        var pill = new GradientDrawable();
-        pill.SetColor(Color.Argb(160, 0, 10, 4).ToArgb());
-        pill.SetCornerRadius(dp(10));
-        milan.Background = pill;
-        milan.SetPadding(dp(20), dp(8), dp(20), dp(8));
         milan.LayoutParameters = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.WrapContent, ViewGroup.LayoutParams.WrapContent)
         {
             Gravity = GravityFlags.Center
         };
         fr.AddView(milan);
-
-        // 底部状态码：WAKE UP · 0101
-        var sub = UI.Text("WAKE UP · 0101", dp(8), GreenFaint);
-        UI.Tabular(sub);
-        sub.LetterSpacing = 0.18f;
-        sub.Gravity = GravityFlags.CenterHorizontal;
-        sub.LayoutParameters = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MatchParent, ViewGroup.LayoutParams.WrapContent)
-        {
-            Gravity = GravityFlags.Bottom,
-            BottomMargin = dp(14)
-        };
-        fr.AddView(sub);
 
         return fr;
     }
@@ -89,14 +61,14 @@ public static class CardBack
 
 /// <summary>
 /// 卡背数字雨层（自绘 + 动画）。继承 AnimatedEffectView：不可见/脱离窗口自动停帧。
-/// 离屏 Bitmap 缓冲做拖尾：每帧半透明黑覆盖整图（渐隐），再在每列头部位置画一颗亮白绿字符；
-/// 旧头部留在缓冲里被逐帧压暗 → 形成下落拖尾。复用单一 Paint 与 Bitmap，OnDraw 空尺寸保护，
-/// Dispose 释放 native 资源（遵守项目铁律）。
+/// 离屏 Bitmap 缓冲做拖尾：每帧半透明黑覆盖整图（长拖尾渐隐），再在每列头部位置画一颗亮绿码字、
+/// 叠一颗亮白头（雨滴尖端）；旧码字留在缓冲里被逐帧压暗 → 形成绿色码字长拖尾。
+/// 复用单一 Paint 与 Bitmap，OnDraw 空尺寸保护，Dispose 释放 native 资源（遵守项目铁律）。
 /// </summary>
 internal sealed class MatrixBackView : AnimatedEffectView
 {
     private readonly Paint _p = new() { AntiAlias = true };
-    private readonly Paint _fade = new() { Color = Color.Black, Alpha = 42 }; // 拖尾渐隐强度
+    private readonly Paint _fade = new() { Color = Color.Black, Alpha = 22 }; // 拖尾渐隐强度（低=长尾）
     private readonly System.Random _rnd = new();
 
     private Bitmap? _buf;
@@ -110,7 +82,7 @@ internal sealed class MatrixBackView : AnimatedEffectView
     private static char[] BuildGlyphs()
     {
         var list = new List<char>();
-        for (int c = 0x30A0; c <= 0x30FF; c++) list.Add((char)c);          // 片假名
+        for (int c = 0x30A0; c <= 0x30FF; c++) list.Add((char)c);          // 半角片假名
         foreach (var ch in "0123456789ABCDEFZ:.=*+<>|") list.Add(ch);      // 数字 / 拉丁 / 符号
         return list.ToArray();
     }
@@ -141,7 +113,7 @@ internal sealed class MatrixBackView : AnimatedEffectView
         {
             _colX[i] = i * colW + colW / 2f;
             _head[i] = -_rnd.Next(0, h);
-            _speed[i] = (1.4f + (float)_rnd.NextDouble() * 3.2f) * density;
+            _speed[i] = (2.4f + (float)_rnd.NextDouble() * 4f) * density;
         }
         _gw = w; _gh = h;
     }
@@ -154,41 +126,35 @@ internal sealed class MatrixBackView : AnimatedEffectView
         if (_buf == null || _bufCanvas == null || _head == null || _speed == null || _colX == null) return;
 
         float density = Resources?.DisplayMetrics?.Density ?? 1f;
-        int colH = UI.Dp(13);
 
-        // 1) 整图压暗 → 旧头部渐隐成拖尾
+        // 1) 整图压暗 → 旧码字渐隐成绿色长拖尾
         _bufCanvas.DrawRect(0, 0, w, h, _fade);
 
-        // 2) 推进每列并在头部画亮白绿字符
+        // 2) 推进每列：先画亮绿码字（拖尾主体），再叠亮白头（雨滴尖端）
         _p.SetStyle(Paint.Style.Fill);
         _p.TextSize = UI.Dp(13);
         _p.TextAlign = Paint.Align.Center;
-        _p.Color = CardBack.Head;
         for (int i = 0; i < _head.Length; i++)
         {
             _head[i] += _speed[i];
             if (_head[i] > h + UI.Dp(40))
             {
                 _head[i] = -_rnd.Next(0, (int)(h * 0.4f));
-                _speed[i] = (1.4f + (float)_rnd.NextDouble() * 3.2f) * density;
+                _speed[i] = (2.4f + (float)_rnd.NextDouble() * 4f) * density;
             }
             float y = _head[i];
             if (y < -UI.Dp(20)) continue;
             char g = Glyphs[_rnd.Next(Glyphs.Length)];
+            _p.Color = CardBack.Green;
+            _bufCanvas.DrawText(g.ToString(), _colX[i], y, _p);
+            _p.Color = CardBack.Tip;
             _bufCanvas.DrawText(g.ToString(), _colX[i], y, _p);
         }
 
         // 3) 合成雨幕
         canvas.DrawBitmap(_buf, 0, 0, null);
 
-        // 4) CRT 扫描线（极淡绿）
-        _p.SetStyle(Paint.Style.Stroke);
-        _p.StrokeWidth = UI.Dp(1);
-        _p.Color = Color.Argb(16, 0, 255, 90);
-        for (int y2 = 0; y2 < h; y2 += UI.Dp(3))
-            canvas.DrawLine(0, y2, w, y2, _p);
-
-        // 5) 绿光圆角边框 + 四角 HUD 角标
+        // 4) 绿光圆角边框（仅细框，去除一切 HUD / 扫描线装饰）
         DrawFrame(canvas, w, h);
 
         NextFrame();
@@ -199,33 +165,13 @@ internal sealed class MatrixBackView : AnimatedEffectView
         float inset = UI.Dp(4);
         float r = UI.Dp(12);
         var rect = new RectF(inset, inset, w - inset, h - inset);
-
         _p.SetStyle(Paint.Style.Stroke);
-        // 外发光
         _p.StrokeWidth = UI.Dp(4);
-        _p.Color = Color.Argb(60, 0, 255, 90);
+        _p.Color = Color.Argb(55, 0, 255, 90);
         canvas.DrawRoundRect(rect, r, r, _p);
-        // 内清晰线
         _p.StrokeWidth = UI.Dp(1.5f);
         _p.Color = Color.Argb(230, 0, 255, 90);
         canvas.DrawRoundRect(rect, r, r, _p);
-
-        // 四角 HUD 角标
-        _p.StrokeWidth = UI.Dp(2);
-        _p.Color = Color.Argb(240, 0, 255, 90);
-        float m = UI.Dp(9), len = UI.Dp(15);
-        // 左上
-        canvas.DrawLine(m, m + len, m, m, _p);
-        canvas.DrawLine(m, m, m + len, m, _p);
-        // 右上
-        canvas.DrawLine(w - m - len, m, w - m, m, _p);
-        canvas.DrawLine(w - m, m, w - m, m + len, _p);
-        // 左下
-        canvas.DrawLine(m, h - m - len, m, h - m, _p);
-        canvas.DrawLine(m, h - m, m + len, h - m, _p);
-        // 右下
-        canvas.DrawLine(w - m - len, h - m, w - m, h - m, _p);
-        canvas.DrawLine(w - m, h - m - len, w - m, h - m, _p);
     }
 
     protected override void Dispose(bool disposing)
