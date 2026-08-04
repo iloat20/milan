@@ -186,7 +186,7 @@ public class HomeActivity : Activity
         // 深黑底 + 粒子
         var bgGrad = new GradientDrawable(
             GradientDrawable.Orientation.TlBr,
-            new[] { AppTheme.BgDeepest.ToArgb(), Color.ParseColor("#0E0A1E").ToArgb(), AppTheme.BgDeepest.ToArgb() });
+            new[] { AppTheme.BgDeepest.ToArgb(), AppTheme.BgMid.ToArgb(), AppTheme.BgDeepest.ToArgb() });
         root.Background = (bgGrad);
 
         var bg = new TwilightBackground(this);

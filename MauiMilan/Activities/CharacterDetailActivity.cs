@@ -482,7 +482,7 @@ public class CharacterDetailActivity : Activity
 
         box.AddView(StatRow("ATK", stats.Atk, AppTheme.Danger));
         box.AddView(StatRow("DEF", stats.Def, AppTheme.Frost));
-        box.AddView(StatRow("HP", stats.Hp, Color.ParseColor("#7ee787")));
+        box.AddView(StatRow("HP", stats.Hp, AppTheme.Success));
         box.AddView(StatRow("SPD", stats.Spd, AppTheme.Gold));
 
         var extra = UI.Text($"等级 Lv.{_view.Save.Level}  ·  星级 {new string('★', _view.Save.Stars)}  ·  天赋点 {_view.Save.UnspentPoints}" + (_owned ? "" : "  ·  未拥有"), 12, world.TextSecondary);
@@ -512,7 +512,7 @@ public class CharacterDetailActivity : Activity
         foreach (var sk in _def.Skills)
         {
             var (from, _, _, _) = ElementTheme.For(sk.Element);
-            var typeColor = sk.Type == "Ultimate" ? Color.ParseColor("#FF6B00")
+            var typeColor = sk.Type == "Ultimate" ? AppTheme.Warning
                 : sk.Type == "Active" ? from : world.TextSecondary;
 
             var row = new LinearLayout(this) { Orientation = Orientation.Horizontal };

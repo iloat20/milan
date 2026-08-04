@@ -37,7 +37,7 @@ public class DeckActivity : Activity
         root.LayoutParameters = new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MatchParent, ViewGroup.LayoutParams.MatchParent);
         root.Background = (new GradientDrawable(
             GradientDrawable.Orientation.TlBr,
-            new[] { AppTheme.BgDeepest.ToArgb(), Color.ParseColor("#0E0A1E").ToArgb(), AppTheme.BgDeepest.ToArgb() }));
+            new[] { AppTheme.BgDeepest.ToArgb(), AppTheme.BgMid.ToArgb(), AppTheme.BgDeepest.ToArgb() }));
 
         var main = UI.VBox();
         main.LayoutParameters = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MatchParent, ViewGroup.LayoutParams.MatchParent);

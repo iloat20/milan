@@ -51,7 +51,7 @@ public class CollectionActivity : Activity
         root.LayoutParameters = new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MatchParent, ViewGroup.LayoutParams.MatchParent);
         root.SetPadding(Dp(16), Dp(40), Dp(16), Dp(16));
 
-        // Obsidian 深色渐变背景
+        // Twilight 深色渐变背景
         var bgGrad = new GradientDrawable();
         bgGrad.SetColors(new[] {
             AppTheme.BgDeepest.ToArgb(),

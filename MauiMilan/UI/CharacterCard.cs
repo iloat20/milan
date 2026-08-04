@@ -5,7 +5,6 @@ using Android.Text;
 using Android.Util;
 using Android.Views;
 using Android.Widget;
-using Milan.Domain.Battle;
 using Milan.Maui.Services;
 
 namespace Milan.Maui;
@@ -16,14 +15,8 @@ namespace Milan.Maui;
 /// </summary>
 public static class CharacterCard
 {
-    // Rarity palette
-    private static Color RarityColor(int r) => r switch
-    {
-        4 => Color.ParseColor("#FF6B00"),  // UR - orange-gold
-        3 => Color.ParseColor("#D070FF"),  // SSR - purple
-        2 => Color.ParseColor("#3AA0FF"),  // SR  - blue
-        _ => Color.ParseColor("#9E9E9E")   // R   - gray
-    };
+    // Rarity palette — 统一取自 AppTheme，避免多处配色漂移
+    private static Color RarityColor(int r) => AppTheme.RarityColor(r);
 
     private static string RarityName(int r) => r switch
     {
@@ -61,9 +54,9 @@ public static class CharacterCard
         portrait.SetPadding(0, 0, 0, Dp(8));
 
         // Name + title
-        var name = UI.Text(ch.Name, 15, AppTheme.TextPrimary, bold: true);
+        var name = UI.Text(ch.Name, 15, AppTheme.Text1, bold: true);
         name.SetMaxLines(1); name.Ellipsize = TextUtils.TruncateAt.End;
-        var title = UI.Text(ch.Title, 11, AppTheme.TextSecondary);
+        var title = UI.Text(ch.Title, 11, AppTheme.Text2);
         title.SetMaxLines(1); title.Ellipsize = TextUtils.TruncateAt.End;
 
         // Rarity + element row
@@ -90,7 +83,7 @@ public static class CharacterCard
 
     // ------------------------------------------------------------------ gacha result chip
 
-    public static View GachaChip(Context context, PullResult r)
+    public static View GachaChip(Context context, PullResult r, System.Action? onClick = null)
     {
         var density = context.Resources.DisplayMetrics.Density;
         int Dp(int v) => (int)(v * density);
@@ -111,17 +104,22 @@ public static class CharacterCard
         else
             chip.Background = UI.RoundRect(AppTheme.Surface, 12, 1, SetAlpha(rarityCol, 140));
 
-        var portrait = Portrait(context, element, glyph, r.Rarity, 44);
+        var portrait = Portrait(context, element, glyph, r.Rarity, 44, r.CharacterId ?? "");
         portrait.SetPadding(0, 0, 0, Dp(6));
         var tag = UI.Text(RarityName(r.Rarity), 12, rarityCol, bold: true);
         tag.Gravity = GravityFlags.CenterHorizontal;
-        var nm = UI.Text(r.CharacterName, 11, AppTheme.TextPrimary);
+        var nm = UI.Text(r.CharacterName, 11, AppTheme.Text1);
         nm.Gravity = GravityFlags.CenterHorizontal;
         nm.SetMaxLines(1); nm.Ellipsize = TextUtils.TruncateAt.End;
 
         chip.AddView(portrait);
         chip.AddView(tag);
         chip.AddView(nm);
+        if (onClick != null)
+        {
+            chip.Clickable = true; chip.Focusable = true;
+            UI.TapFeedback(chip, onClick);
+        }
         return CardEffects.Apply(context, chip, r.Rarity, rarityCol);
     }
 
@@ -137,9 +135,9 @@ public static class CharacterCard
     // ------------------------------------------------------------------ helpers
 
     private static View Portrait(Context context, OwnedCharacterView ch, int sizeDp)
-        => Portrait(context, ch.Element, ElementTheme.For(ch.Element).glyph, ch.Rarity, sizeDp);
+        => Portrait(context, ch.Element, ElementTheme.For(ch.Element).glyph, ch.Rarity, sizeDp, ch.Save.CharacterId);
 
-    private static View Portrait(Context context, string element, string glyph, int rarity, int sizeDp)
+    private static View Portrait(Context context, string element, string glyph, int rarity, int sizeDp, string characterId = "")
     {
         var density = context.Resources.DisplayMetrics.Density;
         int Dp(int v) => (int)(v * density);
@@ -148,28 +146,46 @@ public static class CharacterCard
         var box = new FrameLayout(context);
         box.LayoutParameters = new LinearLayout.LayoutParams(Dp(sizeDp), Dp(sizeDp));
 
-        var bg = new View(context);
-        bg.LayoutParameters = new FrameLayout.LayoutParams(Dp(sizeDp), Dp(sizeDp));
-        bg.Background = ElementTheme.Gradient(element);
-        ((GradientDrawable)bg.Background).SetCornerRadius(Dp(12));
+        // Try to use AI portrait if available
+        var bmp = PortraitLoader.Get(characterId);
+        if (bmp != null && !bmp.IsRecycled)
+        {
+            var iv = new ImageView(context);
+            iv.LayoutParameters = new FrameLayout.LayoutParams(Dp(sizeDp), Dp(sizeDp));
+            iv.SetImageBitmap(bmp);
+            iv.SetScaleType(ImageView.ScaleType.FitCenter);
+            // Rounded corners via clip
+            var bg = new Android.Graphics.Drawables.GradientDrawable();
+            bg.SetCornerRadius(Dp(12));
+            bg.SetColor(Color.Argb(40, 0, 0, 0));
+            box.Background = bg;
+            box.AddView(iv);
+        }
+        else
+        {
+            // Fallback: element gradient + glyph
+            var bg = new View(context);
+            bg.LayoutParameters = new FrameLayout.LayoutParams(Dp(sizeDp), Dp(sizeDp));
+            bg.Background = ElementTheme.Gradient(element);
+            ((GradientDrawable)bg.Background).SetCornerRadius(Dp(12));
 
-        // Diagonal rarity sheen
-        var sheen = new View(context);
-        var sheenLp = new FrameLayout.LayoutParams(Dp(sizeDp), Dp(sizeDp));
-        sheen.LayoutParameters = sheenLp;
-        sheen.Background = Sheen(rarity);
-        ((GradientDrawable)sheen.Background).SetCornerRadius(Dp(12));
+            var sheen = new View(context);
+            var sheenLp = new FrameLayout.LayoutParams(Dp(sizeDp), Dp(sizeDp));
+            sheen.LayoutParameters = sheenLp;
+            sheen.Background = Sheen(rarity);
+            ((GradientDrawable)sheen.Background).SetCornerRadius(Dp(12));
 
-        var g = new TextView(context) { Text = glyph, Gravity = GravityFlags.Center };
-        g.SetTextColor(Color.White);
-        g.SetTextSize(ComplexUnitType.Sp, sizeDp * 0.45f);
-        g.SetTypeface(null, TypefaceStyle.Bold);
-        g.SetShadowLayer(4, 0, 2, Color.Argb(130, 0, 0, 0));
-        g.LayoutParameters = new FrameLayout.LayoutParams(Dp(sizeDp), Dp(sizeDp));
+            var g = new TextView(context) { Text = glyph, Gravity = GravityFlags.Center };
+            g.SetTextColor(Color.White);
+            g.SetTextSize(ComplexUnitType.Sp, sizeDp * 0.45f);
+            g.SetTypeface(null, TypefaceStyle.Bold);
+            g.SetShadowLayer(4, 0, 2, Color.Argb(130, 0, 0, 0));
+            g.LayoutParameters = new FrameLayout.LayoutParams(Dp(sizeDp), Dp(sizeDp));
 
-        box.AddView(bg);
-        box.AddView(sheen);
-        box.AddView(g);
+            box.AddView(bg);
+            box.AddView(sheen);
+            box.AddView(g);
+        }
         return box;
     }
 
@@ -179,7 +195,7 @@ public static class CharacterCard
         {
             Text = new string('★', count)
         };
-        row.SetTextColor(Color.ParseColor("#FFD600"));
+        row.SetTextColor(AppTheme.Gold);
         row.SetTextSize(ComplexUnitType.Sp, sp);
         return row;
     }
