@@ -46,6 +46,9 @@ public class ProgressionActivity : Activity
     private TextView _stageText = null!;
     private TextView _ascendCost = null!;
     private View _btnAscend = null!;
+    private TextView _starText = null!;
+    private TextView _starCostText = null!;
+    private View _btnStarUp = null!;
     private LinearLayout _statsBox = null!;
     private TextView _talentPointText = null!;
     private LinearLayout _talentBox = null!;
@@ -133,6 +136,8 @@ public class ProgressionActivity : Activity
         inner.AddView(sLv); inner.AddView(Spacer(14)); staged.Add(sLv);
         var sAs = BuildSection("突 破", BuildAscendPanel());
         inner.AddView(sAs); inner.AddView(Spacer(14)); staged.Add(sAs);
+        var sStar = BuildSection("升 星", BuildStarPanel());
+        inner.AddView(sStar); inner.AddView(Spacer(14)); staged.Add(sStar);
         var sSt = BuildSection("属 性", BuildStatsPanel());
         inner.AddView(sSt); inner.AddView(Spacer(14)); staged.Add(sSt);
         var sTa = BuildSection("天 赋", BuildTalentPanel());
@@ -391,6 +396,34 @@ public class ProgressionActivity : Activity
         return box;
     }
 
+    // ───────────────────────── 升星 ─────────────────────────
+
+    View BuildStarPanel()
+    {
+        var box = new LinearLayout(this) { Orientation = Orientation.Vertical };
+        box.Background = UI.GlassPanel(14);
+        box.SetPadding(UI.Dp(16), UI.Dp(14), UI.Dp(16), UI.Dp(14));
+
+        var head = new LinearLayout(this) { Orientation = Orientation.Horizontal };
+        head.SetGravity(GravityFlags.CenterVertical);
+        _starText = UI.Text("", 18, AppTheme.Frost, bold: true);
+        head.AddView(_starText);
+        head.AddView(new View(this) { LayoutParameters = new LinearLayout.LayoutParams(0, 0, 1f) });
+        _starCostText = UI.Text("", 13, AppTheme.Text2);
+        UI.Tabular(_starCostText);
+        head.AddView(_starCostText);
+        box.AddView(head);
+        box.AddView(Spacer(10));
+
+        var row = new LinearLayout(this) { Orientation = Orientation.Horizontal };
+        _btnStarUp = ThemeButtons.Gold(this, "升 星");
+        _btnStarUp.LayoutParameters = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WrapContent, 1f);
+        _btnStarUp.Click += (_, _) => OnStarUp();
+        row.AddView(_btnStarUp);
+        box.AddView(row);
+        return box;
+    }
+
     // ───────────────────────── 属性 ─────────────────────────
 
     View BuildStatsPanel()
@@ -409,15 +442,17 @@ public class ProgressionActivity : Activity
         var cur = GameState.ComputeStats(_view);
         int cap = GameState.Service.MaxLevelForStage(_view.Save.Stage);
         int maxStg = _def.MaxStage;
+        int maxStars = _def.MaxStars;
         var nextLv = _view.Save.Level < cap ? GameState.ComputeStatsAt(_view, _view.Save.Level + 1, _view.Save.Stage) : (UnitStats?)null;
         var nextStg = _view.Save.Stage < maxStg ? GameState.ComputeStatsAt(_view, _view.Save.Level, _view.Save.Stage + 1) : (UnitStats?)null;
+        var nextStar = _view.Save.Stars < maxStars ? GameState.ComputeStatsAt(_view, _view.Save.Level, _view.Save.Stage, _view.Save.Stars + 1) : (UnitStats?)null;
 
-        var rows = new (string cn, int val, int? nl, int? ns)[]
+        var rows = new (string cn, int val, int? nl, int? ns, int? nstar)[]
         {
-            ("攻击", cur.Atk, nextLv?.Atk, nextStg?.Atk),
-            ("防御", cur.Def, nextLv?.Def, nextStg?.Def),
-            ("生命", cur.Hp, nextLv?.Hp, nextStg?.Hp),
-            ("速度", cur.Spd, nextLv?.Spd, nextStg?.Spd),
+            ("攻击", cur.Atk, nextLv?.Atk, nextStg?.Atk, nextStar?.Atk),
+            ("防御", cur.Def, nextLv?.Def, nextStg?.Def, nextStar?.Def),
+            ("生命", cur.Hp, nextLv?.Hp, nextStg?.Hp, nextStar?.Hp),
+            ("速度", cur.Spd, nextLv?.Spd, nextStg?.Spd, nextStar?.Spd),
         };
         foreach (var r in rows)
         {
@@ -431,13 +466,14 @@ public class ProgressionActivity : Activity
             line.AddView(val);
             _statsBox.AddView(line);
 
-            if (r.nl.HasValue || r.ns.HasValue)
+            if (r.nl.HasValue || r.ns.HasValue || r.nstar.HasValue)
             {
                 var sub = new LinearLayout(this) { Orientation = Orientation.Horizontal };
                 sub.SetGravity(GravityFlags.CenterVertical);
                 var sb = new System.Text.StringBuilder();
                 if (r.nl.HasValue) sb.Append($"Lv+1 → {r.nl.Value:N0}");
                 if (r.ns.HasValue) sb.Append((sb.Length > 0 ? "   ·   " : "") + $"突破 → {r.ns.Value:N0}");
+                if (r.nstar.HasValue) sb.Append((sb.Length > 0 ? "   ·   " : "") + $"升星 → {r.nstar.Value:N0}");
                 var subTv = UI.Text(sb.ToString(), 12, AppTheme.Frost);
                 UI.Tabular(subTv);
                 sub.AddView(subTv);
@@ -581,6 +617,17 @@ public class ProgressionActivity : Activity
         Refresh();
     }
 
+    void OnStarUp()
+    {
+        if (!_owned) { Toast("未拥有该角色"); return; }
+        if (!GameState.Service.StarUp(_def.CharacterId))
+        {
+            int cost = GameState.Service.StarUpFragments(_view.Save.Stars);
+            Toast(_view.Save.Stars >= _def.MaxStars ? "已满星" : "星魂碎片不足");
+        }
+        Refresh();
+    }
+
     void OnTalent(string nodeId)
     {
         if (!_owned) { Toast("未拥有该角色"); return; }
@@ -628,6 +675,18 @@ public class ProgressionActivity : Activity
         bool canAscend = _owned && !atMax && frags >= aFrag && soft >= aSoft;
         _btnAscend.Enabled = canAscend;
         _btnAscend.Alpha = canAscend ? 1f : 0.4f;
+
+        // 升星
+        int maxStars = _def.MaxStars;
+        bool starMax = save.Stars >= maxStars;
+        int sFrag = GameState.Service.StarUpFragments(save.Stars);
+        _starText.Text = starMax
+            ? $"{"★".PadLeft(save.Stars, '★')} 满星"
+            : $"{"★".PadLeft(save.Stars, '★')}{"☆".PadLeft(maxStars - save.Stars, '☆')}  {save.Stars}/{maxStars}";
+        _starCostText.Text = starMax ? "—" : $"❖ {sFrag:N0}";
+        bool canStar = _owned && !starMax && frags >= sFrag;
+        _btnStarUp.Enabled = canStar;
+        _btnStarUp.Alpha = canStar ? 1f : 0.4f;
 
         FillStats();
         _talentPointText.Text = $"× {save.UnspentPoints}";

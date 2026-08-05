@@ -863,6 +863,37 @@ public class GameService
         return true;
     }
 
+    /// <summary>升星（Stars+1）所需星魂碎片（随当前星数线性上升：1★→2★ 耗 20，2★→3★ 耗 40…）。</summary>
+    public int StarUpFragments(int stars) => System.Math.Max(1, stars) * 20;
+
+    /// <summary>升星（Stars+1）。需未达 MaxStars 且星魂碎片充足。落盘失败回滚。每次仅 +1 星。
+    /// 升星是星级的小幅属性加成（见 GameState.ComputeStatsAt 的 starMul），消耗重复角色补偿的星魂碎片。</summary>
+    public bool StarUp(string charId)
+    {
+        var save = GetSave(charId);
+        if (save == null) return false;
+        var def = Characters.FirstOrDefault(c => c.CharacterId == charId);
+        if (def == null || save.Stars >= def.MaxStars) return false;
+
+        int cost = StarUpFragments(save.Stars);
+        int have = GetStarFragments();
+        if (have < cost) return false;
+
+        int origFrags = have;
+        var item = SaveData.Items.FirstOrDefault(x => x.ItemId == StarFragmentItemId);
+        if (item != null) item.Count -= cost;
+        save.Stars += 1;
+        if (!_save.Save())
+        {
+            if (item != null) item.Count = origFrags;
+            save.Stars -= 1;
+            return false;
+        }
+        PublishCurrencyChanged();
+        PublishProgressionChanged(charId);
+        return true;
+    }
+
     /// <summary>取角色天赋树（含节点与前置关系）。无树返回 null。</summary>
     public TalentTreeData? GetTalentTree(string charId)
     {

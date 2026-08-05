@@ -68,15 +68,19 @@ public static class GameState
     public static Milan.Domain.Battle.UnitStats ComputeStats(OwnedCharacterView ch)
         => ComputeStatsAt(ch, ch.Save.Level, System.Math.Max(1, ch.Save.Stage));
 
-    /// <summary>在指定等级/阶段下计算属性（用于养成页"下一级 / 下一阶"预测值）。
-    /// 天赋加成按当前已点亮节点计算，不随等级/阶段假设改变。</summary>
-    public static Milan.Domain.Battle.UnitStats ComputeStatsAt(OwnedCharacterView ch, int level, int stage)
+    /// <summary>在指定等级/阶段/星级下计算属性（用于养成页"下一级 / 下一阶 / 升星"预测值）。
+    /// 天赋加成按当前已点亮节点计算，不随等级/阶段/星级假设改变。
+    /// <paramref name="stars"/> 缺省（&lt;0）时取 ch.Save.Stars 的实时值。</summary>
+    public static Milan.Domain.Battle.UnitStats ComputeStatsAt(OwnedCharacterView ch, int level, int stage, int stars = -1)
     {
         var def = ch.Def;
         var save = ch.Save;
         var engine = new ProgressionEngine();
         int stg = System.Math.Max(1, stage);
         int lv = System.Math.Max(1, level);
+        int st = stars < 0 ? (ch.Save?.Stars ?? 1) : stars;
+        // 星级小幅加成：每星 +5%（1★→×1.0，满 7★→×1.30）。并入 StatAtLevel 的倍率槽。
+        float starMul = 1f + System.Math.Max(0, st - 1) * 0.05f;
         if (def == null)
             return new Milan.Domain.Battle.UnitStats { CharacterId = save.CharacterId, Hp = 1 };
 
@@ -102,10 +106,10 @@ public static class GameState
         return new Milan.Domain.Battle.UnitStats
         {
             CharacterId = save.CharacterId,
-            Atk = (int)(engine.StatAtLevel(Base(0, 100), lv, stg, 1f) * (1 + atkB)),
-            Def = (int)(engine.StatAtLevel(Base(1, 80), lv, stg, 1f) * (1 + defB)),
-            Hp = (int)(engine.StatAtLevel(Base(2, 1000), lv, stg, 1f) * (1 + hpB)),
-            Spd = (int)(engine.StatAtLevel(Base(3, 12), lv, stg, 1f) * (1 + spdB)),
+            Atk = (int)(engine.StatAtLevel(Base(0, 100), lv, stg, starMul) * (1 + atkB)),
+            Def = (int)(engine.StatAtLevel(Base(1, 80), lv, stg, starMul) * (1 + defB)),
+            Hp = (int)(engine.StatAtLevel(Base(2, 1000), lv, stg, starMul) * (1 + hpB)),
+            Spd = (int)(engine.StatAtLevel(Base(3, 12), lv, stg, starMul) * (1 + spdB)),
         };
     }
 }
