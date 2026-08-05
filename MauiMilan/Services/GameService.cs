@@ -752,6 +752,28 @@ public class GameService
     /// 改动字段后再调此方法即可持久化，无需经抽卡路径。</summary>
     public void Save() => _save.Save();
 
+    // ─────────────────────────────────────────────────────────── 战绩
+    /// <summary>读取战绩（最近在前）。空列表返回新实例，调用方无需判 null。</summary>
+    public IReadOnlyList<BattleRecord> GetBattleRecords()
+    {
+        SaveData.BattleRecords ??= new();
+        return SaveData.BattleRecords;
+    }
+
+    /// <summary>追加一条战绩并落盘。落盘失败回滚本次追加（不广播事件，战绩非经济）。
+    /// 列表上限 50 条，超出丢弃最旧记录。</summary>
+    public void RecordBattle(BattleRecord rec)
+    {
+        if (rec == null) return;
+        SaveData.BattleRecords ??= new();
+        SaveData.BattleRecords.Add(rec);
+        const int MaxRecords = 50;
+        if (SaveData.BattleRecords.Count > MaxRecords)
+            SaveData.BattleRecords.RemoveRange(0, SaveData.BattleRecords.Count - MaxRecords);
+        if (!_save.Save())
+            SaveData.BattleRecords.Remove(rec); // 回滚，避免"内存与存档不一致"
+    }
+
     // ─────────────────────────────────────────────────────────── 养成操作
     // 所有写操作遵循 Pull 的事务范式：先预算/校验可支付，再变更内存并落盘；
     // 落盘失败回滚本次内存改动，绝不让"内存与存档不一致"。回滚路径不广播事件。

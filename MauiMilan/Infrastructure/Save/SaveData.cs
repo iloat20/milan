@@ -15,6 +15,7 @@ public class SaveData
     public List<string> OwnedSkins = new();
     public List<ItemSaveState> Items = new();
     public List<GachaCounterEntry> GachaCounters = new();
+    public List<BattleRecord> BattleRecords = new();
     public string UserId = "";
     public int ServerSyncStatus = 0;
 
@@ -80,6 +81,8 @@ public class SaveData
         d.OwnedCharacters.RemoveAll(x => x == null || x.CharacterId == null);
         d.Items.RemoveAll(x => x == null || x.ItemId == null);
         d.GachaCounters.RemoveAll(x => x == null || x.PoolId == null);
+        d.BattleRecords ??= new();
+        d.BattleRecords.RemoveAll(x => x == null);
     }
 
     public static SaveData CreateDefault() => new();
@@ -113,3 +116,15 @@ public class CharacterSaveState
 
 [System.Serializable]
 public class ItemSaveState { public string ItemId = ""; public int Count; }
+
+[System.Serializable]
+public class BattleRecord
+{
+    public string EnemyName = "";
+    public string EnemyElement = "";
+    public bool Victory;
+    public int Turns;
+    public int RemainingHp;   // 胜利时我方剩余总血量
+    public int TeamPower;     // 队伍战力快照（攻击总和）
+    public long Timestamp;    // 毫秒时间戳
+}
