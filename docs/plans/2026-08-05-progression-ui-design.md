@@ -63,5 +63,5 @@ _build 前若发现未提交改动编译不过，先修基线再叠加 UI。_
 
 ## 8. 风险与未决
 - **升星 (Stars)**：已实现（2026-08-05）。成本 = 当前星 × 20 星魂碎片，属性 +5%/星，UI 接入养成页「升星」面板；满星由 `CharacterDataEntry.MaxStars`（UR7/SSR6/SR5/R4）决定。
-- **天赋实际战力影响**：MVP 仅做记录 + 简易百分比加成显示；若要进 `BattleSimulator` 需扩展其读 `TalentPoints`（可后续）。
+- **天赋/升星实际战力影响**：已落地。`BattleSimulator.StrikeDamage`（atk-def/2）为战斗伤害单一事实来源，`BattleActivity` 出牌按其结算，攻方属性由 `GameState.ComputeStats` 生成（含等级/突破/天赋/升星加成），星级提升直接体现在每次伤害。设计稿原「需扩展 BattleSimulator 读 TalentPoints」已无需单独扩展——加成经由 ComputeStats 统一注入。
 - **经验来源**：本期不引入经验药，升级直接耗星尘，规避无 farming 来源的死循环；如后续加经验本再改 `LevelUp` 为耗经验物。

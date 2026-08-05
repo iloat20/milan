@@ -44,6 +44,11 @@ namespace Milan.Domain.Battle
             return new BattleResult { Victory = false, Turns = maxTurns, RemainingHp = a.Sum(x => Math.Max(0, x.Hp)) };
         }
 
+        /// <summary>单体攻击结算伤害（与 Simulate 内联公式一致，单一事实来源）。
+        /// 攻方属性由 GameState.ComputeStats 生成，已含等级/突破/天赋/升星的加成。</summary>
+        public static int StrikeDamage(UnitStats attacker, UnitStats defender)
+            => System.Math.Max(1, attacker.Atk - defender.Def / 2);
+
         class S { public UnitStats Stats; public int Hp; public bool A; }
     }
 }

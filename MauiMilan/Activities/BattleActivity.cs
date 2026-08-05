@@ -6,6 +6,7 @@ using Android.Text;
 using Android.Util;
 using Android.Views;
 using Android.Widget;
+using Milan.Domain.Battle;
 using Milan.Maui;
 using Milan.Maui.Services;
 
@@ -19,7 +20,11 @@ public class BattleActivity : Activity
     private View _enemyFill = null!;
     private TextView _enemyHpText = null!;
     private readonly Dictionary<View, string> _owner = new();
-    private int _enemyHp = 100;
+    private readonly Dictionary<View, UnitStats> _cardStats = new();
+    private int _enemyHp = 220;
+    private int _enemyMaxHp = 220;
+    private int _enemyDef = 50;
+    private UnitStats _enemyStats;
     private string _enemyElement = "Flame";
     private bool _stateInit; // #26: 防止横竖屏重建时重复初始化战斗状态
 
@@ -43,7 +48,10 @@ public class BattleActivity : Activity
         _owner.Clear(); // _owner 存的是旧视图对象，重建时必须清掉
         if (!_stateInit)
         {
-            _enemyHp = 100;
+            _enemyMaxHp = 220;
+            _enemyDef = 50;
+            _enemyHp = _enemyMaxHp;
+            _enemyStats = new UnitStats { Def = _enemyDef, Hp = _enemyMaxHp, CharacterId = "enemy" };
             // #27: 元素键必须是 ElementTheme 支持的名字，"Aqua"/"Volt"/"Terra" 会全部落到
             // default 分支变成炎属性，敌人配色永远是红的。
             var elems = new[] { "Flame", "Frost", "Thunder", "Earth" };
@@ -146,10 +154,14 @@ public class BattleActivity : Activity
         hpBar.AddView(_enemyFill);
         inner.AddView(hpBar);
 
-        _enemyHpText = UI.Text("HP 100 / 100", 11, AppTheme.Text2);
+        _enemyHpText = UI.Text($"HP {_enemyHp} / {_enemyMaxHp}", 11, AppTheme.Text2);
         _enemyHpText.Gravity = GravityFlags.CenterHorizontal;
         _enemyHpText.SetPadding(0, Dp(5), 0, 0);
         inner.AddView(_enemyHpText);
+
+        var defText = UI.Text($"DEF {_enemyDef}", 11, AppTheme.Frost);
+        defText.Gravity = GravityFlags.CenterHorizontal;
+        inner.AddView(defText);
 
         panel.AddView(inner);
         return panel;
@@ -172,6 +184,7 @@ public class BattleActivity : Activity
                 BottomMargin = Dp(10)
             };
             _owner[flip] = ch?.Name ?? "";
+            if (ch != null) _cardStats[flip] = GameState.ComputeStats(ch);
             cards.Add(flip);
         }
         return cards;
@@ -235,18 +248,21 @@ public class BattleActivity : Activity
     private void OnCardPlayed(View card)
     {
         _owner.TryGetValue(card, out var nm);
-        _enemyHp = System.Math.Max(0, _enemyHp - 18);
+        int dmg = _cardStats.TryGetValue(card, out var st) && st.Atk > 0
+            ? BattleSimulator.StrikeDamage(st, _enemyStats)
+            : 18;
+        _enemyHp = System.Math.Max(0, _enemyHp - dmg);
         UpdateEnemyBar();
-        Toast($"发动：{nm}");
+        Toast($"{nm} 造成 {dmg} 伤害");
         if (_enemyHp <= 0) Toast("胜利！（演示）");
     }
 
     private void UpdateEnemyBar()
     {
-        float ratio = _enemyHp / 100f;
+        float ratio = _enemyMaxHp > 0 ? (float)_enemyHp / _enemyMaxHp : 0f;
         _enemyFill.LayoutParameters = new LinearLayout.LayoutParams(0, Dp(14), ratio);
         _enemyFill.RequestLayout();
-        _enemyHpText.Text = $"HP {_enemyHp} / 100";
+        _enemyHpText.Text = $"HP {_enemyHp} / {_enemyMaxHp}";
     }
 
     // ── helpers ──
