@@ -1,3 +1,0 @@
-Milan.Maui.MainActivity, MauiMilan;crc649583191db32357d4.MainActivity
-Milan.Maui.MainActivity;crc649583191db32357d4.MainActivity
-milan.maui.MainActivity;crc649583191db32357d4.MainActivity
