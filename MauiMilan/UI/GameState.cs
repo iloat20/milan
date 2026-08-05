@@ -25,7 +25,7 @@ public static class GameState
         lock (_gate)
         {
             if (_initialized) return;
-            try { Service.InitializeAsync(context).GetAwaiter().GetResult(); }
+            try { Service.Initialize(context); }
             catch { Service.LoadFallback(); }
             _initialized = true;
         }
@@ -63,22 +63,49 @@ public static class GameState
         _ => 0
     };
 
-    /// <summary>Compute live battle stats from base + progression, mirroring the Unity BattleService.</summary>
+    /// <summary>Compute live battle stats from base + progression, mirroring the Unity BattleService.
+    /// 含已点亮天赋的分支加成（单一事实来源：详情页/养成页/战斗页都走这里）。</summary>
     public static Milan.Domain.Battle.UnitStats ComputeStats(OwnedCharacterView ch)
+        => ComputeStatsAt(ch, ch.Save.Level, System.Math.Max(1, ch.Save.Stage));
+
+    /// <summary>在指定等级/阶段下计算属性（用于养成页"下一级 / 下一阶"预测值）。
+    /// 天赋加成按当前已点亮节点计算，不随等级/阶段假设改变。</summary>
+    public static Milan.Domain.Battle.UnitStats ComputeStatsAt(OwnedCharacterView ch, int level, int stage)
     {
         var def = ch.Def;
         var save = ch.Save;
         var engine = new ProgressionEngine();
-        int stg = System.Math.Max(1, save.Stage);
+        int stg = System.Math.Max(1, stage);
+        int lv = System.Math.Max(1, level);
         if (def == null)
             return new Milan.Domain.Battle.UnitStats { CharacterId = save.CharacterId, Hp = 1 };
+
+        // BaseStats 来自外部 data.json，长度不可信。越界会直接抛 IndexOutOfRangeException，
+        // 而本方法在详情页/检视页/战斗页的构建路径上被调用 —— 抛了就是闪退。
+        var bs = def.BaseStats;
+        int Base(int i, int fallback) => bs != null && i < bs.Length ? bs[i] : fallback;
+
+        // 已点亮天赋的分支加成：power→攻, defense→防+生命, utility→速度（每节点 +3%）。
+        float atkB = 0, defB = 0, hpB = 0, spdB = 0;
+        var tree = ch.Talent;
+        if (tree?.Nodes != null && save.TalentPoints != null)
+        {
+            foreach (var n in tree.Nodes)
+            {
+                if (n == null || !save.TalentPoints.Contains(n.NodeId)) continue;
+                if (n.BranchId == "branch_power") atkB += 0.03f;
+                else if (n.BranchId == "branch_defense") { defB += 0.03f; hpB += 0.03f; }
+                else if (n.BranchId == "branch_utility") spdB += 0.03f;
+            }
+        }
+
         return new Milan.Domain.Battle.UnitStats
         {
             CharacterId = save.CharacterId,
-            Atk = engine.StatAtLevel(def.BaseStats[0], save.Level, stg, 1f),
-            Def = engine.StatAtLevel(def.BaseStats[1], save.Level, stg, 1f),
-            Hp = engine.StatAtLevel(def.BaseStats[2], save.Level, stg, 1f),
-            Spd = engine.StatAtLevel(def.BaseStats[3], save.Level, stg, 1f),
+            Atk = (int)(engine.StatAtLevel(Base(0, 100), lv, stg, 1f) * (1 + atkB)),
+            Def = (int)(engine.StatAtLevel(Base(1, 80), lv, stg, 1f) * (1 + defB)),
+            Hp = (int)(engine.StatAtLevel(Base(2, 1000), lv, stg, 1f) * (1 + hpB)),
+            Spd = (int)(engine.StatAtLevel(Base(3, 12), lv, stg, 1f) * (1 + spdB)),
         };
     }
 }

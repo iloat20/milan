@@ -62,6 +62,35 @@ public class ParticleView : View
 
     public void Stop() { _running = false; Invalidate(); }
 
+    // ---- 生命周期：脱离窗口/不可见时自动暂停发射与重绘 ----
+    private bool _pausedByLifecycle;
+
+    protected override void OnDetachedFromWindow()
+    {
+        base.OnDetachedFromWindow();
+        if (_running) { _pausedByLifecycle = true; _running = false; }
+    }
+
+    protected override void OnAttachedToWindow()
+    {
+        base.OnAttachedToWindow();
+        if (_pausedByLifecycle) { _pausedByLifecycle = false; Start(); }
+    }
+
+    protected override void OnWindowVisibilityChanged(ViewStates visibility)
+    {
+        base.OnWindowVisibilityChanged(visibility);
+        if (visibility != ViewStates.Visible)
+        {
+            if (_running) { _pausedByLifecycle = true; _running = false; }
+        }
+        else if (_pausedByLifecycle)
+        {
+            _pausedByLifecycle = false;
+            Start();
+        }
+    }
+
     private void Emit()
     {
         for (int i = 0; i < _emitRate; i++)

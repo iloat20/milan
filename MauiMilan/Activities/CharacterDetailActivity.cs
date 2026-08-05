@@ -9,6 +9,7 @@ using Android.Views;
 using Android.Widget;
 using Milan.Maui;
 using Milan.Maui.Services;
+using Milan.Infrastructure.EventBus;
 
 namespace Milan.Maui.Activities;
 
@@ -21,6 +22,8 @@ public class CharacterDetailActivity : Activity
     private ScrollView? _page;
     private View? _heroView;
     private View[]? _staged;
+    private View? _statsSection;
+    private LinearLayout? _contentInner;
     private readonly Handler _handler = new(Looper.MainLooper!);
     // 魔兽世界风格数值增长的绿色（属性加成 +N）
     private static readonly Color WoWGreen = Color.Rgb(70, 255, 130);
@@ -99,6 +102,7 @@ public class CharacterDetailActivity : Activity
         // ═══ 内容区（玻璃面板卡，左右留白）═══
         var inner = new LinearLayout(this) { Orientation = Orientation.Vertical };
         inner.SetPadding(Dp(16), 0, Dp(16), Dp(8));
+        _contentInner = inner;
 
         var staged = new System.Collections.Generic.List<View>();
 
@@ -111,6 +115,7 @@ public class CharacterDetailActivity : Activity
 
         var sStats = BuildSection("基 本 属 性", BuildStatsPanel());
         inner.AddView(sStats); inner.AddView(Spacer(16)); staged.Add(sStats);
+        _statsSection = sStats;
 
         var sSkill = BuildSection("技 能", BuildSkillPanel());
         inner.AddView(sSkill); inner.AddView(Spacer(16)); staged.Add(sSkill);
@@ -176,13 +181,14 @@ public class CharacterDetailActivity : Activity
         // 底部浮层铭牌（名字 / 称号 / 稀有度 / 元素）
         frame.AddView(BuildHeroNameplate());
 
-        // 悬浮操作：返回（左上）+ 左右切换（两侧）
+        // 悬浮操作：返回（左上）+ 左右切换（两侧）+ 养成入口（右上，仅已拥有）
         var back = BuildBackButton();
         frame.AddView(back);
         var prevBtn = BuildArrow("‹", true);
         var nextBtn = BuildArrow("›", false);
         frame.AddView(prevBtn);
         frame.AddView(nextBtn);
+        if (_owned) frame.AddView(BuildProgressionButton());
 
         return frame;
     }
@@ -284,6 +290,58 @@ public class CharacterDetailActivity : Activity
         btn.Clickable = true; btn.Focusable = true;
         UI.TapFeedback(btn, () => SwitchCharacter(left ? -1 : 1));
         return btn;
+    }
+
+    View BuildProgressionButton()
+    {
+        var density = Resources.DisplayMetrics.Density;
+        int Dp(int v) => (int)(v * density);
+
+        var btn = UI.Text("养 成 ▲", 16, AppTheme.Gold, bold: true);
+        btn.SetPadding(Dp(16), Dp(9), Dp(16), Dp(9));
+        btn.Background = UI.GlassPanel(20, gold: true);
+        btn.Clickable = true; btn.Focusable = true;
+        UI.TapFeedback(btn, () =>
+        {
+            var intent = new Intent(this, typeof(ProgressionActivity));
+            intent.PutExtra("characterId", _def.CharacterId);
+            StartActivity(intent);
+        });
+        btn.LayoutParameters = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.WrapContent, ViewGroup.LayoutParams.WrapContent)
+        {
+            Gravity = GravityFlags.Top | GravityFlags.Right,
+            TopMargin = Dp(40),
+            RightMargin = Dp(14)
+        };
+        return btn;
+    }
+
+    /// <summary>从养成页返回时，订阅养成变动并在事件/Resume 时就地刷新属性面板，
+    /// 使等级/突破/天赋带来的属性变化即时可见（内存与存档同源，直接重建该区块即可）。</summary>
+    protected override void OnResume()
+    {
+        base.OnResume();
+        EventBus.Subscribe<ProgressionChanged>(OnProgChanged);
+        RefreshStats();
+    }
+
+    protected override void OnPause()
+    {
+        base.OnPause();
+        EventBus.UnsubscribeAll(this);
+    }
+
+    void OnProgChanged(ProgressionChanged _) => RefreshStats();
+
+    void RefreshStats()
+    {
+        if (_contentInner == null || _statsSection == null) return;
+        int idx = _contentInner.IndexOfChild(_statsSection);
+        if (idx < 0) return;
+        _contentInner.RemoveViewAt(idx);
+        var fresh = BuildSection("基 本 属 性", BuildStatsPanel());
+        _contentInner.AddView(fresh, idx);
+        _statsSection = fresh;
     }
 
     void SwitchCharacter(int delta)

@@ -33,6 +33,12 @@ public class CharacterPortrait : View
     private Paint? _paint;
     private Random? _rng;
 
+    // 仅依赖尺寸/稀有度的渐变与 Drawable 按尺寸缓存，避免每帧分配（P4）。
+    private RadialGradient? _inkGrad;
+    private int _inkW, _inkH;
+    private GradientDrawable? _auraGrad;
+    private Paint? _auraPaint;
+
     public CharacterPortrait(Context context) : base(context) { SetWillNotDraw(false); }
 
     /// <summary>Bind a character by id — derives a stable visual identity.</summary>
@@ -63,10 +69,14 @@ public class CharacterPortrait : View
         if (_phase > MathF.PI * 2) _phase -= MathF.PI * 2;
 
         var w = Width; var h = Height;
-        if (w == 0 || h == 0) { Invalidate(); return; }
+        if (w == 0 || h == 0) return;
         var cx = w / 2f; var cy = h * 0.46f;
         var r = Math.Min(w, h) * 0.40f;
         var breathe = 1f + 0.015f * MathF.Sin(_phase);
+
+        // 水墨晕影 + 祥云光环（中西融合头像底）
+        DrawInkVignette(canvas, w, h);
+        DrawCloudHalo(canvas, cx, cy - r * 0.1f, r * 1.5f);
 
         // Background element aura
         DrawAura(canvas, w, h);
@@ -89,24 +99,61 @@ public class CharacterPortrait : View
         // Rarity jewel on corner
         if (_rarity >= 3) DrawJewel(canvas, w, h);
 
+        // 印章式描边框（东方头像框）
+        var fp = _paint!;
+        fp.SetStyle(Paint.Style.Stroke);
+        fp.StrokeWidth = UI.Dp(1.5f);
+        fp.Color = Color.Argb(150, 255, 215, 90);
+        canvas.DrawRoundRect(new RectF(UI.Dp(3), UI.Dp(3), w - UI.Dp(3), h - UI.Dp(3)), UI.Dp(12), UI.Dp(12), fp);
+        fp.SetStyle(Paint.Style.Fill);
+
+        if (_animating) Invalidate();
+    }
+
+    // ---- 动画生命周期：脱离窗口/不可见时停止重绘 ----
+    private bool _animating = true;
+
+    protected override void OnAttachedToWindow()
+    {
+        base.OnAttachedToWindow();
+        _animating = true;
         Invalidate();
+    }
+
+    protected override void OnDetachedFromWindow()
+    {
+        base.OnDetachedFromWindow();
+        _animating = false;
+        _inkGrad?.Dispose(); _inkGrad = null;
+        _auraGrad?.Dispose(); _auraGrad = null;
+    }
+
+    protected override void OnWindowVisibilityChanged(ViewStates visibility)
+    {
+        base.OnWindowVisibilityChanged(visibility);
+        _animating = visibility == ViewStates.Visible;
+        if (_animating) Invalidate();
     }
 
     private void DrawAura(Canvas canvas, int w, int h)
     {
-        var grad = new GradientDrawable();
-        grad.SetColors(new[] { _from.ToArgb(), Color.Argb(30, _to.R, _to.G, _to.B) });
-        grad.SetBounds(0, 0, w, h);
-        grad.Draw(canvas);
+        // 渐变与光点 Paint 仅依赖本实例配色（Bind 后恒定），缓存避免每帧重建（P4）。
+        if (_auraGrad == null)
+        {
+            _auraGrad = new GradientDrawable();
+            _auraGrad.SetColors(new[] { _from.ToArgb(), Color.Argb(30, _to.R, _to.G, _to.B) });
+        }
+        _auraGrad.SetBounds(0, 0, w, h);
+        _auraGrad.Draw(canvas);
         // floating motes
         if (_rng == null) return;
-        var tp = new Paint { AntiAlias = true };
+        _auraPaint ??= new Paint { AntiAlias = true };
         for (int i = 0; i < 8; i++)
         {
             var px = ((_phase * 37 + i * 53) % 1f) * w;
             var py = ((_phase * 23 + i * 71) % 1f) * h;
-            tp.Color = Color.Argb(60, _glow.R, _glow.G, _glow.B);
-            canvas.DrawCircle(px, py, 2 + (i % 3), tp);
+            _auraPaint.Color = Color.Argb(60, _glow.R, _glow.G, _glow.B);
+            canvas.DrawCircle(px, py, 2 + (i % 3), _auraPaint);
         }
     }
 
@@ -248,5 +295,32 @@ public class CharacterPortrait : View
         jp.ClearShadowLayer();
         jp.Color = Color.Argb(200, 255, 255, 255);
         canvas.DrawCircle(jx - jr * 0.3f, jy - jr * 0.3f, jr * 0.3f, jp);
+    }
+
+    private void DrawInkVignette(Canvas canvas, int w, int h)
+    {
+        var gp = _paint!;
+        gp.SetStyle(Paint.Style.Fill);
+        // 仅依赖尺寸的渐变按尺寸缓存（P4）
+        if (_inkGrad == null || _inkW != w || _inkH != h)
+        {
+            _inkGrad?.Dispose();
+            _inkGrad = new RadialGradient(w / 2f, h / 2f, Math.Max(w, h) * 0.6f,
+                UI.ColorLong(Color.Argb(0, 0, 0, 0)), UI.ColorLong(Color.Argb(36, 8, 8, 16)), Shader.TileMode.Clamp);
+            _inkW = w; _inkH = h;
+        }
+        gp.SetShader(_inkGrad);
+        canvas.DrawRect(0, 0, w, h, gp);
+        gp.SetShader(null);
+    }
+
+    private void DrawCloudHalo(Canvas canvas, float cx, float cy, float r)
+    {
+        var hp = _paint!;
+        hp.SetStyle(Paint.Style.Fill);
+        hp.Color = Color.Argb(40, 255, 215, 90);
+        UI.CloudCorner(canvas, hp, cx - r * 0.5f, cy - r * 0.5f, r * 0.5f);
+        hp.Color = Color.Argb(28, 124, 77, 255);
+        UI.CloudCorner(canvas, hp, cx + r * 0.2f, cy + r * 0.1f, r * 0.42f);
     }
 }

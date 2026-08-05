@@ -42,8 +42,8 @@ public class ResultCard : FrameLayout
         var col = new LinearLayout(context) { Orientation = Orientation.Vertical };
         col.LayoutParameters = new LayoutParams(ViewGroup.LayoutParams.MatchParent, ViewGroup.LayoutParams.WrapContent);
 
-        // Portrait (mini FullBodyCharacter)
-        var portrait = new FullBodyCharacter(context, def ?? GameState.Service.Characters.First());
+        // Portrait (AI portrait if available, else procedural)
+        var portrait = new PortraitView(context).Bind(def ?? GameState.Service.Characters.First());
         var portLp = new LinearLayout.LayoutParams(Dp(56), Dp(70));
         portLp.Gravity = GravityFlags.CenterHorizontal;
         portrait.LayoutParameters = portLp;

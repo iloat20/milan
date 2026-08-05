@@ -20,6 +20,8 @@ namespace Milan.Domain.Inspection
 
         public bool IsFullTree(IEnumerable<string> allocatedNodeIds, int totalNodes)
         {
+            // totalNodes <= 0（空树/未初始化）不能判为「满树」，否则无天赋角色被误判解锁 VFX。
+            if (totalNodes <= 0) return false;
             return allocatedNodeIds.Count() >= totalNodes;
         }
     }

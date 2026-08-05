@@ -21,6 +21,11 @@ public class AnimatedPortrait : FrameLayout
     private float _phase;
     private Paint? _paint;
     private ParticleView? _particles;
+    // #37: GradientDrawable / 文字 Paint 复用，避免每帧新建。
+    private GradientDrawable? _disc;
+    private Paint? _textPaint;
+    private int _discW, _discH;
+    private bool _framePending;
 
     public AnimatedPortrait(Context context, string element, int rarity, string glyph, int sizeDp) : base(context)
     {
@@ -51,12 +56,15 @@ public class AnimatedPortrait : FrameLayout
 
     protected override void OnDraw(Canvas canvas)
     {
+        _framePending = false;
+        var w = Width; var h = Height;
+        // 尺寸未就绪时直接返回：此处再 Invalidate 会形成不停重绘的空转死循环。
+        if (w <= 0 || h <= 0) return;
+
         if (_paint == null) _paint = new Paint { AntiAlias = true };
         _phase += 0.03f;
         if (_phase > MathF.PI * 2) _phase -= MathF.PI * 2;
 
-        var w = Width; var h = Height;
-        if (w == 0 || h == 0) { Invalidate(); return; }
         var cx = w / 2f; var cy = h / 2f;
         var baseR = Math.Min(w, h) * 0.42f;
         var breathe = 1f + 0.04f * MathF.Sin(_phase);
@@ -73,20 +81,62 @@ public class AnimatedPortrait : FrameLayout
         }
 
         // Inner gradient disc
-        var gd = new GradientDrawable();
-        gd.SetColors(new[] { _from.ToArgb(), _to.ToArgb() });
-        gd.SetShape(ShapeType.Oval);
-        gd.SetBounds(0, 0, w, h);
-        gd.Draw(canvas);
+        if (_disc == null || _discW != w || _discH != h)
+        {
+            _disc ??= new GradientDrawable();
+            _disc.SetColors(new[] { _from.ToArgb(), _to.ToArgb() });
+            _disc.SetShape(ShapeType.Oval);
+            _disc.SetBounds(0, 0, w, h);
+            _discW = w; _discH = h;
+        }
+        _disc.Draw(canvas);
 
         // Glyph
-        var tp = new Paint { AntiAlias = true, Color = Color.White, TextAlign = Paint.Align.Center };
-        tp.TextSize = w * 0.40f;
-        tp.SetTypeface(Typeface.DefaultBold);
-        tp.SetShadowLayer(6, 0, 2, Color.Argb(130, 0, 0, 0));
-        var fm = tp.GetFontMetrics();
-        canvas.DrawText(_glyph, cx, cy - (fm.Ascent + fm.Descent) / 2f, tp);
+        if (_textPaint == null)
+        {
+            _textPaint = new Paint { AntiAlias = true, Color = Color.White, TextAlign = Paint.Align.Center };
+            _textPaint.SetTypeface(Typeface.DefaultBold);
+            _textPaint.SetShadowLayer(6, 0, 2, Color.Argb(130, 0, 0, 0));
+        }
+        _textPaint.TextSize = w * 0.40f;
+        var fm = _textPaint.GetFontMetrics();
+        if (fm != null && !string.IsNullOrEmpty(_glyph))
+            canvas.DrawText(_glyph, cx, cy - (fm.Ascent + fm.Descent) / 2f, _textPaint);
 
-        Invalidate(); // keep animating
+        ScheduleFrame(); // keep animating while visible
+    }
+
+    // ---- 动画生命周期：脱离窗口/不可见时停止重绘 ----
+    private bool _animating = true;
+
+    /// <summary>30fps 节流预约下一帧，重复调用不会叠加多条动画链。</summary>
+    private void ScheduleFrame()
+    {
+        if (!_animating || _framePending) return;
+        _framePending = true;
+        PostInvalidateDelayed(33);
+    }
+
+    protected override void OnAttachedToWindow()
+    {
+        base.OnAttachedToWindow();
+        _animating = true;
+        _framePending = false;
+        ScheduleFrame();
+    }
+
+    protected override void OnDetachedFromWindow()
+    {
+        base.OnDetachedFromWindow();
+        _animating = false;
+        _framePending = false;
+    }
+
+    protected override void OnWindowVisibilityChanged(ViewStates visibility)
+    {
+        base.OnWindowVisibilityChanged(visibility);
+        _animating = visibility == ViewStates.Visible;
+        _framePending = false;
+        if (_animating) ScheduleFrame();
     }
 }

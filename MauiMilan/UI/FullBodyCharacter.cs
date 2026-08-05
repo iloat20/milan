@@ -9,10 +9,10 @@ namespace Milan.Maui;
 
 /// <summary>
 /// Rich character portrait: draws a full humanoid figure (head, face, hair,
-//  body, outfit, weapon) with element-themed colors, glowing aura, and
-//  floating particle effects. All procedural — no image assets.
+/// body, outfit, weapon) with element-themed colors, glowing aura, and
+/// floating particle effects. All procedural — no image assets.
 /// </summary>
-public class FullBodyCharacter : View
+public class FullBodyCharacter : AnimatedEffectView
 {
     // Visual DNA derived from character id
     private enum FaceShape { Round, Oval, Sharp }
@@ -87,7 +87,7 @@ public class FullBodyCharacter : View
         // 5. Burst flash
         if (_bursting) DrawBurst(canvas);
 
-        Invalidate(); // keep animating
+        if (Animating) Invalidate(); // keep animating while visible
     }
 
     // ------------------------------------------------------------------ layers

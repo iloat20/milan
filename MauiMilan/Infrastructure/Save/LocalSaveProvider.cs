@@ -14,18 +14,51 @@ public class LocalSaveProvider : ISaveProvider
         _path = Path.Combine(dir, filename);
     }
 
-    public void Save(string json)
+    public bool Save(string json)
     {
         var dir = Path.GetDirectoryName(_path);
         if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
             Directory.CreateDirectory(dir);
-        File.WriteAllText(_path, json);
+
+        // 原子写档：先写临时文件，成功后再替换正式文件。
+        // 直接 WriteAllText 覆盖时若进程中途被杀，存档会被截断损坏。
+        var tmp = _path + ".tmp";
+        try
+        {
+            File.WriteAllText(tmp, json);
+            if (File.Exists(_path))
+                File.Replace(tmp, _path, _path + ".bak");
+            else
+                File.Move(tmp, _path);
+            return true;
+        }
+        catch (Exception)
+        {
+            // 写盘失败：清理残留临时文件，避免下次 Load 读到半截 .tmp。
+            try { if (File.Exists(tmp)) File.Delete(tmp); } catch { }
+            return false;
+        }
     }
 
     public string Load()
     {
         if (!File.Exists(_path)) return null;
         return File.ReadAllText(_path);
+    }
+
+    public bool Exists() => File.Exists(_path);
+
+    public string? LoadBackup()
+    {
+        if (File.Exists(_path + ".bak")) return SafeRead(_path + ".bak");
+        if (File.Exists(_path + ".tmp")) return SafeRead(_path + ".tmp");
+        return null;
+    }
+
+    static string? SafeRead(string p)
+    {
+        try { return File.ReadAllText(p); }
+        catch { return null; }
     }
 
     public void Delete()

@@ -10,7 +10,7 @@ The summon art style is a **dimensional rift / portal** (characters cross over f
 
 ## Implementation
 
-The game is a **.NET 8 native Android** app in `MauiMilan/`. Despite the folder name, this is a **plain native-Android** project (SDK `Microsoft.NET.Sdk`), not MAUI UI — it uses `Android.App.Activity` and `Android.Widget` directly, which keeps the package small and the build fast. It builds a native APK at `MauiMilan/bin/Release/net8.0-android/com.milan.game-Signed.apk`.
+The game is a **.NET 10 native Android** app in `MauiMilan/` (TFM `net10.0-android`). Despite the folder name, this is a **plain native-Android** project (SDK `Microsoft.NET.Sdk`), not MAUI UI — it uses `Android.App.Activity` and `Android.Widget` directly, which keeps the package small and the build fast. It builds a native APK at `MauiMilan/bin/Release/net10.0-android/com.milan.game-Signed.apk`.
 
 > A Unity C# implementation used to live in `Assets/_Project/` but has been removed. The pure, UnityEngine-free game core (Domain engines, EventBus, Enums) was moved into `MauiMilan/Core/` so the project is now self-contained.
 
@@ -18,7 +18,7 @@ The game is a **.NET 8 native Android** app in `MauiMilan/`. Despite the folder 
 ```bash
 dotnet build MauiMilan/MauiMilan.csproj -c Release
 ```
-An .NET 8 SDK is required (the runtime alone is not enough). The initial currency is set high (999999) for testing — pulls should feel unlimited.
+A .NET 10 SDK with the Android workload is required (the runtime alone is not enough). The initial currency is set high (999999) for testing — pulls should feel unlimited.
 
 ### Project layout
 ```
@@ -88,4 +88,6 @@ There are no automated tests currently. (The Unity EditMode tests were removed w
 - The `.superpowers/` and `docs/superpowers/` directories are planning artifacts, not source. The HTML brainstorm outputs in `.superpowers/brainstorm/` are gitignored scratch.
 - Content data lives in `MauiMilan/Platforms/Android/Assets/data.json` (and `Resources/Raw/data.json`); `GameService.LoadFallback()` mirrors the same data in code as a fallback if the asset is missing. Keep these in sync when adding characters/pools.
 - Rarity enum: `R=1, SR=2, SSR=3, UR=4`. Worlds: `Shinwa, Aether, Ironveil`.
+- Gacha rules: duplicate pulls award star fragments (`item_star_fragment`, UR 50 / SSR 20 / SR 5 / R 1 — see `GameService.FragmentsForRarity`). If a rolled rarity band has no candidates in the pool, the roll upgrades to the nearest higher band with candidates (never silently re-rolls the whole pool). Pity counter resets on any natural drop at/above the pity rarity.
+- Save integrity: `SaveData.FromJson` swallows corrupt JSON and returns `CreateDefault()`; `LocalSaveProvider.Save` writes atomically via a `.tmp` + `File.Replace` (keeps a `.bak`). Do not regress either.
 - The `UI.Theme` static class holds the full palette and rarity colors — change the look of every screen there.

@@ -11,6 +11,8 @@ namespace Milan.Domain.Battle
 
         public BattleResult Simulate(UnitStats[] teamA, UnitStats[] teamB, int maxTurns)
         {
+            teamA ??= System.Array.Empty<UnitStats>();
+            teamB ??= System.Array.Empty<UnitStats>();
             var a = teamA.Select(u => new S { Stats = u, Hp = u.Hp, A = true }).ToList();
             var b = teamB.Select(u => new S { Stats = u, Hp = u.Hp, A = false }).ToList();
 
@@ -32,9 +34,10 @@ namespace Milan.Domain.Battle
                     target.Hp -= dmg;
                 }
 
-                if (b.All(x => x.Hp <= 0))
+                // 空队伍无法"全部死亡"，必须要求队伍非空，否则空 teamB 会因 LINQ 语义被误判为胜利。
+                if (b.Count > 0 && b.All(x => x.Hp <= 0))
                     return new BattleResult { Victory = true, Turns = turn, RemainingHp = a.Sum(x => Math.Max(0, x.Hp)) };
-                if (a.All(x => x.Hp <= 0))
+                if (a.Count > 0 && a.All(x => x.Hp <= 0))
                     return new BattleResult { Victory = false, Turns = turn, RemainingHp = 0 };
             }
 

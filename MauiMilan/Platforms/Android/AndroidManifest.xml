@@ -16,6 +16,7 @@
         android:roundIcon="@mipmap/appicon_round"
         android:supportsRtl="true"
         android:label="Milan"
-        android:name="Milan.Maui.MauiApp" />
+        android:extractNativeLibs="true"
+        android:name="crc649583191db32357d4.MauiApp" />
     <uses-permission android:name="android.permission.INTERNET" />
 </manifest>
