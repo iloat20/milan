@@ -80,7 +80,7 @@ public static class GameState
         int lv = System.Math.Max(1, level);
         int st = stars < 0 ? (ch.Save?.Stars ?? 1) : stars;
         // 星级小幅加成：每星 +5%（1★→×1.0，满 7★→×1.30）。并入 StatAtLevel 的倍率槽。
-        float starMul = 1f + System.Math.Max(0, st - 1) * 0.05f;
+        float starMul = ProgressionEngine.StarMultiplier(st);
         if (def == null)
             return new Milan.Domain.Battle.UnitStats { CharacterId = save.CharacterId, Hp = 1 };
 

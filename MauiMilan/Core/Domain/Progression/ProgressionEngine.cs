@@ -23,5 +23,9 @@ namespace Milan.Domain.Progression
             stage = System.Math.Max(1, stage);
             return (int)(baseStat * (1 + (level - 1) * 0.1f) * stage * stageMultiplier);
         }
+
+        /// <summary>升星属性倍率：每星 +5%（1★→×1.0，满 7★→×1.30）。
+        /// 抽成纯方法作为单一事实来源，GameState.ComputeStatsAt 与单元测试共用，避免公式漂移。</summary>
+        public static float StarMultiplier(int stars) => 1f + (System.Math.Max(1, stars) - 1) * 0.05f;
     }
 }
