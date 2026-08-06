@@ -298,6 +298,27 @@ public static class UI
         return l;
     }
 
+    /// <summary>
+    /// 垂直留白。此前 9 个 Activity 各自复制了一份等价实现（还有两种 density 取法），
+    /// 收口到这里作为唯一实现。<paramref name="heightDp"/> 为 dp，内部统一换算。
+    /// </summary>
+    public static View Spacer(Context ctx, int heightDp)
+        => new View(ctx)
+        {
+            LayoutParameters = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MatchParent, Dp(heightDp))
+        };
+
+    /// <summary>
+    /// Twilight 页面底色：暮紫夜对角三段渐变。原先 7 个页面各写一遍字面量，
+    /// 一旦调色板改动就会漏改其中几处 —— 收口为唯一来源。
+    /// 每次返回新实例：Drawable 有绑定状态，多个 View 共用同一实例会互相干扰。
+    /// </summary>
+    public static GradientDrawable PageBackground()
+        => new GradientDrawable(
+            GradientDrawable.Orientation.TlBr,
+            new[] { AppTheme.BgDeepest.ToArgb(), AppTheme.BgMid.ToArgb(), AppTheme.BgDeepest.ToArgb() });
+
     /// <summary>通用触摸反馈：按下缩放、抬起恢复并触发 onTap。基于 Touch 事件，
     /// 避免手动实现 IOnTouchListener（net10 Android 绑定要求较多接口成员）。</summary>
     public static void TapFeedback(View v, Action onTap)
@@ -540,6 +561,22 @@ public class MauiApp : Application
         // 直接启动展示页。必须在 Application 阶段做 —— HomeActivity 可能因同样的崩溃
         // 永远起不来，原来的「下次启动回显」就永远看不到。
         ShowPreviousCrashScreen();
+    }
+
+    /// <summary>
+    /// 全局内存压力回调。Application 本身就是 ComponentCallbacks2，系统会对整个进程回调一次，
+    /// 因此缓存收缩收口在这里，无需在 11 个 Activity 里各写一份 OnTrimMemory。
+    /// </summary>
+    public override void OnTrimMemory(TrimMemory level)
+    {
+        base.OnTrimMemory(level);
+        try
+        {
+            if (level >= TrimMemory.Complete) { VfxRenderer.TrimWeaponCache(); PortraitLoader.Trim(0); }
+            else if (level >= TrimMemory.Moderate) { VfxRenderer.TrimWeaponCache(); PortraitLoader.Trim(4); }
+            else if (level >= TrimMemory.UiHidden) PortraitLoader.Trim(8);
+        }
+        catch (Exception ex) { CrashReporter.Write("MauiApp.OnTrimMemory", ex); }
     }
 
     /// <summary>上次崩溃现场回显：优先托管异常报告，否则用未走完的面包屑。</summary>

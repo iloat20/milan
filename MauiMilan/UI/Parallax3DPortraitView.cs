@@ -440,6 +440,9 @@ public class Parallax3DPortraitView : View
         _paint.SetStyle(Paint.Style.Fill);
         var shadowW = _charWidth * 0.72f;
         var shadowH = _charHeight * 0.10f;
+        // Bind 可能早于 OnSizeChanged，此时 _charWidth==0 → RadialGradient radius<=0 抛
+        // IllegalArgumentException，自绘异常会静默杀进程。必须前置守卫。
+        if (shadowW <= 0f || shadowH <= 0f) return;
         var sx = _cx - shadowW / 2f - tiltX * UI.Dp(16f);
         var sy = _charTop + _charHeight * 0.96f - tiltY * UI.Dp(6f);
         var g = new RadialGradient(sx + shadowW / 2f, sy, shadowW * 0.6f,

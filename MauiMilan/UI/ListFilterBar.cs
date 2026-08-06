@@ -65,19 +65,19 @@ public sealed class ListFilterBar
             Changed?.Invoke();
         };
         root.AddView(_search);
-        root.AddView(Spacer(UI.Dp(10)));
+        root.AddView(UI.Spacer(_ctx, 10));
 
         // ── 稀有度 ──
         root.AddView(SectionLabel("稀有度"));
         _rarityRow = UI.HBox();
         root.AddView(Scroll(_rarityRow));
-        root.AddView(Spacer(UI.Dp(6)));
+        root.AddView(UI.Spacer(_ctx, 6));
 
         // ── 元素 ──
         root.AddView(SectionLabel("元素"));
         _elementRow = UI.HBox();
         root.AddView(Scroll(_elementRow));
-        root.AddView(Spacer(UI.Dp(6)));
+        root.AddView(UI.Spacer(_ctx, 6));
 
         // ── 排序 ──
         root.AddView(SectionLabel("排序"));
@@ -208,8 +208,4 @@ public sealed class ListFilterBar
         return sv;
     }
 
-    View Spacer(int h)
-    {
-        return new View(_ctx) { LayoutParameters = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MatchParent, h) };
-    }
 }

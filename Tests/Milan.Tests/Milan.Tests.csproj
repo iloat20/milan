@@ -18,6 +18,7 @@
 
   <!-- 仅链接纯领域文件（绝不含 MAUI/Android 依赖），作为单一事实来源的直接测试对象。 -->
   <ItemGroup>
+    <Compile Include="..\..\MauiMilan\Core\Domain\Progression\EconomyFormulas.cs" />
     <Compile Include="..\..\MauiMilan\Core\Domain\Progression\ProgressionEngine.cs" />
     <Compile Include="..\..\MauiMilan\Core\Domain\Progression\TalentEngine.cs" />
     <Compile Include="..\..\MauiMilan\Core\Domain\Battle\BattleSimulator.cs" />

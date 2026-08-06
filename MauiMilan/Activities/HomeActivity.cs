@@ -20,6 +20,9 @@ public class HomeActivity : Activity
     private TextView _soft = null!;
     private TextView _hard = null!;
     private PortraitView _featured = null!;
+    /// <summary>当前 Hero 角色 Id，用于 OnResume 判断是否需要重建（抽到更高稀有度后主角会变）。</summary>
+    string _featuredId = "";
+
     // #24: Hero 立绘的无限漂浮动画，需在页面销毁时取消
     private ObjectAnimator? _floatAnim;
     // 入场编排的目标容器（竖屏 inner / 横屏 rInner）
@@ -165,6 +168,16 @@ public class HomeActivity : Activity
             // 先订阅再直刷：回到前台立即兜底显示最新值（订阅端也会在事件到达时刷新）。
             EventBus.Subscribe<CurrencyChanged>(OnCurrencyChanged);
             RefreshCurrency();
+
+            // Hero 取"已拥有的最高稀有度角色"。抽卡页抽到更高稀有度后返回主页时，
+            // 仅刷资源栏会让 Hero 立绘/铭牌停留在旧角色。这里只在主角真正变化时重建，
+            // 既修好陈旧显示，又保留"不每次 OnResume 整页重建"的优化。
+            if (FeaturedCharacter().CharacterId != _featuredId)
+            {
+                StopFloatAnim();
+                SetContentView(BuildLayout());
+                RefreshCurrency();
+            }
         }
         catch (System.Exception ex) { CrashReporter.Write("HomeActivity.OnResume", ex); }
     }
@@ -184,9 +197,7 @@ public class HomeActivity : Activity
         root.LayoutParameters = new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MatchParent, ViewGroup.LayoutParams.MatchParent);
 
         // 深黑底 + 粒子
-        var bgGrad = new GradientDrawable(
-            GradientDrawable.Orientation.TlBr,
-            new[] { AppTheme.BgDeepest.ToArgb(), AppTheme.BgMid.ToArgb(), AppTheme.BgDeepest.ToArgb() });
+        var bgGrad = UI.PageBackground();
         root.Background = (bgGrad);
 
         var bg = new TwilightBackground(this);
@@ -333,6 +344,7 @@ public class HomeActivity : Activity
         hero.SetClipChildren(true);
 
         var def = FeaturedCharacter();
+        _featuredId = def.CharacterId; // 记录当前主角，OnResume 据此判断是否需要重建
 
         // 稀有度光晕（脉动，位于立绘之后）
         var haloColor = AppTheme.RarityColor(def.BaseRarity);
@@ -540,19 +552,8 @@ public class HomeActivity : Activity
         };
     }
 
-    void OnNav(GameNavBar.NavItem item)
-    {
-        var target = item switch
-        {
-            GameNavBar.NavItem.Home => typeof(HomeActivity),
-            GameNavBar.NavItem.Gacha => typeof(GachaActivity),
-            GameNavBar.NavItem.Deck => typeof(DeckActivity),
-            GameNavBar.NavItem.Shop => typeof(ShopActivity),
-            GameNavBar.NavItem.Settings => typeof(SettingsActivity),
-            _ => null
-        };
-        Nav.To(this, target);
-    }
+    // 导航映射唯一来源在 Nav.TargetOf；同页点击由 Nav.To 自身拦截。
+    void OnNav(GameNavBar.NavItem item) => Nav.Go(this, item);
 
     /// <summary>
     /// 入场编排（暗夜神性·诸神黄昏）：背景淡入 → 立绘浮入 → 主体各区块错落上浮（stagger 60ms，ease-out）。
@@ -573,24 +574,36 @@ public class HomeActivity : Activity
         catch (System.Exception ex) { CrashReporter.Write("HomeActivity.PlayEntrance", ex); }
     }
 
-    View Spacer(int h)
-    {
-        var density = Resources.DisplayMetrics.Density;
-        return new View(this) { LayoutParameters = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MatchParent, (int)(h * density)) };
-    }
+    // 唯一实现在 UI.Spacer，避免 9 个页面各维护一份换算逻辑。
+    View Spacer(int h) => UI.Spacer(this, h);
 
     /// <summary>稀有度径向光晕：RadialGradient 圆 + 呼吸脉动，位于立绘之后。</summary>
-    private class HaloView : View
+    private class HaloView : AnimatedEffectView
     {
         private readonly Color _color;
         private Paint? _paint;
         private float _phase;
-        private bool _animating = true;
+        // 渐变只依赖半径，缓存复用；呼吸的明暗改用 Paint.Alpha 调制，
+        // 避免每帧 new RadialGradient（每帧一个 native 对象且从不 Dispose）。
+        private RadialGradient? _shader;
+        private float _shaderR;
 
         public HaloView(Context context, Color color) : base(context)
         {
             _color = color;
             SetWillNotDraw(false);
+        }
+
+        protected override void OnSizeChanged(int w, int h, int oldw, int oldh)
+        {
+            base.OnSizeChanged(w, h, oldw, oldh);
+            _shader?.Dispose(); _shader = null; _shaderR = 0f;
+        }
+
+        protected override void OnDetachedFromWindow()
+        {
+            base.OnDetachedFromWindow();
+            _shader?.Dispose(); _shader = null; _shaderR = 0f;
         }
 
         protected override void OnDraw(Canvas canvas)
@@ -604,38 +617,33 @@ public class HomeActivity : Activity
                 var r = Math.Min(Width, Height) * 0.5f;
                 // RadialGradient 半径 <= 0 会抛 IllegalArgumentException("radius must be > 0")。
                 // OnDraw 在 Activity 的 try/catch 之外执行，抛出即进程静默死亡、无任何对话框。
-                if (r <= 0f)
-                {
-                    if (_animating) PostInvalidateDelayed(33);
-                    return;
-                }
+                if (r <= 0f) return;
                 _phase += 0.02f;
                 if (_phase > MathF.PI * 2) _phase -= MathF.PI * 2;
                 var breathe = 0.5f + 0.5f * MathF.Sin(_phase);
-                // 关键修复：本 ROM（ColorOS/Android15）上 RadialGradient 接收 int 颜色时，内部
-                // Color.valueOf(int) 会返回非法 ColorSpace(id 23)，detectColorSpace 抛
-                // IllegalArgumentException，渲染线程直接杀进程、无对话框。改为传 Color 对象（走 sRGB
-                // ColorLong 重载）即可彻底避开；外层 try/catch 兜底，即使极端情况建不出渐变也不杀进程。
-                var centerColor = Color.Argb((int)(150 + 60 * breathe), _color.R, _color.G, _color.B);
-                var edgeColor = Color.Argb(0, _color.R, _color.G, _color.B);
-                _paint.SetShader(new RadialGradient(cx, cy, r, UI.ColorLong(centerColor), UI.ColorLong(edgeColor), Shader.TileMode.Clamp));
+                if (_shader == null || Math.Abs(_shaderR - r) > 0.5f)
+                {
+                    _shader?.Dispose();
+                    // 关键约束：本 ROM（ColorOS/Android15）上 RadialGradient 接收 int 颜色时，内部
+                    // Color.valueOf(int) 会返回非法 ColorSpace(id 23)，detectColorSpace 抛
+                    // IllegalArgumentException，渲染线程直接杀进程、无对话框。必须走 ColorLong 重载。
+                    _shader = new RadialGradient(cx, cy, r,
+                        UI.ColorLong(Color.Argb(255, _color.R, _color.G, _color.B)),
+                        UI.ColorLong(Color.Argb(0, _color.R, _color.G, _color.B)),
+                        Shader.TileMode.Clamp);
+                    _shaderR = r;
+                }
+                _paint.SetShader(_shader);
+                _paint.Alpha = (int)(150 + 60 * breathe); // 呼吸：整体透明度调制，等价于原来改中心色 alpha
                 canvas.DrawCircle(cx, cy, r, _paint);
+                _paint.Alpha = 255;
                 _paint.SetShader(null);
             }
             catch (Exception)
             {
                 // OnDraw 抛异常会静默杀进程；兜底跳过本次绘制以保活（光晕可能不显示）。
             }
-            if (_animating) PostInvalidateDelayed(33);
-        }
-
-        protected override void OnAttachedToWindow() { base.OnAttachedToWindow(); _animating = true; Invalidate(); }
-        protected override void OnDetachedFromWindow() { base.OnDetachedFromWindow(); _animating = false; }
-        protected override void OnWindowVisibilityChanged(ViewStates visibility)
-        {
-            base.OnWindowVisibilityChanged(visibility);
-            _animating = visibility == ViewStates.Visible;
-            if (_animating) Invalidate();
+            NextFrame();
         }
     }
 

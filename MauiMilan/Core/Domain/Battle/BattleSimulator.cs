@@ -30,21 +30,29 @@ namespace Milan.Domain.Battle
                     var enemies = actor.A ? b : a;
                     var target = enemies.Where(e => e.Hp > 0).OrderBy(e => e.Hp).FirstOrDefault();
                     if (target == null || target.Hp <= 0) continue;
-                    int dmg = Math.Max(1, actor.Stats.Atk - target.Stats.Def / 2);
-                    target.Hp -= dmg;
+                    // 伤害公式唯一事实来源：与 BattleActivity 手动出牌走同一入口。
+                    target.Hp -= StrikeDamage(actor.Stats, target.Stats);
                 }
 
                 // 空队伍无法"全部死亡"，必须要求队伍非空，否则空 teamB 会因 LINQ 语义被误判为胜利。
                 if (b.Count > 0 && b.All(x => x.Hp <= 0))
-                    return new BattleResult { Victory = true, Turns = turn, RemainingHp = a.Sum(x => Math.Max(0, x.Hp)) };
+                    return Done(true, turn, a, b);
                 if (a.Count > 0 && a.All(x => x.Hp <= 0))
-                    return new BattleResult { Victory = false, Turns = turn, RemainingHp = 0 };
+                    return Done(false, turn, a, b);
             }
 
-            return new BattleResult { Victory = false, Turns = maxTurns, RemainingHp = a.Sum(x => Math.Max(0, x.Hp)) };
+            return Done(false, maxTurns, a, b);
         }
 
-        /// <summary>单体攻击结算伤害（与 Simulate 内联公式一致，单一事实来源）。
+        static BattleResult Done(bool victory, int turns, List<S> a, List<S> b) => new BattleResult
+        {
+            Victory = victory,
+            Turns = turns,
+            RemainingHp = a.Sum(x => Math.Max(0, x.Hp)),
+            OpponentRemainingHp = b.Sum(x => Math.Max(0, x.Hp)),
+        };
+
+        /// <summary>单体攻击结算伤害（Simulate 与手动出牌共用，单一事实来源）。
         /// 攻方属性由 GameState.ComputeStats 生成，已含等级/突破/天赋/升星的加成。</summary>
         public static int StrikeDamage(UnitStats attacker, UnitStats defender)
             => System.Math.Max(1, attacker.Atk - defender.Def / 2);

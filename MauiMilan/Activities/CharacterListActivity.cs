@@ -56,13 +56,7 @@ public class CharacterListActivity : Activity
         root.SetPadding(Dp(18), Dp(40), Dp(18), Dp(18));
 
         // Twilight 深色渐变背景
-        var bgGrad = new GradientDrawable();
-        bgGrad.SetColors(new[] {
-            AppTheme.BgDeepest.ToArgb(),
-            AppTheme.BgMid.ToArgb(),
-            AppTheme.BgDeepest.ToArgb()
-        });
-        bgGrad.SetOrientation(GradientDrawable.Orientation.TlBr);
+        var bgGrad = UI.PageBackground();
         root.Background = (bgGrad);
 
         // ═══ TOP BAR ═══
@@ -147,9 +141,6 @@ public class CharacterListActivity : Activity
         StartActivity(intent);
     }
 
-    View Spacer(int h)
-    {
-        var density = Resources.DisplayMetrics.Density;
-        return new View(this) { LayoutParameters = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MatchParent, (int)(h * density)) };
-    }
+    // 唯一实现在 UI.Spacer，避免 9 个页面各维护一份换算逻辑。
+    View Spacer(int h) => UI.Spacer(this, h);
 }

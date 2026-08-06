@@ -68,12 +68,30 @@ public abstract class AnimatedEffectView : View
     /// <summary>目标帧间隔（毫秒）。33ms ≈ 30fps，足够顺滑且省一半功耗。</summary>
     protected int FrameIntervalMs { get; set; } = 33;
 
-    protected AnimatedEffectView(Context context) : base(context) { }
+    // 单一待执行帧。PostInvalidateDelayed 每次都排一条新消息，而 OnAttachedToWindow /
+    // OnWindowVisibilityChanged / 外部 Invalidate 都会额外触发 OnDraw，OnDraw 里又请求下一帧 ——
+    // 这些路径叠加会让帧循环成倍分裂，30fps 变 60/90fps 且再也降不回来。
+    // 用固定 Runnable + RemoveCallbacks 保证任何时刻至多一条待执行帧。
+    private readonly Java.Lang.Runnable _tick;
 
-    /// <summary>请求下一帧（带节流）。替代直接在 OnDraw 里调 Invalidate()。</summary>
+    protected AnimatedEffectView(Context context) : base(context)
+    {
+        _tick = new Java.Lang.Runnable(Invalidate);
+    }
+
+    /// <summary>请求下一帧（带节流去重）。替代直接在 OnDraw 里调 Invalidate()。</summary>
     protected void NextFrame()
     {
-        if (Animating) PostInvalidateDelayed(FrameIntervalMs);
+        if (!Animating) return;
+        RemoveCallbacks(_tick);
+        PostDelayed(_tick, FrameIntervalMs);
+    }
+
+    /// <summary>取消待执行帧，停止重绘循环。</summary>
+    private void StopFrames()
+    {
+        Animating = false;
+        RemoveCallbacks(_tick);
     }
 
     protected override void OnAttachedToWindow()
@@ -86,14 +104,14 @@ public abstract class AnimatedEffectView : View
     protected override void OnDetachedFromWindow()
     {
         base.OnDetachedFromWindow();
-        Animating = false;
+        StopFrames();
     }
 
     protected override void OnWindowVisibilityChanged(ViewStates visibility)
     {
         base.OnWindowVisibilityChanged(visibility);
-        Animating = visibility == ViewStates.Visible;
-        if (Animating) Invalidate();
+        if (visibility == ViewStates.Visible) { Animating = true; Invalidate(); }
+        else StopFrames();
     }
 }
 

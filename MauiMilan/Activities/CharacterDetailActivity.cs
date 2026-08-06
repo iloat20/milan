@@ -54,12 +54,7 @@ public class CharacterDetailActivity : Activity
         base.OnDestroy();
     }
 
-    // 系统内存吃紧时释放武器图 native 缓存（VfxRenderer 内部 LRU，最多 16 张）。
-    public override void OnTrimMemory(TrimMemory level)
-    {
-        base.OnTrimMemory(level);
-        if (level >= TrimMemory.Moderate) VfxRenderer.TrimWeaponCache();
-    }
+    // 内存压力处理已收口到 MauiApp.OnTrimMemory（进程级回调，覆盖全部页面）。
 
     bool ResolveCharacter(string id)
     {
@@ -897,11 +892,8 @@ public class CharacterDetailActivity : Activity
         };
     }
 
-    View Spacer(int h)
-    {
-        var density = Resources.DisplayMetrics.Density;
-        return new View(this) { LayoutParameters = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MatchParent, (int)(h * density)) };
-    }
+    // 唯一实现在 UI.Spacer，避免 9 个页面各维护一份换算逻辑。
+    View Spacer(int h) => UI.Spacer(this, h);
 
     // 魔兽世界风格面板外框：暗底 + 金色双描边 + 四角菱形饰钉。
     // 复用 Paint/Path/RectF，OnDraw 空尺寸保护。

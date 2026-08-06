@@ -88,11 +88,7 @@ public class ProgressionActivity : Activity
         base.OnDestroy();
     }
 
-    public override void OnTrimMemory(TrimMemory level)
-    {
-        base.OnTrimMemory(level);
-        if (level >= TrimMemory.Moderate) VfxRenderer.TrimWeaponCache();
-    }
+    // 内存压力处理已收口到 MauiApp.OnTrimMemory（进程级回调，覆盖全部页面）。
 
     bool ResolveCharacter(string id)
     {
@@ -255,7 +251,8 @@ public class ProgressionActivity : Activity
         var idx = chars.FindIndex(c => c.CharacterId == _def.CharacterId);
         if (idx < 0) return;
         var next = (idx + delta + chars.Count) % chars.Count;
-        var intent = new Intent(this, typeof(CharacterDetailActivity));
+        // 养成页内切角色必须停留在养成页；此前误指向 CharacterDetailActivity，点箭头会被踢出养成流程。
+        var intent = new Intent(this, typeof(ProgressionActivity));
         intent.PutExtra("characterId", chars[next].CharacterId);
         StartActivity(intent);
         Finish();
@@ -621,10 +618,7 @@ public class ProgressionActivity : Activity
     {
         if (!_owned) { Toast("未拥有该角色"); return; }
         if (!GameState.Service.StarUp(_def.CharacterId))
-        {
-            int cost = GameState.Service.StarUpFragments(_view.Save.Stars);
             Toast(_view.Save.Stars >= _def.MaxStars ? "已满星" : "星魂碎片不足");
-        }
         Refresh();
     }
 
@@ -680,9 +674,13 @@ public class ProgressionActivity : Activity
         int maxStars = _def.MaxStars;
         bool starMax = save.Stars >= maxStars;
         int sFrag = GameState.Service.StarUpFragments(save.Stars);
+        // 注意：不能用 "★".PadLeft(n,'★') —— PadLeft 的语义是"补齐到总长 n"，
+        // n<=1 时原样返回一个字符，Stars=0 会画出一颗实心星；n 为负还会抛异常。
+        string filled = new string('★', Math.Max(0, save.Stars));
+        string empty = new string('☆', Math.Max(0, maxStars - save.Stars));
         _starText.Text = starMax
-            ? $"{"★".PadLeft(save.Stars, '★')} 满星"
-            : $"{"★".PadLeft(save.Stars, '★')}{"☆".PadLeft(maxStars - save.Stars, '☆')}  {save.Stars}/{maxStars}";
+            ? $"{filled} 满星"
+            : $"{filled}{empty}  {save.Stars}/{maxStars}";
         _starCostText.Text = starMax ? "—" : $"❖ {sFrag:N0}";
         bool canStar = _owned && !starMax && frags >= sFrag;
         _btnStarUp.Enabled = canStar;
@@ -696,9 +694,6 @@ public class ProgressionActivity : Activity
     void OnCurrencyChanged(CurrencyChanged _) => Refresh();
     void OnProgressionChanged(ProgressionChanged _) => Refresh();
 
-    View Spacer(int h)
-    {
-        var density = Resources.DisplayMetrics.Density;
-        return new View(this) { LayoutParameters = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MatchParent, (int)(h * density)) };
-    }
+    // 唯一实现在 UI.Spacer，避免 9 个页面各维护一份换算逻辑。
+    View Spacer(int h) => UI.Spacer(this, h);
 }

@@ -52,13 +52,7 @@ public class CollectionActivity : Activity
         root.SetPadding(Dp(16), Dp(40), Dp(16), Dp(16));
 
         // Twilight 深色渐变背景
-        var bgGrad = new GradientDrawable();
-        bgGrad.SetColors(new[] {
-            AppTheme.BgDeepest.ToArgb(),
-            AppTheme.BgMid.ToArgb(),
-            AppTheme.BgDeepest.ToArgb()
-        });
-        bgGrad.SetOrientation(GradientDrawable.Orientation.TlBr);
+        var bgGrad = UI.PageBackground();
         root.Background = (bgGrad);
 
         // ═══ TOP BAR ═══
@@ -74,9 +68,9 @@ public class CollectionActivity : Activity
         var progress = (float)owned / total;
         var progressLabel = UI.Text($"收集进度  {owned} / {total}", 12, AppTheme.Text2);
 
-        // Progress bar track
-        var track = new FrameLayout(this);
-        var trackLp = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MatchParent, Dp(8));
+        // Progress bar track：用权重表达占比，避免硬编码像素宽度（高 dpi 屏会永远画不满）。
+        var track = new LinearLayout(this) { Orientation = Orientation.Horizontal, WeightSum = 1f };
+        var trackLp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MatchParent, Dp(8));
         trackLp.SetMargins(0, Dp(6), 0, 0);
         track.LayoutParameters = trackLp;
         var trackBg = new GradientDrawable();
@@ -90,12 +84,16 @@ public class CollectionActivity : Activity
         fillBg.SetCornerRadius(Dp(4));
         fillBg.SetColors(new[] { AppTheme.GoldDeep.ToArgb(), AppTheme.GoldHi.ToArgb() });
         fill.Background = fillBg;
-        var fillWidth = (int)(140 * progress);
-        var fillLp = new FrameLayout.LayoutParams(Math.Max(fillWidth, Dp(8)), Dp(8));
-        fill.LayoutParameters = fillLp;
+        var fillRatio = Math.Min(1f, Math.Max(0.02f, progress)); // 保底可见一小段
+        fill.LayoutParameters = new LinearLayout.LayoutParams(0, Dp(8), fillRatio);
+        var rest = new View(this)
+        {
+            LayoutParameters = new LinearLayout.LayoutParams(0, Dp(8), 1f - fillRatio)
+        };
 
         progressBox.AddView(progressLabel);
         track.AddView(fill);
+        track.AddView(rest);
         progressBox.AddView(track);
         root.AddView(progressBox);
         root.AddView(Spacer(12));
@@ -219,9 +217,6 @@ public class CollectionActivity : Activity
         StartActivity(intent);
     }
 
-    View Spacer(int h)
-    {
-        var density = Resources.DisplayMetrics.Density;
-        return new View(this) { LayoutParameters = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MatchParent, (int)(h * density)) };
-    }
+    // 唯一实现在 UI.Spacer，避免 9 个页面各维护一份换算逻辑。
+    View Spacer(int h) => UI.Spacer(this, h);
 }

@@ -63,6 +63,32 @@ public static class PortraitLoader
         catch { return null; }
     }
 
+    /// <summary>
+    /// 系统内存吃紧时（Application.OnTrimMemory）收缩缓存。
+    /// 只丢引用、绝不 Recycle：仍挂在窗口上的视图可能持有同一张 Bitmap，
+    /// 提前 Recycle 会在下一帧 drawBitmap 时抛 "Canvas: trying to use a recycled bitmap"，
+    /// 而自绘异常是静默杀进程的。native 内存交给 GC/finalizer 回收即可。
+    /// </summary>
+    /// <param name="keep">保留最近使用的条目数，0 表示全清。</param>
+    public static void Trim(int keep = 0)
+    {
+        lock (_lock)
+        {
+            _glowCache.Clear(); // 辉光遮罩可随时重建，优先释放
+            while (_lru.Count > keep)
+            {
+                var oldest = _lru.Last!.Value;
+                _lru.RemoveLast();
+                _cache.Remove(oldest);
+            }
+            if (keep <= 0) { _cache.Clear(); _lru.Clear(); }
+        }
+    }
+
+    /// <summary>
+    /// 强制回收全部缓存位图。仅可在确认无任何视图持有引用时调用（如进程退出前）。
+    /// 常规内存压力请用 <see cref="Trim(int)"/>。
+    /// </summary>
     public static void ClearCache()
     {
         lock (_lock)

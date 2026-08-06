@@ -304,17 +304,21 @@ public class BattleActivity : Activity
     private void OnAutoBattle()
     {
         if (_over) return;
-        if (_team.Count == 0) { Toast("无出战角色"); return; }
-        // 复用 BattleSimulator.Simulate 跑整队结算（攻方属性含升星加成）
-        var team = _team.Select(x => new UnitStats
+        var alive = _team.Where(x => !x.Dead).ToList();
+        if (alive.Count == 0) { Toast("无出战角色"); return; }
+        // 复用 BattleSimulator.Simulate 跑整队结算（攻方属性含升星加成）。
+        // 必须接续当前战况：血量取存活单位的「当前 Hp」而非上限，否则手动打掉半血后
+        // 点自动战斗会把双方血量重置回满。
+        var team = alive.Select(x => new UnitStats
         {
-            Atk = x.Stats.Atk, Def = x.Stats.Def, Hp = x.Stats.Hp, Spd = x.Stats.Spd, CharacterId = x.Stats.CharacterId
+            Atk = x.Stats.Atk, Def = x.Stats.Def, Hp = x.Hp, Spd = x.Stats.Spd, CharacterId = x.Stats.CharacterId
         }).ToArray();
-        var enemy = new UnitStats { Atk = _enemyStats.Atk, Def = _enemyStats.Def, Hp = _enemyMaxHp, Spd = _enemyStats.Spd, CharacterId = "enemy" };
+        var enemy = new UnitStats { Atk = _enemyStats.Atk, Def = _enemyStats.Def, Hp = _enemyHp, Spd = _enemyStats.Spd, CharacterId = "enemy" };
         var result = new BattleSimulator(new System.Random()).Simulate(team, new[] { enemy }, 50);
-        _enemyHp = result.Victory ? 0 : _enemyMaxHp;
+        _enemyHp = System.Math.Max(0, result.OpponentRemainingHp);
+        _turns += result.Turns; // 累计手动阶段已打的回合，战绩才是完整场次
         UpdateEnemyBar();
-        EndBattle(result.Victory, result.Turns, result.RemainingHp);
+        EndBattle(result.Victory, _turns, result.RemainingHp);
     }
 
     private void EndBattle(bool victory) => EndBattle(victory, _turns, _team.Where(x => !x.Dead).Sum(x => x.Hp));
@@ -409,10 +413,7 @@ public class BattleActivity : Activity
 
     private static Drawable TwilightBg()
     {
-        var gd = new GradientDrawable();
-        gd.SetColors(new[] { AppTheme.BgDeepest.ToArgb(), AppTheme.BgMid.ToArgb(), AppTheme.BgDeepest.ToArgb() });
-        gd.SetOrientation(GradientDrawable.Orientation.TlBr);
-        return gd;
+        return UI.PageBackground();
     }
 
     private static Drawable GoldFill()
@@ -423,5 +424,5 @@ public class BattleActivity : Activity
         return gd;
     }
 
-    private void Toast(string m) => Android.Widget.Toast.MakeText(this, m, ToastLength.Short).Show();
+    private void Toast(string m) => Android.Widget.Toast.MakeText(this, m, ToastLength.Short)?.Show();
 }

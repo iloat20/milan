@@ -34,9 +34,7 @@ public class SettingsActivity : Activity
     {
         var root = new FrameLayout(this);
         root.LayoutParameters = new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MatchParent, ViewGroup.LayoutParams.MatchParent);
-        root.Background = (new GradientDrawable(
-            GradientDrawable.Orientation.TlBr,
-            new[] { AppTheme.BgDeepest.ToArgb(), AppTheme.BgMid.ToArgb(), AppTheme.BgDeepest.ToArgb() }));
+        root.Background = (UI.PageBackground());
 
         var main = UI.VBox();
         main.LayoutParameters = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MatchParent, ViewGroup.LayoutParams.MatchParent);
@@ -140,27 +138,13 @@ public class SettingsActivity : Activity
         return row;
     }
 
-    void OnNav(GameNavBar.NavItem item)
-    {
-        var target = item switch
-        {
-            GameNavBar.NavItem.Home => typeof(HomeActivity),
-            GameNavBar.NavItem.Gacha => typeof(GachaActivity),
-            GameNavBar.NavItem.Deck => typeof(DeckActivity),
-            GameNavBar.NavItem.Shop => typeof(ShopActivity),
-            GameNavBar.NavItem.Settings => typeof(SettingsActivity),
-            _ => null
-        };
-        Nav.To(this, target);
-    }
+    // 导航映射唯一来源在 Nav.TargetOf；同页点击由 Nav.To 自身拦截。
+    void OnNav(GameNavBar.NavItem item) => Nav.Go(this, item);
 
     void Toast(string msg) => Android.Widget.Toast.MakeText(this, msg, Android.Widget.ToastLength.Short)?.Show();
 
-    View Spacer(int h)
-    {
-        var d = Resources.DisplayMetrics.Density;
-        return new View(this) { LayoutParameters = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MatchParent, (int)(h * d)) };
-    }
+    // 唯一实现在 UI.Spacer，避免 9 个页面各维护一份换算逻辑。
+    View Spacer(int h) => UI.Spacer(this, h);
 }
 
 /// <summary>金色自定义开关（Obsidian &amp; Gold）：开=金色轨道+亮金钮，关=灰轨道+白钮。</summary>
@@ -175,6 +159,8 @@ public sealed class GoldToggle : FrameLayout
 
     private void Init()
     {
+        // ViewGroup 默认 WILL_NOT_DRAW=true，不显式打开则 OnDraw 永不被调用（开关不可见，仅能点）。
+        SetWillNotDraw(false);
         Clickable = true; Focusable = true;
         this.Touch += (s, e) =>
         {

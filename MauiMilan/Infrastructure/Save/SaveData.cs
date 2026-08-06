@@ -83,6 +83,47 @@ public class SaveData
         d.GachaCounters.RemoveAll(x => x == null || x.PoolId == null);
         d.BattleRecords ??= new();
         d.BattleRecords.RemoveAll(x => x == null);
+
+        // ── 数值钳制 ──
+        // 上面的空引用净化只挡住了 NRE，挡不住"结构合法但数值荒谬"的档
+        // （手改存档、旧版本遗留、写盘被截断后侥幸解析成功）。
+        // 负货币会让所有"可负担"判定失效；Level/Stage/Stars < 1 会让
+        // ProgressionEngine.StatAtLevel 的倍率槽算出 0 或负属性，战斗里表现为
+        // 打不动也打不死的僵尸单位。一律在入口钳到合法域。
+        if (d.SoftCurrency < 0) d.SoftCurrency = 0;
+        if (d.HardCurrency < 0) d.HardCurrency = 0;
+
+        // 同一 CharacterId 出现多份会让"是否已拥有"判定与列表渲染分叉
+        // （抽卡判重取第一条、列表按全部渲染 → 图鉴里出现重复卡）。保留首条。
+        var seenChars = new HashSet<string>();
+        d.OwnedCharacters.RemoveAll(x => !seenChars.Add(x.CharacterId));
+        foreach (var c in d.OwnedCharacters)
+        {
+            c.Level = Math.Max(1, c.Level);
+            c.Stage = Math.Max(1, c.Stage);
+            c.Stars = Math.Max(1, c.Stars);
+            c.TotalExp = Math.Max(0, c.TotalExp);
+            c.UnspentPoints = Math.Max(0, c.UnspentPoints);
+            c.TalentPoints ??= new();
+            c.TalentPoints.RemoveAll(string.IsNullOrEmpty);
+        }
+
+        // 道具同理去重合并：分散的同 ID 条目会让"持有数量"读到的只是其中一条。
+        var mergedItems = new Dictionary<string, ItemSaveState>();
+        foreach (var it in d.Items)
+        {
+            if (mergedItems.TryGetValue(it.ItemId, out var exist)) exist.Count += Math.Max(0, it.Count);
+            else { it.Count = Math.Max(0, it.Count); mergedItems[it.ItemId] = it; }
+        }
+        if (mergedItems.Count != d.Items.Count)
+        {
+            d.Items.Clear();
+            d.Items.AddRange(mergedItems.Values);
+        }
+
+        var seenPools = new HashSet<string>();
+        d.GachaCounters.RemoveAll(x => !seenPools.Add(x.PoolId));
+        foreach (var g in d.GachaCounters) g.Count = Math.Max(0, g.Count);
     }
 
     public static SaveData CreateDefault() => new();

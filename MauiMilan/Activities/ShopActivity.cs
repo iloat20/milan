@@ -35,9 +35,7 @@ public class ShopActivity : Activity
     {
         var root = new FrameLayout(this);
         root.LayoutParameters = new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MatchParent, ViewGroup.LayoutParams.MatchParent);
-        root.Background = (new GradientDrawable(
-            GradientDrawable.Orientation.TlBr,
-            new[] { AppTheme.BgDeepest.ToArgb(), AppTheme.BgMid.ToArgb(), AppTheme.BgDeepest.ToArgb() }));
+        root.Background = (UI.PageBackground());
 
         var main = UI.VBox();
         main.LayoutParameters = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MatchParent, ViewGroup.LayoutParams.MatchParent);
@@ -112,25 +110,11 @@ public class ShopActivity : Activity
         return card;
     }
 
-    void OnNav(GameNavBar.NavItem item)
-    {
-        var target = item switch
-        {
-            GameNavBar.NavItem.Home => typeof(HomeActivity),
-            GameNavBar.NavItem.Gacha => typeof(GachaActivity),
-            GameNavBar.NavItem.Deck => typeof(DeckActivity),
-            GameNavBar.NavItem.Shop => typeof(ShopActivity),
-            GameNavBar.NavItem.Settings => typeof(SettingsActivity),
-            _ => null
-        };
-        Nav.To(this, target);
-    }
+    // 导航映射唯一来源在 Nav.TargetOf；同页点击由 Nav.To 自身拦截。
+    void OnNav(GameNavBar.NavItem item) => Nav.Go(this, item);
 
     void Toast(string m) => Android.Widget.Toast.MakeText(this, m, Android.Widget.ToastLength.Short)?.Show();
 
-    View Spacer(int h)
-    {
-        var d = Resources.DisplayMetrics.Density;
-        return new View(this) { LayoutParameters = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MatchParent, (int)(h * d)) };
-    }
+    // 唯一实现在 UI.Spacer，避免 9 个页面各维护一份换算逻辑。
+    View Spacer(int h) => UI.Spacer(this, h);
 }

@@ -80,12 +80,7 @@ public class GachaActivity : Activity
         base.OnPause();
     }
 
-    // 系统内存吃紧时释放武器图 native 缓存（VfxRenderer 内部 LRU，最多 16 张）。
-    public override void OnTrimMemory(TrimMemory level)
-    {
-        base.OnTrimMemory(level);
-        if (level >= TrimMemory.Moderate) VfxRenderer.TrimWeaponCache();
-    }
+    // 内存压力处理已收口到 MauiApp.OnTrimMemory（进程级回调，覆盖全部页面）。
 
     FrameLayout BuildLayout()
     {
@@ -263,19 +258,8 @@ public class GachaActivity : Activity
         StartActivity(intent);
     }
 
-    void OnNav(GameNavBar.NavItem item)
-    {
-        if (item == GameNavBar.NavItem.Gacha) return;
-        var target = item switch
-        {
-            GameNavBar.NavItem.Home => typeof(HomeActivity),
-            GameNavBar.NavItem.Deck => typeof(DeckActivity),
-            GameNavBar.NavItem.Shop => typeof(ShopActivity),
-            GameNavBar.NavItem.Settings => typeof(SettingsActivity),
-            _ => null
-        };
-        Nav.To(this, target);
-    }
+    // 导航映射唯一来源在 Nav.TargetOf；同页点击由 Nav.To 自身拦截。
+    void OnNav(GameNavBar.NavItem item) => Nav.Go(this, item);
 
     /// <summary>
     /// 入场编排（暗夜神性·诸神黄昏）：内容淡入 → 法阵缩放弹入 → 召唤按钮错落上浮（stagger 60ms，ease-out）。
@@ -295,11 +279,8 @@ public class GachaActivity : Activity
         catch (System.Exception ex) { CrashReporter.Write("GachaActivity.PlayEntrance", ex); }
     }
 
-    View Spacer(int h)
-    {
-        var density = Resources.DisplayMetrics.Density;
-        return new View(this) { LayoutParameters = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MatchParent, (int)(h * density)) };
-    }
+    // 唯一实现在 UI.Spacer，避免 9 个页面各维护一份换算逻辑。
+    View Spacer(int h) => UI.Spacer(this, h);
 
     static string BuildRatesLabel(GachaPoolDataEntry? pool)
     {

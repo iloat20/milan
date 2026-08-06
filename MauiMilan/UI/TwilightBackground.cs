@@ -9,11 +9,12 @@ namespace Milan.Maui;
 /// 复用既有常驻动画渐变缓存与生命周期暂停（optimization-review P1），
 /// 并严格遵守 ColorLong 渐变铁律（Shader 只用 long / long[] 重载）。
 /// </summary>
-public class TwilightBackground : View
+public class TwilightBackground : AnimatedEffectView
 {
     private float _phase;
     private Paint? _paint;
     private readonly Random _rng = new();
+    /// <summary>调用方是否要求播放动画（与"窗口是否可见"正交，后者由基类的 Animating 负责）。</summary>
     private bool _running;
     // 主背景常驻动画：渐变只依赖高度，缓存避免每帧分配 + GPU 重传（P1）。
     private LinearGradient? _gradient;
@@ -64,35 +65,13 @@ public class TwilightBackground : View
     public void Start() { _running = true; Invalidate(); }
     public void Stop() { _running = false; }
 
-    // ---- 生命周期：脱离窗口/不可见时自动暂停动画，可见时恢复 ----
-    private bool _pausedByLifecycle;
-
+    // 离屏/不可见的暂停与恢复由 AnimatedEffectView 统一处理（Animating + 单帧去重），
+    // 这里只需在脱离窗口时释放 native Shader。
     protected override void OnDetachedFromWindow()
     {
         base.OnDetachedFromWindow();
         _gradient?.Dispose(); _gradient = null; _gradH = 0;
         _glow?.Dispose(); _glow = null; _glowW = _glowH = 0;
-        if (_running) { _pausedByLifecycle = true; _running = false; }
-    }
-
-    protected override void OnAttachedToWindow()
-    {
-        base.OnAttachedToWindow();
-        if (_pausedByLifecycle) { _pausedByLifecycle = false; Start(); }
-    }
-
-    protected override void OnWindowVisibilityChanged(ViewStates visibility)
-    {
-        base.OnWindowVisibilityChanged(visibility);
-        if (visibility != ViewStates.Visible)
-        {
-            if (_running) { _pausedByLifecycle = true; _running = false; }
-        }
-        else if (_pausedByLifecycle)
-        {
-            _pausedByLifecycle = false;
-            Start();
-        }
     }
 
     protected override void OnDraw(Canvas canvas)
@@ -150,6 +129,6 @@ public class TwilightBackground : View
             _stars[i] = s;
         }
 
-        if (_running) Invalidate();
+        if (_running) NextFrame(); // 节流到 ~30fps，且保证至多一条待执行帧
     }
 }
