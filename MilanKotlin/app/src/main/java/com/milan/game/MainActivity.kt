@@ -21,6 +21,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.milan.game.infrastructure.CrashReporter
+import com.milan.game.ui.characters.CharacterListScreen
+import com.milan.game.ui.components.NeonButton
 import com.milan.game.ui.gacha.GachaScreen
 import com.milan.game.ui.home.HomeScreen
 import com.milan.game.ui.nav.AppTopBar
@@ -52,19 +54,26 @@ class MainActivity : ComponentActivity() {
 private fun MilanNavHost() {
     var tab by rememberSaveable { mutableStateOf(NavItem.Home) }
     var collectionOpen by rememberSaveable { mutableStateOf(false) }
+    var listOpen by rememberSaveable { mutableStateOf(false) }
     var detailId by rememberSaveable { mutableStateOf<String?>(null) }
 
-    val onBack = { collectionOpen = false; detailId = null }
+    val onBack = { collectionOpen = false; listOpen = false; detailId = null }
 
     when {
-        // 子页优先：角色详情 > 名录图鉴
+        // 子页优先：角色详情 > 角色列表 > 名录图鉴
         detailId != null -> PlaceholderScreen(
             title = "角色详情",
             onBack = onBack,
         )
+        listOpen -> CharacterListScreen(
+            onBack = onBack,
+            onOpenCharacter = { id -> detailId = id },
+        )
         collectionOpen -> PlaceholderScreen(
             title = "神谱图鉴",
             onBack = onBack,
+            actionLabel = "我的角色",
+            onAction = { listOpen = true },
         )
         else -> when (tab) {
             NavItem.Home -> HomeScreen(
@@ -102,6 +111,7 @@ private fun MilanNavHost() {
 /**
  * 建设中占位页：顶栏 + 居中提示（TODO: 替换为各页真实实现）。
  * [navItem] 非空时在底部渲染导航条（主 tab 页），空则仅顶栏（子页）。
+ * [actionLabel]/[onAction] 非空时在占位提示下方渲染一个入口按钮（如「我的角色」）。
  */
 @Composable
 private fun PlaceholderScreen(
@@ -110,6 +120,8 @@ private fun PlaceholderScreen(
     modifier: Modifier = Modifier,
     navItem: NavItem? = null,
     onNav: ((NavItem) -> Unit)? = null,
+    actionLabel: String? = null,
+    onAction: (() -> Unit)? = null,
 ) {
     Column(
         modifier = modifier
@@ -136,6 +148,13 @@ private fun PlaceholderScreen(
                     color = AppTheme.Text2,
                     modifier = Modifier.padding(top = 8.dp),
                 )
+                if (actionLabel != null && onAction != null) {
+                    NeonButton(
+                        text = actionLabel,
+                        onClick = onAction,
+                        modifier = Modifier.padding(top = 20.dp),
+                    )
+                }
             }
         }
         if (navItem != null && onNav != null) {
