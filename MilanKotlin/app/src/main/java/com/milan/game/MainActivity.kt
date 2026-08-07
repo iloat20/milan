@@ -21,6 +21,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.milan.game.infrastructure.CrashReporter
+import com.milan.game.ui.characters.CharacterDetailScreen
 import com.milan.game.ui.characters.CharacterListScreen
 import com.milan.game.ui.components.NeonButton
 import com.milan.game.ui.gacha.GachaScreen
@@ -56,14 +57,24 @@ private fun MilanNavHost() {
     var collectionOpen by rememberSaveable { mutableStateOf(false) }
     var listOpen by rememberSaveable { mutableStateOf(false) }
     var detailId by rememberSaveable { mutableStateOf<String?>(null) }
+    var progressionId by rememberSaveable { mutableStateOf<String?>(null) }
 
-    val onBack = { collectionOpen = false; listOpen = false; detailId = null }
+    val onBack = { collectionOpen = false; listOpen = false; progressionId = null; detailId = null }
 
+    // 局部快照：rememberSaveable 的 delegated var 无法 smart-cast，路由判断统一用快照
+    val detail = detailId
+    val progress = progressionId
     when {
-        // 子页优先：角色详情 > 角色列表 > 名录图鉴
-        detailId != null -> PlaceholderScreen(
-            title = "角色详情",
+        // 子页优先：角色养成 > 角色详情 > 角色列表 > 名录图鉴
+        progress != null -> PlaceholderScreen(
+            title = "角色养成",
+            onBack = { progressionId = null }, // TODO: Task 11 换成真实养成屏
+        )
+        detail != null -> CharacterDetailScreen(
+            characterId = detail,
             onBack = onBack,
+            onOpenProgression = { id -> progressionId = id },
+            onSwitchCharacter = { id -> detailId = id },
         )
         listOpen -> CharacterListScreen(
             onBack = onBack,
