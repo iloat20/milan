@@ -49,4 +49,52 @@ class TalentEngineTest {
         val costs = mapOf("a" to 1, "b" to 2, "c" to 3)
         assertEquals(6, engine.totalPoints(costs))
     }
+
+    // ── talentMultipliers：分支属性加成（每节点 +3%）──
+
+    @Test
+    fun talentMultipliers_powerBranch_onlyAtk() {
+        val m = engine.talentMultipliers(listOf(TalentEngine.BRANCH_POWER))
+        assertEquals(0.03f, m.atk, 1e-6f)
+        assertEquals(0f, m.def, 1e-6f)
+        assertEquals(0f, m.hp, 1e-6f)
+        assertEquals(0f, m.spd, 1e-6f)
+    }
+
+    @Test
+    fun talentMultipliers_twoPowerNodes_accumulates() {
+        val m = engine.talentMultipliers(listOf(TalentEngine.BRANCH_POWER, TalentEngine.BRANCH_POWER))
+        assertEquals(0.06f, m.atk, 1e-6f)
+    }
+
+    @Test
+    fun talentMultipliers_defenseBranch_boostsDefAndHp() {
+        val m = engine.talentMultipliers(listOf(TalentEngine.BRANCH_DEFENSE))
+        assertEquals(0.03f, m.def, 1e-6f)
+        assertEquals(0.03f, m.hp, 1e-6f)
+    }
+
+    @Test
+    fun talentMultipliers_utilityBranch_boostsSpd() {
+        val m = engine.talentMultipliers(listOf(TalentEngine.BRANCH_UTILITY))
+        assertEquals(0.03f, m.spd, 1e-6f)
+    }
+
+    @Test
+    fun talentMultipliers_unknownBranch_ignored() {
+        val m = engine.talentMultipliers(listOf("branch_xxx"))
+        assertEquals(0f, m.atk, 1e-6f)
+        assertEquals(0f, m.def, 1e-6f)
+        assertEquals(0f, m.hp, 1e-6f)
+        assertEquals(0f, m.spd, 1e-6f)
+    }
+
+    @Test
+    fun talentMultipliers_emptyList_allZero() {
+        val m = engine.talentMultipliers(emptyList())
+        assertEquals(0f, m.atk, 1e-6f)
+        assertEquals(0f, m.def, 1e-6f)
+        assertEquals(0f, m.hp, 1e-6f)
+        assertEquals(0f, m.spd, 1e-6f)
+    }
 }

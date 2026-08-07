@@ -4,6 +4,7 @@ import com.milan.game.data.CharacterSaveState
 import com.milan.game.data.SaveProvider
 import com.milan.game.domain.battle.UnitStats
 import com.milan.game.domain.progression.ProgressionEngine
+import com.milan.game.domain.progression.TalentEngine
 import com.milan.game.infrastructure.CrashReporter
 import com.milan.game.infrastructure.eventbus.EventBus
 import com.milan.game.services.CharacterDataEntry
@@ -25,6 +26,7 @@ object GameState {
     private val gate = Any()
     private var initialized = false
     private var serviceRef: GameService? = null
+    private val talentEngine = TalentEngine()
 
     /** 共享服务实例（唯一 GameService，进程内只创建一次）。 */
     val service: GameService
@@ -101,28 +103,18 @@ object GameState {
         val bs = def.baseStats
         fun base(i: Int, fallback: Int): Int = if (i < bs.size) bs[i] else fallback
 
-        // 已点亮天赋的分支加成：power→攻，defense→防+生命，utility→速度（每节点 +3%）。
-        var atkB = 0f
-        var defB = 0f
-        var hpB = 0f
-        var spdB = 0f
-        val tree = ch.talent
-        if (tree != null) {
-            for (n in tree.nodes) {
-                if (!save.talentPoints.contains(n.nodeId)) continue
-                when (n.branchId) {
-                    "branch_power" -> atkB += 0.03f
-                    "branch_defense" -> { defB += 0.03f; hpB += 0.03f }
-                    "branch_utility" -> spdB += 0.03f
-                }
-            }
-        }
+        // 天赋加成数值下沉 domain 层（TalentEngine.talentMultipliers，单一事实来源）。
+        // 树为 null → 空分支列表 → 全 0，与旧实现行为一致。
+        val branchIds = ch.talent?.nodes.orEmpty()
+            .filter { save.talentPoints.contains(it.nodeId) }
+            .map { it.branchId }
+        val m = talentEngine.talentMultipliers(branchIds)
 
         return UnitStats(
-            atk = (engine.statAtLevel(base(0, 100), lv, stg, starMul) * (1 + atkB)).toInt(),
-            def = (engine.statAtLevel(base(1, 80), lv, stg, starMul) * (1 + defB)).toInt(),
-            hp = (engine.statAtLevel(base(2, 1000), lv, stg, starMul) * (1 + hpB)).toInt(),
-            spd = (engine.statAtLevel(base(3, 12), lv, stg, starMul) * (1 + spdB)).toInt(),
+            atk = (engine.statAtLevel(base(0, 100), lv, stg, starMul) * (1 + m.atk)).toInt(),
+            def = (engine.statAtLevel(base(1, 80), lv, stg, starMul) * (1 + m.def)).toInt(),
+            hp = (engine.statAtLevel(base(2, 1000), lv, stg, starMul) * (1 + m.hp)).toInt(),
+            spd = (engine.statAtLevel(base(3, 12), lv, stg, starMul) * (1 + m.spd)).toInt(),
             characterId = save.characterId,
         )
     }
