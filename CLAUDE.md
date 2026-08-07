@@ -10,84 +10,81 @@ The summon art style is a **dimensional rift / portal** (characters cross over f
 
 ## Implementation
 
-The game is a **.NET 10 native Android** app in `MauiMilan/` (TFM `net10.0-android`). Despite the folder name, this is a **plain native-Android** project (SDK `Microsoft.NET.Sdk`), not MAUI UI — it uses `Android.App.Activity` and `Android.Widget` directly, which keeps the package small and the build fast. It builds a native APK at `MauiMilan/bin/Release/net10.0-android/com.milan.game-Signed.apk`.
+The game is a **Kotlin / Jetpack Compose native Android** app in `MilanKotlin/` (Gradle 8 + AGP 8.10.1 + Kotlin 2.1.20, `com.milan.game`). Single-`Activity` architecture with a pure-state router (`MilanNavHost`), Material3 theming, kotlinx.serialization for save/content JSON, coroutines for async work. APK at `MilanKotlin/app/build/outputs/apk/debug/app-debug.apk`.
 
-> A Unity C# implementation used to live in `Assets/_Project/` but has been removed. The pure, UnityEngine-free game core (Domain engines, EventBus, Enums) was moved into `MauiMilan/Core/` so the project is now self-contained.
+> This is the third implementation. A Unity C# version (`Assets/_Project/`) and a .NET 10 native-Android version (`MauiMilan/` + `Tests/`) used to live in the repo and were removed on 2026-08-07 in favor of the Kotlin rewrite. Old logic can be recovered from git history; code comments still carry "C# 某某翻译" cross-references — keep those.
 
 ### Build & run
 ```bash
-dotnet build MauiMilan/MauiMilan.csproj -c Release
+./gradlew.bat :app:assembleDebug          # Debug APK
+./gradlew.bat :app:testDebugUnitTest      # unit tests (JUnit4 + coroutines-test)
 ```
-A .NET 10 SDK with the Android workload is required (the runtime alone is not enough). The initial currency is set high (999999) for testing — pulls should feel unlimited.
+JDK 17+ is required (gradle.properties pins `org.gradle.java.home`). Versions live in `MilanKotlin/gradle/libs.versions.toml`. `minSdk=29, targetSdk=36, compileSdk=36`.
 
 ### Project layout
 ```
-MauiMilan/
-├── Activities/        # Android Activities (screens)
-│   ├── HomeActivity           — hub: title, currency, nav cards (gacha / characters / collection)
-│   ├── GachaActivity          — single/ten-pull, full results in a rarity-colored grid
-│   ├── CharacterListActivity  — owned characters as rarity cards (2-col grid)
-│   ├── CharacterDetailActivity— stats, talent placeholder, 360° inspect button
-│   └── CollectionActivity     — collection progress bar + full roster (owned vs silhouette)
-├── UI/                # Shared design system
-│   ├── UIHelper.cs            — Theme palette + rarity colors + rounded button/card/gradient helpers
-│   └── GameState.cs           — process-wide singleton owning the shared GameService/SaveManager
-├── Services/
-│   └── GameService.cs         — gacha/pull logic, progression, content load (data.json + fallback)
-├── Infrastructure/Save/       # ISaveProvider · LocalSaveProvider · SaveData · SaveManager (System.Text.Json)
-├── Core/              # Pure game logic — NO Android/UnityEngine dependency
-│   ├── Domain/        # GachaEngine · PityCounter · ProgressionEngine · TalentEngine · BattleSimulator · VisualLayerComposer
-│   ├── Infrastructure/EventBus/  # EventBus · GameEvents
-│   └── Data/Enums.cs
-├── Platforms/Android/ # MainActivity, AndroidManifest.xml, Assets/data.json (content)
-└── Resources/         # app icons, Raw/data.json
+MilanKotlin/app/src/main/java/com/milan/game/
+├── MainActivity.kt        # single host Activity + MilanNavHost (pure-state routing)
+├── MilanApp.kt            # Application: CrashReporter.install → bootTrace → GameState.ensureInitialized
+├── data/                  # save models (@Serializable) · SaveManager · SaveProvider (interface)
+│   └── AndroidSaveProvider.kt  # filesDir/save/save.json + .bak/.tmp atomic write (Android layer)
+├── domain/                # pure game logic — NO android.* imports allowed
+│   ├── gacha/             # GachaEngine · PityCounter
+│   ├── progression/       # EconomyFormulas · ProgressionEngine · TalentEngine
+│   └── battle/            # BattleSimulator · BattleUnits
+├── infrastructure/        # CrashReporter · eventbus/ (EventBus, Events)
+├── services/              # GameService (orchestration) · GameContent (fallback data) · ContentModels
+└── ui/                    # GameState (process singleton) · screens/ · components/ · nav/ · theme/
 ```
 
 ## Architecture
 
-Modular layered architecture, systems decoupled through a central **EventBus**:
+Layered, systems decoupled through a central **EventBus**:
 
 ```
-Presentation  │ Android Activities / screens (MauiMilan/Activities + UI)
-──────────────┼────────────────────────────────────────────
-Services      │ GameService (gacha, progression, content)
-──────────────┼────────────────────────────────────────────
-Domain (pure) │ GachaEngine · PityCounter · ProgressionEngine · TalentEngine · BattleSimulator · VisualLayerComposer
-──────────────┼────────────────────────────────────────────
-Data          │ Enums · JSON DTOs (CharacterDataEntry, GachaPoolDataEntry) · local save
-──────────────┼────────────────────────────────────────────
-Infrastructure│ EventBus · Save system
+Presentation │ MainActivity + ui/ (Compose screens, GameState process singleton)
+─────────────┼────────────────────────────────────────────
+Services     │ GameService (gacha, progression, battle rewards, content)
+─────────────┼────────────────────────────────────────────
+Domain (pure)│ GachaEngine · PityCounter · ProgressionEngine · TalentEngine · BattleSimulator
+─────────────┼────────────────────────────────────────────
+Data         │ SaveData & models (@Serializable) · SaveManager · SaveProvider
+─────────────┼────────────────────────────────────────────
+Infrastructure│ EventBus · CrashReporter
 ```
 
-Key design rule: **`Core/` (Domain/Data/EventBus) must NOT contain `UnityEngine` or Android usings.** This keeps gacha odds, progression math, battle sim, and talent logic runnable anywhere with injected `System.Random` seeds.
+Key design rule: **`domain/`, `data/` models and `infrastructure/eventbus/` must NOT import `android.*`.** This keeps gacha odds, progression math, battle sim and talent logic runnable anywhere with injected `kotlin.random.Random` seeds.
 
 ### Save system
-- `ISaveProvider` → `LocalSaveProvider` (JSON file in the app's internal storage).
-- `SaveManager` wraps a provider; holds `SaveData` (owned characters, items, gacha pity counters, currencies, plus reserved `UserId`/`ServerSyncStatus` for future online).
-- JSON via `System.Text.Json`. `SaveData.FromJson` **must fall back to `CreateDefault()` on null/empty/corrupt input** — a null `Current` crashes the game.
+- `SaveProvider` interface → `AndroidSaveProvider` (JSON in `filesDir/save/`): atomic writes via `.tmp` → replace, keeps a `.bak`; a killed process never truncates the main save.
+- `SaveManager` **never throws on load**: corrupt main → try `.bak`/`.tmp` → only then fall back to default save, with a `CrashReporter` trace. A throw here during init = app permanently won't start.
+- JSON via kotlinx.serialization. `@SerialName` keys align with data.json's PascalCase keys — do not rename (save/content loss).
 
 ### EventBus
-- Static, struct-typed, queue-and-dispatch. `Publish` enqueues; `Dispatch` runs each frame — events are NOT instantaneous.
-- `UnsubscribeAll(target)` and `ClearQueue()` exist for cleanup.
+- Queue-and-dispatch: `publish` only enqueues; the host must call `dispatch` for real delivery (queue cap 512). Subscribe with an `owner` for batch `unsubscribeAll`. Handler exceptions go to `handlerException` tracing, never crash the thread.
+
+### Transaction paradigm
+- Every currency/progression write: budget/validate → mutate in memory → persist; on persist failure roll back the in-memory change and return `false` — the **rollback path does not broadcast events**. Handle `SpendXxx`/`AddXxx` return values.
 
 ## Screen flow
 
-`HomeActivity` (launcher) → `GachaActivity` / `CharacterListActivity` / `CollectionActivity`; tapping a character card opens `CharacterDetailActivity`. Each Activity rebuilds its view in `OnResume` so currency and owned-count stay fresh after navigating back. `GameState` is the single source of truth shared across all of them.
+Bottom bar with 5 tabs: `Home 主页 / Gacha 抽卡 / Deck 卡组 / Shop 商店 / Settings 设置` (see `ui/nav/GameNavBar.kt` `NavItem`). Sub-pages overlay the tab layer and back out step by step: 神谱图鉴 (placeholder) → 我的角色 (`CharacterListScreen`) → 角色详情 (`CharacterDetailScreen`) → 角色养成 (`ProgressionScreen`). `GameState` is the single source of truth shared by all screens.
 
 ## Testing
 
-There are no automated tests currently. (The Unity EditMode tests were removed with the Unity implementation.) The pure domain engines are structured to be unit-testable — `GachaEngine`, `PityCounter`, `BattleSimulator`, etc. take injected `System.Random` seeds for determinism — and are the natural place to add NUnit/xUnit tests. **Service-layer behavior (currency deduction, fragment-on-duplicate, battle rewards) is untested.**
+Unit tests live in `app/src/test/java/com/milan/game/` (JUnit4 + kotlinx-coroutines-test): `SaveDataTest` / `SaveManagerTest` / `BattleSimulatorTest` / `GachaEngineTest` / `PityCounterTest` / `EconomyFormulasTest` / `ProgressionEngineTest` / `TalentEngineTest`. Domain engines take injected `Random` seeds for determinism — add unit tests for new domain logic. **Service-layer and UI-layer behavior are untested.**
 
 ## Key design references
 
 - `docs/superpowers/specs/2026-07-28-milan-gacha-design.md` — full game design (Chinese). Systems, progression, gacha algorithm, battle, inspection, data model, architecture, performance targets.
-- `docs/superpowers/plans/2026-07-28-milan-mvp.md` — the original MVP implementation plan (TDD-style tasks, written for the Unity build). Useful as design intent, but the Unity-specific steps no longer apply.
+- `docs/superpowers/specs/2026-08-07-*` — Kotlin rewrite planning documents (13-task plan: Compose + coroutines + kotlinx.serialization).
 
 ## Notes for future sessions
 
-- The `.superpowers/` and `docs/superpowers/` directories are planning artifacts, not source. The HTML brainstorm outputs in `.superpowers/brainstorm/` are gitignored scratch.
-- Content data lives in `MauiMilan/Platforms/Android/Assets/data.json` (and `Resources/Raw/data.json`); `GameService.LoadFallback()` mirrors the same data in code as a fallback if the asset is missing. Keep these in sync when adding characters/pools.
+- `.superpowers/`, `docs/superpowers/`, `.omo/`, `.omc/` are planning artifacts, not source.
+- Content data main source: `MilanKotlin/app/src/main/assets/data.json` (packaged asset); `services/GameContent.kt` is the in-code fallback (not the source of truth) used silently when data.json is missing/corrupt. **Current state: `MilanApp` passes `contentJson = null`, so content actually comes from the fallback — wire the asset up and keep both paths flowing through `GameContent.enrich` (issue #31).**
+- Portraits: `res/drawable/char_<rarity>_<pinyin>.png` (R×7 / SR×8 / SSR×6 / UR×7); weapon art: `assets/weapons/<vfx>.png` (28 files) — `CharacterDetailScreen` loads via `context.assets.open("weapons/$weaponVfx.png")`, falls back to the weapon name when missing.
 - Rarity enum: `R=1, SR=2, SSR=3, UR=4`. Worlds: `Shinwa, Aether, Ironveil`.
-- Gacha rules: duplicate pulls award star fragments (`item_star_fragment`, UR 50 / SSR 20 / SR 5 / R 1 — see `GameService.FragmentsForRarity`). If a rolled rarity band has no candidates in the pool, the roll upgrades to the nearest higher band with candidates (never silently re-rolls the whole pool). Pity counter resets on any natural drop at/above the pity rarity.
-- Save integrity: `SaveData.FromJson` swallows corrupt JSON and returns `CreateDefault()`; `LocalSaveProvider.Save` writes atomically via a `.tmp` + `File.Replace` (keeps a `.bak`). Do not regress either.
-- The `UI.Theme` static class holds the full palette and rarity colors — change the look of every screen there.
+- Gacha rules: duplicate pulls award star fragments via `EconomyFormulas.FragmentsForRarity` (UR 50 / SSR 20 / SR 5 / R 1). If a rolled rarity band has no candidates in the pool, the roll upgrades to the nearest higher band with candidates (never silently re-rolls the whole pool). Pity counter resets on any natural drop at/above the pity rarity.
+- Comments and UI copy are all Chinese; comments often carry historical pitfall notes — read them before touching related code.
+- Theme colors live in `ui/theme/` (`AppTheme.kt` / `ElementTheme.kt` / `Theme.kt`).

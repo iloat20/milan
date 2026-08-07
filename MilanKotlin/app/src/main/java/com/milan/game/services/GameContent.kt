@@ -8,9 +8,9 @@ package com.milan.game.services
  * 任何一次内容改动都会让 GameService 的 diff 无法审阅。Kotlin 侧延续同样的拆分。
  *
  * 定位：这里是 data.json 缺失/损坏时的**兜底副本**，不是内容的主来源。
- * 内容主来源是 MauiMilan/Platforms/Android/Assets/data.json；新增角色请**先改 data.json**，
- * 本文件仅在需要保证离线可玩时同步。两条加载路径最终都会经过 [enrich]
- * 补齐派生字段（阵营/背景故事/语音/武器名与描述），保证字段口径一致。
+ * 内容主来源是 MilanKotlin/app/src/main/assets/data.json（.NET 版 MauiMilan 已删除）；
+ * 新增角色请**先改 data.json**，本文件仅在需要保证离线可玩时同步。两条加载路径
+ * 最终都会经过 [enrich] 补齐派生字段（阵营/背景故事/语音/武器名与描述），保证字段口径一致。
  *
  * ⚠️ 技能 ID 与 C# 原文保持一致（含历史笔误如 kikyo3 / leishen2 / shangyang3 /
  * xuanwu3 / bifang3）：SkillId 仅作展示标识，改动会造成两套内容的 id 口径不一致。
