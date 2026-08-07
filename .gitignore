@@ -14,3 +14,6 @@ obj/
 # Temporary logs / installers
 *.log
 dotnet-install.ps1
+
+# Git worktrees
+.worktrees/
