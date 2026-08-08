@@ -47,10 +47,10 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.milan.game.infrastructure.CrashReporter
@@ -58,6 +58,7 @@ import com.milan.game.services.CharacterDataEntry
 import com.milan.game.ui.GameState
 import com.milan.game.ui.components.GoldButton
 import com.milan.game.ui.components.NeonButton
+import com.milan.game.ui.components.PortraitImage
 import com.milan.game.ui.nav.GameNavBar
 import com.milan.game.ui.nav.NavItem
 import com.milan.game.ui.nav.ResourceBar
@@ -66,7 +67,8 @@ import com.milan.game.ui.theme.AppTheme
 /**
  * 主页（C# HomeActivity 翻译）。
  * 资源栏 / 主视觉（Hero 光晕 + 立绘漂浮 + 铭牌）/ 动作按钮 / 诸神名录横滑条 / 底部导航。
- * 立绘图片资源（char_<rarity>_<pinyin>.png）尚未迁入，暂以「稀有度渐变 + 角色名」占位。
+ * 立绘经 PortraitImage 按角色 CharacterId 动态加载（drawable/char_<rarity>_<pinyin>.png），
+ * 缺图自动回退首字占位；R8 保留规则见 res/raw/keep.xml。
  */
 @Composable
 fun HomeScreen(
@@ -171,8 +173,8 @@ private fun Hero(fixedH: androidx.compose.ui.unit.Dp) {
         // 稀有度光晕（脉动，位于立绘之后）
         Halo(rarityColor, Modifier.fillMaxSize())
 
-        // 立绘占位：稀有度径向渐变 + 角色名（TODO: 迁入 drawable 立绘后替换）
-        PortraitPlaceholder(def, rarityColor, Modifier.fillMaxSize())
+        // 主视觉立绘：稀有度光晕之上叠真实立绘（缺图自动回退首字占位）
+        HeroPortrait(def, rarityColor, Modifier.fillMaxSize())
 
         // 底部暗化渐变 + 铭牌
         Column(
@@ -273,9 +275,11 @@ private fun Halo(color: Color, modifier: Modifier = Modifier) {
     )
 }
 
-/** 立绘占位：稀有度渐变底 + 角色名首字（TODO: 接入真实立绘资源）。 */
+/** 主视觉立绘：稀有度渐变底 + 真实立绘（浮动缓动；C# ObjectAnimator 6s 循环）。
+ * 立绘资源名 = 角色 CharacterId（drawable/char_<rarity>_<pinyin>.png），
+ * 经 PortraitImage 动态加载，缺图自动回退首字占位。 */
 @Composable
-private fun PortraitPlaceholder(def: CharacterDataEntry, rarityColor: Color, modifier: Modifier = Modifier) {
+private fun HeroPortrait(def: CharacterDataEntry, rarityColor: Color, modifier: Modifier = Modifier) {
     // 立绘漂浮（±10dp 缓动，伪 3D 呼吸感；C# ObjectAnimator 6s 循环）
     val t = rememberInfiniteTransition(label = "float")
     val offsetY by t.animateFloat(
@@ -287,6 +291,7 @@ private fun PortraitPlaceholder(def: CharacterDataEntry, rarityColor: Color, mod
         modifier = modifier.offset(y = offsetY.dp),
         contentAlignment = Alignment.Center,
     ) {
+        // 稀有度渐变底（立绘为透明底 PNG 时提供视觉支撑）
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -297,12 +302,12 @@ private fun PortraitPlaceholder(def: CharacterDataEntry, rarityColor: Color, mod
                     )
                 ),
         )
-        Text(
-            text = def.displayName.take(1),
-            fontSize = 64.sp,
-            fontWeight = FontWeight.Bold,
-            color = rarityColor.copy(alpha = 0.85f),
-            textAlign = TextAlign.Center,
+        PortraitImage(
+            characterId = def.characterId,
+            rarity = def.baseRarity,
+            name = def.displayName,
+            modifier = Modifier.fillMaxSize(),
+            contentScale = ContentScale.Crop,
         )
     }
 }
@@ -364,7 +369,7 @@ private fun AvatarStrip(onOpenCharacter: (String) -> Unit) {
     }
 }
 
-/** 头像占位：稀有度色圆环 + 首字（TODO: 接入 UnifiedAvatarView 立绘）。 */
+/** 名录头像：稀有度色圆环 + 真实立绘（C# UnifiedAvatarView；缺图自动回退首字）。 */
 @Composable
 private fun AvatarCircle(def: CharacterDataEntry, modifier: Modifier = Modifier) {
     val c = AppTheme.rarityColor(def.baseRarity)
@@ -375,11 +380,12 @@ private fun AvatarCircle(def: CharacterDataEntry, modifier: Modifier = Modifier)
             .border(1.5.dp, c.copy(alpha = 0.7f), CircleShape),
         contentAlignment = Alignment.Center,
     ) {
-        Text(
-            text = def.displayName.take(1),
-            fontSize = 22.sp,
-            fontWeight = FontWeight.Bold,
-            color = c,
+        PortraitImage(
+            characterId = def.characterId,
+            rarity = def.baseRarity,
+            name = def.displayName,
+            modifier = Modifier.fillMaxSize(),
+            contentScale = ContentScale.Crop,
         )
     }
 }

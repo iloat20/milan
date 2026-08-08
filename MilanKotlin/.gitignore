@@ -4,3 +4,7 @@ local.properties
 .idea/
 *.iml
 .kotlin/
+# 本地签名凭据（keystore 在 ~/.android/，均不入库）
+keystore.properties
+*.keystore
+

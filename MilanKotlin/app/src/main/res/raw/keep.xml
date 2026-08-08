@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  阻止 R8 shrinkResources 误删动态引用的立绘资源。
+
+  背景：PortraitImage 用 context.resources.getIdentifier(characterId, "drawable", ...)
+  按角色 CharacterId 动态加载 drawable/char_*.png，资源收缩器静态分析不到这些引用，
+  导致 Release 包把 28 张立绘全部删光（Debug 包正常、Release 全灭）。
+  tools:keep 通配模式是 AGP 官方机制，缺它 Release 立绘必然再次消失。
+  数据侧 characterId 即资源名（28 名 ↔ 28 张，一一对应）。
+-->
+<resources xmlns:tools="http://schemas.android.com/tools"
+    tools:keep="@drawable/char_*" />
