@@ -144,16 +144,18 @@ fun PortraitImage(
 - **启动反馈（P5）**：首帧立即渲染占位（渐变+首字），立绘异步填充——低端机「占位 → 立绘」有即时反馈，不再冻结。
 - 失败路径：`portraitId == 0`（无资源）或 `load` 返回 null（解码失败）→ 均走 `PortraitFallback`。
 
-### 4.3 调用点分档（12 处）
+### 4.3 调用点分档（8 处）
 
 | 调用点 | 档位 | 理由 |
 |---|---|---|
 | HomeScreen HeroPortrait（全屏大图） | Full | 显示 ~430dp 高，2x 采样足 |
 | HomeScreen AvatarCircle（58dp） | Thumb | 显示 58dp，4x 采样足 |
-| CharacterListScreen 列表项 | Thumb | 列表小头像 |
+| CharacterListScreen ListCard 立绘框（58dp） | Thumb | 58dp 头像 |
 | CharacterDetailScreen 全屏立绘 | Full | 全屏显示 |
 | ProgressionScreen 全屏立绘 | Full | 全屏显示 |
-| GachaScreen 抽卡结果卡 ×3 | Full | 结果展示大图 |
+| GachaScreen 池角色预览（52dp） | Thumb | 52dp 圆形头像 |
+| GachaScreen 抽卡 reveal 结果大图 | Full | 全屏展示 |
+| GachaScreen GachaChip（42dp） | Thumb | 42dp 小立绘 |
 
 ### 4.4 AvatarStrip → LazyRow（P2/P3）
 
