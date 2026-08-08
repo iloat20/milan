@@ -39,6 +39,7 @@ import com.milan.game.ui.components.ListFilterBar
 import com.milan.game.ui.components.ListSortMode
 import com.milan.game.ui.components.PageBackground
 import com.milan.game.ui.components.PortraitImage
+import com.milan.game.ui.components.PortraitTarget
 import com.milan.game.ui.nav.AppTopBar
 import com.milan.game.ui.theme.AppTheme
 import com.milan.game.ui.theme.ElementTheme
@@ -173,6 +174,7 @@ private fun ListCard(ch: OwnedCharacterView, onClick: () -> Unit) {
                     rarity = ch.rarity,
                     name = ch.name,
                     modifier = Modifier.fillMaxSize(),
+                    target = PortraitTarget.Thumb,
                 )
             }
             Spacer(Modifier.height(8.dp))

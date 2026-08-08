@@ -57,6 +57,7 @@ import com.milan.game.ui.components.GoldButton
 import com.milan.game.ui.components.NeonButton
 import com.milan.game.ui.components.PageBackground
 import com.milan.game.ui.components.PortraitImage
+import com.milan.game.ui.components.PortraitTarget
 import com.milan.game.ui.nav.GameNavBar
 import com.milan.game.ui.nav.ResourceBar
 import com.milan.game.ui.nav.NavItem
@@ -263,6 +264,7 @@ fun GachaScreen(
                                 rarity = entry.rarityIndex,
                                 name = def?.displayName,
                                 modifier = Modifier.size(52.dp).clip(CircleShape),
+                                target = PortraitTarget.Thumb,
                             )
                             Spacer(Modifier.height(4.dp))
                             Text(
@@ -523,6 +525,7 @@ private fun GachaChip(
             rarity = r.rarity,
             name = r.characterName,
             modifier = Modifier.size(42.dp).clip(RoundedCornerShape(10.dp)),
+            target = PortraitTarget.Thumb,
         )
         Spacer(Modifier.height(6.dp))
         Text(AppTheme.rarityName(r.rarity), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = rc)

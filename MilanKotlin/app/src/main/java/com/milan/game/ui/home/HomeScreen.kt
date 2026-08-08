@@ -59,6 +59,7 @@ import com.milan.game.ui.GameState
 import com.milan.game.ui.components.GoldButton
 import com.milan.game.ui.components.NeonButton
 import com.milan.game.ui.components.PortraitImage
+import com.milan.game.ui.components.PortraitTarget
 import com.milan.game.ui.nav.GameNavBar
 import com.milan.game.ui.nav.NavItem
 import com.milan.game.ui.nav.ResourceBar
@@ -386,6 +387,7 @@ private fun AvatarCircle(def: CharacterDataEntry, modifier: Modifier = Modifier)
             name = def.displayName,
             modifier = Modifier.fillMaxSize(),
             contentScale = ContentScale.Crop,
+            target = PortraitTarget.Thumb,
         )
     }
 }
