@@ -7,6 +7,7 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.Executors
 
 /**
  * 轻量音频服务（单例）。
@@ -23,6 +24,10 @@ object MilanAudio {
     private val sfxIds = ConcurrentHashMap<String, Int>()
     private var bgmPlayer: ExoPlayer? = null
     private var bgmName: String? = null
+    /** 最新 BGM 意图（null=停止）；后台线程串行消费，防连续切换重复构建。 */
+    private var bgmTarget: String? = null
+    /** BGM 构建专用单线程执行器：ExoPlayer 构建/prepare 移出主线程（低端机性能优化）。 */
+    private val bgmExecutor = Executors.newSingleThreadExecutor { r -> Thread(r, "milan-bgm") }
     private var sfxVolume = 0.9f
     private var bgmVolume = 0.7f
 
@@ -54,32 +59,56 @@ object MilanAudio {
         if (id > 0) pool.play(id, sfxVolume, sfxVolume, 1, 0, 1f)
     }
 
-    /** 播放背景乐（循环）；同名重复调用不重启，先 stop 再播。 */
+    /** 播放背景乐（循环）；同名重复调用不重启。构建在后台线程串行执行，不阻塞主线程。 */
+    @Synchronized
     fun playBgm(name: String) {
         val c = appContext ?: return
-        if (bgmName == name) return
-        stopBgm()
-        // 资源缺失检查：静默跳过，不创建空播放器
-        try {
-            c.assets.open("audio/bgm/$name.ogg").close()
-        } catch (_: Exception) {
-            return
-        }
-        val player = ExoPlayer.Builder(c).build().apply {
-            setMediaItem(MediaItem.fromUri("asset:///audio/bgm/$name.ogg"))
-            repeatMode = Player.REPEAT_MODE_ALL
-            volume = bgmVolume
-            prepare()
-            play()
-        }
-        bgmPlayer = player
-        bgmName = name
+        if (bgmName == name || bgmTarget == name) return
+        bgmTarget = name
+        bgmExecutor.execute { runBgm(c, name) }
     }
 
+    @Synchronized
     fun stopBgm() {
-        bgmPlayer?.release()
-        bgmPlayer = null
-        bgmName = null
+        bgmTarget = null
+        bgmExecutor.execute {
+            synchronized(this) {
+                bgmPlayer?.release()
+                bgmPlayer = null
+                bgmName = null
+            }
+        }
+    }
+
+    /** 后台线程执行：按最新意图构建播放器；意图已变则丢弃，不重复构建。 */
+    private fun runBgm(c: Context, name: String) {
+        synchronized(this) {
+            if (bgmTarget != name) return
+            // 资源缺失检查：静默跳过，不创建空播放器
+            try {
+                c.assets.open("audio/bgm/$name.ogg").close()
+            } catch (_: Exception) {
+                bgmTarget = null
+                return
+            }
+            // 释放旧播放器（统一在此处，不再依赖 playBgm 先调 stopBgm）
+            bgmPlayer?.release()
+            bgmPlayer = null
+            bgmName = null
+            val player = ExoPlayer.Builder(c).build().apply {
+                setMediaItem(MediaItem.fromUri("asset:///audio/bgm/$name.ogg"))
+                repeatMode = Player.REPEAT_MODE_ALL
+                volume = bgmVolume
+                prepare()
+                play()
+            }
+            if (bgmTarget != name) { // 构建期间意图已变：释放刚建的，避免泄漏
+                player.release()
+                return
+            }
+            bgmPlayer = player
+            bgmName = name
+        }
     }
 
     fun setSfxVolume(v: Float) { sfxVolume = v.coerceIn(0f, 1f) }
@@ -88,6 +117,7 @@ object MilanAudio {
     /** 释放全部音频资源。 */
     fun release() {
         stopBgm()
+        bgmExecutor.shutdown()
         sfxPool?.release()
         sfxPool = null
         sfxIds.clear()
