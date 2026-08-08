@@ -55,6 +55,8 @@ import androidx.compose.ui.unit.sp
 import com.milan.game.infrastructure.CrashReporter
 import com.milan.game.services.CharacterDataEntry
 import com.milan.game.ui.GameState
+import com.milan.game.ui.components.GoldButton
+import com.milan.game.ui.components.NeonButton
 import com.milan.game.ui.nav.GameNavBar
 import com.milan.game.ui.nav.NavItem
 import com.milan.game.ui.nav.ResourceBar
@@ -313,50 +315,6 @@ private fun HeroButtons(onOpenGacha: () -> Unit, onOpenCollection: () -> Unit) {
         GoldButton("✦ 前往召唤", Modifier.weight(1f), onOpenGacha)
         Spacer(Modifier.width(12.dp))
         NeonButton("神谱图鉴", Modifier.weight(1f), onOpenCollection)
-    }
-}
-
-/** 金色主按钮：熔金渐变底 + 深金收边（C# ThemeButtons.Gold 近似）。 */
-@Composable
-private fun GoldButton(text: String, modifier: Modifier = Modifier, onClick: () -> Unit) {
-    Box(
-        modifier = modifier
-            .clip(RoundedCornerShape(14.dp))
-            .background(
-                Brush.verticalGradient(listOf(AppTheme.GoldHi, AppTheme.GoldDeep)),
-                RoundedCornerShape(14.dp),
-            )
-            .border(1.dp, AppTheme.GoldHi.copy(alpha = 0.6f), RoundedCornerShape(14.dp))
-            .clickable(onClick = onClick)
-            .padding(vertical = 14.dp),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(
-            text = text,
-            fontSize = 15.sp,
-            fontWeight = FontWeight.Bold,
-            color = AppTheme.GoldTextOn,
-        )
-    }
-}
-
-/** 霓虹次按钮：透明底 + 霜蓝描边（C# ThemeButtons.Neon 近似）。 */
-@Composable
-private fun NeonButton(text: String, modifier: Modifier = Modifier, onClick: () -> Unit) {
-    Box(
-        modifier = modifier
-            .clip(RoundedCornerShape(14.dp))
-            .border(1.dp, AppTheme.Frost.copy(alpha = 0.6f), RoundedCornerShape(14.dp))
-            .clickable(onClick = onClick)
-            .padding(vertical = 14.dp),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(
-            text = text,
-            fontSize = 15.sp,
-            fontWeight = FontWeight.Bold,
-            color = AppTheme.Frost,
-        )
     }
 }
 
