@@ -66,15 +66,6 @@ object GameState {
         OwnedCharacterView(ch, def)
     }
 
-    /** 按索引取战斗属性（C# Stat）：0=攻 1=防 2=命 3=速。 */
-    fun stat(s: UnitStats, idx: Int): Int = when (idx) {
-        0 -> s.atk
-        1 -> s.def
-        2 -> s.hp
-        3 -> s.spd
-        else -> 0
-    }
-
     /**
      * 由基础值 + 养成推导实时战斗属性（单一事实来源：详情页/养成页/战斗页都走这里）。
      */

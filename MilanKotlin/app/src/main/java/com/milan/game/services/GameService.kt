@@ -41,6 +41,9 @@ class GameService(
     private val saveManager = SaveManager(saveProvider, onTrace)
     private val gacha = GachaEngine(rng)
     private val talent = TalentEngine()
+
+    /** prereqMap 结果缓存（treeId → map）；loadContent 时失效重建。 */
+    private var prereqCache: MutableMap<String, Map<String, List<String>>>? = null
     private val pullLock = Any()
 
     /** 进程级存档引用（与 SaveManager.current 同一对象，写操作原地修改后 [save] 持久化）。 */
@@ -69,6 +72,7 @@ class GameService(
      * - 卡池/天赋树过滤后为空 → 用 [GameContent] 补全（防抽卡直接崩 / 养成界面空掉）。
      */
     fun loadContent(rawJson: String?) {
+        prereqCache = null // 内容重载 → 前置映射可能变化，缓存作废
         if (rawJson != null) {
             try {
                 val root = ContentJson.decodeFromString<RootData>(rawJson)
@@ -428,31 +432,38 @@ class GameService(
 
     /** 构建 nodeId → 前置节点列表 的映射，喂给 TalentEngine.canAllocate。 */
     fun prereqMap(tree: TalentTreeData): Map<String, List<String>> {
+        val cache = prereqCache ?: mutableMapOf<String, Map<String, List<String>>>().also { prereqCache = it }
+        return cache.getOrPut(tree.treeId) { buildPrereq(tree) }
+    }
+
+    private fun buildPrereq(tree: TalentTreeData): Map<String, List<String>> {
         val m = mutableMapOf<String, List<String>>()
         for (n in tree.nodes) m[n.nodeId] = n.prerequisiteNodeIds
         return m
     }
 
+    /** 天赋加点前置校验：角色存在 + 树存在 + 节点存在 + 未点亮 + 点数足够；任一失败返回 null。 */
+    private fun talentCheck(charId: String, nodeId: String): Triple<CharacterSaveState, TalentNodeData, TalentTreeData>? {
+        val save = getSave(charId) ?: return null
+        val tree = getTalentTree(charId) ?: return null
+        val node = tree.nodes.firstOrNull { it.nodeId == nodeId } ?: return null
+        if (save.talentPoints.contains(nodeId)) return null
+        if (save.unspentPoints < node.cost) return null
+        return Triple(save, node, tree)
+    }
+
     /** 不落盘地预判某天赋节点当前是否可点亮（用于 UI 三态与按钮可用性）。 */
     fun canAllocateTalent(charId: String, nodeId: String): Boolean {
-        val save = getSave(charId) ?: return false
         // C# 在渲染路径上曾有 "TalentPoints": null 覆盖字段初始化器的 NRE（逐节点调用直接闪退），
         // 用 ??= 兜底；Kotlin 类型系统 + coerceInputValues 保证 talentPoints 非空，天然免疫。
-        val tree = getTalentTree(charId) ?: return false
-        val node = tree.nodes.firstOrNull { it.nodeId == nodeId } ?: return false
-        if (save.talentPoints.contains(nodeId)) return false
-        if (save.unspentPoints < node.cost) return false
+        val (save, _, tree) = talentCheck(charId, nodeId) ?: return false
         return talent.canAllocate(nodeId, save.talentPoints.filterNotNull(), prereqMap(tree))
     }
 
     /** 点亮天赋节点：校验前置（TalentEngine）与天赋点余额，扣点并落盘。
      * 已点过 / 点不够 / 前置未满足 / 落盘失败均返回 false。 */
     fun allocateTalent(charId: String, nodeId: String): Boolean {
-        val save = getSave(charId) ?: return false
-        val tree = getTalentTree(charId) ?: return false
-        val node = tree.nodes.firstOrNull { it.nodeId == nodeId } ?: return false
-        if (save.talentPoints.contains(nodeId)) return false
-        if (save.unspentPoints < node.cost) return false
+        val (save, node, tree) = talentCheck(charId, nodeId) ?: return false
         if (!talent.canAllocate(nodeId, save.talentPoints.filterNotNull(), prereqMap(tree))) return false
 
         val origPoints = save.unspentPoints

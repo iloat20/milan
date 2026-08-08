@@ -33,7 +33,8 @@
 ## 测试（app/src/test/java/com/milan/game/）
 
 - 覆盖：`SaveDataTest` / `SaveManagerTest` / `BattleSimulatorTest` / `GachaEngineTest` / `PityCounterTest` / `EconomyFormulasTest` / `ProgressionEngineTest` / `TalentEngineTest`（JUnit4 + coroutines-test）。
-- 领域引擎都支持注入 seed（`kotlin.random.Random`）保证确定性；新增领域逻辑请配套单测。Service 层与 UI 层目前无测试。
+- 领域引擎都支持注入 seed（`kotlin.random.Random`）保证确定性；新增领域逻辑请配套单测。
+- `GameServiceTest`（app/src/test/java/com/milan/game/services/GameServiceTest.kt）覆盖服务层（抽卡/货币/养成/战绩）；UI 层目前无测试。
 
 ## Android 注册与内容数据
 
