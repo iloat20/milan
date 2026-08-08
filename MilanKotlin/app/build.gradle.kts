@@ -19,7 +19,9 @@ android {
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            // R8 代码收缩 + 资源收缩；kotlinx.serialization keep 规则见 proguard-rules.pro
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
     }
@@ -48,9 +50,12 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
-    implementation(libs.androidx.navigation.compose)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.kotlinx.coroutines.android)
+    // 安装时注入 Baseline Profile（src/main/baseline-prof.txt），冷启动预编译热点
+    implementation(libs.androidx.profileinstaller)
+    // 音频：背景乐 ExoPlayer（SFX 走 SoundPool，见 infrastructure/MilanAudio.kt）
+    implementation(libs.androidx.media3.exoplayer)
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
     debugImplementation(libs.androidx.ui.tooling)

@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
@@ -37,6 +38,7 @@ fun AppTopBar(
 ) {
     Row(
         modifier = modifier
+            .statusBarsPadding()
             .fillMaxWidth()
             .padding(start = 14.dp, top = 10.dp, end = 14.dp, bottom = 6.dp),
         verticalAlignment = Alignment.CenterVertically,

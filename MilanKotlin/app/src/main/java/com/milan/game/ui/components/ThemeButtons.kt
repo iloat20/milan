@@ -127,13 +127,14 @@ fun NeonButton(
     onClick: () -> Unit,
     textSize: TextUnit = 14.sp,
     color: Color = AppTheme.Frost,
+    enabled: Boolean = true,
 ) {
     Box(
         modifier = modifier
             .clip(RoundedCornerShape(10.dp))
             .background(color.copy(alpha = 0.06f), RoundedCornerShape(10.dp))
             .border(1.5.dp, color, RoundedCornerShape(10.dp))
-            .clickable(onClick = onClick)
+            .clickable(enabled = enabled, onClick = onClick)
             .padding(horizontal = 28.dp, vertical = 12.dp),
         contentAlignment = Alignment.Center,
     ) {

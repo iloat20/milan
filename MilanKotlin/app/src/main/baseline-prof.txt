@@ -1,0 +1,69 @@
+# 手写 Baseline Profile：冷启动关键路径（Compose 框架 + App 启动链）
+# 生成工具（macrobenchmark）待接入；当前条目覆盖启动帧的确定性热点。
+# 规则：HSPL = 启动关键（安装后立即编译），PL = 高频但非关键。
+
+# ── App 启动链 ──
+HSPLcom/milan/game/MilanApp;->onCreate()V
+HSPLcom/milan/game/MainActivity;->onCreate(Landroid/os/Bundle;)V
+HSPLcom/milan/game/ui/GameState;->ensureInitialized()V
+HSPLcom/milan/game/infrastructure/CrashReporter;->boot(Ljava/lang/String;)V
+HSPLcom/milan/game/MainActivityKt;->MilanNavHost(Landroidx/compose/runtime/Composer;I)V
+HSPLcom/milan/game/ui/theme/MilanThemeKt;->MilanTheme(Landroidx/compose/runtime/Composer;I)V
+
+# ── Compose runtime 渲染核心 ──
+HSPLandroidx/compose/runtime/ComposerImpl;->recompose(Landroidx/compose/runtime/Composer;)V
+HSPLandroidx/compose/runtime/ComposerImpl;->applyChanges()V
+HSPLandroidx/compose/runtime/ComposerImpl;->startRestartGroup(I)Landroidx/compose/runtime/Composer;
+HSPLandroidx/compose/runtime/ComposerImpl;->startGroup(I)V
+HSPLandroidx/compose/runtime/ComposerImpl;->endGroup()V
+HSPLandroidx/compose/runtime/ComposerImpl;->startNode()V
+HSPLandroidx/compose/runtime/ComposerImpl;->endNode()V
+HSPLandroidx/compose/runtime/ComposerImpl;->realizeMovement()V
+HSPLandroidx/compose/runtime/ComposerImpl;->recordWrite()V
+HSPLandroidx/compose/runtime/ComposerImpl;->recordDelete()V
+HSPLandroidx/compose/runtime/ComposerImpl;->skipToGroupEnd()V
+HSPLandroidx/compose/runtime/ComposerImpl;->skipCurrentGroup()V
+HSPLandroidx/compose/runtime/Recomposer;->runRecomposeAndApplyChanges()V
+HSPLandroidx/compose/runtime/Recomposer;->createComposer(Landroidx/compose/runtime/Recomposer;)Landroidx/compose/runtime/ComposerImpl;
+HSPLandroidx/compose/runtime/MovableContent;-><init>(Lkotlin/jvm/functions/Function2;)V
+HSPLandroidx/compose/runtime/Anchor;-><init>(I)V
+HSPLandroidx/compose/runtime/GroupKind;->getOrdinal()I
+HSPLandroidx/compose/runtime/SlotWriter;->commit()V
+HSPLandroidx/compose/runtime/SlotWriter;->insert(I)V
+HSPLandroidx/compose/runtime/SlotWriter;->ensure(I)V
+HSPLandroidx/compose/runtime/SlotWriter;->update(I)V
+HSPLandroidx/compose/runtime/Applier;-><init>()V
+
+# ── Compose layout / measurement ──
+HSPLandroidx/compose/ui/node/LayoutNode;->measure$compose_ui(Landroidx/compose/ui/unit/Constraints;)Landroidx/compose/ui/layout/Placeable;
+HSPLandroidx/compose/ui/node/LayoutNode;->layout$compose_ui(II)V
+HSPLandroidx/compose/ui/node/LayoutNode;->place$compose_ui(II)V
+HSPLandroidx/compose/ui/node/LayoutNode;->replace$compose_ui(ILandroidx/compose/ui/node/LayoutNode;)V
+HSPLandroidx/compose/ui/layout/Placeable;-><init>(J)V
+HSPLandroidx/compose/ui/layout/Placeable;->placeAt$compose_ui(J)V
+HSPLandroidx/compose/ui/node/NodeCoordinator;-><init>(Landroidx/compose/ui/node/LayoutNode;)V
+HSPLandroidx/compose/ui/node/NodeCoordinator;->measure(Landroidx/compose/ui/unit/Constraints;)Landroidx/compose/ui/layout/Placeable;
+HSPLandroidx/compose/ui/node/NodeCoordinator;->placeAt(J)V
+HSPLandroidx/compose/ui/node/NodeCoordinator;->layout(II)V
+HSPLandroidx/compose/ui/node/NodeCoordinator;->performDraw(Landroidx/compose/ui/graphics/Canvas;)V
+HSPLandroidx/compose/ui/graphics/Canvas;-><init>()V
+HSPLandroidx/compose/ui/graphics/drawscope/CanvasDrawScope;-><init>()V
+HSPLandroidx/compose/ui/graphics/drawscope/CanvasDrawScope;->drawRect(Landroidx/compose/ui/graphics/drawscope/DrawScope;J)V
+
+# ── foundation / text ──
+HSPLandroidx/compose/foundation/CanvasKt;->Canvas(Landroidx/compose/ui/Modifier;Landroidx/compose/ui/graphics/drawscope/DrawScope;)V
+HSPLandroidx/compose/foundation/BackgroundKt;->background(Landroidx/compose/ui/Modifier;Landroidx/compose/ui/graphics/Brush;Landroidx/compose/ui/unit/Density;)Landroidx/compose/ui/Modifier;
+HSPLandroidx/compose/foundation/ClickableKt;->clickable(Landroidx/compose/ui/Modifier;Landroidx/compose/foundation/interaction/MutableInteractionSource;)Landroidx/compose/ui/Modifier;
+HSPLandroidx/compose/foundation/layout/LayoutKt;->Row(Landroidx/compose/ui/Modifier;Landroidx/compose/foundation/layout/RowScope;)V
+HSPLandroidx/compose/foundation/layout/LayoutKt;->Column(Landroidx/compose/ui/Modifier;Landroidx/compose/foundation/layout/ColumnScope;)V
+HSPLandroidx/compose/foundation/layout/BoxKt;->Box(Landroidx/compose/ui/Modifier;)V
+HSPLandroidx/compose/foundation/layout/BoxKt;->spacer(Landroidx/compose/ui/Modifier;)V
+HSPLandroidx/compose/foundation/lazy/LazyListKt;->LazyColumn(Landroidx/compose/ui/Modifier;Landroidx/compose/foundation/lazy/LazyListState;)V
+HSPLandroidx/compose/foundation/lazy/LazyLayoutKt;->LazyLayout(Landroidx/compose/ui/Modifier;Landroidx/compose/foundation/lazy/LazyLayoutState;)V
+HSPLandroidx/compose/foundation/lazy/LazyLayoutKt;->rememberLazyLayoutMeasurePolicy(Landroidx/compose/foundation/lazy/LazyLayoutState;)Landroidx/compose/foundation/lazy/layout/LazyLayoutMeasurePolicy;
+HSPLandroidx/compose/material3/TextKt;->Text(Ljava/lang/String;Landroidx/compose/ui/Modifier;Landroidx/compose/ui/graphics/Color;)V
+
+# ── 序列化（存档载入在启动路径上） ──
+HSPLkotlinx/serialization/json/Json;->decodeFromString(Lkotlinx/serialization/DeserializationStrategy;Ljava/lang/String;)Ljava/lang/Object;
+HSPLkotlinx/serialization/json/Json;->encodeToString(Lkotlinx/serialization/SerializationStrategy;Ljava/lang/Object;)Ljava/lang/String;
+HSPLkotlinx/serialization/json/internal/StreamingJsonDecoder;-><init>(Lkotlinx/serialization/json/Json;Lkotlinx/serialization/json/internal/JsonReader;Lkotlinx/serialization/descriptors/SerialDescriptor;)V

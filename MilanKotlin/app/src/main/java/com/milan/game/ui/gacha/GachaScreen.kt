@@ -1,5 +1,6 @@
 package com.milan.game.ui.gacha
 
+import android.view.HapticFeedbackConstants
 import android.widget.Toast
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
@@ -17,6 +18,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -45,6 +47,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.milan.game.infrastructure.CrashReporter
+import com.milan.game.infrastructure.MilanAudio
 import com.milan.game.services.CharacterDataEntry
 import com.milan.game.services.GachaPoolDataEntry
 import com.milan.game.services.PullResult
@@ -103,6 +106,14 @@ fun GachaScreen(
     }
     LaunchedEffect(Unit) { entered = true }
 
+    /** 触觉反馈（View 级，兼容非 Composable 路径；设备不支持时静默）。 */
+    fun buzz(effect: Int) {
+        try {
+            val view = (context as? android.app.Activity)?.window?.decorView ?: return
+            view.performHapticFeedback(effect)
+        } catch (_: Exception) { }
+    }
+
     /** 演出结束 / 跳过：展示结果、复位状态（C# FinishReveal）。 */
     fun finishReveal() {
         val list = staged
@@ -147,6 +158,8 @@ fun GachaScreen(
             return
         }
         staged = pulled
+        buzz(HapticFeedbackConstants.KEYBOARD_TAP)
+        MilanAudio.playSfx("gacha_pull")
         revealDef = GameState.service.characters.firstOrNull { it.characterId == best.characterId }
         revealRarity = best.rarity
         flashColor = AppTheme.rarityColor(best.rarity)
@@ -162,9 +175,11 @@ fun GachaScreen(
             delay(480); if (token != revealToken) return@launch
             flashVisible = false
             delay(120); if (token != revealToken) return@launch
-            // 阶段三：大立绘卡弹出
+            // 阶段三：大立绘卡弹出（SSR/UR 重触觉 + reveal 音效）
             cardIn = true
             showReveal = true
+            MilanAudio.playSfx("gacha_reveal")
+            if (revealRarity >= 3) buzz(HapticFeedbackConstants.CONFIRM) else buzz(HapticFeedbackConstants.VIRTUAL_KEY)
             delay(1500); if (token != revealToken) return@launch
             // 阶段四：结果
             finishReveal()
@@ -195,7 +210,7 @@ fun GachaScreen(
                 .graphicsLayer { alpha = entranceAlpha },
         ) {
             // ── 标题 + 资源胶囊（C# 顶部 header，无返回键，靠底部导航切换）──
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Row(Modifier.statusBarsPadding().fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     text = "次元裂缝",
                     fontSize = 22.sp,

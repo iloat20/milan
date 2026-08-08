@@ -3,6 +3,7 @@ package com.milan.game
 import android.app.Application
 import com.milan.game.data.AndroidSaveProvider
 import com.milan.game.infrastructure.CrashReporter
+import com.milan.game.infrastructure.MilanAudio
 import com.milan.game.ui.GameState
 
 /**
@@ -23,6 +24,7 @@ class MilanApp : Application() {
         CrashReporter.install(this)
         CrashReporter.beginBootTrace()
         CrashReporter.boot("app.oncreate")
+        MilanAudio.init(this) // 音频服务（资源缺失静默，见 MilanAudio 注释）
 
         try {
             GameState.ensureInitialized(

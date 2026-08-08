@@ -3,6 +3,7 @@ package com.milan.game
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -21,6 +22,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.milan.game.infrastructure.CrashReporter
+import com.milan.game.infrastructure.MilanAudio
 import com.milan.game.ui.characters.CharacterDetailScreen
 import com.milan.game.ui.characters.CharacterListScreen
 import com.milan.game.ui.components.NeonButton
@@ -28,6 +30,7 @@ import com.milan.game.ui.gacha.GachaScreen
 import com.milan.game.ui.home.HomeScreen
 import com.milan.game.ui.nav.AppTopBar
 import com.milan.game.ui.nav.NavItem
+import com.milan.game.ui.progression.ProgressionScreen
 import com.milan.game.ui.theme.AppTheme
 import com.milan.game.ui.theme.MilanTheme
 
@@ -42,6 +45,9 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         CrashReporter.boot("main.onCreate")
+        // targetSdk≥35 强制 edge-to-edge：内容延伸到系统栏区域，由各组件用 insets 内边距避让
+        enableEdgeToEdge()
+        MilanAudio.playBgm("theme") // 启动 BGM（无资源静默，见 MilanAudio）
         setContent {
             MilanTheme {
                 MilanNavHost()
@@ -66,9 +72,10 @@ private fun MilanNavHost() {
     val progress = progressionId
     when {
         // 子页优先：角色养成 > 角色详情 > 角色列表 > 名录图鉴
-        progress != null -> PlaceholderScreen(
-            title = "角色养成",
-            onBack = { progressionId = null }, // TODO: Task 11 换成真实养成屏
+        progress != null -> ProgressionScreen(
+            characterId = progress,
+            onBack = { progressionId = null },
+            onSwitchCharacter = { id -> progressionId = id },
         )
         detail != null -> CharacterDetailScreen(
             characterId = detail,
