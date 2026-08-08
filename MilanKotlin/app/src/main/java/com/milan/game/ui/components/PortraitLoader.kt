@@ -1,5 +1,11 @@
 package com.milan.game.ui.components
 
+import android.content.res.Resources
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+
 /**
  * 角色立绘加载（C# PortraitLoader 的 Kotlin 等价物，2026-08-08 低端机性能优化）。
  *
@@ -70,4 +76,23 @@ class PortraitLruCache<V : Any>(
             map.remove(map.entries.iterator().next().key)
         }
     }
+}
+
+// ---- Android 接入（以下依赖 android.*，不可进 JVM 单测）----
+
+object PortraitLoader {
+    private val cache = PortraitLruCache<Bitmap>(PORTRAIT_CACHE_BYTES) { it.byteCount }
+
+    /**
+     * 异步解码：命中缓存直接返回；未命中 IO 线程按档位采样解码并入缓存；
+     * 解码失败/资源损坏返回 null（调用方走占位，宁可难看也不能崩）。
+     */
+    suspend fun load(res: Resources, resId: Int, target: PortraitTarget): Bitmap? =
+        withContext(Dispatchers.IO) {
+            val key = PortraitKey(resId, target.sample)
+            cache.get(key) ?: runCatching {
+                val opts = BitmapFactory.Options().apply { inSampleSize = target.sample }
+                BitmapFactory.decodeResource(res, resId, opts)?.also { cache.put(key, it) }
+            }.getOrNull()
+        }
 }
