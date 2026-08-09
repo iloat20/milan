@@ -4,6 +4,14 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.SharedTransitionLayout
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -56,7 +64,16 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-/** 导航宿主：tab 切换 + 子页覆盖。 */
+/** 导航路由快照：data class 值相等则不重启过渡（每次重组新建实例，equals 判定）。 */
+private data class NavRoute(
+    val tab: NavItem,
+    val collectionOpen: Boolean,
+    val listOpen: Boolean,
+    val detailId: String?,
+    val progressionId: String?,
+)
+
+/** 导航宿主：tab 切换 + 子页覆盖。SharedTransitionLayout 提供立绘过渡作用域。 */
 @Composable
 private fun MilanNavHost() {
     var tab by rememberSaveable { mutableStateOf(NavItem.Home) }
@@ -67,61 +84,73 @@ private fun MilanNavHost() {
 
     val onBack = { collectionOpen = false; listOpen = false; progressionId = null; detailId = null }
 
-    // 局部快照：rememberSaveable 的 delegated var 无法 smart-cast，路由判断统一用快照
-    val detail = detailId
-    val progress = progressionId
-    when {
-        // 子页优先：角色养成 > 角色详情 > 角色列表 > 名录图鉴
-        progress != null -> ProgressionScreen(
-            characterId = progress,
-            onBack = { progressionId = null },
-            onSwitchCharacter = { id -> progressionId = id },
-        )
-        detail != null -> CharacterDetailScreen(
-            characterId = detail,
-            onBack = onBack,
-            onOpenProgression = { id -> progressionId = id },
-            onSwitchCharacter = { id -> detailId = id },
-        )
-        listOpen -> CharacterListScreen(
-            onBack = onBack,
-            onOpenCharacter = { id -> detailId = id },
-        )
-        collectionOpen -> PlaceholderScreen(
-            title = "神谱图鉴",
-            onBack = onBack,
-            actionLabel = "我的角色",
-            onAction = { listOpen = true },
-        )
-        else -> when (tab) {
-            NavItem.Home -> HomeScreen(
-                onNav = { tab = it },
-                onOpenGacha = { tab = NavItem.Gacha },
-                onOpenCollection = { collectionOpen = true },
-                onOpenCharacter = { id -> detailId = id },
-            )
-            NavItem.Gacha -> GachaScreen(
-                onNav = { tab = it },
-                onOpenCharacter = { id -> detailId = id },
-            )
-            NavItem.Deck -> PlaceholderScreen(
-                title = "卡组",
-                onBack = { tab = NavItem.Home },
-                navItem = NavItem.Deck,
-                onNav = { tab = it },
-            )
-            NavItem.Shop -> PlaceholderScreen(
-                title = "商店",
-                onBack = { tab = NavItem.Home },
-                navItem = NavItem.Shop,
-                onNav = { tab = it },
-            )
-            NavItem.Settings -> PlaceholderScreen(
-                title = "设置",
-                onBack = { tab = NavItem.Home },
-                navItem = NavItem.Settings,
-                onNav = { tab = it },
-            )
+    // 路由快照：AnimatedContent 的 targetState（值相等不重启过渡）
+    val route = NavRoute(tab, collectionOpen, listOpen, detailId, progressionId)
+
+    SharedTransitionLayout(Modifier.fillMaxSize()) {
+        AnimatedContent(
+            targetState = route,
+            transitionSpec = {
+                // 子页进出场：fade + 轻微上滑（D4，替换硬切）
+                (fadeIn(tween(280)) + slideInVertically(initialOffsetY = { it / 24 }))
+                    .togetherWith(fadeOut(tween(200)) + slideOutVertically(targetOffsetY = { -it / 24 }))
+            },
+            label = "nav",
+        ) { r ->
+            // 子页优先：角色养成 > 角色详情 > 角色列表 > 名录图鉴（快照判断，避免 smart-cast 问题）
+            when {
+                r.progressionId != null -> ProgressionScreen(
+                    characterId = r.progressionId,
+                    onBack = { progressionId = null },
+                    onSwitchCharacter = { id -> progressionId = id },
+                )
+                r.detailId != null -> CharacterDetailScreen(
+                    characterId = r.detailId,
+                    onBack = onBack,
+                    onOpenProgression = { id -> progressionId = id },
+                    onSwitchCharacter = { id -> detailId = id },
+                )
+                r.listOpen -> CharacterListScreen(
+                    onBack = onBack,
+                    onOpenCharacter = { id -> detailId = id },
+                )
+                r.collectionOpen -> PlaceholderScreen(
+                    title = "神谱图鉴",
+                    onBack = onBack,
+                    actionLabel = "我的角色",
+                    onAction = { listOpen = true },
+                )
+                else -> when (r.tab) {
+                    NavItem.Home -> HomeScreen(
+                        onNav = { tab = it },
+                        onOpenGacha = { tab = NavItem.Gacha },
+                        onOpenCollection = { collectionOpen = true },
+                        onOpenCharacter = { id -> detailId = id },
+                    )
+                    NavItem.Gacha -> GachaScreen(
+                        onNav = { tab = it },
+                        onOpenCharacter = { id -> detailId = id },
+                    )
+                    NavItem.Deck -> PlaceholderScreen(
+                        title = "卡组",
+                        onBack = { tab = NavItem.Home },
+                        navItem = NavItem.Deck,
+                        onNav = { tab = it },
+                    )
+                    NavItem.Shop -> PlaceholderScreen(
+                        title = "商店",
+                        onBack = { tab = NavItem.Home },
+                        navItem = NavItem.Shop,
+                        onNav = { tab = it },
+                    )
+                    NavItem.Settings -> PlaceholderScreen(
+                        title = "设置",
+                        onBack = { tab = NavItem.Home },
+                        navItem = NavItem.Settings,
+                        onNav = { tab = it },
+                    )
+                }
+            }
         }
     }
 }
