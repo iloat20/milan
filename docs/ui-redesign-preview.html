@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Milan UI 重设计 · 视觉设计稿</title>
+<style>
+:root{
+  --bg-deepest:#07070F; --bg-nebula1:#0D0221; --bg-nebula2:#1A0B3D;
+  --panel:rgba(26,26,46,.78); --panel2:rgba(37,37,66,.65);
+  --border:rgba(255,255,255,.12); --border-gold:rgba(255,215,90,.45);
+  --gold:#FFD75A; --gold-deep:#C9962E; --gold-glow:rgba(255,233,168,.6);
+  --cyan:#00E5FF; --magenta:#FF3DAE; --red:#E94560;
+  --r:#9BA3AF; --sr:#3AA0FF; --ssr:#D070FF; --ur:#FF6B00;
+  --tp:#F5F0FF; --ts:#9C9CB8;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg-deepest);color:var(--tp);font-family:"Segoe UI","Microsoft YaHei",sans-serif;
+  background-image:radial-gradient(ellipse 80% 50% at 50% -10%,rgba(124,77,255,.15),transparent),
+  radial-gradient(ellipse 60% 40% at 90% 100%,rgba(0,229,255,.06),transparent);}
+.wrap{max-width:1240px;margin:0 auto;padding:40px 24px 80px}
+h1{font-size:32px;text-align:center;background:linear-gradient(180deg,#FFE9A8,#C9962E);
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:8px}
+.sub{text-align:center;color:var(--ts);font-size:14px;margin-bottom:48px}
+h2{font-size:20px;margin:56px 0 20px;display:flex;align-items:center;gap:14px}
+h2::before,h2::after{content:"";height:1px;flex:0 0 60px;background:linear-gradient(90deg,transparent,var(--gold));}
+h2::after{background:linear-gradient(90deg,var(--gold),transparent);flex:1}
+h2 .dm{color:var(--gold);font-size:12px}
+/* tokens */
+.tokens{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:12px}
+.tk{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:10px;text-align:center}
+.tk .sw{height:52px;border-radius:8px;margin-bottom:8px;border:1px solid rgba(255,255,255,.08)}
+.tk b{font-size:12px;display:block}.tk span{font-size:11px;color:var(--ts)}
+/* buttons demo */
+.row{display:flex;gap:20px;flex-wrap:wrap;align-items:center}
+.btn-gold{position:relative;overflow:hidden;padding:13px 38px;font-size:15px;font-weight:bold;color:#3A2800;border:none;cursor:pointer;
+  background:linear-gradient(180deg,#FFE9A8 0%,var(--gold) 35%,var(--gold-deep) 100%);
+  clip-path:polygon(10px 0,100% 0,100% calc(100% - 10px),calc(100% - 10px) 100%,0 100%,0 10px);
+  box-shadow:0 3px 8px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.5);transition:transform .12s}
+.btn-gold:active{transform:scale(.96)}
+.btn-gold::after{content:"";position:absolute;top:0;left:-60%;width:40%;height:100%;
+  background:linear-gradient(105deg,transparent,rgba(255,255,255,.65),transparent);animation:shine 4s infinite}
+@keyframes shine{0%,70%{left:-60%}85%,100%{left:130%}}
+.btn-neon{padding:12px 34px;font-size:15px;color:var(--cyan);background:rgba(0,229,255,.06);cursor:pointer;
+  border:1.5px solid var(--cyan);border-radius:10px;box-shadow:inset 0 0 14px rgba(0,229,255,.15),0 0 10px rgba(0,229,255,.15);transition:transform .12s,background .2s}
+.btn-neon:active{transform:scale(.96);background:rgba(0,229,255,.18)}
+.btn-danger{padding:12px 34px;font-size:15px;color:#fff;font-weight:bold;border:none;cursor:pointer;
+  background:linear-gradient(180deg,#FF6B7C,var(--red) 60%,#B92B44);
+  clip-path:polygon(10px 0,100% 0,100% calc(100% - 10px),calc(100% - 10px) 100%,0 100%,0 10px);
+  box-shadow:0 3px 8px rgba(0,0,0,.5)}
+.btn-icon{width:46px;height:46px;border-radius:50%;background:var(--panel);border:1px solid var(--border);
+  color:var(--gold);font-size:18px;cursor:pointer;box-shadow:0 3px 8px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.15)}
+/* rarity cards + flip */
+.cards{display:flex;gap:22px;flex-wrap:wrap}
+.flip{width:150px;height:210px;perspective:900px;cursor:pointer}
+.flip-inner{position:relative;width:100%;height:100%;transition:transform .4s cubic-bezier(.4,0,.2,1);transform-style:preserve-3d}
+.flip.flipped .flip-inner{transform:rotateY(180deg)}
+.face{position:absolute;inset:0;border-radius:14px;backface-visibility:hidden;overflow:hidden}
+.back{background:linear-gradient(160deg,var(--bg-nebula1),var(--bg-nebula2));border:2px solid var(--gold-deep);
+  display:flex;align-items:center;justify-content:center}
+.back .rune{width:78px;height:78px;border:2px solid var(--gold);transform:rotate(45deg);display:flex;align-items:center;justify-content:center;box-shadow:0 0 18px rgba(255,215,90,.35),inset 0 0 18px rgba(255,215,90,.2)}
+.back .rune i{width:44px;height:44px;border:1px solid var(--gold);transform:rotate(45deg)}
+.front{transform:rotateY(180deg);display:flex;flex-direction:column;justify-content:flex-end;padding:10px;
+  background:linear-gradient(180deg,#2A2A4E 0%,#151528 100%)}
+.front.rr{border:2.5px solid var(--r)}
+.front.rsr{border:2.5px solid var(--sr);box-shadow:0 0 14px rgba(58,160,255,.4)}
+.front.rssr{border:2.5px solid var(--ssr);box-shadow:0 0 20px rgba(208,112,255,.55);animation:pulse 2.4s infinite}
+.front.rur{border:2.5px solid var(--ur);box-shadow:0 0 24px rgba(255,107,0,.6)}
+@keyframes pulse{0%,100%{box-shadow:0 0 12px rgba(208,112,255,.35)}50%{box-shadow:0 0 26px rgba(208,112,255,.75)}}
+.front .art{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:52px;opacity:.9}
+.front .info{position:relative;background:linear-gradient(transparent,rgba(0,0,0,.85));margin:-10px;padding:26px 10px 10px}
+.front .nm{font-size:14px;font-weight:bold}.front .rt{font-size:11px;font-weight:bold}
+.rr .rt{color:var(--r)}.rsr .rt{color:var(--sr)}.rssr .rt{color:var(--ssr)}.rur .rt{color:var(--ur)}
+.hint{color:var(--ts);font-size:13px;margin-top:12px}
+/* phone mockups */
+.phones{display:flex;gap:32px;flex-wrap:wrap;justify-content:center}
+.phone{width:300px;height:620px;border-radius:28px;border:3px solid #2A2A3E;background:linear-gradient(180deg,var(--bg-nebula1),#0A0A18 60%);
+  overflow:hidden;position:relative;box-shadow:0 20px 50px rgba(0,0,0,.6);flex-shrink:0}
+.phone.land{width:620px;height:300px}
+.plabel{text-align:center;margin-top:12px;font-size:14px;color:var(--gold)}
+.pwrap{display:flex;flex-direction:column;align-items:center}
+.stars{position:absolute;inset:0;background-image:radial-gradient(1px 1px at 20% 30%,rgba(255,255,255,.6),transparent),
+ radial-gradient(1px 1px at 70% 15%,rgba(255,255,255,.4),transparent),radial-gradient(1.5px 1.5px at 85% 60%,rgba(0,229,255,.5),transparent),
+ radial-gradient(1px 1px at 40% 75%,rgba(255,255,255,.35),transparent),radial-gradient(1.5px 1.5px at 10% 85%,rgba(255,215,90,.4),transparent);pointer-events:none}
+.topbar{display:flex;align-items:center;gap:8px;padding:12px 12px 8px}
+.ava{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#7C4DFF,#00E5FF);border:2px solid var(--gold);flex-shrink:0}
+.lv{font-size:10px;color:var(--ts)}
+.res{margin-left:auto;display:flex;gap:6px}
+.pill{background:var(--panel);border:1px solid var(--border);border-radius:20px;padding:3px 8px;font-size:11px;color:var(--gold);display:flex;gap:4px;align-items:center}
+.pill em{color:var(--cyan);font-style:normal}
+.navbar{position:absolute;bottom:0;left:0;right:0;height:56px;background:var(--panel);border-top:1px solid var(--border);
+  backdrop-filter:blur(6px);display:flex;align-items:stretch}
+.nav-i{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:10px;color:var(--ts);gap:2px;position:relative}
+.nav-i b{font-size:16px}
+.nav-i.on{color:var(--gold)}
+.nav-i.on::after{content:"";position:absolute;bottom:0;width:26px;height:3px;background:var(--gold);border-radius:2px;box-shadow:0 0 8px var(--gold)}
+.glass{background:var(--panel);border:1px solid var(--border);border-radius:14px;box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 4px 10px rgba(0,0,0,.4)}
+/* home */
+.hero{position:absolute;right:-16px;bottom:120px;width:170px;height:300px;background:radial-gradient(ellipse at 50% 20%,rgba(255,215,90,.25),transparent 60%);display:flex;align-items:center;justify-content:center;font-size:110px;filter:drop-shadow(0 0 24px rgba(255,215,90,.35));animation:breath 3s ease-in-out infinite}
+@keyframes breath{0%,100%{transform:scale(1)}50%{transform:scale(1.01)}}
+.hero::after{content:"";position:absolute;bottom:6px;left:24%;width:52%;height:14px;border-radius:50%;background:radial-gradient(rgba(255,215,90,.5),transparent 70%)}
+.banner{position:absolute;left:12px;top:64px;width:150px;height:76px;border-radius:12px;overflow:hidden;
+  background:linear-gradient(120deg,#3A1C71,#7C4DFF);border:1.5px solid var(--border-gold);padding:8px}
+.banner b{font-size:12px}.banner span{display:block;font-size:10px;color:var(--gold);margin-top:4px}
+.event{position:absolute;left:12px;top:150px;padding:5px 10px;border:1.2px solid var(--magenta);border-radius:16px;font-size:10px;color:var(--magenta);background:rgba(255,61,174,.08)}
+.sidecol{position:absolute;right:10px;top:64px;display:flex;flex-direction:column;gap:10px}
+.sicon{width:38px;height:38px;border-radius:50%;background:var(--panel);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:15px;position:relative}
+.sicon .dot{position:absolute;top:-1px;right:-1px;width:8px;height:8px;border-radius:50%;background:var(--red);animation:breath 1.6s infinite}
+.cta{position:absolute;bottom:70px;left:50%;transform:translateX(-50%);}
+/* gacha */
+.gtabs{display:flex;gap:6px;padding:10px 12px 0}
+.gtab{padding:5px 14px;border-radius:16px;font-size:11px;background:var(--panel);border:1px solid var(--border);color:var(--ts)}
+.gtab.on{background:linear-gradient(180deg,#FFE9A8,var(--gold-deep));color:#3A2800;font-weight:bold;border-color:var(--gold)}
+.circle{position:absolute;top:120px;left:50%;transform:translateX(-50%);width:230px;height:230px;border-radius:50%;
+  border:1.5px solid rgba(255,215,90,.35);display:flex;align-items:center;justify-content:center;animation:spin 60s linear infinite}
+@keyframes spin{to{transform:translateX(-50%) rotate(360deg)}}
+.circle::before{content:"";position:absolute;inset:18px;border-radius:50%;border:1px dashed rgba(255,215,90,.3)}
+.circle::after{content:"";position:absolute;inset:52px;transform:rotate(45deg);border:1px solid rgba(0,229,255,.35)}
+.gchar{position:absolute;top:150px;left:50%;transform:translateX(-50%);font-size:96px;filter:drop-shadow(0 0 26px rgba(208,112,255,.5))}
+.uptag{position:absolute;top:120px;right:24px;padding:3px 9px;background:rgba(255,61,174,.15);border:1px solid var(--magenta);border-radius:4px;font-size:10px;color:var(--magenta);transform:rotate(6deg)}
+.pity{position:absolute;top:96px;left:16px;font-size:10px;color:var(--ts)}.pity em{color:var(--cyan);font-style:normal;font-size:13px;font-weight:bold}
+.gpanel{position:absolute;bottom:0;left:0;right:0;padding:14px 14px 18px;background:var(--panel);border-top:1px solid var(--border-gold);backdrop-filter:blur(6px)}
+.gbtns{display:flex;gap:10px}
+.gbtns .btn-neon{flex:1;padding:10px 0;font-size:12px;text-align:center}
+.gbtns .btn-gold{flex:1.3;padding:10px 0;font-size:12px;text-align:center}
+.gnote{font-size:9px;color:var(--ts);text-align:right;margin-top:6px}
+.plink{font-size:10px;color:var(--cyan);text-decoration:underline;margin-bottom:8px;display:inline-block}
+/* battle */
+.enemy-row{position:absolute;top:14px;left:70px;right:70px;display:flex;justify-content:space-around}
+.unit{text-align:center;font-size:30px}
+.hp{width:54px;height:5px;background:#333;border-radius:3px;margin:3px auto 0;overflow:hidden}
+.hp i{display:block;height:100%;background:linear-gradient(90deg,#FF7A88,var(--red));border-radius:3px}
+.hp.ally i{background:linear-gradient(90deg,#7FF0B8,#35D07F)}
+.turn{position:absolute;top:10px;left:50%;transform:translateX(-50%);padding:2px 14px;border:1px solid var(--border-gold);border-radius:4px;font-size:10px;color:var(--gold);background:rgba(0,0,0,.4)}
+.ally-row{position:absolute;top:110px;left:110px;right:110px;display:flex;justify-content:space-around}
+.hand{position:absolute;bottom:-28px;left:50%;transform:translateX(-50%);display:flex}
+.hcard{width:64px;height:92px;border-radius:8px;margin:0 -8px;background:linear-gradient(180deg,#2A2A4E,#151528);
+  border:1.8px solid var(--sr);display:flex;align-items:center;justify-content:center;font-size:26px;
+  transition:transform .2s;position:relative;box-shadow:0 4px 10px rgba(0,0,0,.6)}
+.hcard:hover{transform:translateY(-22px) scale(1.1);z-index:5}
+.hcard:nth-child(1){transform:rotate(-7deg) translateY(9px)}.hcard:nth-child(2){transform:rotate(-3.5deg) translateY(3px)}
+.hcard:nth-child(4){transform:rotate(3.5deg) translateY(3px)}.hcard:nth-child(5){transform:rotate(7deg) translateY(9px)}
+.hcard:nth-child(1):hover{transform:rotate(-7deg) translateY(-16px) scale(1.1)}
+.hcard:nth-child(2):hover{transform:rotate(-3.5deg) translateY(-19px) scale(1.1)}
+.hcard:nth-child(4):hover{transform:rotate(3.5deg) translateY(-19px) scale(1.1)}
+.hcard:nth-child(5):hover{transform:rotate(7deg) translateY(-16px) scale(1.1)}
+.hcard.ur2{border-color:var(--ur);box-shadow:0 0 14px rgba(255,107,0,.5)}
+.hcard .cost{position:absolute;top:-7px;left:-7px;width:18px;height:18px;background:linear-gradient(135deg,#7C4DFF,#4A2FBD);transform:rotate(45deg);display:flex;align-items:center;justify-content:center;border:1px solid var(--cyan)}
+.hcard .cost i{transform:rotate(-45deg);font-size:9px;font-style:normal;color:#fff;font-weight:bold}
+.mana{position:absolute;bottom:12px;left:14px;display:flex;gap:3px}
+.gem{width:12px;height:12px;background:linear-gradient(135deg,#B39DFF,#7C4DFF);transform:rotate(45deg);border:1px solid var(--cyan)}
+.gem.used{background:#2A2A3E;border-color:#444}
+.endturn{position:absolute;right:14px;bottom:14px;width:56px;height:56px;border-radius:50%;
+  background:linear-gradient(180deg,#FFE9A8,var(--gold-deep));color:#3A2800;font-size:11px;font-weight:bold;border:2px solid #fff3;
+  display:flex;align-items:center;justify-content:center;text-align:center;box-shadow:0 0 18px rgba(255,215,90,.5);animation:pulse2 2s infinite;cursor:pointer}
+@keyframes pulse2{0%,100%{box-shadow:0 0 10px rgba(255,215,90,.4)}50%{box-shadow:0 0 24px rgba(255,215,90,.8)}}
+.dmg{position:absolute;top:52px;right:150px;font-size:22px;font-weight:900;color:var(--gold);text-shadow:0 0 10px rgba(255,107,0,.8);animation:dmgpop 1.8s infinite}
+@keyframes dmgpop{0%{opacity:0;transform:translateY(8px) scale(.6)}15%{opacity:1;transform:translateY(0) scale(1.15)}30%{transform:scale(1)}70%{opacity:1}100%{opacity:0;transform:translateY(-14px)}}
+/* deck */
+.dhead{display:flex;align-items:baseline;gap:8px;padding:12px 14px 6px}
+.dhead b{font-size:14px}.dhead .pw{margin-left:auto;color:var(--gold);font-weight:bold;font-size:15px}
+.slots{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:6px 14px}
+.slot{aspect-ratio:3/4;border-radius:9px;background:var(--panel2);border:1px dashed rgba(255,255,255,.2);
+  display:flex;align-items:center;justify-content:center;font-size:22px;color:var(--ts)}
+.slot.full{border:1.6px solid var(--ssr);background:linear-gradient(180deg,#2A2A4E,#151528);color:var(--tp)}
+.slot.empty{animation:blink 2s infinite}
+@keyframes blink{0%,100%{opacity:.5}50%{opacity:1}}
+.filter{display:flex;gap:6px;padding:10px 14px 4px}
+.fpill{font-size:10px;padding:3px 10px;border-radius:14px;border:1px solid var(--cyan);color:var(--cyan);background:rgba(0,229,255,.05)}
+.fpill.off{border-color:var(--border);color:var(--ts)}
+.pool{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:6px 14px}
+.pcard{aspect-ratio:3/4;border-radius:9px;background:linear-gradient(180deg,#2A2A4E,#151528);display:flex;align-items:center;justify-content:center;font-size:22px;position:relative}
+.pcard.b-r{border:1.6px solid var(--r)}.pcard.b-sr{border:1.6px solid var(--sr)}.pcard.b-ssr{border:1.6px solid var(--ssr)}.pcard.b-ur{border:1.6px solid var(--ur)}
+.pcard.inuse{opacity:.4}.pcard.inuse::after{content:"✓";position:absolute;top:2px;right:5px;color:var(--gold);font-size:12px;opacity:1}
+.deckbtns{position:absolute;bottom:66px;left:14px;right:14px;display:flex;gap:8px}
+.deckbtns .btn-gold{flex:1.4;padding:9px 0;font-size:12px;text-align:center}.deckbtns .btn-neon{flex:1;padding:9px 0;font-size:12px;text-align:center}
+/* shop */
+.stabs{display:flex;padding:8px 14px 0;gap:14px;font-size:12px;color:var(--ts)}
+.stab.on{color:var(--gold);position:relative}
+.stab.on::after{content:"";position:absolute;bottom:-5px;left:0;right:0;height:2px;background:var(--gold);box-shadow:0 0 6px var(--gold)}
+.deal{margin:14px 14px 8px;height:86px;border-radius:12px;background:linear-gradient(120deg,#4A1B3D,#7C1E5A);border:1.5px solid var(--border-gold);position:relative;padding:10px 12px;overflow:hidden}
+.deal b{font-size:13px}.deal .cd{font-size:10px;color:var(--magenta);margin-top:4px}
+.deal .off{position:absolute;top:0;right:0;background:var(--red);color:#fff;font-size:10px;font-weight:bold;padding:3px 10px;clip-path:polygon(0 0,100% 0,100% 100%,10px 100%)}
+.goods{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:6px 14px}
+.good{border-radius:12px;background:var(--panel);border:1px solid var(--border);padding:12px 8px;text-align:center;position:relative}
+.good.rare{border-color:var(--border-gold);overflow:hidden}
+.good.rare::after{content:"";position:absolute;top:0;left:-60%;width:40%;height:100%;background:linear-gradient(105deg,transparent,rgba(255,215,90,.18),transparent);animation:shine 5s infinite}
+.good .gi{font-size:34px;filter:drop-shadow(0 6px 6px rgba(0,0,0,.5))}
+.good .gn{font-size:11px;margin:6px 0}
+.good .gp{display:inline-block;font-size:11px;color:var(--gold);background:rgba(0,0,0,.35);border:1px solid var(--border);border-radius:12px;padding:2px 10px}
+.good.sold{filter:grayscale(1);opacity:.55}
+.good.sold::before{content:"已售罄";position:absolute;top:38%;left:50%;transform:translate(-50%,-50%) rotate(-14deg);border:2px solid var(--red);color:var(--red);font-size:13px;font-weight:bold;padding:2px 10px;border-radius:4px;z-index:2}
+/* settings */
+.pcardtop{margin:12px 14px;padding:12px;display:flex;gap:10px;align-items:center}
+.pcardtop .ava{width:44px;height:44px}
+.pcardtop .un{font-size:14px;font-weight:bold}.pcardtop .uid{font-size:10px;color:var(--cyan)}
+.sgroup{margin:10px 14px;padding:4px 12px}
+.sgroup .gt{font-size:10px;color:var(--gold);padding:8px 0 2px;letter-spacing:2px}
+.srow{display:flex;align-items:center;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.06);font-size:12px}
+.srow:last-child{border:none}
+.srow span{margin-left:auto}
+.slider{width:110px;height:6px;background:#20203A;border-radius:3px;position:relative;margin-left:auto}
+.slider i{position:absolute;left:0;top:0;height:100%;width:70%;background:linear-gradient(90deg,var(--gold-deep),var(--gold));border-radius:3px}
+.slider b{position:absolute;left:calc(70% - 7px);top:-4px;width:14px;height:14px;background:linear-gradient(135deg,#FFE9A8,var(--gold));transform:rotate(45deg);box-shadow:0 0 8px rgba(255,215,90,.7)}
+.toggle{width:40px;height:20px;border-radius:12px;background:linear-gradient(90deg,var(--gold-deep),var(--gold));position:relative;margin-left:auto}
+.toggle::after{content:"";position:absolute;right:2px;top:2px;width:16px;height:16px;border-radius:50%;background:#fff;box-shadow:0 0 6px rgba(255,233,168,.9)}
+.toggle.off{background:#2A2A3E}.toggle.off::after{right:auto;left:2px;background:#666;box-shadow:none}
+.seg{display:flex;margin-left:auto;border:1px solid var(--cyan);border-radius:12px;overflow:hidden}
+.seg i{font-style:normal;font-size:10px;padding:2px 8px;color:var(--ts)}
+.seg i.on{background:rgba(0,229,255,.2);color:var(--cyan)}
+.logout{margin:14px;text-align:center;padding:9px;border:1.5px solid var(--red);border-radius:10px;color:var(--red);font-size:12px}
+.note{background:var(--panel);border:1px solid var(--border);border-left:3px solid var(--gold);border-radius:8px;padding:14px 18px;font-size:13px;color:var(--ts);line-height:1.8;margin-top:16px}
+.note b{color:var(--gold)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>MILAN · UI 重设计视觉稿</h1>
+  <div class="sub">Obsidian &amp; Gold —— 深色玻璃拟态 × 鎏金 × 霓虹点缀 ｜ 配套文档：docs/ui-redesign-plan.md</div>
+
+  <h2><span class="dm">◆</span> 设计 Token · 配色系统</h2>
+  <div class="tokens">
+    <div class="tk"><div class="sw" style="background:#07070F"></div><b>BgDeepest</b><span>#07070F</span></div>
+    <div class="tk"><div class="sw" style="background:linear-gradient(135deg,#0D0221,#1A0B3D)"></div><b>BgNebula</b><span>#0D0221→#1A0B3D</span></div>
+    <div class="tk"><div class="sw" style="background:rgba(26,26,46,.78);border:1px solid rgba(255,255,255,.12)"></div><b>PanelGlass</b><span>#1A1A2E α78%</span></div>
+    <div class="tk"><div class="sw" style="background:linear-gradient(180deg,#FFE9A8,#FFD75A,#C9962E)"></div><b>Gold</b><span>#FFD75A</span></div>
+    <div class="tk"><div class="sw" style="background:#00E5FF"></div><b>NeonCyan</b><span>#00E5FF</span></div>
+    <div class="tk"><div class="sw" style="background:#FF3DAE"></div><b>NeonMagenta</b><span>#FF3DAE</span></div>
+    <div class="tk"><div class="sw" style="background:#E94560"></div><b>AccentRed</b><span>#E94560</span></div>
+    <div class="tk"><div class="sw" style="background:#9BA3AF"></div><b>Rarity R</b><span>#9BA3AF</span></div>
+    <div class="tk"><div class="sw" style="background:#3AA0FF"></div><b>Rarity SR</b><span>#3AA0FF</span></div>
+    <div class="tk"><div class="sw" style="background:linear-gradient(135deg,#D070FF,#FF6BD6)"></div><b>Rarity SSR</b><span>#D070FF</span></div>
+    <div class="tk"><div class="sw" style="background:linear-gradient(135deg,#FF6B00,#FFD75A)"></div><b>Rarity UR</b><span>#FF6B00→金</span></div>
+    <div class="tk"><div class="sw" style="background:#35D07F"></div><b>Success</b><span>#35D07F</span></div>
+  </div>
+
+  <h2><span class="dm">◆</span> 核心组件 · 按钮体系（金色主按钮带自动扫光）</h2>
+  <div class="row">
+    <button class="btn-gold">十连召唤 ×10</button>
+    <button class="btn-neon">概率详情</button>
+    <button class="btn-danger">放弃战斗</button>
+    <button class="btn-icon">‹</button>
+    <button class="btn-icon">⚙</button>
+  </div>
+
+  <h2><span class="dm">◆</span> 卡牌规范 · 点击体验翻转动效（400ms · 卡背→揭示）</h2>
+  <div class="cards">
+    <div class="flip" onclick="this.classList.toggle('flipped')"><div class="flip-inner">
+      <div class="face back"><div class="rune"><i></i></div></div>
+      <div class="face front rr"><div class="art">🗡️</div><div class="info"><div class="nm">见习剑士</div><div class="rt">R ★</div></div></div>
+    </div></div>
+    <div class="flip" onclick="this.classList.toggle('flipped')"><div class="flip-inner">
+      <div class="face back"><div class="rune"><i></i></div></div>
+      <div class="face front rsr"><div class="art">🏹</div><div class="info"><div class="nm">疾风游侠</div><div class="rt">SR ★★</div></div></div>
+    </div></div>
+    <div class="flip" onclick="this.classList.toggle('flipped')"><div class="flip-inner">
+      <div class="face back"><div class="rune"><i></i></div></div>
+      <div class="face front rssr"><div class="art">🔮</div><div class="info"><div class="nm">虚空贤者</div><div class="rt">SSR ★★★</div></div></div>
+    </div></div>
+    <div class="flip" onclick="this.classList.toggle('flipped')"><div class="flip-inner">
+      <div class="face back"><div class="rune"><i></i></div></div>
+      <div class="face front rur"><div class="art">🐉</div><div class="info"><div class="nm">炎狱龙帝</div><div class="rt">UR ★★★★</div></div></div>
+    </div></div>
+  </div>
+  <div class="hint">↑ 点击卡牌体验翻转。SSR 带呼吸光晕（PulseView），UR 带常驻强光；正式实现中 90° 换面瞬间触发粒子爆发。</div>
+
+  <h2><span class="dm">◆</span> 页面设计稿 · 主页 / 抽卡</h2>
+  <div class="phones">
+    <div class="pwrap">
+      <div class="phone">
+        <div class="stars"></div>
+        <div class="topbar"><div class="ava"></div><div><div style="font-size:11px;font-weight:bold">指挥官</div><div class="lv">Lv.42</div></div>
+          <div class="res"><div class="pill">🪙 128,400 <em>+</em></div><div class="pill">💎 3,200 <em>+</em></div></div></div>
+        <div class="banner"><b>新春限定卡池</b><span>UP: 炎狱龙帝 ▶</span></div>
+        <div class="event">⏱ 限时活动 2天13:22</div>
+        <div class="sidecol">
+          <div class="sicon">✉<div class="dot"></div></div>
+          <div class="sicon">📋<div class="dot"></div></div>
+          <div class="sicon">📅</div>
+        </div>
+        <div class="hero">🐉</div>
+        <div class="cta"><button class="btn-gold" style="padding:12px 44px">出 战</button></div>
+        <div class="navbar">
+          <div class="nav-i on"><b>⌂</b>主页</div><div class="nav-i"><b>✦</b>抽卡</div><div class="nav-i"><b>🂠</b>卡组</div><div class="nav-i"><b>🛒</b>商店</div><div class="nav-i"><b>📖</b>图鉴</div>
+        </div>
+      </div>
+      <div class="plabel">主页 · 立绘视差 + 活动位 + 全局导航</div>
+    </div>
+    <div class="pwrap">
+      <div class="phone">
+        <div class="stars"></div>
+        <div class="topbar"><button class="btn-icon" style="width:32px;height:32px;font-size:13px">‹</button>
+          <div class="res"><div class="pill">💎 3,200 <em>+</em></div></div></div>
+        <div class="gtabs"><div class="gtab on">限定UP</div><div class="gtab">常驻</div><div class="gtab">新手</div></div>
+        <div class="pity">距保底 <em>27</em> 抽</div>
+        <div class="circle"></div>
+        <div class="gchar">🐉</div>
+        <div class="uptag">限定 UP ×2</div>
+        <div class="gpanel">
+          <span class="plink">概率详情 ›</span>
+          <div class="gbtns"><button class="btn-neon">单次召唤 ×1</button><button class="btn-gold">十连召唤 ×10</button></div>
+          <div class="gnote">十连必得 SR 及以上</div>
+        </div>
+      </div>
+      <div class="plabel">抽卡 · 旋转法阵 + 保底计数 + 双按钮</div>
+    </div>
+  </div>
+
+  <h2><span class="dm">◆</span> 战斗页（横屏主设计 · 扇形手牌悬停试试）</h2>
+  <div class="phones"><div class="pwrap">
+    <div class="phone land">
+      <div class="stars"></div>
+      <div class="turn">回合 3 · 敌方行动预告 ⚔×2</div>
+      <button class="btn-icon" style="position:absolute;top:8px;left:10px;width:30px;height:30px;font-size:12px">Ⅱ</button>
+      <div class="enemy-row">
+        <div class="unit">👹<div class="hp"><i style="width:80%"></i></div></div>
+        <div class="unit">💀<div class="hp"><i style="width:45%"></i></div></div>
+        <div class="unit">🐺<div class="hp"><i style="width:100%"></i></div></div>
+      </div>
+      <div class="dmg">-1280!</div>
+      <div class="ally-row">
+        <div class="unit">🗡️<div class="hp ally"><i style="width:90%"></i></div></div>
+        <div class="unit">🔮<div class="hp ally"><i style="width:65%"></i></div></div>
+      </div>
+      <div class="hand">
+        <div class="hcard"><div class="cost"><i>2</i></div>🗡️</div>
+        <div class="hcard"><div class="cost"><i>3</i></div>🏹</div>
+        <div class="hcard ur2"><div class="cost"><i>6</i></div>🐉</div>
+        <div class="hcard"><div class="cost"><i>1</i></div>🛡️</div>
+        <div class="hcard"><div class="cost"><i>4</i></div>🔮</div>
+      </div>
+      <div class="mana"><div class="gem"></div><div class="gem"></div><div class="gem"></div><div class="gem"></div><div class="gem used"></div><div class="gem used"></div><div class="gem used"></div></div>
+      <div class="endturn">结束<br>回合</div>
+    </div>
+    <div class="plabel">战斗 · 扇形手牌拖拽出牌 + 费用水晶 + 伤害数字弹跳</div>
+  </div></div>
+
+  <h2><span class="dm">◆</span> 卡组编辑 / 商店 / 设置</h2>
+  <div class="phones">
+    <div class="pwrap">
+      <div class="phone">
+        <div class="stars"></div>
+        <div class="dhead"><b>主力卡组 ✎</b><div class="pw">⚡ 24,860</div></div>
+        <div class="slots">
+          <div class="slot full">🐉</div><div class="slot full">🔮</div><div class="slot full">🗡️</div><div class="slot full">🏹</div>
+          <div class="slot full">🛡️</div><div class="slot full">⚔️</div><div class="slot empty">＋</div><div class="slot empty">＋</div>
+        </div>
+        <div class="filter"><div class="fpill">全部元素</div><div class="fpill off">稀有度</div><div class="fpill off">战力 ↓</div></div>
+        <div class="pool">
+          <div class="pcard b-ur inuse">🐉</div><div class="pcard b-ssr inuse">🔮</div><div class="pcard b-sr">🌊</div><div class="pcard b-sr inuse">🏹</div>
+          <div class="pcard b-r">🪓</div><div class="pcard b-sr">⚡</div><div class="pcard b-r inuse">🛡️</div><div class="pcard b-ssr">🌙</div>
+        </div>
+        <div class="deckbtns"><button class="btn-gold">保存卡组</button><button class="btn-neon">一键配卡</button></div>
+        <div class="navbar"><div class="nav-i"><b>⌂</b>主页</div><div class="nav-i"><b>✦</b>抽卡</div><div class="nav-i on"><b>🂠</b>卡组</div><div class="nav-i"><b>🛒</b>商店</div><div class="nav-i"><b>📖</b>图鉴</div></div>
+      </div>
+      <div class="plabel">卡组编辑 · 槽位 + 卡池 + 已入组标记</div>
+    </div>
+    <div class="pwrap">
+      <div class="phone">
+        <div class="stars"></div>
+        <div class="topbar"><div class="ava"></div><div class="res"><div class="pill">🪙 128,400 <em>+</em></div><div class="pill">💎 3,200 <em>+</em></div></div></div>
+        <div class="stabs"><div class="stab on">礼包</div><div class="stab">钻石</div><div class="stab">碎片兑换</div><div class="stab">每日特惠</div></div>
+        <div class="deal"><div class="off">-30%</div><b>新春豪华礼包</b><div class="cd">⏱ 限时 23:59:59</div><div style="font-size:22px;margin-top:2px">🎁🐉💎</div></div>
+        <div class="goods">
+          <div class="good rare"><div class="gi">🎫</div><div class="gn">十连召唤券</div><div class="gp">💎 1,500</div></div>
+          <div class="good"><div class="gi">💎</div><div class="gn">钻石 ×980</div><div class="gp">¥ 68</div></div>
+          <div class="good"><div class="gi">⭐</div><div class="gn">星辉碎片 ×50</div><div class="gp">🪙 8,000</div></div>
+          <div class="good sold"><div class="gi">📦</div><div class="gn">每日补给箱</div><div class="gp">🪙 500</div></div>
+        </div>
+        <div class="navbar"><div class="nav-i"><b>⌂</b>主页</div><div class="nav-i"><b>✦</b>抽卡</div><div class="nav-i"><b>🂠</b>卡组</div><div class="nav-i on"><b>🛒</b>商店</div><div class="nav-i"><b>📖</b>图鉴</div></div>
+      </div>
+      <div class="plabel">商店 · 特惠横幅 + 稀有礼包流光 + 售罄态</div>
+    </div>
+    <div class="pwrap">
+      <div class="phone">
+        <div class="stars"></div>
+        <div class="topbar"><button class="btn-icon" style="width:32px;height:32px;font-size:13px">‹</button><div style="font-size:14px;font-weight:bold">设 置</div></div>
+        <div class="glass pcardtop"><div class="ava"></div><div><div class="un">指挥官</div><div class="uid">UID 8842-1937 ⧉</div></div></div>
+        <div class="glass sgroup">
+          <div class="gt">音 频</div>
+          <div class="srow">音乐音量<div class="slider"><i></i><b></b></div></div>
+          <div class="srow">音效音量<div class="slider"><i style="width:85%"></i><b style="left:calc(85% - 7px)"></b></div></div>
+        </div>
+        <div class="glass sgroup">
+          <div class="gt">画 质</div>
+          <div class="srow">粒子密度<div class="seg"><i>低</i><i class="on">中</i><i>高</i></div></div>
+          <div class="srow">背景视差<div class="toggle"></div></div>
+        </div>
+        <div class="glass sgroup">
+          <div class="gt">通 知</div>
+          <div class="srow">体力回满提醒<div class="toggle"></div></div>
+          <div class="srow">活动推送<div class="toggle off"></div></div>
+        </div>
+        <div class="logout">退出登录</div>
+        <div style="text-align:center;font-size:10px;color:var(--ts)">v1.0.0 (build 2026.07)</div>
+      </div>
+      <div class="plabel">设置 · 玻璃分组 + 水晶滑杆 + 金色开关</div>
+    </div>
+  </div>
+
+  <div class="note">
+    <b>说明</b>：本设计稿为视觉规范演示（HTML 模拟），最终在 Android 端以 C# 动态 View + GradientDrawable/LayerDrawable + 自绘特效实现。
+    完整规范（含 10 个页面全部设计说明、横竖屏适配矩阵、动效参数表、与现有代码的落地映射）见 <b>docs/ui-redesign-plan.md</b>。
+    交互演示：金色按钮自动扫光、卡牌点击翻转、战斗手牌悬停浮起、SSR 呼吸光晕、伤害数字循环弹跳。
+  </div>
+</div>
+</body>
+</html>

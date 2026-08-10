@@ -10,7 +10,7 @@ The summon art style is a **dimensional rift / portal** (characters cross over f
 
 ## Implementation
 
-The game is a **Kotlin / Jetpack Compose native Android** app in `MilanKotlin/` (Gradle 8 + AGP 8.10.1 + Kotlin 2.1.20, `com.milan.game`). Single-`Activity` architecture with a pure-state router (`MilanNavHost`), Material3 theming, kotlinx.serialization for save/content JSON, coroutines for async work. APK at `MilanKotlin/app/build/outputs/apk/debug/app-debug.apk`.
+The game is a **Kotlin / Jetpack Compose native Android** app in `MilanKotlin/` (Gradle 9.5.0 + AGP 9.1.1 + Kotlin 2.4.0 — AGP 9 has built-in Kotlin, no kotlin-android plugin — `com.milan.game`). Single-`Activity` architecture with type-safe Navigation Compose 2.9 routes (`@Serializable` route classes in `ui/nav/Routes.kt`, replacing an earlier self-built state router), Material3 theming, kotlinx.serialization for save/content JSON, coroutines for async work. APK at `MilanKotlin/app/build/outputs/apk/debug/app-debug.apk`.
 
 > This is the third implementation. A Unity C# version (`Assets/_Project/`) and a .NET 10 native-Android version (`MauiMilan/` + `Tests/`) used to live in the repo and were removed on 2026-08-07 in favor of the Kotlin rewrite. Old logic can be recovered from git history; code comments still carry "C# 某某翻译" cross-references — keep those.
 
@@ -19,7 +19,7 @@ The game is a **Kotlin / Jetpack Compose native Android** app in `MilanKotlin/` 
 ./gradlew.bat :app:assembleDebug          # Debug APK
 ./gradlew.bat :app:testDebugUnitTest      # unit tests (JUnit4 + coroutines-test)
 ```
-JDK 17+ is required (gradle.properties pins `org.gradle.java.home`). Versions live in `MilanKotlin/gradle/libs.versions.toml`. `minSdk=29, targetSdk=36, compileSdk=36`.
+JDK 17+ is required (gradle.properties pins `org.gradle.java.home`). Versions live in `MilanKotlin/gradle/libs.versions.toml`. `minSdk=29, targetSdk=36, compileSdk=37` (37 is forced by BOM 2026.06.01's ui 1.12.0-alpha03).
 
 ### Project layout
 ```
@@ -72,7 +72,7 @@ Bottom bar with 5 tabs: `Home 主页 / Gacha 抽卡 / Deck 卡组 / Shop 商店 
 
 ## Testing
 
-Unit tests live in `app/src/test/java/com/milan/game/` (JUnit4 + kotlinx-coroutines-test): `SaveDataTest` / `SaveManagerTest` / `BattleSimulatorTest` / `GachaEngineTest` / `PityCounterTest` / `EconomyFormulasTest` / `ProgressionEngineTest` / `TalentEngineTest`. Domain engines take injected `Random` seeds for determinism — add unit tests for new domain logic. **Service-layer and UI-layer behavior are untested.**
+Unit tests live in `app/src/test/java/com/milan/game/` (JUnit4 + kotlinx-coroutines-test): `SaveDataTest` / `SaveManagerTest` / `BattleSimulatorTest` / `GachaEngineTest` / `PityCounterTest` / `EconomyFormulasTest` / `ProgressionEngineTest` / `TalentEngineTest` / `EventBusTest` / `DataJsonContentTest` / `PortraitLoaderTest` / `RoutesTest`. Domain engines take injected `Random` seeds for determinism — add unit tests for new domain logic. **Service-layer (`GameServiceTest`) is covered; `RoutesTest` covers the type-safe routes (`NavItem.toNavRoute()` mapping + `@Serializable` round-trips, pure Kotlin); Compose rendering remains untested.**
 
 ## Key design references
 
@@ -82,8 +82,8 @@ Unit tests live in `app/src/test/java/com/milan/game/` (JUnit4 + kotlinx-corouti
 ## Notes for future sessions
 
 - `.superpowers/`, `docs/superpowers/`, `.omo/`, `.omc/` are planning artifacts, not source.
-- Content data main source: `MilanKotlin/app/src/main/assets/data.json` (packaged asset); `services/GameContent.kt` is the in-code fallback (not the source of truth) used silently when data.json is missing/corrupt. **Current state: `MilanApp` passes `contentJson = null`, so content actually comes from the fallback — wire the asset up and keep both paths flowing through `GameContent.enrich` (issue #31).**
-- Portraits: `res/drawable/char_<rarity>_<pinyin>.png` (R×7 / SR×8 / SSR×6 / UR×7); weapon art: `assets/weapons/<vfx>.png` (28 files) — `CharacterDetailScreen` loads via `context.assets.open("weapons/$weaponVfx.png")`, falls back to the weapon name when missing.
+- Content data main source: `MilanKotlin/app/src/main/assets/data.json` (packaged asset); `MilanApp` reads it at startup and passes it to `GameService`; `services/GameContent.kt` is the in-code fallback (not the source of truth) used silently when data.json is missing/corrupt/has no valid characters. **Both load paths flow through `GameContent.enrich` for derived fields (issue #31 done).**
+- Portraits: `res/drawable/char_<rarity>_<pinyin>.webp` (R×7 / SR×8 / SSR×6 / UR×7, migrated from old versions and converted PNG→WebP); `PortraitImage` probes with `getIdentifier` and decodes off the main thread, rendering a rarity-gradient placeholder when missing. Weapon art: `assets/weapons/<vfx>.webp` (28 files, converted PNG→WebP) — `CharacterDetailScreen` loads via `context.assets.open("weapons/$weaponVfx.webp")` on an IO thread with 2x sampling, falls back to the weapon name when missing.
 - Rarity enum: `R=1, SR=2, SSR=3, UR=4`. Worlds: `Shinwa, Aether, Ironveil`.
 - Gacha rules: duplicate pulls award star fragments via `EconomyFormulas.FragmentsForRarity` (UR 50 / SSR 20 / SR 5 / R 1). If a rolled rarity band has no candidates in the pool, the roll upgrades to the nearest higher band with candidates (never silently re-rolls the whole pool). Pity counter resets on any natural drop at/above the pity rarity.
 - Comments and UI copy are all Chinese; comments often carry historical pitfall notes — read them before touching related code.

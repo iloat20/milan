@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Milan · 诸神黄昏·东方 — 首页原型</title>
+<style>
+  :root {
+    --bg-deep: #0B0612;
+    --bg-mid: #160A26;
+    --bg-panel: rgba(30, 16, 51, 0.66);
+    --gold: #E8B84B;
+    --gold-bright: #FFC857;
+    --frost: #7FC4FF;
+    --frost-deep: #4A90D9;
+    --violet: #9A6BFF;
+    --text-1: #F3ECFF;
+    --text-2: #B7A6CF;
+    --ur: #FFC857;
+    --ssr: #C79BFF;
+    --sr: #7FC4FF;
+    --r: #E8E2F2;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+    background:
+      radial-gradient(1200px 700px at 70% -10%, rgba(154, 107, 255, 0.18), transparent 60%),
+      radial-gradient(900px 600px at 0% 110%, rgba(74, 144, 217, 0.16), transparent 55%),
+      linear-gradient(160deg, #0B0612 0%, #160A26 55%, #0B0612 100%);
+    min-height: 100vh;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 40px;
+    align-items: center;
+    justify-content: center;
+    padding: 36px 20px;
+    color: var(--text-1);
+  }
+
+  /* ===== Phone frame ===== */
+  .phone {
+    width: 392px;
+    height: 830px;
+    border-radius: 46px;
+    padding: 12px;
+    background: linear-gradient(160deg, #2a1740, #0e0718);
+    box-shadow: 0 30px 80px rgba(0,0,0,0.6), inset 0 0 0 1px rgba(255,255,255,0.06);
+    position: relative;
+    flex: 0 0 auto;
+  }
+  .screen {
+    width: 100%; height: 100%;
+    border-radius: 36px;
+    overflow: hidden;
+    position: relative;
+    background:
+      radial-gradient(120% 80% at 50% -10%, rgba(154,107,255,0.22), transparent 55%),
+      linear-gradient(180deg, #100821 0%, #160A26 45%, #0B0612 100%);
+  }
+  .notch {
+    position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
+    width: 120px; height: 26px; background: #06030c; border-radius: 0 0 16px 16px; z-index: 30;
+  }
+
+  /* Cosmic particle layer (CSS only) */
+  .cosmic { position: absolute; inset: 0; z-index: 1; pointer-events: none; opacity: 0.5; }
+  .cosmic i {
+    position: absolute; width: 2px; height: 2px; border-radius: 50%;
+    background: var(--frost); box-shadow: 0 0 6px var(--frost);
+    animation: rise linear infinite;
+  }
+  @keyframes rise { from { transform: translateY(0); opacity: 0; } 20%{opacity:.9;} to { transform: translateY(-760px); opacity: 0; } }
+
+  .content { position: absolute; inset: 0; z-index: 10; display: flex; flex-direction: column; padding: 30px 16px 0; }
+
+  /* ===== Top bar ===== */
+  .topbar { display: flex; align-items: center; justify-content: space-between; }
+  .brand { display: flex; flex-direction: column; line-height: 1.1; }
+  .brand .cn {
+    font-size: 19px; font-weight: 800; letter-spacing: 2px;
+    background: linear-gradient(90deg, var(--gold-bright), #fff 60%, var(--frost));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    text-shadow: 0 0 18px rgba(255,200,87,0.25);
+  }
+  .brand .en { font-size: 9px; letter-spacing: 3px; color: var(--text-2); margin-top: 2px; }
+  .pills { display: flex; gap: 8px; }
+  .pill {
+    display: flex; align-items: center; gap: 5px;
+    background: rgba(30,16,51,0.7); border: 1px solid rgba(232,184,75,0.35);
+    border-radius: 20px; padding: 6px 11px; font-size: 12px; font-weight: 700;
+    box-shadow: 0 0 14px rgba(154,107,255,0.15);
+  }
+  .pill .g { font-size: 13px; }
+  .pill.gold .g { color: var(--gold-bright); }
+  .pill.frost .g { color: var(--frost); }
+  .pill .v { color: var(--text-1); }
+
+  /* ===== Hero (reduced top whitespace, larger) ===== */
+  .hero {
+    position: relative; margin-top: 8px; height: 430px;
+    border-radius: 22px; overflow: hidden;
+    background:
+      radial-gradient(80% 60% at 50% 38%, rgba(154,107,255,0.16), transparent 70%),
+      linear-gradient(180deg, rgba(20,10,38,0.2), rgba(11,6,18,0.6));
+    border: 1px solid rgba(232,184,75,0.30);
+    box-shadow: inset 0 0 30px rgba(0,0,0,0.5), 0 10px 30px rgba(0,0,0,0.4);
+    perspective: 800px;
+  }
+  /* rarity halo + pulse */
+  .halo {
+    position: absolute; left: 50%; top: 46%; transform: translate(-50%,-50%);
+    width: 280px; height: 280px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(255,200,87,0.55) 0%, rgba(255,200,87,0.12) 40%, transparent 70%);
+    filter: blur(6px); animation: pulse 4.5s ease-in-out infinite; z-index: 1;
+  }
+  @keyframes pulse { 0%,100%{ opacity:.55; transform: translate(-50%,-50%) scale(1);} 50%{ opacity:.95; transform: translate(-50%,-50%) scale(1.08);} }
+  .art {
+    position: absolute; left: 50%; bottom: -6px; transform: translateX(-50%);
+    height: 100%; z-index: 3;
+    filter: drop-shadow(0 14px 26px rgba(0,0,0,0.6)) drop-shadow(0 0 16px rgba(255,200,87,0.25));
+    animation: float 6s ease-in-out infinite;
+    will-change: transform;
+  }
+  @keyframes float { 0%,100%{ transform: translateX(-50%) translateY(0) rotate(-0.6deg);} 50%{ transform: translateX(-50%) translateY(-12px) rotate(0.6deg);} }
+  /* rim light sweep */
+  .rim {
+    position: absolute; inset: 0; z-index: 4; pointer-events: none;
+    background: linear-gradient(115deg, transparent 40%, rgba(255,255,255,0.14) 50%, transparent 60%);
+    mix-blend-mode: screen; animation: sweep 5.5s ease-in-out infinite;
+  }
+  @keyframes sweep { 0%,100%{ opacity:0; transform: translateX(-30%);} 50%{ opacity:1; transform: translateX(30%);} }
+  /* nameplate */
+  .plate {
+    position: absolute; left: 0; right: 0; bottom: 0; z-index: 6; padding: 40px 16px 14px;
+    background: linear-gradient(0deg, rgba(8,4,14,0.92), rgba(8,4,14,0.0));
+  }
+  .plate .name { font-size: 22px; font-weight: 800; letter-spacing: 1px; color: #fff; text-shadow: 0 2px 8px rgba(0,0,0,0.7); }
+  .plate .title { font-size: 12px; color: var(--text-2); margin-top: 3px; }
+  .tag {
+    display: inline-block; margin-top: 7px; font-size: 11px; font-weight: 800; letter-spacing: 1px;
+    color: var(--ur); border: 1px solid var(--ur); border-radius: 8px; padding: 2px 10px;
+    background: rgba(255,200,87,0.12);
+  }
+  .placeholder-badge {
+    position: absolute; top: 10px; right: 10px; z-index: 7; font-size: 9px; color: var(--text-2);
+    background: rgba(0,0,0,0.45); border: 1px solid rgba(255,255,255,0.12); border-radius: 8px; padding: 3px 7px;
+  }
+
+  /* ===== Action buttons ===== */
+  .actions { display: flex; gap: 10px; margin-top: 12px; }
+  .btn {
+    flex: 1; text-align: center; padding: 12px 0; border-radius: 14px; font-weight: 800; font-size: 14px;
+    letter-spacing: 1px; cursor: pointer; position: relative; overflow: hidden;
+  }
+  .btn.gold {
+    color: #1a0f00;
+    background: linear-gradient(100deg, var(--gold-bright), var(--gold));
+    box-shadow: 0 6px 18px rgba(232,184,75,0.35);
+  }
+  .btn.gold::after {
+    content:""; position:absolute; top:0; left:-60%; width:40%; height:100%;
+    background: linear-gradient(100deg, transparent, rgba(255,255,255,0.7), transparent);
+    animation: shine 3.5s ease-in-out infinite;
+  }
+  @keyframes shine { 0%{ left:-60%;} 60%,100%{ left:130%;} }
+  .btn.ghost { color: var(--frost); background: rgba(127,196,255,0.1); border: 1px solid rgba(127,196,255,0.4); }
+
+  /* ===== Section title ===== */
+  .sec-title { display: flex; align-items: center; gap: 8px; margin: 16px 2px 10px; }
+  .sec-title .bar { width: 3px; height: 15px; background: linear-gradient(var(--gold-bright), var(--frost)); border-radius: 2px; }
+  .sec-title span { font-size: 13px; font-weight: 800; letter-spacing: 2px; color: var(--text-1); }
+  .sec-title .sub { font-size: 10px; color: var(--text-2); letter-spacing: 1px; }
+
+  /* ===== Avatar row (unified redesign) ===== */
+  .avatars { display: flex; gap: 12px; overflow-x: auto; padding: 2px 2px 6px; }
+  .avatars::-webkit-scrollbar { height: 0; }
+  .ava { flex: 0 0 auto; text-align: center; width: 64px; }
+  .ava .ring {
+    width: 60px; height: 60px; border-radius: 50%; margin: 0 auto;
+    padding: 2px; position: relative;
+    background: conic-gradient(from 0deg, var(--c1), var(--c2), var(--c1));
+    box-shadow: 0 0 14px var(--c1); animation: spin 8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg);} }
+  .ava .ring::before {
+    content:""; position:absolute; inset:3px; border-radius:50%;
+    background: #0c0716; box-shadow: inset 0 0 10px rgba(0,0,0,0.8);
+  }
+  .ava img { position: relative; width: 52px; height: 52px; border-radius: 50%; object-fit: cover; z-index: 2; }
+  .ava .nm { font-size: 10px; margin-top: 5px; color: var(--text-1); font-weight: 700; }
+  .ava .src { font-size: 8px; color: var(--text-2); }
+
+  /* ===== Backstory → design strip ===== */
+  .lore { display: flex; flex-direction: column; gap: 8px; }
+  .lore .card {
+    display: flex; gap: 10px; align-items: flex-start;
+    background: var(--bg-panel); border: 1px solid rgba(154,107,255,0.22);
+    border-radius: 12px; padding: 10px 12px;
+  }
+  .lore .ic { font-size: 20px; line-height: 1; }
+  .lore .t { font-size: 12px; font-weight: 800; color: var(--gold-bright); }
+  .lore .d { font-size: 10.5px; color: var(--text-2); margin-top: 2px; line-height: 1.5; }
+  .lore .d b { color: var(--frost); font-weight: 700; }
+
+  /* ===== Bottom nav ===== */
+  .nav {
+    position: absolute; left: 0; right: 0; bottom: 0; z-index: 20; height: 60px;
+    display: flex; align-items: center; justify-content: space-around;
+    background: linear-gradient(0deg, rgba(11,6,18,0.96), rgba(11,6,18,0.0));
+    border-top: 1px solid rgba(232,184,75,0.18);
+  }
+  .nav .it { text-align: center; font-size: 9.5px; color: var(--text-2); flex: 1; }
+  .nav .it .ic { font-size: 19px; display: block; margin-bottom: 2px; }
+  .nav .it.on { color: var(--gold-bright); text-shadow: 0 0 12px rgba(255,200,87,0.6); }
+  .nav .it.on .ic { color: var(--gold-bright); }
+
+  /* ===== Side notes panel ===== */
+  .notes { width: 340px; max-width: 90vw; color: var(--text-1); }
+  .notes h1 { font-size: 22px; letter-spacing: 1px; margin-bottom: 4px;
+    background: linear-gradient(90deg, var(--gold-bright), var(--frost)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .notes .tagline { font-size: 12px; color: var(--text-2); margin-bottom: 18px; }
+  .notes .pt { background: rgba(255,255,255,0.03); border: 1px solid rgba(154,107,255,0.25); border-radius: 14px; padding: 14px 16px; margin-bottom: 12px; }
+  .notes .pt h3 { font-size: 13px; color: var(--gold-bright); margin-bottom: 6px; display: flex; align-items: center; gap: 8px; }
+  .notes .pt p { font-size: 12px; color: var(--text-2); line-height: 1.65; }
+  .notes .pt p b { color: var(--frost); }
+  .swatch { display: inline-block; width: 12px; height: 12px; border-radius: 3px; vertical-align: middle; margin-right: 4px; }
+</style>
+</head>
+<body>
+
+  <!-- ============ PHONE PROTOTYPE ============ -->
+  <div class="phone">
+    <div class="screen">
+      <div class="notch"></div>
+      <div class="cosmic">
+        <i style="left:12%; bottom:0; animation-duration:9s;"></i>
+        <i style="left:28%; bottom:0; animation-duration:11s; animation-delay:1s;"></i>
+        <i style="left:48%; bottom:0; animation-duration:8s; animation-delay:2s;"></i>
+        <i style="left:68%; bottom:0; animation-duration:12s; animation-delay:.5s;"></i>
+        <i style="left:84%; bottom:0; animation-duration:10s; animation-delay:1.5s;"></i>
+        <i style="left:38%; bottom:0; animation-duration:13s; animation-delay:3s;"></i>
+      </div>
+
+      <div class="content">
+        <!-- top bar -->
+        <div class="topbar">
+          <div class="brand">
+            <div class="cn">诸神黄昏 · 东方</div>
+            <div class="en">TWILIGHT OF GODS</div>
+          </div>
+          <div class="pills">
+            <div class="pill gold"><span class="g">✦</span><span class="v">999,999</span></div>
+            <div class="pill frost"><span class="g">❖</span><span class="v">2,400</span></div>
+          </div>
+        </div>
+
+        <!-- hero -->
+        <div class="hero" id="hero">
+          <div class="halo"></div>
+          <img class="art" id="art" src="assets/char_ur_zhulong.png" alt="烛龙" />
+          <div class="rim"></div>
+          <div class="placeholder-badge">占位立绘 · 待按新方向重绘</div>
+          <div class="plate">
+            <div class="name">烛龙 Zhulong</div>
+            <div class="title">昼夜之主 · 山海经 · Shinwa</div>
+            <span class="tag">UR · 万象终焉之光</span>
+          </div>
+        </div>
+
+        <!-- actions -->
+        <div class="actions">
+          <div class="btn gold">✦ 前往召唤</div>
+          <div class="btn ghost">神谱图鉴</div>
+        </div>
+
+        <!-- avatar row -->
+        <div class="sec-title"><div class="bar"></div><span>诸神名录</span><span class="sub">UNIFIED AVATARS</span></div>
+        <div class="avatars">
+          <div class="ava" style="--c1:#FFC857;--c2:#E8B84B;"><div class="ring"><img src="assets/char_ur_zhulong.png"></div><div class="nm">烛龙</div><div class="src">山海经</div></div>
+          <div class="ava" style="--c1:#FFC857;--c2:#E8B84B;"><div class="ring"><img src="assets/ur_xingtian.png"></div><div class="nm">刑天</div><div class="src">中国神话</div></div>
+          <div class="ava" style="--c1:#C79BFF;--c2:#9A6BFF;"><div class="ring"><img src="assets/char_ssr_fenghuang.png"></div><div class="nm">凤凰</div><div class="src">山海经</div></div>
+          <div class="ava" style="--c1:#7FC4FF;--c2:#4A90D9;"><div class="ring"><img src="assets/char_sr_bifang.png"></div><div class="nm">毕方</div><div class="src">山海经</div></div>
+          <div class="ava" style="--c1:#7FC4FF;--c2:#4A90D9;"><div class="ring"><img src="assets/char_sr_jingwei.png"></div><div class="nm">精卫</div><div class="src">中国神话</div></div>
+          <div class="ava" style="--c1:#C79BFF;--c2:#9A6BFF;"><div class="ring"><img src="assets/char_ssr_leishen.png"></div><div class="nm">雷神</div><div class="src">山海经</div></div>
+        </div>
+
+        <!-- backstory -> design -->
+        <div class="sec-title"><div class="bar"></div><span>立绘依据背景故事</span><span class="sub">LORE-DRIVEN</span></div>
+        <div class="lore">
+          <div class="card"><div class="ic">🐉</div><div><div class="t">烛龙 · 昼夜之主</div><div class="d">原型<b>人面蛇身，睁眼为昼闭眼为夜，吐息为天火</b>。立绘以半人半蛇、异色瞳（左金日/右银月）、周身凤凰火翼表现"执掌昼夜"的神话张力。</div></div></div>
+          <div class="card"><div class="ic">⚔️</div><div><div class="t">刑天 · 不死战神</div><div class="d">原型<b>断首，以乳为目以脐为口，执干戚而舞</b>。立绘以无头机甲战神、胸口光学目、巨斧战盾呼应"刑天舞干戚"的悲壮。</div></div></div>
+          <div class="card"><div class="ic">🔥</div><div><div class="t">凤凰 · 涅槃圣禽</div><div class="d">原型<b>五色而文，德义礼仁信，涅槃重生</b>。立绘以五色焰发、火焰莲台、合十掌心的凤凰之火体现"涅槃"神性。</div></div></div>
+        </div>
+
+        <div style="height:70px;"></div>
+      </div>
+
+      <!-- bottom nav -->
+      <div class="nav">
+        <div class="it on"><span class="ic">🏠</span>首页</div>
+        <div class="it"><span class="ic">✦</span>召唤</div>
+        <div class="it"><span class="ic">⚔</span>角色</div>
+        <div class="it"><span class="ic">☲</span>图鉴</div>
+        <div class="it"><span class="ic">⚙</span>设置</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ NOTES PANEL ============ -->
+  <div class="notes">
+    <h1>诸神黄昏 · 东方</h1>
+    <div class="tagline">Twilight of Gods — 末世交汇的东西方神系重做方案（原型阶段）</div>
+
+    <div class="pt">
+      <h3>① 留白压缩 & 比例优化</h3>
+      <p>顶部状态栏由 38dp 压到 <b>~12dp</b>，主视觉高度从 230dp 提升到 <b>430dp（约 55% 屏高）</b>；铭牌与按钮间距收紧，取消原"功能导航 2 列网格"的大块空白，改为<b>单行神谱头像横滑</b>，信息密度更高、视线更聚焦立绘。</p>
+    </div>
+    <div class="pt">
+      <h3>② 立绘 3D 感 / 漂浮 / 光效</h3>
+      <p>原型用 CSS 演示可落地的代码方案：<b>float</b> 漂浮（±12px 缓动）、<b>rarity 光晕脉动</b>（halo pulse）、<b>rim-light 扫光</b>、鼠标视差<b>伪 3D 倾斜</b>。正式立绘需重绘为带体积光/景深的高质量图（见规范文档）。</p>
+    </div>
+    <div class="pt">
+      <h3>③ 统一风格头像</h3>
+      <p>所有头像改为<b>圆形 + 稀有度渐变光环（conic 旋转）+ 内描边</b>，与立绘共用配色，告别旧版方形卡。</p>
+    </div>
+    <div class="pt">
+      <h3>④ 立绘基于背景故事</h3>
+      <p>每个角色立绘严格源自其神话原型（烛龙=昼夜、刑天=干戚、凤凰=涅槃…），下方"立绘依据背景故事"条已给出 3 例映射。</p>
+    </div>
+    <div class="pt">
+      <h3>⑤ 主题：次元裂缝 → 诸神黄昏·东方</h3>
+      <p>配色：<span class="swatch" style="background:#0B0612"></span>暗紫夜 <span class="swatch" style="background:#E8B84B"></span>熔金 <span class="swatch" style="background:#7FC4FF"></span>霜蓝。融合<b>山海经 + 中国上古神话 + 希腊神系</b>（现阵容以希腊/超英融合呈现，后续扩池引入宙斯、雅典娜等真正希腊神）。</p>
+    </div>
+  </div>
+
+  <script>
+    // pseudo-3D parallax tilt on hero
+    const hero = document.getElementById('hero');
+    const art = document.getElementById('art');
+    hero.addEventListener('mousemove', (e) => {
+      const r = hero.getBoundingClientRect();
+      const x = (e.clientX - r.left) / r.width - 0.5;
+      const y = (e.clientY - r.top) / r.height - 0.5;
+      art.style.transform = `translateX(-50%) rotateY(${x*10}deg) rotateX(${-y*10}deg) translateY(${y*-8}px)`;
+    });
+    hero.addEventListener('mouseleave', () => { art.style.transform = ''; });
+  </script>
+</body>
+</html>
