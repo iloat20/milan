@@ -21,3 +21,5 @@ dependencyResolutionManagement {
 
 rootProject.name = "MilanKotlin"
 include(":app")
+// 试验田 Track C：Compose Multiplatform 复用演示（shared 领域数学 + 桌面 JVM 模拟器）
+include(":shared", ":desktopApp")
