@@ -1,15 +1,22 @@
 [versions]
-agp = "8.10.1"
-kotlin = "2.1.20"
+# AGP 9.1.x 是支持 compileSdk 37 的最小版本（需 Gradle >= 9.3.1，wrapper 9.5.0 满足）
+agp = "9.1.1"
+kotlin = "2.4.0"
 coreKtx = "1.15.0"
 lifecycle = "2.8.7"
 activityCompose = "1.10.0"
-composeBom = "2026.04.01"
-serialization = "1.8.1"
+composeBom = "2026.06.01"
+serialization = "1.11.0"
 coroutines = "1.10.1"
 junit = "4.13.2"
 profileinstaller = "1.4.1"
-media3 = "1.6.1"
+media3 = "1.11.0"
+materialIcons = "1.7.8"
+navigationCompose = "2.9.8"
+glance = "1.1.1"
+benchmark = "1.4.1"
+uiautomator = "2.3.0"
+testRunner = "1.6.2"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -21,16 +28,27 @@ androidx-ui = { group = "androidx.compose.ui", name = "ui" }
 androidx-ui-graphics = { group = "androidx.compose.ui", name = "ui-graphics" }
 androidx-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling" }
 androidx-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview" }
-androidx-material3 = { group = "androidx.compose.material3", name = "material3" }
+# 显式覆盖：BOM 2026.06.01 默认 material3 = 1.4.0（expressive 主题仍实验期，需 opt-in）。
+# 1.5.0-alpha22 是最后一个仍基于 Compose 1.11.x 的版本，且 MaterialExpressiveTheme 已在 1.5.0-alpha18 毕业为非实验（无需 opt-in）。
+# 选 alpha22 而非 alpha23，是因为 alpha23 把 Compose 依赖抬到 1.12.0-beta01，会与 BOM 的 1.11.x 产生版本错位。
+# 待 material3 1.5.0 稳定后可直接移除本覆盖行，让 BOM 重新接管。
+androidx-material3 = { group = "androidx.compose.material3", name = "material3", version = "1.5.0-alpha22" }
+androidx-compose-material-icons-core = { group = "androidx.compose.material", name = "material-icons-core", version.ref = "materialIcons" }
 kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "serialization" }
 kotlinx-coroutines-android = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-android", version.ref = "coroutines" }
 kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "coroutines" }
 androidx-profileinstaller = { group = "androidx.profileinstaller", name = "profileinstaller", version.ref = "profileinstaller" }
 androidx-media3-exoplayer = { group = "androidx.media3", name = "media3-exoplayer", version.ref = "media3" }
+androidx-navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigationCompose" }
+androidx-glance-appwidget = { group = "androidx.glance", name = "glance-appwidget", version.ref = "glance" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
+androidx-benchmark = { group = "androidx.benchmark", name = "benchmark-macro-junit4", version.ref = "benchmark" }
+androidx-uiautomator = { group = "androidx.test.uiautomator", name = "uiautomator", version.ref = "uiautomator" }
+androidx-test-runner = { group = "androidx.test", name = "runner", version.ref = "testRunner" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
-kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+# AGP 9 默认启用 built-in Kotlin，org.jetbrains.kotlin.android 插件不再应用（AGP 内置 KGP 2.2.10，
+# 版本由根 build.gradle.kts 的 buildscript classpath 提升到 2.4.0）
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
