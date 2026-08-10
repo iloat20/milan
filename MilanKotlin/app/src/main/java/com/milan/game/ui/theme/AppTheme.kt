@@ -41,8 +41,8 @@ object AppTheme {
     /** 次文字。 */
     val Text2 = Color(0xFFB7A6CF)
 
-    /** 弱化 / 占位。 */
-    val Text3 = Color(0xFF6E5C8A)
+    /** 弱化 / 占位（P2-7 无障碍：#6E5C8A→#8070AA，BgDeepest 上对比度 3.39→4.59:1，达 WCAG AA）。 */
+    val Text3 = Color(0xFF8070AA)
 
     /** 语义色：成功。 */
     val Success = Color(0xFF35D07F)

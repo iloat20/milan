@@ -1,5 +1,6 @@
 package com.milan.game.ui.characters
 
+import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -33,6 +34,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.milan.game.ui.GameState
+import com.milan.game.ui.LocalSharedTransitionScope
 import com.milan.game.ui.OwnedCharacterView
 import com.milan.game.ui.components.ListFilter
 import com.milan.game.ui.components.ListFilterBar
@@ -61,6 +63,7 @@ private fun rarityName(r: Int): String = when (r) {
 fun CharacterListScreen(
     onBack: () -> Unit,
     onOpenCharacter: (String) -> Unit,
+    animatedVisibilityScope: androidx.compose.animation.AnimatedVisibilityScope,
     modifier: Modifier = Modifier,
 ) {
     // 数据快照：单例存档 + 内容定义合并（C# OnCreate 时取一次，重建后重算）。
@@ -128,7 +131,7 @@ fun CharacterListScreen(
                     horizontalArrangement = Arrangement.spacedBy(0.dp),
                 ) {
                     itemsIndexed(visible) { _, ch ->
-                        ListCard(ch) { onOpenCharacter(ch.save.characterId) }
+                        ListCard(ch, animatedVisibilityScope) { onOpenCharacter(ch.save.characterId) }
                     }
                 }
             }
@@ -142,9 +145,26 @@ fun CharacterListScreen(
  * 立绘 + 名称 + 职阶 + 稀有度/元素行 + 星级。
  */
 @Composable
-private fun ListCard(ch: OwnedCharacterView, onClick: () -> Unit) {
+private fun ListCard(
+    ch: OwnedCharacterView,
+    animatedVisibilityScope: androidx.compose.animation.AnimatedVisibilityScope,
+    onClick: () -> Unit,
+) {
     val rarityCol = AppTheme.rarityColor(ch.rarity)
     val elem = ElementTheme.forElement(ch.element)
+    // Shared Element 作用域：AnimatedContent 提供（null 时退化为普通渲染，安全降级）
+    val sharedScope = LocalSharedTransitionScope.current
+    // 立绘 Box：sharedBounds（key 全局唯一 = "portrait_${characterId}"，与详情 Hero 同 key 配对）
+    val portraitModifier = if (sharedScope != null) {
+        with(sharedScope) {
+            Modifier.sharedBounds(
+                sharedContentState = rememberSharedContentState(key = "portrait_${ch.save.characterId}"),
+                animatedVisibilityScope = animatedVisibilityScope,
+                resizeMode = SharedTransitionScope.ResizeMode.RemeasureToBounds,
+            )
+        }
+    } else Modifier
+
     Column(
         modifier = Modifier
             .padding(5.dp) // C# margin 5dp
@@ -167,7 +187,8 @@ private fun ListCard(ch: OwnedCharacterView, onClick: () -> Unit) {
                     .fillMaxWidth()
                     .height(58.dp)
                     .clip(RoundedCornerShape(12.dp))
-                    .background(elem.from.copy(alpha = 0.22f), RoundedCornerShape(12.dp)),
+                    .background(elem.from.copy(alpha = 0.22f), RoundedCornerShape(12.dp))
+                    .then(portraitModifier),
             ) {
                 PortraitImage(
                     characterId = ch.save.characterId,

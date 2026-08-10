@@ -1,6 +1,8 @@
 package com.milan.game.ui.characters
 
+import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -22,6 +24,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -47,6 +51,7 @@ import com.milan.game.domain.battle.UnitStats
 import com.milan.game.services.CharacterDataEntry
 import com.milan.game.services.SkillData
 import com.milan.game.ui.GameState
+import com.milan.game.ui.LocalSharedTransitionScope
 import com.milan.game.ui.OwnedCharacterView
 import com.milan.game.ui.components.GlassArrow
 import com.milan.game.ui.components.GlassPanel
@@ -60,6 +65,8 @@ import com.milan.game.ui.theme.ElementTheme
 import com.milan.game.ui.theme.WorldPalette
 import com.milan.game.ui.theme.WorldTheme
 import kotlin.math.max
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 /**
  * 角色详情页（C# CharacterDetailActivity 翻译）。
@@ -77,6 +84,7 @@ fun CharacterDetailScreen(
     onBack: () -> Unit,
     onOpenProgression: (String) -> Unit,
     onSwitchCharacter: (String) -> Unit,
+    animatedVisibilityScope: androidx.compose.animation.AnimatedVisibilityScope,
     modifier: Modifier = Modifier,
 ) {
     val def = remember(characterId) {
@@ -132,6 +140,7 @@ fun CharacterDetailScreen(
                 eFrom = eFrom,
                 eGlyph = eGlyph,
                 heroHeight = heroHeight,
+                animatedVisibilityScope = animatedVisibilityScope,
                 onBack = onBack,
                 onOpenProgression = onOpenProgression,
                 onPrev = { switch(-1) },
@@ -187,18 +196,32 @@ private fun HeroRegion(
     eFrom: Color,
     eGlyph: String,
     heroHeight: Dp,
+    animatedVisibilityScope: androidx.compose.animation.AnimatedVisibilityScope,
     onBack: () -> Unit,
     onOpenProgression: (String) -> Unit,
     onPrev: () -> Unit,
     onNext: () -> Unit,
 ) {
+    // Shared Element 作用域：AnimatedContent 提供（null 时退化为普通渲染，安全降级）
+    val sharedScope = LocalSharedTransitionScope.current
+    // 立绘 Box：sharedBounds（key 全局唯一 = "portrait_${characterId}"，与列表卡片同 key 配对）
+    val portraitModifier = if (sharedScope != null) {
+        with(sharedScope) {
+            Modifier.sharedBounds(
+                sharedContentState = rememberSharedContentState(key = "portrait_${view.save.characterId}"),
+                animatedVisibilityScope = animatedVisibilityScope,
+                resizeMode = SharedTransitionScope.ResizeMode.RemeasureToBounds,
+            )
+        }
+    } else Modifier
+
     Box(Modifier.fillMaxWidth().height(heroHeight)) {
         // 立绘（C# Parallax3DPortraitView；P2 视差，先用静态铺满）
         PortraitImage(
             characterId = view.save.characterId,
             rarity = view.rarity,
             name = view.name,
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier.fillMaxSize().then(portraitModifier),
             contentScale = ContentScale.Crop,
         )
 
@@ -366,10 +389,17 @@ private fun WeaponStage(
     weaponName: String,
 ) {
     val context = LocalContext.current
-    val weaponBmp = remember(weaponVfx) {
-        runCatching {
-            context.assets.open("weapons/$weaponVfx.png").use { BitmapFactory.decodeStream(it) }
-        }.getOrNull()
+    // 武器图已转 WebP（assets/weapons/{vfx}.webp）；IO 线程按 2x 采样解码
+    // （1024×1024 原图、显示仅 160.dp 高，解码内存降 4 倍），首帧不卡主线程。
+    val weaponBmp by produceState<Bitmap?>(initialValue = null, weaponVfx) {
+        value = withContext(Dispatchers.IO) {
+            runCatching {
+                context.assets.open("weapons/$weaponVfx.webp").use { ins ->
+                    val opts = BitmapFactory.Options().apply { inSampleSize = 2 }
+                    BitmapFactory.decodeStream(ins, null, opts)
+                }
+            }.getOrNull()
+        }
     }
 
     Box(
@@ -705,7 +735,7 @@ private fun StoryPanel(
             )
             if (view.def?.story.isNullOrBlank().not()) {
                 Text(
-                    view.def?.story.orEmpty(),
+                    view.def.story.orEmpty(),
                     fontSize = 14.sp,
                     color = worldColor.textSecondary,
                     lineHeight = 18.sp,
@@ -714,7 +744,7 @@ private fun StoryPanel(
             }
             if (!view.def?.faction.isNullOrBlank()) {
                 Text(
-                    "所属势力：${view.def?.faction}",
+                    "所属势力：${view.def.faction}",
                     fontSize = 12.sp,
                     color = worldColor.glow,
                     modifier = Modifier.padding(top = 10.dp),

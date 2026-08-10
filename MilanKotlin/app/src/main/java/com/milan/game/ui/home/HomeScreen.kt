@@ -63,6 +63,7 @@ import com.milan.game.ui.components.PortraitTarget
 import com.milan.game.ui.nav.GameNavBar
 import com.milan.game.ui.nav.NavItem
 import com.milan.game.ui.nav.ResourceBar
+import com.milan.game.ui.effects.FluidBackground
 import com.milan.game.ui.theme.AppTheme
 
 /**
@@ -80,12 +81,9 @@ fun HomeScreen(
     modifier: Modifier = Modifier,
 ) {
     Box(
-        modifier = modifier
-            .fillMaxSize()
-            .background(
-                Brush.verticalGradient(listOf(AppTheme.BgDeepest, AppTheme.BgMid))
-            ),
+        modifier = modifier.fillMaxSize(),
     ) {
+        FluidBackground(Modifier.fillMaxSize())
         Column(Modifier.fillMaxSize()) {
             // 资源栏：logo + 资源胶囊
             Row(
@@ -467,6 +465,10 @@ private fun CrashDialogIfAny() {
             report = r
             show = true
         }
+        // 启动流程完成标记：HomeScreen 首次组合成功 = 启动走完。
+        // 坑因：此前该标记从未写入，previousBootIncomplete() 恒真，每次启动都误报「上次未走完/疑似 native 崩溃」。
+        // 必须放在回显判断之后：本轮标记只影响下一次启动的判定，与 prev_boot_trace（上一轮归档）互不干扰。
+        CrashReporter.boot("home.oncreate.done")
     }
 
     if (show) {

@@ -2,7 +2,11 @@ package com.milan.game.ui.gacha
 
 import android.view.HapticFeedbackConstants
 import android.widget.Toast
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -35,6 +39,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import com.milan.game.ui.effects.GpuRevealLayer
+import com.milan.game.ui.effects.HolographicFoilOverlay
+import com.milan.game.ai.OnDeviceAgent
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -96,6 +103,7 @@ fun GachaScreen(
     var revealDef by remember { mutableStateOf<CharacterDataEntry?>(null) }
     var revealRarity by remember { mutableIntStateOf(1) }
     var showReveal by remember { mutableStateOf(false) }
+    var fortune by remember { mutableStateOf("") }
     var cardIn by remember { mutableStateOf(false) }
     var flashVisible by remember { mutableStateOf(false) }
     var flashColor by remember { mutableStateOf(Color.White) }
@@ -164,8 +172,10 @@ fun GachaScreen(
         revealDef = GameState.service.characters.firstOrNull { it.characterId == best.characterId }
         revealRarity = best.rarity
         flashColor = AppTheme.rarityColor(best.rarity)
-        cardIn = false
+        // 端侧 AI 签文（默认 Stub：离线、确定性；seed 含 token 保证每抽不同但可复现）
         val token = revealToken + 1
+        fortune = revealDef?.let { OnDeviceAgent.current.fortune(it, it.characterId.hashCode().toLong() + token) } ?: ""
+        cardIn = false
         revealToken = token
         scope.launch {
             // 阶段一：法阵脉冲
@@ -201,6 +211,12 @@ fun GachaScreen(
         targetValue = if (flashVisible) 1f else 0f,
         animationSpec = tween(420),
         label = "flash",
+    )
+    // 开包 GPU 演出进度（0→1，与翻牌阶段同步），驱动能量环扩张
+    val revealProgress by animateFloatAsState(
+        targetValue = if (showReveal) 1f else 0f,
+        animationSpec = tween(1500),
+        label = "revealProgress",
     )
 
     PageBackground(modifier = modifier) {
@@ -386,6 +402,7 @@ fun GachaScreen(
 
         // ── 翻牌演出层：全屏遮罩 + 稀有度光晕 + 大立绘卡 + 跳过（C# FlipCardView 简化）──
         if (showReveal) {
+            GpuRevealLayer(active = true, progress = revealProgress) {
             val def = revealDef
             val rc = AppTheme.rarityColor(revealRarity)
             val cardScale by animateFloatAsState(
@@ -398,6 +415,21 @@ fun GachaScreen(
                 animationSpec = tween(200),
                 label = "cardAlpha",
             )
+            // SSR/UR 光晕脉动（P0-2 演出分级）：稀有度≥3 时呼吸发光 + 光晕缩放，R/SR 保持静态
+            val isEpic = revealRarity >= 3
+            val glowTransition = rememberInfiniteTransition(label = "glow")
+            val glowAlpha by glowTransition.animateFloat(
+                initialValue = 0.35f,
+                targetValue = 0.85f,
+                animationSpec = infiniteRepeatable(tween(750), RepeatMode.Reverse),
+                label = "glowAlpha",
+            )
+            val glowScale by glowTransition.animateFloat(
+                initialValue = 0.92f,
+                targetValue = 1.10f,
+                animationSpec = infiniteRepeatable(tween(750), RepeatMode.Reverse),
+                label = "glowScale",
+            )
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -405,16 +437,40 @@ fun GachaScreen(
                     .clickable(onClick = ::skipReveal),
                 contentAlignment = Alignment.Center,
             ) {
-                // 稀有度光晕（径向渐变全屏）
+                // 稀有度光晕（径向渐变全屏；SSR/UR 脉动呼吸 + 缩放，UR 追加熔金叠层）
                 Box(
                     Modifier
                         .fillMaxSize()
-                        .background(Brush.radialGradient(listOf(rc.copy(alpha = 0.50f), Color.Transparent))),
+                        .graphicsLayer {
+                            scaleX = if (isEpic) glowScale else 1f
+                            scaleY = if (isEpic) glowScale else 1f
+                        }
+                        .background(
+                            Brush.radialGradient(
+                                listOf(
+                                    rc.copy(alpha = if (isEpic) glowAlpha else 0.50f),
+                                    Color.Transparent,
+                                )
+                            )
+                        ),
                 )
-                // 大立绘卡 220x312（C# FlipCardView 尺寸）
+                // UR 专属：熔金爆发叠层（金光盖过紫光，配 UR 金色立绘边框）
+                if (revealRarity >= 4) {
+                    Box(
+                        Modifier
+                            .fillMaxSize()
+                            .background(
+                                Brush.radialGradient(
+                                    listOf(AppTheme.GoldHi.copy(alpha = glowAlpha * 0.8f), Color.Transparent)
+                                )
+                            ),
+                    )
+                }
+                // 大立绘卡 220x312（C# FlipCardView 尺寸）+ 全息箔叠层
+                Box(Modifier.size(width = 220.dp, height = 312.dp)) {
                 Column(
                     modifier = Modifier
-                        .size(width = 220.dp, height = 312.dp)
+                        .fillMaxSize()
                         .graphicsLayer { scaleX = cardScale; scaleY = cardScale; alpha = cardAlpha }
                         .clip(RoundedCornerShape(18.dp))
                         .background(
@@ -457,6 +513,21 @@ fun GachaScreen(
                         color = rc,
                         modifier = Modifier.padding(vertical = 8.dp),
                     )
+                    // 端侧 AI 命运签文（离线确定性生成；接大模型时自动升级）
+                    if (fortune.isNotEmpty()) {
+                        Text(
+                            text = fortune,
+                            fontSize = 10.sp,
+                            color = AppTheme.Text2,
+                            lineHeight = 15.sp,
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 2.dp),
+                        )
+                    }
+                }
+                HolographicFoilOverlay(
+                    Modifier.matchParentSize().clip(RoundedCornerShape(18.dp)),
+                    alpha = 0.30f,
+                )
                 }
                 // 跳过按钮（整屏也可点跳过）
                 Text(
@@ -469,9 +540,10 @@ fun GachaScreen(
                         .clip(RoundedCornerShape(10.dp))
                         .background(AppTheme.Surface)
                         .border(1.dp, AppTheme.Gold.copy(alpha = 0.5f), RoundedCornerShape(10.dp))
-                        .clickable(onClick = ::skipReveal)
-                        .padding(horizontal = 14.dp, vertical = 8.dp),
+                    .clickable(onClick = ::skipReveal)
+                    .padding(horizontal = 14.dp, vertical = 8.dp),
                 )
+            }
             }
         }
     }
