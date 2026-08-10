@@ -207,7 +207,7 @@ internal object GameContent {
         // 蠃鱼 Luoyu - 山海经"蠃鱼"，漫威海王纳摩+DC水行侠
         add(chars, "char_r_luoyu", "蠃鱼 Luoyu", "渊海游灵", "Shinwa", "Frost", 1,
             listOf(70, 68, 780, 13), 4, false,
-            "山海经蠃鱼，鱼身鸟翼，音如鸳鸯。漫威纳摩的深海之力与DC水行侠的亚特兰蒂斯之能在其鳞翼中流淌，御水而行。",
+            "山海经蠃鱼，鱼身鸟翼，音如鸳鸯。漫威海王纳摩的深海之力与DC水行侠的亚特兰蒂斯之能在其鳞翼中流淌，御水而行。",
             "tree_luoyu", listOf(
                 sk("luoyu_1", "寒流冲击", "喷射寒流造成伤害并减速目标30%", "Frost", "Active", 44),
                 sk("luoyu_2", "鳞甲水护", "受到攻击时生成水盾吸收伤害", "Frost", "Passive", 33),
@@ -411,7 +411,7 @@ internal object GameContent {
             "char_ssr_fenghuang" to listOf("灰烬不是终点，是新生的温床。", "每一次坠落，都是为了更炽烈地燃烧。", "听，凤凰座在为我歌唱。"),
             "char_ssr_xiangliu" to listOf("毒泽之上，连神明都不敢涉足。", "九个脑袋，九种杀你的方式。", "来，尝尝这杯瘟疫。"),
             "char_ssr_leishen" to listOf("功率满格，审判开始。", "雷霆不会审判，它只是执行。", "我的核心在发烫——你最好躲远点。"),
-            "char_ssr_feilian" to listOf("风从不回头，我也是。", "等你看见我的时候，已经来不及了。", "fastest alive? 我只是懒得争辩。"),
+            "char_ssr_feilian" to listOf("风从不回头，我也是。", "等你看见我的时候，已经来不及了。", " fastest alive? 我只是懒得争辩。"),
             "char_ssr_shangyang" to listOf("未来不是一条线，是无数裂隙交织的网。", "我看见你的结局了……但它还能改。", "星象从不撒谎，只会被误读。"),
             "char_sr_suanni" to listOf("狮吼之下，敌魂皆碎。", "守护这件事，我从没打算交给别人。", "下次，换我当前锋。"),
             "char_sr_jingwei" to listOf("一粒一粒，大海终会被填平。", "世界碎了多少，我就补多少。", "东海欠我的，我会一笔一笔讨回来。"),

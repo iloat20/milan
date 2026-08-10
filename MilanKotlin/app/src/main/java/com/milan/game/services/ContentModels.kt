@@ -1,5 +1,6 @@
 package com.milan.game.services
 
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
@@ -118,6 +119,7 @@ data class RootData(
  * - allowTrailingComma：宽容尾逗号（C# AllowTrailingCommas=true）。
  * 注意：data.json 无注释，无需 ReadCommentHandling.Skip。
  */
+@OptIn(ExperimentalSerializationApi::class)
 internal val ContentJson: Json = Json {
     ignoreUnknownKeys = true
     coerceInputValues = true

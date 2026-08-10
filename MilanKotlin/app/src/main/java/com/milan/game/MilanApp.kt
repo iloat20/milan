@@ -29,9 +29,12 @@ class MilanApp : Application() {
         try {
             GameState.ensureInitialized(
                 saveProvider = AndroidSaveProvider(this),
-                // 内容包（data.json）尚未迁入 assets：走 GameContent 代码内兜底数据，
-                // 行为与 C# 侧 asset 缺失时一致（静默使用兜底）。
-                contentJson = null,
+                // 内容包：优先 assets/data.json（GameService 解析失败/无有效角色时
+                // 自动回退 GameContent 代码内兜底，两条路径均走 enrich 补派生字段）。
+                // 读取失败传 null，行为与 C# 侧 asset 缺失时一致（静默兜底）。
+                contentJson = runCatching {
+                    assets.open("data.json").bufferedReader(Charsets.UTF_8).use { it.readText() }
+                }.getOrNull(),
                 onTrace = { CrashReporter.boot(it) },
             )
             CrashReporter.boot("app.init.done")
