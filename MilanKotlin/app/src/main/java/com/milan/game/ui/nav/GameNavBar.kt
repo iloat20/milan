@@ -16,8 +16,16 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.List
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.ShoppingCart
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -28,19 +36,20 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.milan.game.ui.theme.AppTheme
 
-/** 全局底部导航项（C# GameNavBar.NavItem 翻译，5 项，Unicode 字形作图标）。 */
-enum class NavItem(val glyph: String, val label: String) {
-    Home("◈", "主页"),
-    Gacha("✦", "抽卡"),
-    Deck("❖", "卡组"),
-    Shop("⬢", "商店"),
-    Settings("⚙", "设置"),
+/** 全局底部导航项（C# GameNavBar.NavItem 翻译，5 项，Material 标准图标（P2-6 统一图标语言））。 */
+enum class NavItem(val icon: ImageVector, val label: String) {
+    Home(Icons.Filled.Home, "主页"),
+    Gacha(Icons.Filled.Star, "抽卡"),
+    Deck(Icons.AutoMirrored.Filled.List, "卡组"),
+    Shop(Icons.Filled.ShoppingCart, "商店"),
+    Settings(Icons.Filled.Settings, "设置"),
 }
 
 /**
@@ -145,12 +154,11 @@ private fun NavCell(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = androidx.compose.foundation.layout.Arrangement.Center,
         ) {
-            Text(
-                text = item.glyph,
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold,
-                color = glyphColor,
-                textAlign = TextAlign.Center,
+            Icon(
+                imageVector = item.icon,
+                contentDescription = item.label,
+                tint = glyphColor,
+                modifier = Modifier.size(22.dp),
             )
             Text(
                 text = item.label,

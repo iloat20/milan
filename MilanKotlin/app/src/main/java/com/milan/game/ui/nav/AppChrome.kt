@@ -1,5 +1,7 @@
 package com.milan.game.ui.nav
 
+import androidx.compose.animation.core.animateIntAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -9,13 +11,16 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -43,15 +48,20 @@ fun AppTopBar(
             .padding(start = 14.dp, top = 10.dp, end = 14.dp, bottom = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(
-            text = "‹",
-            fontSize = 24.sp,
-            fontWeight = FontWeight.Bold,
-            color = AppTheme.Gold,
+        // 返回箭头（P2-7 无障碍：48dp 尺寸保证触控热区 ≥48dp，等效 minimumInteractiveComponentSize）
+        Box(
             modifier = Modifier
-                .clickable(onClick = onBack)
-                .padding(end = 8.dp),
-        )
+                .size(48.dp)
+                .clickable(onClick = onBack),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                text = "‹",
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Bold,
+                color = AppTheme.Gold,
+            )
+        }
         Text(
             text = title,
             fontSize = 20.sp,
@@ -79,8 +89,8 @@ fun AppTopBar(
  */
 @Composable
 fun ResourceBar(modifier: Modifier = Modifier) {
-    val dust = NumberFormat.getIntegerInstance().format(GameState.currency.toLong())
-    val gems = NumberFormat.getIntegerInstance().format(GameState.service.saveData.hardCurrency.toLong())
+    val dust = GameState.currency
+    val gems = GameState.service.saveData.hardCurrency
 
     Row(
         modifier = modifier
@@ -96,9 +106,14 @@ fun ResourceBar(modifier: Modifier = Modifier) {
     }
 }
 
-/** 单资源条目：字形 + 数值（C# Chip）。 */
+/** 单资源条目：字形 + 数值（C# Chip）。数值变化时 400ms 滚动动画（P1-4 数值反馈）。 */
 @Composable
-private fun Chip(glyph: String, value: String, color: androidx.compose.ui.graphics.Color) {
+private fun Chip(glyph: String, value: Int, color: Color) {
+    val animated by animateIntAsState(
+        targetValue = value,
+        animationSpec = tween(400),
+        label = "chipValue",
+    )
     Row(verticalAlignment = Alignment.CenterVertically) {
         Text(
             text = glyph,
@@ -108,7 +123,7 @@ private fun Chip(glyph: String, value: String, color: androidx.compose.ui.graphi
             modifier = Modifier.padding(end = 4.dp),
         )
         Text(
-            text = value,
+            text = NumberFormat.getIntegerInstance().format(animated.toLong()),
             fontSize = 14.sp,
             fontWeight = FontWeight.Bold,
             color = AppTheme.Text1,
