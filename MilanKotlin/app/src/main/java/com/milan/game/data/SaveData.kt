@@ -87,7 +87,11 @@ class SaveData(
             .onEach { it.count = it.count.coerceAtLeast(0) }
             .toMutableList()
 
-        battleRecords = battleRecords.filterNotNull().toMutableList()
+        battleRecords = battleRecords.filterNotNull().let { list ->
+            // P3-7：旧档可能携带超过上限的战绩（recordBattle 只裁剪新写入），载入时一并裁剪，
+            // 否则超量条目永久保留在档里（对齐 recordBattle 的「上限 50 丢弃最旧」契约）。
+            if (list.size > MAX_BATTLE_RECORDS) list.drop(list.size - MAX_BATTLE_RECORDS) else list
+        }.toMutableList()
 
         if (softCurrency < 0) softCurrency = 0
         if (hardCurrency < 0) hardCurrency = 0
@@ -95,6 +99,8 @@ class SaveData(
     }
 
     companion object {
+        /** 战绩列表上限（recordBattle 与 sanitize 共用同一契约，禁止就地写 50）。 */
+        const val MAX_BATTLE_RECORDS = 50
         /**
          * ignoreUnknownKeys：旧版/未来字段不致命（System.Text.Json 默认忽略未知属性，对齐）。
          * coerceInputValues：JSON 显式 null 落到非空字段时用默认值而非抛异常（C# null 覆盖 + Sanitize 兜底）。

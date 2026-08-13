@@ -1,6 +1,7 @@
 package com.milan.game.domain.progression
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
@@ -130,5 +131,36 @@ class EconomyFormulasTest {
         var expected = 0
         for (lv in 3 until 3 + gained) expected += EconomyFormulas.levelCost(lv)
         assertEquals(expected, cost)
+    }
+
+    // ── 商店定价 ──
+
+    @Test
+    fun fragmentPack_smallAndLargeSizes() {
+        assertEquals(10, EconomyFormulas.fragmentPackSize(1))
+        assertEquals(60, EconomyFormulas.fragmentPackSize(2))
+    }
+
+    @Test
+    fun fragmentPack_invalidPackIsZero() {
+        assertEquals(0, EconomyFormulas.fragmentPackSize(0))
+        assertEquals(0, EconomyFormulas.fragmentPackSize(3))
+        assertEquals(0, EconomyFormulas.fragmentPackCost(0))
+        assertEquals(0, EconomyFormulas.fragmentPackCost(99))
+    }
+
+    @Test
+    fun fragmentPack_largePackIsBulkDiscounted() {
+        // 大包单价低于小包（批量优惠），且总价更高
+        val smallUnit = EconomyFormulas.fragmentPackCost(1).toDouble() / EconomyFormulas.fragmentPackSize(1)
+        val largeUnit = EconomyFormulas.fragmentPackCost(2).toDouble() / EconomyFormulas.fragmentPackSize(2)
+        assertTrue(largeUnit < smallUnit)
+        assertTrue(EconomyFormulas.fragmentPackCost(2) > EconomyFormulas.fragmentPackCost(1))
+    }
+
+    @Test
+    fun diamondExchange_positiveRates() {
+        assertTrue(EconomyFormulas.diamondExchangeCost() > 0)
+        assertTrue(EconomyFormulas.diamondExchangeYield() > 0)
     }
 }

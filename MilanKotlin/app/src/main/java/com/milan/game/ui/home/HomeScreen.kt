@@ -48,12 +48,15 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.milan.game.infrastructure.CrashReporter
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import com.milan.game.services.CharacterDataEntry
 import com.milan.game.ui.GameState
 import com.milan.game.ui.components.GoldButton
@@ -114,9 +117,9 @@ fun HomeScreen(
 
             // 主体：滚动
             Box(Modifier.weight(1f)) {
-                val config = LocalConfiguration.current
+                val container = LocalWindowInfo.current.containerSize
                 val heroHeight =
-                    if (config.screenWidthDp > config.screenHeightDp) 300.dp else 430.dp
+                    if (container.width > container.height) 300.dp else 430.dp
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = androidx.compose.foundation.layout.PaddingValues(
@@ -287,7 +290,7 @@ private fun HeroPortrait(def: CharacterDataEntry, rarityColor: Color, modifier: 
         label = "floatY",
     )
     Box(
-        modifier = modifier.offset(y = offsetY.dp),
+        modifier = modifier.offset { IntOffset(0, offsetY.dp.roundToPx()) },
         contentAlignment = Alignment.Center,
     ) {
         // 稀有度渐变底（立绘为透明底 PNG 时提供视觉支撑）
@@ -307,6 +310,7 @@ private fun HeroPortrait(def: CharacterDataEntry, rarityColor: Color, modifier: 
             name = def.displayName,
             modifier = Modifier.fillMaxSize(),
             contentScale = ContentScale.Crop,
+            aura = true,
         )
     }
 }
@@ -345,7 +349,7 @@ private fun AvatarStrip(onOpenCharacter: (String) -> Unit) {
         verticalAlignment = Alignment.CenterVertically,
     ) {
         items(Picks) { (id, name, src) ->
-            val def = GameState.service.characters.firstOrNull { it.characterId == id }
+            val def = GameState.service.character(id)
                 ?: return@items
             Column(
                 modifier = Modifier
@@ -456,10 +460,15 @@ private fun CrashDialogIfAny() {
     var report by remember { mutableStateOf("") }
 
     LaunchedEffect(Unit) {
-        var r = CrashReporter.readAndClear() ?: ""
-        if (r.isEmpty() && CrashReporter.previousBootIncomplete()) {
-            r = "未捕获到托管异常，但上次启动未走完流程 —— 疑似 native 层崩溃。\n\n" +
-                "上次启动面包屑：\n" + (CrashReporter.previousBootTrace() ?: "(无)")
+        // P3-6：崩溃取证文件读取移到 IO 线程（readAndClear/previousBootTrace 是文件 IO，
+        // 此前在 LaunchedEffect 默认主线程调度器上执行）
+        val r = withContext(Dispatchers.IO) {
+            var r = CrashReporter.readAndClear() ?: ""
+            if (r.isEmpty() && CrashReporter.previousBootIncomplete()) {
+                r = "未捕获到托管异常，但上次启动未走完流程 —— 疑似 native 层崩溃。\n\n" +
+                    "上次启动面包屑：\n" + (CrashReporter.previousBootTrace() ?: "(无)")
+            }
+            r
         }
         if (r.isNotEmpty()) {
             report = r

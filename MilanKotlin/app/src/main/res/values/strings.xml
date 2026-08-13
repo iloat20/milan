@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Milan</string>
+    <string name="widget_loading_text">Milan 运势加载中…</string>
 </resources>

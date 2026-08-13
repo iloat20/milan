@@ -22,10 +22,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shadow
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.milan.game.ui.GameState
 import com.milan.game.ui.theme.AppTheme
 import java.text.NumberFormat
@@ -48,11 +51,13 @@ fun AppTopBar(
             .padding(start = 14.dp, top = 10.dp, end = 14.dp, bottom = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        // 返回箭头（P2-7 无障碍：48dp 尺寸保证触控热区 ≥48dp，等效 minimumInteractiveComponentSize）
+        // 返回箭头（P2-7 无障碍：48dp 尺寸保证触控热区 ≥48dp，等效 minimumInteractiveComponentSize；
+        // P2-6：补 contentDescription，TalkBack 不再读裸字形「‹」）
         Box(
             modifier = Modifier
                 .size(48.dp)
-                .clickable(onClick = onBack),
+                .clickable(onClick = onBack)
+                .semantics { contentDescription = "返回" },
             contentAlignment = Alignment.Center,
         ) {
             Text(
@@ -84,13 +89,17 @@ fun AppTopBar(
 }
 
 /**
- * 资源胶囊：星尘（金 ✦）+ 钻石（青 ❖）两项（C# AppChrome.ResourceBar 翻译）。
- * 主页与子页面复用；数值在宿主重组时自动刷新。
+ * 资源胶囊：星尘（金 ✦）+ 钻石（青 ◆）两项（C# AppChrome.ResourceBar 翻译）。
+ * 主页与子页面复用。数值订阅 [GameState.snapshot]（StateFlow，2026-08 现代化）：
+ * 任何成功写操作后自动刷新——此前仅靠宿主重组「碰巧」刷新，子页停留期间的经济
+ * 变动（如商店购买）会让胶囊显示陈旧值（P2-14）。
+ * P2-5 符号统一：✦ 星尘 / ◆ 钻石 / ❖ 星魂碎片（此前钻石误用 ❖，与商店/养成页冲突）。
  */
 @Composable
 fun ResourceBar(modifier: Modifier = Modifier) {
-    val dust = GameState.currency
-    val gems = GameState.service.saveData.hardCurrency
+    val snap by GameState.snapshot.collectAsStateWithLifecycle()
+    val dust = snap.softCurrency
+    val gems = snap.hardCurrency
 
     Row(
         modifier = modifier
@@ -102,7 +111,7 @@ fun ResourceBar(modifier: Modifier = Modifier) {
     ) {
         Chip("✦", dust, AppTheme.Gold)
         Spacer(Modifier.width(10.dp))
-        Chip("❖", gems, AppTheme.Frost)
+        Chip("◆", gems, AppTheme.Frost)
     }
 }
 

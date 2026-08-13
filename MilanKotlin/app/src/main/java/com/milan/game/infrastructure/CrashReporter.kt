@@ -9,10 +9,11 @@ import android.content.Context
 import android.os.Build
 import android.widget.Toast
 import java.io.File
-import java.text.SimpleDateFormat
-import java.util.Date
+import java.lang.ref.WeakReference
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 import java.util.Locale
-import kotlin.concurrent.thread
+import java.util.concurrent.Executors
 
 /**
  * 崩溃取证与留痕（C# CrashReporter 翻译）。
@@ -41,12 +42,19 @@ object CrashReporter {
     private lateinit var crashFile: File
     private lateinit var traceFile: File
     private var externalDir: File? = null
-    private var currentActivity: Activity? = null
+    // 前台 Activity 用弱引用持有：静态单例强引用会泄漏 Activity（lint StaticFieldLeak）
+    private var currentActivityRef: WeakReference<Activity>? = null
 
-    private val timeFmt = SimpleDateFormat("HH:mm:ss.SSS", Locale.US)
-    private val stampFmt = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US)
+    // P3-6：SimpleDateFormat 非线程安全（buildReport 可被任意未捕获异常线程调用、beginBootTrace
+    // 与 boot 在 gate 内）——DateTimeFormatter 不可变线程安全，直接替换。
+    private val timeFmt = DateTimeFormatter.ofPattern("HH:mm:ss.SSS", Locale.US)
+    private val stampFmt = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss", Locale.US)
     // 归档文件名专用：无冒号，保证 adb pull 到 Windows 不出问题
-    private val histStampFmt = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US)
+    private val histStampFmt = DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss", Locale.US)
+
+    // P3-7：外部镜像从「每次调用 spawn 一个 thread」（boot 高频路径产生大量短命线程）
+    // 改为单线程执行器串行落盘，保序且不反复建线程。
+    private val mirrorExecutor = Executors.newSingleThreadExecutor { r -> Thread(r, "milan-crash-mirror") }
 
     /** 安装全局异常钩子。必须在 Application.onCreate 最开始调用。 */
     fun install(context: Context) {
@@ -62,8 +70,8 @@ object CrashReporter {
         // 前台 Activity 跟踪：崩溃对话框需要宿主 Activity（C# MauiApp.Current 同层）。
         (appContext as? Application)?.registerActivityLifecycleCallbacks(
             object : Application.ActivityLifecycleCallbacks {
-                override fun onActivityResumed(activity: Activity) { currentActivity = activity }
-                override fun onActivityPaused(activity: Activity) { if (currentActivity === activity) currentActivity = null }
+                override fun onActivityResumed(activity: Activity) { currentActivityRef = WeakReference(activity) }
+                override fun onActivityPaused(activity: Activity) { if (currentActivityRef?.get() === activity) currentActivityRef = null }
                 override fun onActivityCreated(activity: Activity, savedInstanceState: android.os.Bundle?) {}
                 override fun onActivityStarted(activity: Activity) {}
                 override fun onActivityStopped(activity: Activity) {}
@@ -74,8 +82,11 @@ object CrashReporter {
 
         // 未捕获异常统一走 write（Android 主/子线程未捕获异常都到达默认处理器）。
         // 不设「已处理」——让它照常崩，避免应用停在不一致状态。
-        Thread.setDefaultUncaughtExceptionHandler { _, e ->
+        val previous = Thread.getDefaultUncaughtExceptionHandler()
+        Thread.setDefaultUncaughtExceptionHandler { thread, e ->
             write("Thread.UncaughtException", e)
+            // 委托系统默认处理器：取证后照常崩溃退出（C# 语义「让它崩」，避免停在不一致状态）
+            previous?.uncaughtException(thread, e)
         }
     }
 
@@ -83,7 +94,7 @@ object CrashReporter {
     fun boot(stage: String) {
         try {
             synchronized(gate) {
-                val line = "${timeFmt.format(Date())}  $stage\n"
+                val line = "${timeFmt.format(LocalDateTime.now())}  $stage\n"
                 // 轮转保护：单轮启动面包屑过长时停止追加，避免无限增长与反复读全文件造成 O(n^2) IO。
                 if (traceFile.length() < MAX_TRACE_BYTES)
                     traceFile.appendText(line)
@@ -91,6 +102,21 @@ object CrashReporter {
                 mirrorAppend("boot_trace.txt", line)
             }
         } catch (_: Exception) { /* 取证代码本身绝不能再抛 */ }
+    }
+
+    /**
+     * 非致命留痕（P3-8：EventBus handler 异常等）：只追加 non_fatal.txt，不弹崩溃对话框、
+     * 不递增 crash_count——此前 EventBus.handlerException 接到 [write] 会把普通 handler 异常
+     * 当崩溃处理（弹窗 + 计数 + 归档），语义过重。
+     */
+    fun traceNonFatal(source: String, ex: Throwable) {
+        try {
+            synchronized(gate) {
+                val line = "${timeFmt.format(LocalDateTime.now())}  [非致命] $source: ${ex.message}\n"
+                File(baseDir, "non_fatal.txt").appendText(line)
+                mirrorAppend("non_fatal.txt", line)
+            }
+        } catch (_: Exception) { }
     }
 
     /** 新一轮启动：把上一轮的面包屑归档为 prev_boot_trace，然后清空。 */
@@ -102,7 +128,7 @@ object CrashReporter {
                     File(baseDir, "prev_boot_trace.txt").writeText(prev)
                     mirror("prev_boot_trace.txt", prev)
                 }
-                val header = "=== boot ${stampFmt.format(Date())} ===\n"
+                val header = "=== boot ${stampFmt.format(LocalDateTime.now())} ===\n"
                 traceFile.writeText(header)
                 mirror("boot_trace.txt", header)
             }
@@ -134,7 +160,7 @@ object CrashReporter {
     /** 拼装崩溃报告全文（异常链 ≤6 层 + 本次启动面包屑）。 */
     private fun buildReport(source: String, ex: Throwable?): String {
         val sb = StringBuilder()
-        sb.appendLine("时间: ${stampFmt.format(Date())}")
+        sb.appendLine("时间: ${stampFmt.format(LocalDateTime.now())}")
         sb.appendLine("来源: $source")
         sb.appendLine("机型: ${Build.MANUFACTURER} ${Build.MODEL}")
         sb.appendLine("系统: Android ${Build.VERSION.RELEASE} (API ${Build.VERSION.SDK_INT})")
@@ -236,12 +262,12 @@ object CrashReporter {
 
     // ── 内部 ──
 
-    /** 把取证文件整体镜像到外部目录（调用方需持有 gate 锁）。外部目录 IO 较重，后台线程落盘。 */
+    /** 把取证文件整体镜像到外部目录（调用方需持有 gate 锁）。外部目录 IO 较重，单线程执行器落盘。 */
     private fun mirror(name: String, content: String) {
         try {
             val d = externalDir ?: return
             val full = File(d, name)
-            thread {
+            mirrorExecutor.execute {
                 try { d.mkdirs(); full.writeText(content) } catch (_: Exception) { }
             }
         } catch (_: Exception) { }
@@ -252,7 +278,7 @@ object CrashReporter {
         try {
             val d = externalDir ?: return
             val full = File(d, name)
-            thread {
+            mirrorExecutor.execute {
                 try { d.mkdirs(); full.appendText(line) } catch (_: Exception) { }
             }
         } catch (_: Exception) { }
@@ -264,7 +290,7 @@ object CrashReporter {
         try {
             synchronized(gate) {
                 val dir = File(baseDir, HISTORY_DIR).apply { mkdirs() }
-                File(dir, "crash_${histStampFmt.format(Date())}.txt").writeText(text)
+                File(dir, "crash_${histStampFmt.format(LocalDateTime.now())}.txt").writeText(text)
                 val files = dir.listFiles()?.filter { it.isFile }?.sortedBy { it.lastModified() }?.toMutableList()
                     ?: return
                 while (files.size > MAX_HISTORY_FILES) {
@@ -289,7 +315,7 @@ object CrashReporter {
      * 即使弹不出来，落盘的 last_crash.txt 仍保证下次启动回显。 */
     private fun tryShowDialog(report: String) {
         try {
-            val act = currentActivity ?: return
+            val act = currentActivityRef?.get() ?: return
             act.runOnUiThread {
                 try {
                     val shown = if (report.length > 3000) report.substring(0, 3000) else report

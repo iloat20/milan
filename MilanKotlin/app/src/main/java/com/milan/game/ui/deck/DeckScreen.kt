@@ -109,7 +109,8 @@ fun DeckScreen(
                     contentPadding = PaddingValues(start = 13.dp, end = 13.dp, bottom = 16.dp),
                     horizontalArrangement = Arrangement.spacedBy(0.dp),
                 ) {
-                    itemsIndexed(owned) { _, ch ->
+                    // P3-3：Lazy 容器补稳定 key（角色 Id），避免槽位复用导致筛选/状态错乱
+                    itemsIndexed(owned, key = { _, ch -> ch.save.characterId }) { _, ch ->
                         DeckCard(ch) { previewId = ch.save.characterId }
                     }
                 }
@@ -160,6 +161,7 @@ fun DeckScreen(
                                 .fillMaxWidth()
                                 .weight(1f)
                                 .padding(horizontal = 12.dp, vertical = 14.dp),
+                            aura = true,
                         )
                         Box(
                             Modifier
@@ -242,6 +244,8 @@ private fun DeckCard(ch: OwnedCharacterView, onClick: () -> Unit) {
                     name = ch.name,
                     modifier = Modifier.fillMaxSize(),
                     target = PortraitTarget.Thumb,
+                    aura = true,
+                    glowScale = 0.7f,
                 )
             }
             Spacer(Modifier.height(8.dp))

@@ -2,9 +2,13 @@ package com.milan.game.ui.theme
 
 import androidx.compose.material3.MaterialExpressiveTheme
 import androidx.compose.material3.Shapes
+import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
 
 // twilight 暗夜主题 · Material 3 Expressive 刷新（Task 9 + M3 升级）
 //
@@ -59,6 +63,23 @@ fun MilanTheme(content: @Composable () -> Unit) {
     MaterialExpressiveTheme(
         colorScheme = TwilightColors,
         shapes = Shapes(),
+        // P3-2：游戏排版体系（增量落地）——此前 MaterialExpressiveTheme 未传 typography，
+        // 全部文本硬编码 fontSize/letterSpacing；先定义标题/正文/标签三档供新代码与逐步替换使用。
+        typography = GameTypography,
         content = content,
     )
 }
+
+/** 游戏排版体系（P3-2）：暮紫夜主题的标题/正文/标签档位，替代散落的硬编码字号。
+ *  增量使用：新代码优先取这里；存量硬编码字号按页面批次替换（避免一次性视觉回归）。 */
+val GameTypography = Typography(
+    headlineSmall = TextStyle(fontSize = 22.sp, fontWeight = FontWeight.Bold, letterSpacing = 3.sp),
+    titleLarge = TextStyle(fontSize = 20.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.5.sp),
+    titleMedium = TextStyle(fontSize = 17.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.5.sp),
+    titleSmall = TextStyle(fontSize = 15.sp, fontWeight = FontWeight.Bold),
+    bodyLarge = TextStyle(fontSize = 14.sp),
+    bodyMedium = TextStyle(fontSize = 13.sp),
+    labelLarge = TextStyle(fontSize = 12.sp, fontWeight = FontWeight.Bold),
+    labelMedium = TextStyle(fontSize = 11.sp),
+    labelSmall = TextStyle(fontSize = 10.sp),
+)

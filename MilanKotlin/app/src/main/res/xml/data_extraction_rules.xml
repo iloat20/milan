@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  云备份/设备迁移范围限制（P3-12）：filesDir 下仅有 save/（存档）与 crash/（取证），
+  均不进云备份——单机进度走本地 .bak/.tmp 链即可，避免「跨机恢复把进度打回旧档」。
+-->
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="file" path="save/" />
+        <exclude domain="file" path="crash/" />
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="file" path="save/" />
+        <exclude domain="file" path="crash/" />
+    </device-transfer>
+</data-extraction-rules>

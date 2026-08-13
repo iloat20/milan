@@ -1,4 +1,5 @@
-// 试验田·微创新：Macrobenchmark 模块（独立，不污染 :app）。
+// 试验田·微创新：Macrobenchmark 模块（2026-08-13 修复并接入 settings：补 ext:junit、
+// compileSdk 对齐 app 的 37——此前 compileSdk 36 且缺 AndroidJUnit4 依赖，模块一旦 include 即编译失败）。
 // 注意：本项目已升级 AGP 9（内置 Kotlin），故不重复应用 kotlin-android 插件，
 // 与 app 模块保持一致；若你的 AGP 版本不同导致 Kotlin 源无法编译，可在此补 kotlin("android")。
 plugins {
@@ -7,7 +8,7 @@ plugins {
 
 android {
     namespace = "com.milan.game.benchmark"
-    compileSdk = 36
+    compileSdk = 37
 
     defaultConfig {
         minSdk = 29
@@ -30,6 +31,7 @@ android {
 dependencies {
     implementation(libs.androidx.benchmark)
     implementation(libs.androidx.test.runner)
+    implementation(libs.androidx.test.ext.junit)
     implementation(libs.androidx.uiautomator)
     implementation(libs.junit)
 }

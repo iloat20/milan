@@ -2,6 +2,8 @@ package com.milan.game.infrastructure
 
 import android.content.Context
 import android.media.AudioAttributes
+import android.media.AudioFocusRequest
+import android.media.AudioManager
 import android.media.SoundPool
 import android.os.Handler
 import android.os.HandlerThread
@@ -40,6 +42,63 @@ object MilanAudio {
     private val bgmHandler = Handler(bgmThread.looper)
     private var sfxVolume = 0.9f
     private var bgmVolume = 0.7f
+
+    // ── AudioFocus（P3-9）：来电/语音导航/其他 App 播放时按系统焦点指令 duck 或暂停，
+    // 此前只处理了 Activity 前后台，外部抢占焦点时 BGM 会继续响。
+    private var focusRequest: AudioFocusRequest? = null
+
+    private val audioManager: AudioManager?
+        get() = appContext?.getSystemService(Context.AUDIO_SERVICE) as? AudioManager
+
+    /** 请求独占焦点（BGM looper 线程内调用；回调同样切回该 looper，满足 media3 线程约束）。 */
+    private fun requestFocus() {
+        val am = audioManager ?: return
+        val req = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
+            .setAudioAttributes(
+                AudioAttributes.Builder()
+                    .setUsage(AudioAttributes.USAGE_GAME)
+                    .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                    .build(),
+            )
+            .setOnAudioFocusChangeListener(::onFocusChange, bgmHandler)
+            .build()
+        focusRequest = req
+        am.requestAudioFocus(req)
+    }
+
+    private fun abandonFocus() {
+        val am = audioManager ?: return
+        val req = focusRequest ?: return
+        am.abandonAudioFocusRequest(req)
+        focusRequest = null
+    }
+
+    /** 焦点变化回调（在 BGM looper 线程执行）。 */
+    private fun onFocusChange(focus: Int) {
+        bgmHandler.post {
+            synchronized(this) {
+                when (focus) {
+                    AudioManager.AUDIOFOCUS_LOSS -> {
+                        // 永久失去：停播并清意图（不释放播放器，回前台可恢复）
+                        bgmPlayer?.pause()
+                        bgmName = null
+                        bgmTarget = null
+                        abandonFocus()
+                    }
+                    AudioManager.AUDIOFOCUS_LOSS_TRANSIENT -> {
+                        bgmPlayer?.pause()
+                    }
+                    AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK -> {
+                        bgmPlayer?.volume = bgmVolume * 0.2f
+                    }
+                    AudioManager.AUDIOFOCUS_GAIN -> {
+                        bgmPlayer?.volume = bgmVolume
+                        bgmPlayer?.play()
+                    }
+                }
+            }
+        }
+    }
 
     /** 初始化（幂等）。@param context 任意 Context，内部转 applicationContext。 */
     fun init(context: Context) {
@@ -103,6 +162,7 @@ object MilanAudio {
         bgmTarget = null
         bgmHandler.post {
             synchronized(this) {
+                abandonFocus()
                 bgmPlayer?.release()
                 bgmPlayer = null
                 bgmName = null
@@ -119,6 +179,7 @@ object MilanAudio {
     fun pauseBackground() {
         bgmHandler.post {
             synchronized(this) {
+                abandonFocus()
                 bgmPlayer?.release()
                 bgmPlayer = null
                 bgmName = null
@@ -172,6 +233,7 @@ object MilanAudio {
                 }
                 bgmPlayer = player
                 bgmName = name
+                requestFocus() // P3-9：开始播放即请求独占焦点
             } catch (_: Exception) {
                 // 播放器构建/准备失败：静默放弃本轮，保留「无音效也能玩」的容错约定
                 bgmTarget = null

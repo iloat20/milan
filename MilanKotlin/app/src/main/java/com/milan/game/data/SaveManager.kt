@@ -33,7 +33,7 @@ class SaveManager(
 
     fun load(): SaveData {
         val result = try {
-            if (!provider.exists()) {
+            val data = if (!provider.exists()) {
                 SaveData.createDefault()
             } else {
                 val parsed = SaveData.tryParse(provider.load())
@@ -53,12 +53,18 @@ class SaveManager(
                     }
                 }
             }
+            // 版本迁移必须在 try 内执行：迁移逻辑一旦抛异常，必须走兜底而非让 load 崩溃
+            // （对齐「载入永不抛异常」红线；当前 stub 安全，但预防未来迁移代码出错）。
+            migrate(data)
+            data
         } catch (e: Exception) {
-            // IO 瞬时异常 → 回退默认档（对齐 C#：任何分支都不抛异常）
+            // IO 瞬时异常 / 迁移异常 → 回退默认档（对齐 C#：任何分支都不抛异常）。
+            // 留痕：与「主档损坏分支」同等的排障可见性——否则无法区分「新号」与「IO 失败」，
+            // 违背「绝不静默抹档」的精神（P2-1）。
+            onTrace("save.load.failed: ${e.message}")
             SaveData.createDefault()
         }
         current = result
-        migrate(result)
         return result
     }
 
@@ -78,4 +84,18 @@ class SaveManager(
 
     /** 版本迁移占位（C# Migrate stub）。 */
     private fun migrate(data: SaveData) { /* version migration stub */ }
+
+    /**
+     * 重置存档：删除存档文件并重新载入默认档（对齐「载入永不抛异常」红线）。
+     * 删除失败返回 null 且不重载——调用方应保持原引用不动（事务语义：失败无任何变更）。
+     */
+    fun reset(): SaveData? {
+        try {
+            provider.delete()
+        } catch (e: Exception) {
+            onTrace("save.reset.delete.failed: ${e.message}")
+            return null
+        }
+        return load()
+    }
 }

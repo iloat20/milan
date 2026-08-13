@@ -28,6 +28,8 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shadow
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -65,7 +67,7 @@ fun MissingCharacter(onBack: () -> Unit, modifier: Modifier = Modifier) {
     }
 }
 
-/** 左右切换箭头（C# BuildArrow：44dp 圆角玻璃按钮 + 金色高光阴影）。 */
+/** 左右切换箭头（C# BuildArrow：44dp 圆角玻璃按钮 + 金色高光阴影）。P2-6：补方向语义。 */
 @Composable
 fun GlassArrow(text: String, modifier: Modifier = Modifier, onClick: () -> Unit) {
     Text(
@@ -79,7 +81,8 @@ fun GlassArrow(text: String, modifier: Modifier = Modifier, onClick: () -> Unit)
             .clip(RoundedCornerShape(22.dp))
             .background(AppTheme.Surface)
             .border(1.dp, AppTheme.Gold.copy(alpha = 0.65f), RoundedCornerShape(22.dp))
-            .clickable(onClick = onClick),
+            .clickable(onClick = onClick)
+            .semantics { contentDescription = if (text == "‹") "上一个" else "下一个" },
     )
 }
 

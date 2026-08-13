@@ -3,6 +3,8 @@ package com.milan.game.ui.components
 import android.content.res.Resources
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import java.util.concurrent.ConcurrentHashMap
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -68,6 +70,21 @@ class PortraitLruCache<V : Any>(
     @Synchronized
     fun size(): Int = map.size
 
+    /** P3-7：清空缓存（onLowMemory / 内存压力临界档位）。 */
+    @Synchronized
+    fun clear() = map.clear()
+
+    /** P3-7：按比例收缩缓存（保留 [keepFraction] 的字节上限，如 0.5 = 剩 12MB）。 */
+    @Synchronized
+    fun trimFraction(keepFraction: Float) {
+        val target = (maxBytes * keepFraction.coerceIn(0f, 1f)).toInt()
+        while (true) {
+            val total = map.entries.sumOf { sizeOf(it.value) }
+            if (total <= target || map.isEmpty()) return
+            map.remove(map.entries.iterator().next().key)
+        }
+    }
+
     /** 从最久未用开始逐出，直到总占用 ≤ 上限。 */
     private fun trimToSize() {
         while (true) {
@@ -83,16 +100,61 @@ class PortraitLruCache<V : Any>(
 object PortraitLoader {
     private val cache = PortraitLruCache<Bitmap>(PORTRAIT_CACHE_BYTES) { it.byteCount }
 
+    /** 解码中（in-flight）任务表：同一键只允许一个解码协程，其余协程复用其结果（并发去重）。 */
+    private val inflight = ConcurrentHashMap<PortraitKey, CompletableDeferred<Bitmap?>>()
+
+    /**
+     * 内存压力回调（P3-7）：PortraitImage 组合期注册到 applicationContext，
+     * 低档位收缩一半缓存、临界档位/onLowMemory 全清——此前 24MB LRU 对系统内存压力无感知，
+     * 低端机在大量立绘缓存后易触发更激进的系统回收。
+     */
+    val memoryCallbacks: android.content.ComponentCallbacks2 = object : android.content.ComponentCallbacks2 {
+        override fun onTrimMemory(level: Int) {
+            when {
+                level >= android.content.ComponentCallbacks2.TRIM_MEMORY_RUNNING_CRITICAL -> cache.clear()
+                level >= android.content.ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW -> cache.trimFraction(0.5f)
+            }
+        }
+
+        override fun onLowMemory() {
+            cache.clear()
+        }
+
+        override fun onConfigurationChanged(newConfig: android.content.res.Configuration) { }
+    }
+
     /**
      * 异步解码：命中缓存直接返回；未命中 IO 线程按档位采样解码并入缓存；
+     * 同一资源并发请求只解码一次（快速滚动时列表多处引用同一立绘，避免重复解码与内存峰值）；
      * 解码失败/资源损坏返回 null（调用方走占位，宁可难看也不能崩）。
      */
     suspend fun load(res: Resources, resId: Int, target: PortraitTarget): Bitmap? =
         withContext(Dispatchers.IO) {
             val key = PortraitKey(resId, target.sample)
-            cache.get(key) ?: runCatching {
-                val opts = BitmapFactory.Options().apply { inSampleSize = target.sample }
-                BitmapFactory.decodeResource(res, resId, opts)?.also { cache.put(key, it) }
-            }.getOrNull()
+            try {
+                cache.get(key) ?: decodeOnce(res, key, target)
+            } catch (e: Exception) {
+                null // 与旧 runCatching 语义一致：任何异常都不上抛
+            }
         }
+
+    /** 单飞解码：占 in-flight 槽 → 解码 → 入缓存 → 完成；已有请求在解则直接等其结果。 */
+    private suspend fun decodeOnce(res: Resources, key: PortraitKey, target: PortraitTarget): Bitmap? {
+        val deferred = CompletableDeferred<Bitmap?>()
+        val mine = inflight.putIfAbsent(key, deferred) == null
+        if (!mine) return inflight[key]?.await()
+        try {
+            val opts = BitmapFactory.Options().apply { inSampleSize = target.sample }
+            val bmp = BitmapFactory.decodeResource(res, key.resId, opts)
+            if (bmp != null) cache.put(key, bmp)
+            deferred.complete(bmp)
+            return bmp
+        } catch (e: Exception) {
+            // 失败也 complete(null)：等待者立即拿到占位，不悬挂；槽随后清空允许下次重试
+            deferred.complete(null)
+            return null
+        } finally {
+            inflight.remove(key, deferred)
+        }
+    }
 }

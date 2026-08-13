@@ -17,3 +17,9 @@ dotnet-install.ps1
 
 # Git worktrees
 .worktrees/
+
+# Workspace-local Gradle user home (sandbox: %USERPROFILE%\.gradle not writable)
+.gradle-home/
+
+# Workspace-local Android user home (debug keystore; sandbox: %USERPROFILE%\.android not writable)
+.android-home/

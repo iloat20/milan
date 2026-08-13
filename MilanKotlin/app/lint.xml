@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Milan App 的 lint 配置。
+  当前仅有一条规则：项目正式使用 media3 的 @UnstableApi（ExoPlayer.Builder.setLooper
+  需要 BGM looper 线程绑定，media3 官方要求显式指定 application looper），
+  故对 UnsafeOptInUsageError 做项目级 opt-in，避免在 Kotlin 声明上逐点标注
+  （androidx lint 检查器不识别声明级 @OptIn 的传播，会误报死循环）。
+-->
+<lint>
+    <!-- 应用图标为全量独立 PNG（非 adaptive-icon 文件，无前景/背景分层），
+         刻意填满图标边界以保持大屏观感，忽略 Launcher 的形状建议。 -->
+    <issue id="IconLauncherShape" severity="ignore" />
+    <issue id="UnsafeOptInUsageError">
+        <option name="opt-in" value="androidx.media3.common.util.UnstableApi" />
+    </issue>
+</lint>

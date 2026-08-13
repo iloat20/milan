@@ -8,3 +8,10 @@
 -keepclasseswithmembers class com.milan.game.** {
     kotlinx.serialization.KSerializer serializer(...);
 }
+
+# WorkManager 自动初始化 keep 规则（AGP 9 R8 严格化会裁掉反射实例化的 WorkDatabase_Impl，
+# 导致 release 启动崩：Failed to create an instance of androidx.work.impl.WorkDatabase；Google Issue 348590028）
+-keep class androidx.work.impl.WorkDatabase_Impl { *; }
+-keep class * extends androidx.work.ListenableWorker {
+    <init>(android.content.Context, androidx.work.WorkerParameters);
+}

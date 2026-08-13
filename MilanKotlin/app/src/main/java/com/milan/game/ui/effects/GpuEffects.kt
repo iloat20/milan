@@ -249,7 +249,7 @@ fun rememberDeviceTilt(): State<Pair<Float, Float>> {
             override fun onAccuracyChanged(s: Sensor?, a: Int) { }
         }
         try {
-            sensor?.let { sm?.registerListener(listener, it, SensorManager.SENSOR_DELAY_UI) }
+            sensor?.let { sm.registerListener(listener, it, SensorManager.SENSOR_DELAY_UI) }
         } catch (_: Exception) { }
         onDispose {
             try { sm?.unregisterListener(listener) } catch (_: Exception) { }

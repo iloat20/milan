@@ -94,9 +94,9 @@ fun PageBackground(
 @Composable
 fun TitleWithOrnament(
     title: String,
+    modifier: Modifier = Modifier,
     fontSize: TextUnit = 20.sp,
     frost: Boolean = false,
-    modifier: Modifier = Modifier,
 ) {
     Row(
         modifier = modifier.fillMaxWidth(),
@@ -147,10 +147,10 @@ fun SectionLabel(text: String, modifier: Modifier = Modifier) {
 @Composable
 fun TabularText(
     text: String,
+    modifier: Modifier = Modifier,
     fontSize: TextUnit = 14.sp,
     color: Color = AppTheme.Text1,
     fontWeight: FontWeight = FontWeight.Normal,
-    modifier: Modifier = Modifier,
 ) {
     Text(
         text = text,
@@ -192,8 +192,8 @@ fun Avatar(
 fun IconCircle(
     glyph: String,
     onClick: () -> Unit,
-    size: Dp = 44.dp,
     modifier: Modifier = Modifier,
+    size: Dp = 44.dp,
 ) {
     Box(
         modifier = modifier

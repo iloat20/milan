@@ -23,10 +23,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -39,8 +39,9 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -48,12 +49,11 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.milan.game.data.CharacterSaveState
 import com.milan.game.domain.progression.TalentEngine
-import com.milan.game.infrastructure.eventbus.CurrencyChanged
-import com.milan.game.infrastructure.eventbus.EventBus
-import com.milan.game.infrastructure.eventbus.ProgressionChanged
 import com.milan.game.services.TalentNodeData
+import com.milan.game.services.WriteOutcome
 import com.milan.game.ui.GameState
 import com.milan.game.ui.OwnedCharacterView
 import com.milan.game.ui.components.GlassArrow
@@ -68,6 +68,7 @@ import com.milan.game.ui.components.WoWDivider
 import com.milan.game.ui.theme.AppTheme
 import com.milan.game.ui.theme.ElementTheme
 import java.util.Locale
+import kotlinx.coroutines.launch
 
 /**
  * 养成系统全屏页（C# ProgressionActivity 翻译，暗夜神性·诸神黄昏）。
@@ -88,20 +89,15 @@ fun ProgressionScreen(
 ) {
     val context = LocalContext.current
 
-    // 事件订阅的刷新节拍：GameService 落盘成功后同步广播 → handler 里 tick++ →
-    // 组合中读取 tick 建立重组依赖 → 全屏重算最新存档（轻标记事件，无负载）。
-    var tick by remember { mutableStateOf(0) }
-    DisposableEffect(Unit) {
-        val owner = Any()
-        EventBus.subscribe<CurrencyChanged>(owner) { tick++ }
-        EventBus.subscribe<ProgressionChanged>(owner) { tick++ }
-        onDispose { EventBus.unsubscribeAll(owner) }
-    }
-    // 组合中读取 tick：写但不读的 mutableState 不会触发重组（tick 是唯一的重组触发器）
+    // 状态快照刷新节拍（2026-08 现代化）：GameService 成功写操作后推进 snapshot.revision，
+    // 组合中读取 revision 建立重组依赖 → 全屏重读最新存档（替代「EventBus tick 轻标记」）。
+    // 失败路径不推进 revision——状态未变，无需重组。
+    val snap by GameState.service.snapshot.collectAsStateWithLifecycle()
+    // 组合中读取 revision：只 collect 不读字段不会触发重组（revision 是唯一重组触发器）
     @Suppress("UNUSED_EXPRESSION")
-    tick
+    snap.revision
 
-    val def = GameState.service.characters.firstOrNull { it.characterId == characterId }
+    val def = GameState.service.character(characterId)
     if (def == null) {
         // C# ResolveCharacter 失败 → Finish()；单 Activity 下渲染空态并给返回入口
         MissingCharacter(onBack, modifier)
@@ -128,41 +124,62 @@ fun ProgressionScreen(
 
     fun toast(msg: String) = Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
 
+    // 2026-08 主线程 IO 异步化：养成写操作为 suspend（落盘在 IO 线程），用页面协程调用
+    val scope = rememberCoroutineScope()
+
     fun onLevel(n: Int) {
         if (!owned) { toast("未拥有该角色"); return }
-        if (!GameState.service.levelUp(characterId, n)) {
-            val cap = GameState.service.maxLevelForStage(save.stage)
-            toast(if (cap <= save.level) "已满级" else "星尘不足")
+        scope.launch {
+            when (GameState.service.levelUp(characterId, n)) {
+                WriteOutcome.Success -> {}
+                WriteOutcome.Rejected -> {
+                    val cap = GameState.service.maxLevelForStage(save.stage)
+                    toast(if (cap <= save.level) "已满级" else "星尘不足")
+                }
+                WriteOutcome.SaveFailed -> toast("保存失败，请重试")
+            }
         }
-        tick++
     }
 
     fun onAscend() {
         if (!owned) { toast("未拥有该角色"); return }
-        if (!GameState.service.ascend(characterId)) {
-            val frags = GameState.service.ascendFragments(save.stage)
-            toast(if (GameState.service.getStarFragments() < frags) "星魂碎片不足" else "星尘不足")
+        scope.launch {
+            when (GameState.service.ascend(characterId)) {
+                WriteOutcome.Success -> {}
+                WriteOutcome.Rejected -> {
+                    val frags = GameState.service.ascendFragments(save.stage)
+                    toast(if (GameState.service.getStarFragments() < frags) "星魂碎片不足" else "星尘不足")
+                }
+                WriteOutcome.SaveFailed -> toast("保存失败，请重试")
+            }
         }
-        tick++
     }
 
     fun onStarUp() {
         if (!owned) { toast("未拥有该角色"); return }
-        if (!GameState.service.starUp(characterId)) {
-            toast(if (save.stars >= def.maxStars) "已满星" else "星魂碎片不足")
+        scope.launch {
+            when (GameState.service.starUp(characterId)) {
+                WriteOutcome.Success -> {}
+                WriteOutcome.Rejected -> toast(if (save.stars >= def.maxStars) "已满星" else "星魂碎片不足")
+                WriteOutcome.SaveFailed -> toast("保存失败，请重试")
+            }
         }
-        tick++
     }
 
     fun onTalent(nodeId: String) {
         if (!owned) { toast("未拥有该角色"); return }
-        if (!GameState.service.allocateTalent(characterId, nodeId)) {
-            toast("无法满足前置或天赋点不足")
+        scope.launch {
+            when (GameState.service.allocateTalent(characterId, nodeId)) {
+                WriteOutcome.Success -> {}
+                WriteOutcome.Rejected -> toast("无法满足前置或天赋点不足")
+                WriteOutcome.SaveFailed -> toast("保存失败，请重试")
+            }
         }
-        tick++
     }
 
-    val heroHeight = LocalConfiguration.current.screenHeightDp.dp * 0.46f
+    val heroHeight = with(LocalDensity.current) {
+        LocalWindowInfo.current.containerSize.height.toDp() * 0.46f
+    }
 
     Box(
         modifier = modifier
@@ -260,6 +277,7 @@ private fun HeroRegion(
             name = view.name,
             modifier = Modifier.fillMaxSize(),
             contentScale = ContentScale.Crop,
+            aura = true,
         )
 
         // 底部渐隐遮罩：立绘下缘柔和融入背景

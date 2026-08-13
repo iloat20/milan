@@ -100,4 +100,17 @@ class BattleSimulatorTest {
         assertFalse(r.victory)
         assertEquals(0, r.opponentRemainingHp)
     }
+
+    // P3-6：maxTurns<=0 不得返回非正回合数（旧实现 `1..0` 空循环返回 turns=0）
+    @Test
+    fun simulate_nonPositiveMaxTurns_coercedToAtLeastOne() {
+        val a = arrayOf(u(100, 200, 100000, 12))
+        val b = arrayOf(u(100, 200, 100000, 12))
+        val r = BattleSimulator(Random(1)).simulate(a, b, 0)
+        assertFalse(r.victory)
+        assertEquals(1, r.turns)
+
+        val r2 = BattleSimulator(Random(1)).simulate(a, b, -5)
+        assertEquals(1, r2.turns)
+    }
 }

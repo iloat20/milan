@@ -13,31 +13,32 @@ data class ElementIdentity(
     val glyph: String,
 )
 
-/** 元素 → 视觉身份 的单一事实来源（C# ElementTheme.cs 译文；未知元素回退 Flame）。 */
+/**
+ * 元素 → 视觉身份 的单一事实来源（C# ElementTheme.cs 译文；未知元素回退 Flame）。
+ * 元素体系（2026-08-11 定稿）：金木水火土光暗电 8 种；键名沿用旧数据标识，避免动序列化结构：
+ * Metal=金 / Wood=木 / Water=水 / Flame=火 / Earth=土 / Light=光 / Shadow=暗 / Thunder=电；
+ * 旧 Wind/Frost/Void/Star 已并入 Wood/Water/Shadow/Light，data.json 与 GameContent 兜底同步收敛。
+ */
 object ElementTheme {
 
-    private val Flame = ElementIdentity(Color(0xFFFF4D00), Color(0xFFFFB300), Color(0xFFFF5252), "炎")
-    private val Frost = ElementIdentity(Color(0xFF0097A7), Color(0xFFB2EBF2), Color(0xFF4DD0E1), "冰")
-    private val Thunder = ElementIdentity(Color(0xFFFFD600), Color(0xFF7E57C2), Color(0xFFE040FB), "雷")
-    private val Wind = ElementIdentity(Color(0xFF00C853), Color(0xFFB9F6CA), Color(0xFF69F0AE), "风")
-    private val Shadow = ElementIdentity(Color(0xFF1A0033), Color(0xFF6A1B9A), Color(0xFF9C27B0), "暗")
-    private val Light = ElementIdentity(Color(0xFFFFD600), Color(0xFFFFFDE7), Color(0xFFFDE7FF), "光")
+    private val Metal = ElementIdentity(Color(0xFFFFD700), Color(0xFFFFF3C4), Color(0xFFFFC107), "金")
+    private val Wood = ElementIdentity(Color(0xFF00C853), Color(0xFFB9F6CA), Color(0xFF69F0AE), "木")
+    private val Water = ElementIdentity(Color(0xFF0097A7), Color(0xFFB2EBF2), Color(0xFF4DD0E1), "水")
+    private val Flame = ElementIdentity(Color(0xFFFF4D00), Color(0xFFFFB300), Color(0xFFFF5252), "火")
     private val Earth = ElementIdentity(Color(0xFF795548), Color(0xFFD7CCC8), Color(0xFFA1887F), "土")
-    private val Metal = ElementIdentity(Color(0xFF455A64), Color(0xFFB0BEC5), Color(0xFF78909C), "钢")
-    private val Void = ElementIdentity(Color(0xFF0D0221), Color(0xFF6A0DAD), Color(0xFFCE93D8), "虚")
-    private val Star = ElementIdentity(Color(0xFF1A237E), Color(0xFF7C4DFF), Color(0xFFB388FF), "星")
+    private val Light = ElementIdentity(Color(0xFFFFD600), Color(0xFFFFFDE7), Color(0xFFFDE7FF), "光")
+    private val Shadow = ElementIdentity(Color(0xFF1A0033), Color(0xFF6A1B9A), Color(0xFF9C27B0), "暗")
+    private val Thunder = ElementIdentity(Color(0xFF00B8D4), Color(0xFFB3E5FC), Color(0xFF18FFFF), "电")
 
     fun forElement(element: String): ElementIdentity = when (element) {
-        "Flame" -> Flame
-        "Frost" -> Frost
-        "Thunder" -> Thunder
-        "Wind" -> Wind
-        "Shadow" -> Shadow
-        "Light" -> Light
-        "Earth" -> Earth
         "Metal" -> Metal
-        "Void" -> Void
-        "Star" -> Star
+        "Wood" -> Wood
+        "Water" -> Water
+        "Flame" -> Flame
+        "Earth" -> Earth
+        "Light" -> Light
+        "Shadow" -> Shadow
+        "Thunder" -> Thunder
         else -> Flame
     }
 }

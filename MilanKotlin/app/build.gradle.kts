@@ -7,7 +7,9 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
 }
 
-// 本地签名凭据（keystore.properties 不入库）；文件缺失时 release 退化为未签名，保证他人克隆/CI 可构建
+// 本地签名凭据（keystore.properties 不入库）；文件缺失时 release 退化为未签名，保证他人克隆/CI 可构建。
+// 注（P3-11）：配置期读取 + configuration-cache 会把密码序列化进缓存条目——仅限本地机器使用，
+// CI 应改走环境变量注入，避免凭据落进共享缓存。
 val keystoreProps = Properties().apply {
     val f = rootProject.file("keystore.properties")
     if (f.exists()) f.inputStream().use { load(it) }
@@ -32,7 +34,7 @@ android {
     defaultConfig {
         applicationId = "com.milan.game"
         minSdk = 29
-        targetSdk = 36
+        targetSdk = 37
         versionCode = 1
         versionName = "1.0"
     }
@@ -44,6 +46,13 @@ android {
             isShrinkResources = true
             signingConfig = signingConfigs.findByName("release")
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+        }
+        // Macrobenchmark 专用构建类型（:benchmark 模块的 targetProjectPath 按此 variant 消费 :app；
+        // 对齐官方模板：非 debuggable + debug 签名，基准化时用 release 等价代码路径）
+        create("benchmark") {
+            isDebuggable = false
+            signingConfig = signingConfigs.getByName("debug")
+            matchingFallbacks += listOf("release")
         }
     }
     compileOptions {
@@ -64,11 +73,11 @@ kotlin {
 dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
-    implementation(libs.androidx.lifecycle.viewmodel.compose)
+    // collectAsStateWithLifecycle：StateFlow 状态快照的 UI 订阅（2026-08 现代化）
+    implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.activity.compose)
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.ui)
-    implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
     // 底部导航等处的 Material 图标（P2-6：NavCell 字符字形 → 标准图标）
@@ -83,6 +92,9 @@ dependencies {
     implementation(libs.androidx.navigation.compose)
     // 桌面小组件（Glance）：GachaGlanceWidget 的今日运势入口（ui/glance/）
     implementation(libs.androidx.glance.appwidget)
+    // KMP 共享领域层：抽卡/养成/战斗引擎与跨平台模型（commonMain，见 :shared 模块）。
+    // 领域逻辑自此与桌面/将来 iOS 共用同一份实现（2026-08 KMP 下沉）。
+    implementation(project(":shared"))
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
     debugImplementation(libs.androidx.ui.tooling)

@@ -49,13 +49,13 @@ internal object GameContent {
                 sk("zhulong_3", "不灭之焰", "受到致命伤害时保留1点生命并回复30%血量（每场一次）", "Flame", "Passive", 60),
             ))
         // 虚无 Wuxu - 山海经"混沌"+漫威湮灭(DC反物质)
-        add(chars, "char_ur_wuxu", "虚无 Wuxu", "万象终焉", "Aether", "Void", 4,
+        add(chars, "char_ur_wuxu", "虚无 Wuxu", "万象终焉", "Aether", "Shadow", 4,
             listOf(155, 125, 1150, 17), 7, true,
             "山海经所载混沌之形，无面无相，万物归虚。漫威湮灭与DC反监视者的力量在此交汇，它来自维度裂隙深处，以星辰为食，所余唯有虚无。",
             "tree_wuxu", listOf(
-                sk("wuxu_1", "湮灭奇点", "在敌阵制造黑洞，持续吸引并撕裂范围内所有目标", "Void", "Ultimate", 92),
-                sk("wuxu_2", "虚化", "进入虚无形态，闪避下一次攻击并回复能量", "Void", "Active", 68),
-                sk("wuxu_3", "存在抹消", "普攻有15%概率直接削减目标15%当前生命", "Void", "Passive", 65),
+                sk("wuxu_1", "湮灭奇点", "在敌阵制造黑洞，持续吸引并撕裂范围内所有目标", "Shadow", "Ultimate", 92),
+                sk("wuxu_2", "虚化", "进入虚无形态，闪避下一次攻击并回复能量", "Shadow", "Active", 68),
+                sk("wuxu_3", "存在抹消", "普攻有15%概率直接削减目标15%当前生命", "Shadow", "Passive", 65),
             ))
         // 刑天 Xingtian - 山海经"刑天"，漫威金刚狼+DC毁灭日
         add(chars, "char_ur_xingtian", "刑天 Xingtian", "不死战神", "Ironveil", "Metal", 4,
@@ -95,13 +95,13 @@ internal object GameContent {
                 sk("fenghuang_3", "凤鸣朝阳", "鸣叫提升全队20%攻击力，持续8秒", "Flame", "Active", 60),
             ))
         // 相柳 Xiangliu - 山海经"相柳"，漫威毒液+DC小丑
-        add(chars, "char_ssr_xiangliu", "相柳 Xiangliu", "九首毒厄", "Aether", "Void", 3,
+        add(chars, "char_ssr_xiangliu", "相柳 Xiangliu", "九首毒厄", "Aether", "Shadow", 3,
             listOf(118, 95, 1100, 14), 6, false,
             "山海经相柳，九首蛇身，所到之处化为毒泽。漫威毒液的共生体与小丑的剧毒在其血液中流淌，吐息即瘟疫，触碰即腐蚀。",
             "tree_xiangliu", listOf(
-                sk("xiangliu_1", "九首噬天", "九首齐出撕咬前方，造成多段伤害并叠加中毒", "Void", "Ultimate", 80),
-                sk("xiangliu_2", "毒泽万里", "在地面制造毒沼，踏入的敌人持续掉血减速", "Void", "Active", 65),
-                sk("xiangliu_3", "腐蚀之血", "攻击附带中毒，中毒目标受到治疗量降低50%", "Void", "Passive", 58),
+                sk("xiangliu_1", "九首噬天", "九首齐出撕咬前方，造成多段伤害并叠加中毒", "Shadow", "Ultimate", 80),
+                sk("xiangliu_2", "毒泽万里", "在地面制造毒沼，踏入的敌人持续掉血减速", "Shadow", "Active", 65),
+                sk("xiangliu_3", "腐蚀之血", "攻击附带中毒，中毒目标受到治疗量降低50%", "Shadow", "Passive", 58),
             ))
         // 雷神 Leishen - 山海经"雷兽"，漫威雷神索尔+DC宙斯
         add(chars, "char_ssr_leishen", "雷神 Leishen", "雷霆裁决", "Ironveil", "Thunder", 3,
@@ -113,22 +113,22 @@ internal object GameContent {
                 sk("leishen_3", "静电充能", "每次受到攻击积累静电，下次技能伤害+25%", "Thunder", "Passive", 56),
             ))
         // 飞廉 Feilian - 山海经"飞廉"，漫威快银+DC闪电侠
-        add(chars, "char_ssr_feilian", "飞廉 Feilian", "风驰电掣", "Shinwa", "Wind", 3,
+        add(chars, "char_ssr_feilian", "飞廉 Feilian", "风驰电掣", "Shinwa", "Wood", 3,
             listOf(122, 70, 880, 24), 6, false,
             "山海经飞廉，鹿身雀首，司掌风伯。漫威快银的神速与DC闪电侠的神速力在其血脉中奔袭，疾风迅雷，唯快不破。",
             "tree_feilian", listOf(
-                sk("feilian_1", "神速连斩", "以超越视觉的速度连续斩击单体12次", "Wind", "Ultimate", 78),
-                sk("feilian_2", "疾风步", "瞬移至敌人身后发动背刺，必定暴击", "Wind", "Active", 62),
-                sk("feilian_3", "风之残影", "闪避后留下残影，残影爆炸对周围造成伤害", "Wind", "Passive", 55),
+                sk("feilian_1", "神速连斩", "以超越视觉的速度连续斩击单体12次", "Wood", "Ultimate", 78),
+                sk("feilian_2", "疾风步", "瞬移至敌人身后发动背刺，必定暴击", "Wood", "Active", 62),
+                sk("feilian_3", "风之残影", "闪避后留下残影，残影爆炸对周围造成伤害", "Wood", "Passive", 55),
             ))
         // 商羊 Shangyang - 山海经"商羊"，漫威X教授+DC命运博士
-        add(chars, "char_ssr_shangyang", "商羊 Shangyang", "预知神鸟", "Aether", "Star", 3,
+        add(chars, "char_ssr_shangyang", "商羊 Shangyang", "预知神鸟", "Aether", "Light", 3,
             listOf(115, 100, 1080, 15), 6, false,
             "山海经商羊，一足鸟身，预知风雨。漫威X教授的精神力与DC命运博士的纳布神盔赋予其预知未来的能力，以星象指引命运。",
             "tree_shangyang", listOf(
-                sk("shangyang_1", "星轨预言", "揭示敌方弱点，全队暴击率+30%持续6秒", "Star", "Ultimate", 76),
-                sk("shangyang_2", "预知闪避", "预判下一次攻击，必定闪避并反击", "Star", "Active", 60),
-                sk("shangyang3", "命运织网", "战斗开始时随机标记一名敌人，其受到伤害+20%", "Star", "Passive", 54),
+                sk("shangyang_1", "星轨预言", "揭示敌方弱点，全队暴击率+30%持续6秒", "Light", "Ultimate", 76),
+                sk("shangyang_2", "预知闪避", "预判下一次攻击，必定闪避并反击", "Light", "Active", 60),
+                sk("shangyang3", "命运织网", "战斗开始时随机标记一名敌人，其受到伤害+20%", "Light", "Passive", 54),
             ))
         // ========== SR 2★ ==========
         // 狻猊 Suanni - 山海经"狻猊"，漫威黑豹+DC蝙蝠侠
@@ -141,13 +141,13 @@ internal object GameContent {
                 sk("suanni_3", "兽王威严", "生命低于40%时攻击+25%", "Flame", "Passive", 40),
             ))
         // 精卫 Jingwei - 山海经"精卫"，漫威黑寡妇+DC猫女
-        add(chars, "char_sr_jingwei", "精卫 Jingwei", "衔石填海", "Aether", "Wind", 2,
+        add(chars, "char_sr_jingwei", "精卫 Jingwei", "衔石填海", "Aether", "Wood", 2,
             listOf(88, 72, 850, 16), 5, false,
             "山海经精卫，炎帝之女溺于东海，化为神鸟衔石填海。漫威黑寡妇的坚韧与DC猫女的敏捷赋予其不屈意志，以柔克刚。",
             "tree_jingwei", listOf(
-                sk("jingwei_1", "衔石连射", "连续发射碎石攻击单体，每次伤害递增", "Wind", "Active", 52),
-                sk("jingwei_2", "填海之志", "每回合结束时未死亡则回复5%最大生命", "Wind", "Passive", 42),
-                sk("jingwei_3", "风翼庇护", "闪避后制造风盾，吸收下一次伤害", "Wind", "Passive", 38),
+                sk("jingwei_1", "衔石连射", "连续发射碎石攻击单体，每次伤害递增", "Wood", "Active", 52),
+                sk("jingwei_2", "填海之志", "每回合结束时未死亡则回复5%最大生命", "Wood", "Passive", 42),
+                sk("jingwei_3", "风翼庇护", "闪避后制造风盾，吸收下一次伤害", "Wood", "Passive", 38),
             ))
         // 穷奇 Qiongqi - 山海经"穷奇"，漫威死侍+DC丧钟
         add(chars, "char_sr_qiongqi", "穷奇 Qiongqi", "噬罪凶兽", "Ironveil", "Metal", 2,
@@ -205,22 +205,22 @@ internal object GameContent {
                 sk("sishu_3", "暗影打击", "从暗处攻击额外造成50%伤害", "Shadow", "Passive", 26),
             ))
         // 蠃鱼 Luoyu - 山海经"蠃鱼"，漫威海王纳摩+DC水行侠
-        add(chars, "char_r_luoyu", "蠃鱼 Luoyu", "渊海游灵", "Shinwa", "Frost", 1,
+        add(chars, "char_r_luoyu", "蠃鱼 Luoyu", "渊海游灵", "Shinwa", "Water", 1,
             listOf(70, 68, 780, 13), 4, false,
             "山海经蠃鱼，鱼身鸟翼，音如鸳鸯。漫威海王纳摩的深海之力与DC水行侠的亚特兰蒂斯之能在其鳞翼中流淌，御水而行。",
             "tree_luoyu", listOf(
-                sk("luoyu_1", "寒流冲击", "喷射寒流造成伤害并减速目标30%", "Frost", "Active", 44),
-                sk("luoyu_2", "鳞甲水护", "受到攻击时生成水盾吸收伤害", "Frost", "Passive", 33),
-                sk("luoyu_3", "深渊低语", "生命低于50%时技能冷却-20%", "Frost", "Passive", 27),
+                sk("luoyu_1", "寒流冲击", "喷射寒流造成伤害并减速目标30%", "Water", "Active", 44),
+                sk("luoyu_2", "鳞甲水护", "受到攻击时生成水盾吸收伤害", "Water", "Passive", 33),
+                sk("luoyu_3", "深渊低语", "生命低于50%时技能冷却-20%", "Water", "Passive", 27),
             ))
         // 当康 Dangang - 山海经"当康"，漫威野兽+DC火星猎人
-        add(chars, "char_r_dangang", "当康 Dangang", "丰穗瑞兽", "Aether", "Wind", 1,
+        add(chars, "char_r_dangang", "当康 Dangang", "丰穗瑞兽", "Aether", "Wood", 1,
             listOf(78, 72, 820, 11), 4, false,
             "山海经当康，状如豚而有牙，其鸣自叫，见则天下大穰。漫威野兽的蛮力与DC火星猎人的兽性在其瑞兽之躯中苏醒，以丰收之名为战。",
             "tree_dangang", listOf(
-                sk("dangang_1", "丰穗冲撞", "蓄力冲撞单体，造成伤害并击退", "Wind", "Active", 43),
-                sk("dangang_2", "瑞兽庇佑", "战斗开始时为全队施加5%生命护盾", "Wind", "Passive", 31),
-                sk("dangang_3", "丰收之愈", "每次击杀回复10%最大生命", "Wind", "Passive", 29),
+                sk("dangang_1", "丰穗冲撞", "蓄力冲撞单体，造成伤害并击退", "Wood", "Active", 43),
+                sk("dangang_2", "瑞兽庇佑", "战斗开始时为全队施加5%生命护盾", "Wood", "Passive", 31),
+                sk("dangang_3", "丰收之愈", "每次击杀回复10%最大生命", "Wood", "Passive", 29),
             ))
 
         // ========== 裂隙纪元新增角色 ==========
@@ -261,13 +261,13 @@ internal object GameContent {
                 sk("baihu_3", "圣兽之威", "对生命低于30%的敌人伤害提升", "Metal", "Passive", 56),
             ))
         // SR 花妖 Huayao - Aether 千瓣灵魅
-        add(chars, "char_sr_huayao", "花妖 Huayao", "千瓣灵魅", "Aether", "Wind", 2,
+        add(chars, "char_sr_huayao", "花妖 Huayao", "千瓣灵魅", "Aether", "Wood", 2,
             listOf(85, 78, 860, 18), 5, false,
             "原是 Aether 浮空花园中一株千年灵植，因裂隙能量涌入而化形。漫威暴风女的大气操控与DC毒藤女的植物共鸣，使她可以呼唤风携带花瓣形成治愈或剧毒领域。",
             "tree_huayao", listOf(
-                sk("huayao_1", "千瓣愈风", "召唤花瓣之风为全队回复生命并提升速度", "Wind", "Active", 52),
-                sk("huayao_2", "毒藤缠绕", "用毒藤束缚单体敌人，造成持续伤害并降低其攻击", "Wind", "Active", 48),
-                sk("huayao_3", "花语轻喃", "受到致命伤害时化为花瓣规避一次（每场一次）", "Wind", "Passive", 40),
+                sk("huayao_1", "千瓣愈风", "召唤花瓣之风为全队回复生命并提升速度", "Wood", "Active", 52),
+                sk("huayao_2", "毒藤缠绕", "用毒藤束缚单体敌人，造成持续伤害并降低其攻击", "Wood", "Active", 48),
+                sk("huayao_3", "花语轻喃", "受到致命伤害时化为花瓣规避一次（每场一次）", "Wood", "Passive", 40),
             ))
         // SR 饕餮 Taotie - Shinwa 贪食凶兽
         add(chars, "char_sr_taotie", "饕餮 Taotie", "贪食无厌", "Shinwa", "Flame", 2,
@@ -476,6 +476,22 @@ internal object GameContent {
             "char_ssr_shangyang" to "卜天·星谶盘",
             "char_ssr_chiyou" to "虎魄·裂魂斧",
             "char_ssr_baihu" to "庚金·虎啸爪",
+            // SR 专属特色武器（2026-08 武器重做后 data.json 已全量补齐，兜底同步收敛，防双路径口径漂移）
+            "char_sr_suanni" to "炎吼·焚音爪",
+            "char_sr_jingwei" to "衔石·逐浪弹",
+            "char_sr_qiongqi" to "啮钢·噬魂炮",
+            "char_sr_xuanwu" to "负岳·玄甲盾",
+            "char_sr_bifang" to "焚羽·惊雷翎",
+            "char_sr_huayao" to "缠丝·落花刃",
+            "char_sr_taotie" to "噬纹·贪鼎",
+            // R 专属特色武器
+            "char_r_lili" to "掘地·裂壤爪",
+            "char_r_qinyuan" to "毒螫·群蜂针",
+            "char_r_sishu" to "缚影·缠魂丝",
+            "char_r_luoyu" to "涌潮·三叉戟",
+            "char_r_dangang" to "獠突·冲岳牙",
+            "char_r_shanxiao" to "拾荒·碎铁爪",
+            "char_r_yecha" to "喑杀·影刃",
         )
 
         val weaponDesc: Map<String, String> = mapOf(
@@ -494,6 +510,22 @@ internal object GameContent {
             "char_ssr_shangyang" to "商羊以星轨为纹、以卜辞为灵的占盘，盘面流转着未卜先知的微光。转动之间，可窥天命一角、引星辉为刃；所照之处，未来如掌中纹路般清晰。",
             "char_ssr_chiyou" to "蚩尤以败者之魂铸入斧刃的凶兵，斧面隐现虎魄之纹，饮血则啸。挥之如猛虎扑食、裂石断金；每一道斧光，都镌着上古战场的硝烟。",
             "char_ssr_baihu" to "西方庚金之气凝成的虎爪兵装，爪尖流转肃杀白芒，撕裂之处寒铁亦如腐木。白虎振爪则风雪俱寂、万兽伏首；一扑之威，可镇一方秋杀。",
+            // SR 专属特色武器描述（与 weaponName 同步补齐，对齐 data.json）
+            "char_sr_suanni" to "龙子狻猊好烟好坐，以火焰狮爪为兵，挥击迸发音波烈焰环，吼声所及烟焰俱燃。",
+            "char_sr_jingwei" to "精卫衔石填海之志凝为兵，风缕编成投石索，抛出晶石如浪，矢志不停。",
+            "char_sr_qiongqi" to "穷奇食人之翼虎，以吞噬之钢锻造兽口炮，喷吐金属碎片，所噬之魂无所归。",
+            "char_sr_xuanwu" to "旋龟负岳而行，甲壳化为活体玄铁盾，山脊纹路流转，御敌如山镇。",
+            "char_sr_bifang" to "毕方一足火鸟，取燃烧雷羽为镖，蓄雷而投，落处火起雷鸣。",
+            "char_sr_huayao" to "花妖以花瓣缎带凝成旋转飞刃，落红成刃，缠缚斩切皆宜。",
+            "char_sr_taotie" to "饕餮贪食，青铜鼎口即其噬焰之口，所吞之物尽化青烟，永不满足。",
+            // R 专属特色武器描述
+            "char_r_lili" to "狸力掌掘如犁，土系掘地爪锄破壤而行，藏于地脉。",
+            "char_r_qinyuan" to "钦原毒蜂之躯，一簇剧毒蜂针离手则追魂，螫处溃烂。",
+            "char_r_sishu" to "跂踵招死之鸟，吐影丝缠缚魂魄，中招者如陷永夜。",
+            "char_r_luoyu" to "蠃鱼鱼鸟之形，水波三叉戟涌潮而出，戟身鱼纹流转。",
+            "char_r_dangang" to "当康瑞兽野猪，以獠牙为冲撞兵装，突进如山岳之倾。",
+            "char_r_shanxiao" to "山魈山鬼，拾荒废铁拼成利爪，杂乱中藏凶性。",
+            "char_r_yecha" to "夜叉捷鬼，无声影刃出鞘无音，一闪取命。",
         )
 
         for (c in characters) {

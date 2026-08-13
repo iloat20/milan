@@ -73,15 +73,15 @@ data class GachaPoolDataEntry(
     @SerialName("Entries") var entries: List<GachaPoolEntry> = emptyList(),
 )
 
-/** 单次抽卡结果（C# PullResult，仅内存传输，不序列化）。 */
+/** 单次抽卡结果（C# PullResult，仅内存传输，不序列化）。P3-3：不可变（val）。 */
 data class PullResult(
-    var success: Boolean = false,
-    var characterId: String? = null,
-    var characterName: String = "",
-    var rarity: Int = 0,
-    var isNew: Boolean = false,
+    val success: Boolean = false,
+    val characterId: String? = null,
+    val characterName: String = "",
+    val rarity: Int = 0,
+    val isNew: Boolean = false,
     /** 重复角色时补偿的星魂碎片数量（新角色为 0）。 */
-    var fragmentsAwarded: Int = 0,
+    val fragmentsAwarded: Int = 0,
 )
 
 /** 天赋树节点（C# TalentNodeData）。 */
@@ -110,6 +110,21 @@ data class RootData(
     @SerialName("Characters") var characters: List<CharacterDataEntry?> = emptyList(),
     @SerialName("Pools") var pools: List<GachaPoolDataEntry?> = emptyList(),
     @SerialName("TalentTrees") var talentTrees: List<TalentTreeData?> = emptyList(),
+)
+
+/**
+ * 进程内最新经济/拥有状态快照（2026-08 现代化：UI 订阅 [GameService.snapshot]，
+ * 替代「EventBus 轻标记 + 手动重读」）。
+ *
+ * - [revision] 每次成功写操作后 +1：作为组合期读取的重组触发器（读快照字段则无需 revision）；
+ * - 货币/碎片/拥有数为当前存档实时值（刷新时机 = 成功落盘 + 广播）。
+ */
+data class GameSnapshot(
+    val revision: Long = 0,
+    val softCurrency: Int = 0,
+    val hardCurrency: Int = 0,
+    val starFragments: Int = 0,
+    val ownedCount: Int = 0,
 )
 
 /**

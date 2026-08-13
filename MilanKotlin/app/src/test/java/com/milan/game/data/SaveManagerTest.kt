@@ -66,13 +66,18 @@ class SaveManagerTest {
     }
 
     @Test
-    fun load_ioException_fallsBackToDefault() {
+    fun load_ioException_fallsBackToDefaultWithTrace() {
+        // P2-1：IO 异常分支不得静默——留痕后才能区分「新号」与「IO 失败」
         val provider = FakeProvider(main = """{"SoftCurrency":1}""", throwOnLoad = true)
         val manager = SaveManager(provider, onTrace = provider.traces::add)
 
         val data = manager.load()
 
         assertEquals(999999, data.softCurrency)
+        assertTrue(
+            "应留痕 io 失败：${provider.traces}",
+            provider.traces.any { it.startsWith("save.load.failed:") && it.contains("io boom") },
+        )
     }
 
     @Test

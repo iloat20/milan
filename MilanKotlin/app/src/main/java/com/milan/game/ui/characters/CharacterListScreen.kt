@@ -130,7 +130,7 @@ fun CharacterListScreen(
                     contentPadding = PaddingValues(start = 13.dp, end = 13.dp, bottom = 16.dp),
                     horizontalArrangement = Arrangement.spacedBy(0.dp),
                 ) {
-                    itemsIndexed(visible) { _, ch ->
+                    itemsIndexed(visible, key = { _, ch -> ch.save.characterId }) { _, ch ->
                         ListCard(ch, animatedVisibilityScope) { onOpenCharacter(ch.save.characterId) }
                     }
                 }
@@ -196,6 +196,8 @@ private fun ListCard(
                     name = ch.name,
                     modifier = Modifier.fillMaxSize(),
                     target = PortraitTarget.Thumb,
+                    aura = true,
+                    glowScale = 0.7f,
                 )
             }
             Spacer(Modifier.height(8.dp))

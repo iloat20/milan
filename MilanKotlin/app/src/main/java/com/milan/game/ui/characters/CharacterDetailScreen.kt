@@ -47,6 +47,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.milan.game.data.CharacterSaveState
 import com.milan.game.domain.battle.UnitStats
 import com.milan.game.services.CharacterDataEntry
@@ -97,13 +98,21 @@ fun CharacterDetailScreen(
         return
     }
 
-    val ownedSave = remember(characterId) {
-        GameState.service.saveData.ownedCharacters.firstOrNull { it?.characterId == characterId }
-    }
+    // P2-13/P3-5：订阅快照 revision，任何成功写操作后重组重读最新存档——此前
+    // remember(characterId) 缓存 ownedSave 引用，依赖「GameService 原地修改同一对象」的
+    // 脆弱契约（resetSave 整体替换存档后，缓存会指向失效对象）。
+    val snap by GameState.snapshot.collectAsStateWithLifecycle()
+    @Suppress("UNUSED_EXPRESSION")
+    snap.revision
+    val ownedSave = GameState.service.saveData.ownedCharacters.firstOrNull { it?.characterId == characterId }
     val owned = ownedSave != null
-    // C# 未拥有兜底存档（Level/Stage/Stars=1），保证属性面板/铭牌可渲染
-    val save = ownedSave ?: CharacterSaveState(characterId = characterId, level = 1, stage = 1, stars = 1)
-    val view = remember(def, save) { OwnedCharacterView(save, def) }
+    // 未拥有兜底存档（Level/Stage/Stars=1）：纯渲染模型，按角色缓存即可（拥有后 ownedSave 优先）。
+    val fallbackSave = remember(characterId) {
+        CharacterSaveState(characterId = characterId, level = 1, stage = 1, stars = 1)
+    }
+    val save = ownedSave ?: fallbackSave
+    // 视图为轻量值对象，每次重组直接构建（勿 remember 缓存，避免拿到陈旧 save 引用）
+    val view = OwnedCharacterView(save, def)
 
     val world = WorldTheme.forWorld(view.world)
     val rarityCol = AppTheme.rarityColor(view.rarity)
@@ -402,6 +411,8 @@ private fun WeaponStage(
     // 武器图已转 WebP（assets/weapons/{vfx}.webp）；IO 线程按 2x 采样解码
     // （1024×1024 原图、显示仅 160.dp 高，解码内存降 4 倍），首帧不卡主线程。
     val weaponBmp by produceState<Bitmap?>(initialValue = null, weaponVfx) {
+        // P1-2：key（weaponVfx）变化时先清空旧值，否则切角色瞬间会闪一瞬上一角色的武器图
+        value = null
         value = withContext(Dispatchers.IO) {
             runCatching {
                 context.assets.open("weapons/$weaponVfx.webp").use { ins ->

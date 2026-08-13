@@ -1,7 +1,7 @@
 package com.milan.game.domain.gacha
 
 import com.milan.game.data.Rarity
-import java.util.Random
+import kotlin.random.Random
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -44,6 +44,17 @@ class GachaEngineTest {
         // UR 占比 ~70% 允许 ±5% 抖动（确定性种子下是固定值，仅作冒烟断言）
         assertTrue("UR ratio ${counts[3]}", counts[3] > 6_500)
         assertTrue("R count ${counts[0]}", counts[0] in 800..1_200)
+    }
+
+    @Test
+    fun rollRarity_extraWeightsClampToHighestRarity_noCrash() {
+        // data.json 若提供 >4 个权重（漏校验），旧实现 Rarity.entries[4] 越界崩溃；
+        // 现钳到最高稀有度 UR(4)，绝不抛异常（#3）。
+        val engine = GachaEngine(Random(123))
+        repeat(500) {
+            val rarity = engine.rollRarity(intArrayOf(1, 1, 1, 1, 6))
+            assertTrue("unexpected $rarity", rarity.ordinal in 0..3)
+        }
     }
 
     @Test

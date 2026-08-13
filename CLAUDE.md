@@ -10,7 +10,7 @@ The summon art style is a **dimensional rift / portal** (characters cross over f
 
 ## Implementation
 
-The game is a **Kotlin / Jetpack Compose native Android** app in `MilanKotlin/` (Gradle 9.5.0 + AGP 9.1.1 + Kotlin 2.4.0 — AGP 9 has built-in Kotlin, no kotlin-android plugin — `com.milan.game`). Single-`Activity` architecture with type-safe Navigation Compose 2.9 routes (`@Serializable` route classes in `ui/nav/Routes.kt`, replacing an earlier self-built state router), Material3 theming, kotlinx.serialization for save/content JSON, coroutines for async work. APK at `MilanKotlin/app/build/outputs/apk/debug/app-debug.apk`.
+The game is a **Kotlin / Jetpack Compose native Android** app in `MilanKotlin/` (Gradle 9.5.0 + AGP 9.3.0 + Kotlin 2.4.10 — AGP 9 has built-in Kotlin, no kotlin-android plugin — `com.milan.game`). Single-`Activity` architecture with type-safe Navigation Compose 2.9 routes (`@Serializable` route classes in `ui/nav/Routes.kt`), Material3 theming (BOM 2026.06.01 + material3 1.5.0-alpha22), kotlinx.serialization for save/content JSON, coroutines for async work, **KMP `:shared` module for the domain layer** (shared with `desktopApp`). APK at `MilanKotlin/app/build/outputs/apk/debug/app-debug.apk`.
 
 > This is the third implementation. A Unity C# version (`Assets/_Project/`) and a .NET 10 native-Android version (`MauiMilan/` + `Tests/`) used to live in the repo and were removed on 2026-08-07 in favor of the Kotlin rewrite. Old logic can be recovered from git history; code comments still carry "C# 某某翻译" cross-references — keep those.
 
@@ -18,23 +18,29 @@ The game is a **Kotlin / Jetpack Compose native Android** app in `MilanKotlin/` 
 ```bash
 ./gradlew.bat :app:assembleDebug          # Debug APK
 ./gradlew.bat :app:testDebugUnitTest      # unit tests (JUnit4 + coroutines-test)
+./gradlew.bat :desktopApp:run             # desktop simulator (reuses :shared engines)
 ```
-JDK 17+ is required (gradle.properties pins `org.gradle.java.home`). Versions live in `MilanKotlin/gradle/libs.versions.toml`. `minSdk=29, targetSdk=36, compileSdk=37` (37 is forced by BOM 2026.06.01's ui 1.12.0-alpha03).
+JDK 17+ is required. Versions live in `MilanKotlin/gradle/libs.versions.toml`. `minSdk=29, targetSdk=37, compileSdk=37` (37 is forced by BOM 2026.06.01's ui 1.12.0-alpha03). **In the DSH sandbox use `pwsh -NoProfile -File .\run-gradle.ps1 <args>`** (redirects GRADLE_USER_HOME/ANDROID_USER_HOME into the workspace; see AGENTS.md).
 
 ### Project layout
 ```
-MilanKotlin/app/src/main/java/com/milan/game/
-├── MainActivity.kt        # single host Activity + MilanNavHost (pure-state routing)
-├── MilanApp.kt            # Application: CrashReporter.install → bootTrace → GameState.ensureInitialized
-├── data/                  # save models (@Serializable) · SaveManager · SaveProvider (interface)
-│   └── AndroidSaveProvider.kt  # filesDir/save/save.json + .bak/.tmp atomic write (Android layer)
-├── domain/                # pure game logic — NO android.* imports allowed
-│   ├── gacha/             # GachaEngine · PityCounter
-│   ├── progression/       # EconomyFormulas · ProgressionEngine · TalentEngine
-│   └── battle/            # BattleSimulator · BattleUnits
-├── infrastructure/        # CrashReporter · eventbus/ (EventBus, Events)
-├── services/              # GameService (orchestration) · GameContent (fallback data) · ContentModels
-└── ui/                    # GameState (process singleton) · screens/ · components/ · nav/ · theme/
+MilanKotlin/
+├── shared/src/commonMain/kotlin/com/milan/game/   # KMP domain layer — NO android.* imports
+│   ├── domain/gacha/          # GachaEngine · PityCounter (kotlin.random.Random)
+│   ├── domain/progression/    # EconomyFormulas · ProgressionEngine · TalentEngine
+│   ├── domain/battle/         # BattleSimulator · BattleUnits
+│   └── data/Rarity.kt
+├── desktopApp/                # desktop simulator demo reusing :shared (application plugin)
+├── benchmark/                 # macrobenchmark (wired into settings; needs device for :benchmarkRelease)
+└── app/src/main/java/com/milan/game/
+    ├── MainActivity.kt        # single host Activity + MilanNavHost (type-safe routes)
+    ├── MilanApp.kt            # Application: CrashReporter.install → bootTrace → GameState.ensureInitialized
+    ├── data/                  # save models (@Serializable) · SaveManager · SaveProvider (interface)
+    │   └── AndroidSaveProvider.kt  # filesDir/save/save.json + .bak/.tmp atomic write (Android layer)
+    ├── infrastructure/        # CrashReporter · eventbus/ (EventBus, Events) · MilanAudio
+    ├── services/              # GameService (orchestration) · GameContent (fallback) · ContentModels
+    │   └── WriteOutcome.kt    # sealed WriteOutcome / PullOutcome (typed write results)
+    └── ui/                    # GameState (process singleton + snapshot StateFlow) · screens/ · components/ · nav/ · theme/
 ```
 
 ## Architecture
@@ -53,7 +59,7 @@ Data         │ SaveData & models (@Serializable) · SaveManager · SaveProvide
 Infrastructure│ EventBus · CrashReporter
 ```
 
-Key design rule: **`domain/`, `data/` models and `infrastructure/eventbus/` must NOT import `android.*`.** This keeps gacha odds, progression math, battle sim and talent logic runnable anywhere with injected `kotlin.random.Random` seeds.
+Key design rule: **the domain layer (`:shared` commonMain) and `data/` models and `infrastructure/eventbus/` must NOT import `android.*`.** This keeps gacha odds, progression math, battle sim and talent logic runnable anywhere (Android, desktop, future iOS) with injected `kotlin.random.Random` seeds — `desktopApp` is a live demo of that reuse.
 
 ### Save system
 - `SaveProvider` interface → `AndroidSaveProvider` (JSON in `filesDir/save/`): atomic writes via `.tmp` → replace, keeps a `.bak`; a killed process never truncates the main save.
@@ -64,7 +70,11 @@ Key design rule: **`domain/`, `data/` models and `infrastructure/eventbus/` must
 - Queue-and-dispatch: `publish` only enqueues; the host must call `dispatch` for real delivery (queue cap 512). Subscribe with an `owner` for batch `unsubscribeAll`. Handler exceptions go to `handlerException` tracing, never crash the thread.
 
 ### Transaction paradigm
-- Every currency/progression write: budget/validate → mutate in memory → persist; on persist failure roll back the in-memory change and return `false` — the **rollback path does not broadcast events**. Handle `SpendXxx`/`AddXxx` return values.
+- Every currency/progression write: budget/validate → mutate in memory → persist; on persist failure roll back the in-memory change and return a non-Success result — the **rollback path does not broadcast events**. Since 2026-08-13 writes return typed `WriteOutcome` (Success/Rejected/SaveFailed; `pull` returns `PullOutcome`) and go through the shared `GameService.transaction(tag, mutate, rollback, onCommit)` template. UI refresh prefers `GameService.snapshot` (StateFlow) over EventBus light markers.
+- Since the suspend refactor: **all write operations are `suspend`** — mutation + persistence happen inside a serial `writeMutex` (Mutex) critical section, persistence runs on `Dispatchers.IO`, the main thread never blocks, and rollback is decided synchronously in the same critical section. UI calls them from `rememberCoroutineScope().launch` / `LaunchedEffect`; unit tests use `runTest`. Lock-holding paths (e.g. `pull`) use `transactionLocked` internally (Mutex is not reentrant).
+
+### UI state (since 2026-08-13)
+- `GameService.snapshot: StateFlow<GameSnapshot>` (revision + currency/fragments/owned count) is refreshed on every successful write; screens use `collectAsStateWithLifecycle()` (ResourceBar, ShopScreen, ProgressionScreen). EventBus remains for cross-screen commands (audio/haptics) and is still the test-asserted commit signal.
 
 ## Screen flow
 

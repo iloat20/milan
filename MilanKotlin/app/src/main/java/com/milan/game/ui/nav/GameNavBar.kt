@@ -19,6 +19,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Home
@@ -102,6 +105,8 @@ private fun NavCell(
     val interaction = remember { MutableInteractionSource() }
     val pressed by interaction.collectIsPressedAsState()
     val scale by animateFloatAsState(if (pressed) 0.94f else 1f, label = "navScale")
+    // 捕获参数副本：semantics 块内 receiver 也有 selected 属性，直接 `selected = selected` 会自赋值
+    val isSelected = selected
 
     val glyphColor = if (selected) AppTheme.Gold else AppTheme.Frost.copy(alpha = 0.7f)
     val labelColor = if (selected) AppTheme.Gold else AppTheme.Text2
@@ -121,6 +126,12 @@ private fun NavCell(
                     .border(1.dp, AppTheme.Gold.copy(alpha = 0.35f), RoundedCornerShape(14.dp))
                 else Modifier
             )
+            // P2-6 无障碍：把选中态与 Tab 角色暴露给 TalkBack（此前选中只靠视觉高亮）。
+            // 用显式属性键（SemanticsProperties.Selected/Role），避免版本间扩展属性签名差异。
+            .semantics {
+                this[SemanticsProperties.Selected] = isSelected
+                this[SemanticsProperties.Role] = Role.Tab
+            }
             .clickable(
                 interactionSource = interaction,
                 indication = null,

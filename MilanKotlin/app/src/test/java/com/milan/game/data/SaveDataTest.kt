@@ -62,6 +62,20 @@ class SaveDataTest {
     }
 
     @Test
+    fun fromJson_overCapBattleRecords_trimmedTo50() {
+        // P3-7：旧档可能携带 >50 条战绩（recordBattle 只裁剪新写入），载入时按
+        // MAX_BATTLE_RECORDS 丢弃最旧，避免超量条目永久残留。
+        val many = (0 until 60).joinToString(",") {
+            """{"EnemyName":"enemy$it","Victory":true}"""
+        }
+        val d = SaveData.fromJson("""{"BattleRecords":[$many]}""")
+        assertEquals(SaveData.MAX_BATTLE_RECORDS, d.battleRecords.size)
+        // 最旧 10 条被丢弃，保留最近 50 条（enemy10..enemy59）
+        assertEquals("enemy10", requireNotNull(d.battleRecords.first()).enemyName)
+        assertEquals("enemy59", requireNotNull(d.battleRecords.last()).enemyName)
+    }
+
+    @Test
     fun fromJson_garbage_fallsBackToDefault() {
         val d = SaveData.fromJson("这不是 json{{{")
         assertNotNull(d)

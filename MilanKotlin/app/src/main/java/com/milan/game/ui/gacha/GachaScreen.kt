@@ -3,6 +3,7 @@ package com.milan.game.ui.gacha
 import android.os.Build
 import android.view.HapticFeedbackConstants
 import android.widget.Toast
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
@@ -32,17 +33,21 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.layout.offset
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.PathEffect
-import androidx.compose.ui.graphics.Stroke
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.listSaver
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import com.milan.game.ui.effects.GpuRevealLayer
 import com.milan.game.ui.effects.HolographicFoilOverlay
@@ -54,6 +59,8 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -62,6 +69,7 @@ import com.milan.game.infrastructure.CrashReporter
 import com.milan.game.infrastructure.MilanAudio
 import com.milan.game.services.CharacterDataEntry
 import com.milan.game.services.GachaPoolDataEntry
+import com.milan.game.services.PullOutcome
 import com.milan.game.services.PullResult
 import com.milan.game.ui.GameState
 import com.milan.game.ui.components.GlassPanel
@@ -100,8 +108,12 @@ fun GachaScreen(
 
     var pity by remember { mutableIntStateOf(0) }
     var busy by remember { mutableStateOf(false) }
-    var results by remember { mutableStateOf<List<PullResult>>(emptyList()) }
-    var summary by remember { mutableStateOf("") }
+    // P3-8：结果列表与摘要用 rememberSaveable——旋转（配置变更）后恢复，
+    // 玩家不会丢掉已付费抽卡的结果展示（PullResult 经 PullResultsSaver 编码为字符串列表）。
+    var results by rememberSaveable(stateSaver = PullResultsSaver) {
+        mutableStateOf<List<PullResult>>(emptyList())
+    }
+    var summary by rememberSaveable { mutableStateOf("") }
     var batch by remember { mutableIntStateOf(0) }
     var revealToken by remember { mutableIntStateOf(0) }
     var staged by remember { mutableStateOf<List<PullResult>?>(null) }
@@ -153,7 +165,13 @@ fun GachaScreen(
         finishReveal()
     }
 
-    /** 抽卡入口（C# DoPull）：余额检查 → pull → 兜底 → 演出编排。 */
+    // P1-3 修复：演出中系统返回（手势/Predictive Back）不得直接销毁组合——抽卡已扣款发货，
+    // 直接返回会让玩家看不到结果；拦截并转跳过演出（等价点按跳过），随后再返回才退出页面。
+    BackHandler(enabled = showReveal) { skipReveal() }
+
+    /** 抽卡入口（C# DoPull）：余额检查 → pull → 兜底 → 演出编排。
+     *  2026-08 主线程 IO 异步化：pull 为 suspend，落盘在 IO 线程执行，主线程不阻塞；
+     *  演出编排与抽卡在同一协程内衔接（busy 在协程期间保持，防连点）。 */
     fun doPull(tenPull: Boolean) {
         if (busy) return
         val p = pool ?: return
@@ -163,30 +181,45 @@ fun GachaScreen(
             return
         }
         busy = true
-        val pulled = GameState.service.pull(p.poolId, tenPull)
-        val best = pulled.maxByOrNull { it.rarity }
-        if (best == null || best.characterId == null) {
-            // 空结果兜底（C# 同款：留痕 + 复位，绝不闪退）。
-            // 注意：空结果 =「卡池无候选角色」或「落盘失败已回滚」两种失败之一，
-            // 对玩家统一提示重试即可；具体原因由 CrashReporter 留痕区分
-            // （gacha.pull.empty vs pull.save.failed: rolled back）。
-            busy = false
-            Toast.makeText(context, "抽卡失败，请重试", Toast.LENGTH_SHORT).show()
-            try { CrashReporter.boot("gacha.pull.empty poolId=${p.poolId}") } catch (_: Exception) { }
-            return
-        }
-        staged = pulled
-        buzz(HapticFeedbackConstants.KEYBOARD_TAP)
-        MilanAudio.playSfx("gacha_pull")
-        revealDef = best.characterId?.let { GameState.service.character(it) }
-        revealRarity = best.rarity
-        flashColor = AppTheme.rarityColor(best.rarity)
-        // 端侧 AI 签文（默认 Stub：离线、确定性；seed 含 token 保证每抽不同但可复现）
-        val token = revealToken + 1
-        fortune = revealDef?.let { OnDeviceAgent.current.fortune(it, it.characterId.hashCode().toLong() + token) } ?: ""
-        cardIn = false
-        revealToken = token
         scope.launch {
+            // 类型化结果：Success 携带产出；Rejected / SaveFailed 分别提示，
+            // 替代「空列表 = 卡池数据异常」的误导性笼统文案（余额不足与落盘失败原因可区分）。
+            val pulled = when (val outcome = GameState.service.pull(p.poolId, tenPull)) {
+                is PullOutcome.Success -> outcome.results
+                is PullOutcome.Rejected -> {
+                    // 被拒绝：余额不足（前面已拦截）或卡池无候选产出；留痕 + 复位，绝不闪退
+                    busy = false
+                    Toast.makeText(context, "抽卡失败，请重试", Toast.LENGTH_SHORT).show()
+                    try { CrashReporter.boot("gacha.pull.rejected poolId=${p.poolId}") } catch (_: Exception) { }
+                    return@launch
+                }
+                is PullOutcome.SaveFailed -> {
+                    // 落盘失败：扣款与发货已回滚，可安全重试（原因由 CrashReporter 留痕区分）
+                    busy = false
+                    Toast.makeText(context, "保存失败，请重试", Toast.LENGTH_SHORT).show()
+                    try { CrashReporter.boot("gacha.pull.saveFailed poolId=${p.poolId}") } catch (_: Exception) { }
+                    return@launch
+                }
+            }
+            val best = pulled.maxByOrNull { it.rarity }
+            if (best == null || best.characterId == null) {
+                // Success 契约下理论不可达（plan 空会走 Rejected），防御性保留兜底
+                busy = false
+                Toast.makeText(context, "抽卡失败，请重试", Toast.LENGTH_SHORT).show()
+                try { CrashReporter.boot("gacha.pull.empty poolId=${p.poolId}") } catch (_: Exception) { }
+                return@launch
+            }
+            staged = pulled
+            buzz(HapticFeedbackConstants.KEYBOARD_TAP)
+            MilanAudio.playSfx("gacha_pull")
+            revealDef = best.characterId?.let { GameState.service.character(it) }
+            revealRarity = best.rarity
+            flashColor = AppTheme.rarityColor(best.rarity)
+            // 端侧 AI 签文（默认 Stub：离线、确定性；seed 含 token 保证每抽不同但可复现）
+            val token = revealToken + 1
+            fortune = revealDef?.let { OnDeviceAgent.current.fortune(it, it.characterId.hashCode().toLong() + token) } ?: ""
+            cardIn = false
+            revealToken = token
             // 阶段一：法阵脉冲
             riftSwell = true
             delay(420); if (token != revealToken) return@launch
@@ -337,18 +370,21 @@ fun GachaScreen(
             )
             Spacer(Modifier.height(6.dp))
 
-            // ── 结果网格：每行 5 个 chip，逐张缩放淡入（C# 5 列 LinearLayout + 依序动画）──
+            // ── 结果网格：每行 5 个 chip，逐张缩放淡入（C# 5 列 LinearLayout + 依序动画）
+            // P3-3：chip 加稳定 key（位置 + 结果实例），避免 LazyColumn 槽位复用串态
             LazyColumn(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 itemsIndexed(results.chunked(5)) { rowIdx, row ->
                     Row(Modifier.fillMaxWidth()) {
                         row.forEachIndexed { i, r ->
-                            GachaChip(
-                                r = r,
-                                delayMs = (rowIdx * 5 + i) * 60,
-                                batch = batch,
-                                onOpen = { r.characterId?.let(onOpenCharacter) },
-                                modifier = Modifier.weight(1f),
-                            )
+                            key(i, r) {
+                                GachaChip(
+                                    r = r,
+                                    delayMs = (rowIdx * 5 + i) * 60,
+                                    batch = batch,
+                                    onOpen = { r.characterId?.let(onOpenCharacter) },
+                                    modifier = Modifier.weight(1f),
+                                )
+                            }
                         }
                     }
                 }
@@ -407,6 +443,8 @@ fun GachaScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .background(Color.Black.copy(alpha = 0.74f))
+                    // P2-6 无障碍：全屏可点遮罩给 TalkBack 明确语义，避免读到下层页面内容
+                    .semantics { contentDescription = "抽卡揭晓，点击跳过" }
                     .clickable(onClick = ::skipReveal),
                 contentAlignment = Alignment.Center,
             ) {
@@ -522,6 +560,29 @@ fun GachaScreen(
         }
     }
 }
+
+/**
+ * PullResult 结果列表的 rememberSaveable Saver（P3-8：旋转后恢复抽卡结果展示）。
+ * PullResult 字段全为基本类型/字符串，以管道分隔编码为 String 列表存入 Bundle；
+ * 角色显示名/ID 不含 '|'（编码契约，见 GachaChip 渲染处）。
+ */
+private val PullResultsSaver = listSaver<List<PullResult>, String>(
+    save = { list -> list.map { r ->
+        "${r.success}|${r.characterId.orEmpty()}|${r.characterName}|${r.rarity}|${r.isNew}|${r.fragmentsAwarded}"
+    } },
+    restore = { strs -> strs.mapNotNull { s ->
+        val p = s.split('|', limit = 6)
+        if (p.size < 6) null
+        else PullResult(
+            success = p[0].toBooleanStrictOrNull() ?: false,
+            characterId = p[1].ifEmpty { null },
+            characterName = p[2],
+            rarity = p[3].toIntOrNull() ?: 0,
+            isNew = p[4].toBooleanStrictOrNull() ?: false,
+            fragmentsAwarded = p[5].toIntOrNull() ?: 0,
+        )
+    } },
+)
 
 /**
  * 中西融合法阵（C# RiftPortal 升级）：八卦外环 + 回纹中环 + 符箓内环，紫金霓虹、缓旋。

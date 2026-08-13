@@ -18,9 +18,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -35,7 +35,7 @@ import com.milan.game.infrastructure.MilanAudio
 import com.milan.game.ui.LocalSharedTransitionScope
 import com.milan.game.ui.characters.CharacterDetailScreen
 import com.milan.game.ui.characters.CharacterListScreen
-import com.milan.game.ui.components.NeonButton
+import com.milan.game.ui.collection.CollectionScreen
 import com.milan.game.ui.deck.DeckScreen
 import com.milan.game.ui.gacha.GachaScreen
 import com.milan.game.ui.home.HomeScreen
@@ -52,6 +52,8 @@ import com.milan.game.ui.nav.SettingsRoute
 import com.milan.game.ui.nav.ShopRoute
 import com.milan.game.ui.nav.toNavRoute
 import com.milan.game.ui.progression.ProgressionScreen
+import com.milan.game.ui.shop.ShopScreen
+import com.milan.game.ui.settings.SettingsScreen
 import com.milan.game.ui.theme.AppTheme
 import com.milan.game.ui.theme.MilanTheme
 
@@ -78,6 +80,21 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+
+    /**
+     * BGM 生命周期接线：App 退后台（锁屏/切走）暂停 BGM 并释放 ExoPlayer 省资源，
+     * 回前台自动恢复上次曲目（保留 bgmTarget 意图，见 MilanAudio.pauseBackground/resumeForeground）。
+     * 之前缺失此接线，BGM 在后台持续播放。
+     */
+    override fun onStop() {
+        super.onStop()
+        MilanAudio.pauseBackground()
+    }
+
+    override fun onStart() {
+        super.onStart()
+        MilanAudio.resumeForeground()
+    }
 }
 
 /** 导航宿主（Navigation Compose 2.9 类型安全路由）：tab 切换 + 子页压栈覆盖。
@@ -85,6 +102,15 @@ class MainActivity : ComponentActivity() {
 @Composable
 private fun MilanNavHost() {
     val navController = rememberNavController()
+
+    // P3-10：EventBus 宿主级兜底派发——GameService 写操作内联 dispatch 之外的来源
+    // （未来 widget/后台/其他模块 publish）也能被消费，防事件滞留队列（上限 512 只是保险丝）。
+    LaunchedEffect(Unit) {
+        while (true) {
+            com.milan.game.infrastructure.eventbus.EventBus.dispatch()
+            kotlinx.coroutines.delay(250)
+        }
+    }
 
     // ── 导航辅助（C# 语义翻译）──
 
@@ -147,27 +173,21 @@ private fun MilanNavHost() {
                     )
                 }
                 composable<ShopRoute> {
-                    PlaceholderScreen(
-                        title = "商店",
-                        onBack = { navigateToTab(NavItem.Home) }, // C# 语义：商店顶栏返回固定回主页
-                        navItem = NavItem.Shop,
+                    ShopScreen(
                         onNav = ::navigateToTab,
                     )
                 }
                 composable<SettingsRoute> {
-                    PlaceholderScreen(
-                        title = "设置",
-                        onBack = { navigateToTab(NavItem.Home) }, // C# 语义：设置顶栏返回固定回主页
-                        navItem = NavItem.Settings,
+                    SettingsScreen(
                         onNav = ::navigateToTab,
                     )
                 }
                 composable<CollectionRoute> {
-                    PlaceholderScreen(
-                        title = "神谱图鉴",
+                    CollectionScreen(
                         onBack = { navController.popBackStack() },
-                        actionLabel = "我的角色",
-                        onAction = { navController.navigate(CharacterListRoute) },
+                        onOpenCharacter = ::openCharacter,
+                        onOpenMyCharacters = { navController.navigate(CharacterListRoute) },
+                        animatedVisibilityScope = this,
                     )
                 }
                 composable<CharacterListRoute> {
@@ -198,65 +218,6 @@ private fun MilanNavHost() {
                     )
                 }
             }
-        }
-    }
-}
-
-/**
- * 建设中占位页：顶栏 + 居中提示（TODO: 替换为各页真实实现）。
- * [navItem] 非空时在底部渲染导航条（主 tab 页），空则仅顶栏（子页）。
- * [actionLabel]/[onAction] 非空时在占位提示下方渲染一个入口按钮（如「我的角色」）。
- */
-@Composable
-private fun PlaceholderScreen(
-    title: String,
-    onBack: () -> Unit,
-    modifier: Modifier = Modifier,
-    navItem: NavItem? = null,
-    onNav: ((NavItem) -> Unit)? = null,
-    actionLabel: String? = null,
-    onAction: (() -> Unit)? = null,
-) {
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .background(
-                Brush.verticalGradient(listOf(AppTheme.BgDeepest, AppTheme.BgMid))
-            ),
-    ) {
-        AppTopBar(title = title, onBack = onBack)
-        Box(
-            modifier = Modifier.weight(1f).fillMaxSize(),
-            contentAlignment = Alignment.Center,
-        ) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(
-                    text = "✦",
-                    fontSize = 40.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = AppTheme.Gold.copy(alpha = 0.6f),
-                )
-                Text(
-                    text = "建设中…",
-                    fontSize = 14.sp,
-                    color = AppTheme.Text2,
-                    modifier = Modifier.padding(top = 8.dp),
-                )
-                if (actionLabel != null && onAction != null) {
-                    NeonButton(
-                        text = actionLabel,
-                        onClick = onAction,
-                        modifier = Modifier.padding(top = 20.dp),
-                    )
-                }
-            }
-        }
-        if (navItem != null && onNav != null) {
-            com.milan.game.ui.nav.GameNavBar(
-                active = navItem,
-                onSelect = onNav,
-                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-            )
         }
     }
 }

@@ -5,10 +5,13 @@
 # ── App 启动链 ──
 HSPLcom/milan/game/MilanApp;->onCreate()V
 HSPLcom/milan/game/MainActivity;->onCreate(Landroid/os/Bundle;)V
-HSPLcom/milan/game/ui/GameState;->ensureInitialized()V
+# P2-4 修正：ensureInitialized 实际带 3 参（SaveProvider/String?/Function1），此前 0 参规则被 ART 静默忽略
+HSPLcom/milan/game/ui/GameState;->ensureInitialized(Lcom/milan/game/data/SaveProvider;Ljava/lang/String;Lkotlin/jvm/functions/Function1;)V
 HSPLcom/milan/game/infrastructure/CrashReporter;->boot(Ljava/lang/String;)V
 HSPLcom/milan/game/MainActivityKt;->MilanNavHost(Landroidx/compose/runtime/Composer;I)V
-HSPLcom/milan/game/ui/theme/MilanThemeKt;->MilanTheme(Landroidx/compose/runtime/Composer;I)V
+# P2-4 修正：MilanTheme 声明于 Theme.kt → 类名 ThemeKt，且 content 为 composable lambda（Function2）
+# （此前 MilanThemeKt 类名 + 缺 content 参数，规则被 ART 静默忽略）
+HSPLcom/milan/game/ui/theme/ThemeKt;->MilanTheme(Lkotlin/jvm/functions/Function2;Landroidx/compose/runtime/Composer;I)V
 
 # ── Compose runtime 渲染核心 ──
 HSPLandroidx/compose/runtime/ComposerImpl;->recompose(Landroidx/compose/runtime/Composer;)V
