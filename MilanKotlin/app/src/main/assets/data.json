@@ -34,7 +34,7 @@
       "DisplayName": "虚无 Wuxu",
       "Title": "万象终焉",
       "World": "Aether",
-      "Element": "Void",
+      "Element": "Shadow",
       "BaseRarity": 4,
       "BaseStats": [
         155,
@@ -179,7 +179,7 @@
       "DisplayName": "相柳 Xiangliu",
       "Title": "九首毒厄",
       "World": "Aether",
-      "Element": "Void",
+      "Element": "Shadow",
       "BaseRarity": 3,
       "BaseStats": [
         118,
@@ -237,7 +237,7 @@
       "DisplayName": "飞廉 Feilian",
       "Title": "风驰电掣",
       "World": "Shinwa",
-      "Element": "Wind",
+      "Element": "Wood",
       "BaseRarity": 3,
       "BaseStats": [
         122,
@@ -266,7 +266,7 @@
       "DisplayName": "商羊 Shangyang",
       "Title": "预知神鸟",
       "World": "Aether",
-      "Element": "Star",
+      "Element": "Light",
       "BaseRarity": 3,
       "BaseStats": [
         115,
@@ -315,14 +315,16 @@
         "下次，换我当前锋。"
       ],
       "WeaponVfx": "roar_shock_claw",
-      "AmbientVfx": "pride_aura_flame"
+      "AmbientVfx": "pride_aura_flame",
+      "Weapon": "炎吼·焚音爪",
+      "WeaponDesc": "龙子狻猊好烟好坐，以火焰狮爪为兵，挥击迸发音波烈焰环，吼声所及烟焰俱燃。"
     },
     {
       "CharacterId": "char_sr_jingwei",
       "DisplayName": "精卫 Jingwei",
       "Title": "衔石填海",
       "World": "Aether",
-      "Element": "Wind",
+      "Element": "Wood",
       "BaseRarity": 2,
       "BaseStats": [
         88,
@@ -342,7 +344,9 @@
         "东海欠我的，我会一笔一笔讨回来。"
       ],
       "WeaponVfx": "wind_stone_projectile",
-      "AmbientVfx": "sea_stone_mist"
+      "AmbientVfx": "sea_stone_mist",
+      "Weapon": "衔石·逐浪弹",
+      "WeaponDesc": "精卫衔石填海之志凝为兵，风缕编成投石索，抛出晶石如浪，矢志不停。"
     },
     {
       "CharacterId": "char_sr_qiongqi",
@@ -369,7 +373,9 @@
         "以暴制暴虽然老套，但好用。"
       ],
       "WeaponVfx": "regen_blast_cannon",
-      "AmbientVfx": "blood_metal_smoke"
+      "AmbientVfx": "blood_metal_smoke",
+      "Weapon": "啮钢·噬魂炮",
+      "WeaponDesc": "穷奇食人之翼虎，以吞噬之钢锻造兽口炮，喷吐金属碎片，所噬之魂无所归。"
     },
     {
       "CharacterId": "char_sr_xuanwu",
@@ -396,7 +402,9 @@
         "守，也是一种进攻。"
       ],
       "WeaponVfx": "shell_barrier_earth",
-      "AmbientVfx": "jade_shield_earth"
+      "AmbientVfx": "jade_shield_earth",
+      "Weapon": "负岳·玄甲盾",
+      "WeaponDesc": "旋龟负岳而行，甲壳化为活体玄铁盾，山脊纹路流转，御敌如山镇。"
     },
     {
       "CharacterId": "char_sr_bifang",
@@ -423,7 +431,9 @@
         "凤凰前辈看我的眼神，我很受用。"
       ],
       "WeaponVfx": "thunder_feather_dive",
-      "AmbientVfx": "storm_feather_spark"
+      "AmbientVfx": "storm_feather_spark",
+      "Weapon": "焚羽·惊雷翎",
+      "WeaponDesc": "毕方一足火鸟，取燃烧雷羽为镖，蓄雷而投，落处火起雷鸣。"
     },
     {
       "CharacterId": "char_r_lili",
@@ -450,7 +460,9 @@
         "别看我小，挖洞我可是专业的。"
       ],
       "WeaponVfx": "earth_burrow_strike",
-      "AmbientVfx": "dust_earth_burst"
+      "AmbientVfx": "dust_earth_burst",
+      "Weapon": "掘地·裂壤爪",
+      "WeaponDesc": "狸力掌掘如犁，土系掘地爪锄破壤而行，藏于地脉。"
     },
     {
       "CharacterId": "char_r_qinyuan",
@@ -477,7 +489,9 @@
         "蜂群从不多话，它们只行动。"
       ],
       "WeaponVfx": "poison_stinger_swarm",
-      "AmbientVfx": "mechanical_bee_cloud"
+      "AmbientVfx": "mechanical_bee_cloud",
+      "Weapon": "毒螫·群蜂针",
+      "WeaponDesc": "钦原毒蜂之躯，一簇剧毒蜂针离手则追魂，螫处溃烂。"
     },
     {
       "CharacterId": "char_r_sishu",
@@ -504,14 +518,16 @@
         "杂技不是表演，是杀人方式。"
       ],
       "WeaponVfx": "shadow_wire_tangle",
-      "AmbientVfx": "night_city_shadows"
+      "AmbientVfx": "night_city_shadows",
+      "Weapon": "缚影·缠魂丝",
+      "WeaponDesc": "跂踵招死之鸟，吐影丝缠缚魂魄，中招者如陷永夜。"
     },
     {
       "CharacterId": "char_r_luoyu",
       "DisplayName": "蠃鱼 Luoyu",
       "Title": "渊海游灵",
       "World": "Shinwa",
-      "Element": "Frost",
+      "Element": "Water",
       "BaseRarity": 1,
       "BaseStats": [
         70,
@@ -531,14 +547,16 @@
         "亚特兰蒂斯的回声，是我故乡的歌。"
       ],
       "WeaponVfx": "water_trident_surge",
-      "AmbientVfx": "underwater_bubble_light"
+      "AmbientVfx": "underwater_bubble_light",
+      "Weapon": "涌潮·三叉戟",
+      "WeaponDesc": "蠃鱼鱼鸟之形，水波三叉戟涌潮而出，戟身鱼纹流转。"
     },
     {
       "CharacterId": "char_r_dangang",
       "DisplayName": "当康 Dangang",
       "Title": "丰穗瑞兽",
       "World": "Aether",
-      "Element": "Wind",
+      "Element": "Wood",
       "BaseRarity": 1,
       "BaseStats": [
         78,
@@ -558,7 +576,9 @@
         "吃饱了，才有力气打架嘛。"
       ],
       "WeaponVfx": "tusk_charge_wind",
-      "AmbientVfx": "harvest_wind_leaves"
+      "AmbientVfx": "harvest_wind_leaves",
+      "Weapon": "獠突·冲岳牙",
+      "WeaponDesc": "当康瑞兽野猪，以獠牙为冲撞兵装，突进如山岳之倾。"
     },
     {
       "CharacterId": "char_ur_jinwu",
@@ -786,7 +806,7 @@
       "Title": "千瓣灵魅",
       "World": "Aether",
       "Faction": "Aether",
-      "Element": "Wind",
+      "Element": "Wood",
       "BaseRarity": 2,
       "BaseStats": [
         85,
@@ -811,7 +831,7 @@
           "SkillId": "huayao_1",
           "DisplayName": "千瓣愈风",
           "Description": "召唤花瓣之风为全队回复生命并提升速度",
-          "Element": "Wind",
+          "Element": "Wood",
           "Type": "Active",
           "Power": 52
         },
@@ -819,7 +839,7 @@
           "SkillId": "huayao_2",
           "DisplayName": "毒藤缠绕",
           "Description": "用毒藤束缚单体敌人，造成持续伤害并降低其攻击",
-          "Element": "Wind",
+          "Element": "Wood",
           "Type": "Active",
           "Power": 48
         },
@@ -827,11 +847,13 @@
           "SkillId": "huayao_3",
           "DisplayName": "花语轻喃",
           "Description": "受到致命伤害时化为花瓣规避一次（每场一次）",
-          "Element": "Wind",
+          "Element": "Wood",
           "Type": "Passive",
           "Power": 40
         }
-      ]
+      ],
+      "Weapon": "缠丝·落花刃",
+      "WeaponDesc": "花妖以花瓣缎带凝成旋转飞刃，落红成刃，缠缚斩切皆宜。"
     },
     {
       "CharacterId": "char_sr_taotie",
@@ -884,7 +906,9 @@
           "Type": "Passive",
           "Power": 42
         }
-      ]
+      ],
+      "Weapon": "噬纹·贪鼎",
+      "WeaponDesc": "饕餮贪食，青铜鼎口即其噬焰之口，所吞之物尽化青烟，永不满足。"
     },
     {
       "CharacterId": "char_r_shanxiao",
@@ -937,7 +961,9 @@
           "Type": "Passive",
           "Power": 28
         }
-      ]
+      ],
+      "Weapon": "拾荒·碎铁爪",
+      "WeaponDesc": "山魈山鬼，拾荒废铁拼成利爪，杂乱中藏凶性。"
     },
     {
       "CharacterId": "char_r_yecha",
@@ -990,7 +1016,9 @@
           "Type": "Passive",
           "Power": 26
         }
-      ]
+      ],
+      "Weapon": "喑杀·影刃",
+      "WeaponDesc": "夜叉捷鬼，无声影刃出鞘无音，一闪取命。"
     }
   ],
   "Pools": [

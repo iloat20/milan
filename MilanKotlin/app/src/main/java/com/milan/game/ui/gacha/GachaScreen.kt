@@ -1,5 +1,6 @@
 package com.milan.game.ui.gacha
 
+import android.os.Build
 import android.view.HapticFeedbackConstants
 import android.widget.Toast
 import androidx.compose.animation.core.RepeatMode
@@ -29,7 +30,11 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.Stroke
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -115,8 +120,9 @@ fun GachaScreen(
     }
     LaunchedEffect(Unit) { entered = true }
 
-    /** 触觉反馈（View 级，兼容非 Composable 路径；设备不支持时静默）。 */
+    /** 触觉反馈（View 级，兼容非 Composable 路径；设备不支持或设置关闭振动时静默）。 */
     fun buzz(effect: Int) {
+        if (!GameState.service.saveData.vibrationEnabled) return
         try {
             val view = (context as? android.app.Activity)?.window?.decorView ?: return
             view.performHapticFeedback(effect)
@@ -160,16 +166,19 @@ fun GachaScreen(
         val pulled = GameState.service.pull(p.poolId, tenPull)
         val best = pulled.maxByOrNull { it.rarity }
         if (best == null || best.characterId == null) {
-            // 卡池数据异常兜底（C# 同款：留痕 + 复位，绝不闪退）。
+            // 空结果兜底（C# 同款：留痕 + 复位，绝不闪退）。
+            // 注意：空结果 =「卡池无候选角色」或「落盘失败已回滚」两种失败之一，
+            // 对玩家统一提示重试即可；具体原因由 CrashReporter 留痕区分
+            // （gacha.pull.empty vs pull.save.failed: rolled back）。
             busy = false
-            Toast.makeText(context, "卡池数据异常，抽卡失败", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, "抽卡失败，请重试", Toast.LENGTH_SHORT).show()
             try { CrashReporter.boot("gacha.pull.empty poolId=${p.poolId}") } catch (_: Exception) { }
             return
         }
         staged = pulled
         buzz(HapticFeedbackConstants.KEYBOARD_TAP)
         MilanAudio.playSfx("gacha_pull")
-        revealDef = GameState.service.characters.firstOrNull { it.characterId == best.characterId }
+        revealDef = best.characterId?.let { GameState.service.character(it) }
         revealRarity = best.rarity
         flashColor = AppTheme.rarityColor(best.rarity)
         // 端侧 AI 签文（默认 Stub：离线、确定性；seed 含 token 保证每抽不同但可复现）
@@ -190,7 +199,14 @@ fun GachaScreen(
             cardIn = true
             showReveal = true
             MilanAudio.playSfx("gacha_reveal")
-            if (revealRarity >= 3) buzz(HapticFeedbackConstants.CONFIRM) else buzz(HapticFeedbackConstants.VIRTUAL_KEY)
+            // CONFIRM 需 API 30（minSdk 29）：低版本回退 LONG_PRESS，其余路径不变
+            if (revealRarity >= 3) {
+                val confirm = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R)
+                    HapticFeedbackConstants.CONFIRM else HapticFeedbackConstants.LONG_PRESS
+                buzz(confirm)
+            } else {
+                buzz(HapticFeedbackConstants.VIRTUAL_KEY)
+            }
             delay(1500); if (token != revealToken) return@launch
             // 阶段四：结果
             finishReveal()
@@ -201,11 +217,6 @@ fun GachaScreen(
         targetValue = if (entered) 1f else 0f,
         animationSpec = tween(450),
         label = "entrance",
-    )
-    val riftScale by animateFloatAsState(
-        targetValue = if (riftSwell) 1.45f else 1f,
-        animationSpec = tween(700),
-        label = "rift",
     )
     val flashAlpha by animateFloatAsState(
         targetValue = if (flashVisible) 1f else 0f,
@@ -267,7 +278,7 @@ fun GachaScreen(
                 // ── 池角色预览：横排圆形头像（点击进角色详情）──
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     items(pool.entries) { entry ->
-                        val def = GameState.service.characters.firstOrNull { it.characterId == entry.characterId }
+                        val def = GameState.service.character(entry.characterId)
                         Column(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(10.dp))
@@ -296,56 +307,18 @@ fun GachaScreen(
             }
             Spacer(Modifier.height(14.dp))
 
-            // ── 召唤法阵（C# RiftPortal 简化为静态径向渐变 + 双环 + 抽卡脉冲）──
-            Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                Box(
-                    Modifier
-                        .size(190.dp)
-                        .graphicsLayer { scaleX = riftScale; scaleY = riftScale },
-                ) {
-                    Box(
-                        Modifier
-                            .fillMaxSize()
-                            .clip(CircleShape)
-                            .background(
-                                Brush.radialGradient(
-                                    listOf(
-                                        AppTheme.Violet.copy(alpha = 0.55f),
-                                        AppTheme.Gold.copy(alpha = 0.18f),
-                                        Color.Transparent,
-                                    ),
-                                ),
-                            ),
-                    )
-                    Box(
-                        Modifier
-                            .fillMaxSize()
-                            .clip(CircleShape)
-                            .border(1.5.dp, AppTheme.Violet.copy(alpha = 0.45f), CircleShape),
-                    )
-                    Box(
-                        Modifier
-                            .size(150.dp)
-                            .align(Alignment.Center)
-                            .clip(CircleShape)
-                            .border(1.dp, AppTheme.Gold.copy(alpha = 0.35f), CircleShape),
-                    )
-                    Box(
-                        Modifier
-                            .size(110.dp)
-                            .align(Alignment.Center)
-                            .clip(CircleShape)
-                            .border(1.dp, AppTheme.Gold.copy(alpha = 0.5f), CircleShape),
-                    )
-                    Text(
-                        text = "✦",
-                        fontSize = 44.sp,
-                        color = AppTheme.Gold,
-                        modifier = Modifier.align(Alignment.Center),
-                    )
-                }
-            }
+            // ── 召唤法阵（C# RiftPortal 升级：中西融合法阵，八卦/回纹/符箓 + 紫金霓虹）──
+            RitualArrayPortal(swell = riftSwell)
             Spacer(Modifier.height(16.dp))
+
+            Text(
+                text = "─ 敕令開陣 ─",
+                fontSize = 11.sp,
+                color = AppTheme.Gold.copy(alpha = 0.6f),
+                letterSpacing = 4.sp,
+                modifier = Modifier.align(Alignment.CenterHorizontally),
+            )
+            Spacer(Modifier.height(6.dp))
 
             // ── 单抽 / 十连（C# Neon + Gold 双按钮）──
             Row(Modifier.fillMaxWidth().padding(horizontal = 30.dp)) {
@@ -490,6 +463,7 @@ fun GachaScreen(
                                 .fillMaxWidth()
                                 .weight(1f)
                                 .padding(horizontal = 12.dp, vertical = 14.dp),
+                            aura = true, // v2：抽卡揭晓稀有度光环
                         )
                     } else {
                         Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
@@ -546,6 +520,109 @@ fun GachaScreen(
             }
             }
         }
+    }
+}
+
+/**
+ * 中西融合法阵（C# RiftPortal 升级）：八卦外环 + 回纹中环 + 符箓内环，紫金霓虹、缓旋。
+ * 环与八卦刻度随 spin 旋转，八卦卦象与中心辉光保持正立，避免字号倒置。
+ */
+@Composable
+private fun RitualArrayPortal(swell: Boolean) {
+    val scale by animateFloatAsState(
+        targetValue = if (swell) 1.45f else 1f,
+        animationSpec = tween(700),
+        label = "riftScale",
+    )
+    val spin by rememberInfiniteTransition(label = "arraySpin").animateFloat(
+        initialValue = 0f,
+        targetValue = 360f,
+        animationSpec = infiniteRepeatable(tween(28000), RepeatMode.Restart),
+        label = "spin",
+    )
+    val trigrams = listOf("☰", "☱", "☲", "☳", "☴", "☵", "☶", "☷")
+    val talismans = listOf("敕", "令", "罡", "玦")
+    Box(
+        Modifier.size(190.dp).graphicsLayer { scaleX = scale; scaleY = scale },
+        contentAlignment = Alignment.Center,
+    ) {
+        // 旋转法阵环（外庚金环 + 回纹虚线中环 + 内庚金环 + 八卦刻度）
+        Canvas(Modifier.fillMaxSize().graphicsLayer { rotationZ = spin }) {
+            val cx = size.width / 2f
+            val cy = size.height / 2f
+            val R = size.minDimension / 2f
+            drawCircle(
+                color = AppTheme.Gold,
+                radius = R * 0.95f,
+                center = Offset(cx, cy),
+                style = Stroke(width = 2.dp.toPx()),
+            )
+            drawCircle(
+                color = AppTheme.Violet,
+                radius = R * 0.76f,
+                center = Offset(cx, cy),
+                style = Stroke(width = 2.dp.toPx(), pathEffect = PathEffect.dashPathEffect(floatArrayOf(7f, 6f), 0f)),
+            )
+            drawCircle(
+                color = AppTheme.Gold,
+                radius = R * 0.5f,
+                center = Offset(cx, cy),
+                style = Stroke(width = 1.5.dp.toPx()),
+            )
+            for (i in 0 until 8) {
+                val a = Math.toRadians((i * 45).toDouble())
+                val x1 = cx + R * 0.78f * Math.sin(a).toFloat()
+                val y1 = cy - R * 0.78f * Math.cos(a).toFloat()
+                val x2 = cx + R * 0.92f * Math.sin(a).toFloat()
+                val y2 = cy - R * 0.92f * Math.cos(a).toFloat()
+                drawLine(
+                    color = AppTheme.Gold,
+                    start = Offset(x1, y1),
+                    end = Offset(x2, y2),
+                    strokeWidth = 1.5.dp.toPx(),
+                )
+            }
+        }
+        // 八卦卦象（正立，不随环旋转）
+        trigrams.forEachIndexed { i, g ->
+            val a = Math.toRadians((i * 45).toDouble())
+            val rx = (78f * Math.sin(a)).toFloat()
+            val ry = (-78f * Math.cos(a)).toFloat()
+            Text(
+                g,
+                Modifier.align(Alignment.Center).offset(x = rx.dp, y = ry.dp),
+                color = AppTheme.Gold,
+                fontSize = 13.sp,
+            )
+        }
+        // 中心能量辉光
+        Box(
+            Modifier.fillMaxSize().clip(CircleShape).background(
+                Brush.radialGradient(
+                    listOf(
+                        AppTheme.Violet.copy(alpha = 0.55f),
+                        AppTheme.Gold.copy(alpha = 0.18f),
+                        Color.Transparent,
+                    ),
+                ),
+            ),
+        )
+        // 符箓内环（4 字，缓慢逆向旋转营造咒文流转）
+        Box(Modifier.size(150.dp).graphicsLayer { rotationZ = -spin * 0.5f }, contentAlignment = Alignment.Center) {
+            talismans.forEachIndexed { i, t ->
+                val a = Math.toRadians((i * 90).toDouble())
+                val rx = (46f * Math.sin(a)).toFloat()
+                val ry = (-46f * Math.cos(a)).toFloat()
+                Text(
+                    t,
+                    Modifier.align(Alignment.Center).offset(x = rx.dp, y = ry.dp),
+                    color = AppTheme.Gold.copy(alpha = 0.7f),
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                )
+            }
+        }
+        Text(text = "✦", fontSize = 44.sp, color = AppTheme.Gold, modifier = Modifier.align(Alignment.Center))
     }
 }
 

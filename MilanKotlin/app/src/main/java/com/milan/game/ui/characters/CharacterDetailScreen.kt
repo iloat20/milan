@@ -37,8 +37,9 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -88,7 +89,7 @@ fun CharacterDetailScreen(
     modifier: Modifier = Modifier,
 ) {
     val def = remember(characterId) {
-        GameState.service.characters.firstOrNull { it.characterId == characterId }
+        GameState.service.character(characterId)
     }
     if (def == null) {
         // C# ResolveCharacter 失败 → Finish()；单 Activity 下渲染空态并给返回入口
@@ -121,7 +122,9 @@ fun CharacterDetailScreen(
         onSwitchCharacter(chars[next].characterId)
     }
 
-    val heroHeight = LocalConfiguration.current.screenHeightDp.dp * 0.56f
+    val heroHeight = with(LocalDensity.current) {
+        LocalWindowInfo.current.containerSize.height.toDp() * 0.56f
+    }
 
     Box(
         modifier = modifier
@@ -223,6 +226,7 @@ private fun HeroRegion(
             name = view.name,
             modifier = Modifier.fillMaxSize().then(portraitModifier),
             contentScale = ContentScale.Crop,
+            aura = true, // v2：稀有度脚下光环（详情页主立绘）
         )
 
         // 底部渐隐遮罩：立绘下缘柔和融入背景
@@ -309,8 +313,8 @@ private fun WeaponPanel(
 
     GlassPanel(modifier = Modifier.fillMaxWidth(), gold = owned) {
         Column(Modifier.padding(horizontal = 16.dp, vertical = 14.dp)) {
-            // 武器舞台：仅 SSR(3)/UR(4) 展示专属武器（C# 同条件）
-            if (def.weaponVfx.isNotBlank() && def.baseRarity >= 3) {
+            // 武器舞台：全稀有度展示专属武器（SR/R 武器现已补齐 lore）
+            if (def.weaponVfx.isNotBlank()) {
                 WeaponStage(weaponVfx = def.weaponVfx, rarityCol = rarityCol, eFrom = eFrom, weaponName = def.weapon)
                 Spacer(Modifier.height(10.dp))
             }
@@ -343,9 +347,15 @@ private fun WeaponPanel(
                         .weight(1f)
                         .padding(start = 10.dp),
                 )
-                // 专属标签（C#：Rarity>=4 ? "UR 专属" : "SSR 专属"）
+                // 专属标签（按稀有度动态：UR/SSR/SR/R 专属）
+                val ownTag = when (view.rarity) {
+                    4 -> "UR 专属"
+                    3 -> "SSR 专属"
+                    2 -> "SR 专属"
+                    else -> "R 专属"
+                }
                 Text(
-                    if (view.rarity >= 4) "UR 专属" else "SSR 专属",
+                    ownTag,
                     fontSize = 10.sp,
                     fontWeight = FontWeight.Bold,
                     color = rarityCol,
