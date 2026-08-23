@@ -1,7 +1,6 @@
 package com.milan.game.ui.collection
 
 import androidx.compose.animation.AnimatedVisibilityScope
-import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -31,32 +30,20 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.milan.game.services.CharacterDataEntry
 import com.milan.game.ui.GameState
-import com.milan.game.ui.LocalSharedTransitionScope
 import com.milan.game.ui.OwnedCharacterView
+import com.milan.game.ui.components.CharacterCard
 import com.milan.game.ui.components.ListFilter
 import com.milan.game.ui.components.ListFilterBar
 import com.milan.game.ui.components.ListSortMode
 import com.milan.game.ui.components.PageBackground
-import com.milan.game.ui.components.PortraitImage
-import com.milan.game.ui.components.PortraitTarget
 import com.milan.game.ui.nav.AppTopBar
 import com.milan.game.ui.theme.AppTheme
-import com.milan.game.ui.theme.ElementTheme
-
-/** 稀有度标签（与 CharacterListScreen 同语义：4=UR 3=SSR 2=SR 其余=R）。 */
-private fun rarityName(r: Int): String = when (r) {
-    4 -> "UR"
-    3 -> "SSR"
-    2 -> "SR"
-    else -> "R"
-}
 
 /**
  * 神谱图鉴屏（替换原 PlaceholderScreen 占位）：
@@ -85,13 +72,15 @@ fun CollectionScreen(
 
     // 元素 chips 用全量角色的元素（图鉴视角：未拥有的元素也应可筛）
     val elements = remember(all) { all.map { it.element }.distinct() }
-    val visible = ListFilter.filterSort(
-        all, rarityFilter, elementFilter, searchText, sort,
-        getName = { it.displayName },
-        getRarity = { it.baseRarity },
-        getElement = { it.element },
-        getGroupKey = { it.world },
-    )
+    val visible = remember(all, rarityFilter, elementFilter, searchText, sort) {
+        ListFilter.filterSort(
+            all, rarityFilter, elementFilter, searchText, sort,
+            getName = { it.displayName },
+            getRarity = { it.baseRarity },
+            getElement = { it.element },
+            getGroupKey = { it.world },
+        )
+    }
 
     PageBackground(modifier = modifier) {
         Column(Modifier.fillMaxSize()) {
@@ -138,11 +127,24 @@ fun CollectionScreen(
                     horizontalArrangement = Arrangement.spacedBy(0.dp),
                 ) {
                     itemsIndexed(visible, key = { _, def -> def.characterId }) { _, def ->
-                        CollectionCard(
-                            def = def,
-                            ownedView = ownedById[def.characterId],
-                            animatedVisibilityScope = animatedVisibilityScope,
+                        val ownedView = ownedById[def.characterId]
+                        CharacterCard(
+                            characterId = def.characterId,
+                            name = def.displayName,
+                            title = def.title,
+                            rarity = def.baseRarity,
+                            element = def.element,
                             onClick = { onOpenCharacter(def.characterId) },
+                            locked = ownedView == null,
+                            animatedVisibilityScope = animatedVisibilityScope,
+                            footer = {
+                                Text(
+                                    text = if (ownedView != null) "★".repeat(ownedView.save.stars.coerceAtLeast(1)) else "未获得",
+                                    fontSize = 11.sp,
+                                    color = if (ownedView != null) AppTheme.Gold else AppTheme.Text3,
+                                    modifier = Modifier.padding(top = 3.dp),
+                                )
+                            },
                         )
                     }
                 }
@@ -232,7 +234,7 @@ private fun CollectionProgressHeader(
             for (r in rarityOrder) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        text = rarityName(r),
+                        text = AppTheme.rarityName(r),
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
                         color = AppTheme.rarityColor(r),
@@ -249,109 +251,5 @@ private fun CollectionProgressHeader(
 }
 
 /**
- * 图鉴卡片（ListCard 同构样式 + 未拥有态）：
- * 稀有度描边 + 元素淡底立绘框；未拥有时立绘叠黑蒙层 + 🔒，星级行显示「未获得」。
+ * 图鉴卡片（已收敛至共享组件 CharacterCard，R1/I1）：locked 蒙层与星级/未获得 footer 走参数插槽。
  */
-@Composable
-private fun CollectionCard(
-    def: CharacterDataEntry,
-    ownedView: OwnedCharacterView?,
-    animatedVisibilityScope: AnimatedVisibilityScope,
-    onClick: () -> Unit,
-) {
-    val rarity = def.baseRarity
-    val rarityCol = AppTheme.rarityColor(rarity)
-    val elem = ElementTheme.forElement(def.element)
-    // Shared Element：与详情页 Hero 同 key 配对（未拥有同样可过渡，详情页自带遮罩）
-    val sharedScope = LocalSharedTransitionScope.current
-    val portraitModifier = if (sharedScope != null) {
-        with(sharedScope) {
-            Modifier.sharedBounds(
-                sharedContentState = rememberSharedContentState(key = "portrait_${def.characterId}"),
-                animatedVisibilityScope = animatedVisibilityScope,
-                resizeMode = SharedTransitionScope.ResizeMode.RemeasureToBounds,
-            )
-        }
-    } else Modifier
-
-    Column(
-        modifier = Modifier
-            .padding(5.dp) // C# margin 5dp
-            .clip(RoundedCornerShape(18.dp))
-            .background(rarityCol.copy(alpha = 110f / 255f), RoundedCornerShape(18.dp))
-            .border(2.dp, rarityCol, RoundedCornerShape(18.dp))
-            .clickable(onClick = onClick)
-            .padding(3.dp),
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(16.dp))
-                .background(AppTheme.Surface, RoundedCornerShape(16.dp))
-                .padding(12.dp),
-        ) {
-            // 立绘框：元素淡色底 + 头像（缺图时回退稀有度渐变 + 首字）
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(58.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(elem.from.copy(alpha = 0.22f), RoundedCornerShape(12.dp))
-                    .then(portraitModifier),
-            ) {
-                PortraitImage(
-                    characterId = def.characterId,
-                    rarity = rarity,
-                    name = def.displayName,
-                    modifier = Modifier.fillMaxSize(),
-                    target = PortraitTarget.Thumb,
-                    aura = true,
-                    glowScale = 0.7f,
-                )
-                if (ownedView == null) {
-                    // 未收录：黑蒙层 + 锁（立绘成剪影）
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .background(Color.Black.copy(alpha = 0.55f), RoundedCornerShape(12.dp)),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Text(text = "🔒", fontSize = 16.sp)
-                    }
-                }
-            }
-            Spacer(Modifier.height(8.dp))
-            Text(
-                text = def.displayName,
-                fontSize = 15.sp,
-                fontWeight = FontWeight.Bold,
-                color = AppTheme.Text1,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-            Text(
-                text = def.title,
-                fontSize = 11.sp,
-                color = AppTheme.Text2,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-            Row(Modifier.padding(top = 2.dp)) {
-                Text(
-                    text = rarityName(rarity),
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = rarityCol,
-                    modifier = Modifier.padding(end = 8.dp),
-                )
-                Text(text = elem.glyph + " " + def.element, fontSize = 11.sp, color = elem.from)
-            }
-            Text(
-                text = if (ownedView != null) "★".repeat(ownedView.save.stars.coerceAtLeast(1)) else "未获得",
-                fontSize = 11.sp,
-                color = if (ownedView != null) AppTheme.Gold else AppTheme.Text3,
-                modifier = Modifier.padding(top = 3.dp),
-            )
-        }
-    }
-}

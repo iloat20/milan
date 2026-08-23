@@ -1,0 +1,451 @@
+#!/usr/bin/env python3
+import json
+from pathlib import Path
+from copy import deepcopy
+
+root = Path("C:/Users/Administrator/Downloads/work/milan/MauiMilan")
+paths = [
+    root / "Platforms/Android/Assets/data.json",
+    root / "Resources/Raw/data.json",
+]
+
+base = json.loads(paths[0].read_text(encoding="utf-8"))
+
+# Faction mapping
+FACTION = {
+    "Shinwa": "Shinwa",
+    "Aether": "Aether",
+    "Ironveil": "Ironveil",
+}
+
+VOICES = {
+    "char_ur_zhulong": [
+        "睁眼为昼，闭眼为夜——汝所见之光，皆由我裁断。",
+        "天火燎原，不过是吐息之间。",
+        "星辰会记得，是谁燃尽了它们。"
+    ],
+    "char_ur_wuxu": [
+        "万物终将归零，包括你的挣扎。",
+        "存在本身，就是需要被修正的错误。",
+        "听，维度在哭泣。"
+    ],
+    "ur_xingtian": [
+        "头颅可断，战意不灭。",
+        "干戚在手，何惧神魔？",
+        "每一次倒下，都只是进化的前奏。"
+    ],
+    "char_ur_kikyo": [
+        "四魂之玉的光芒，我守过一次，不会再让它熄灭。",
+        "亡者的执念，也能成为破魔的箭。",
+        "这世间，从不缺需要超度的灵魂。"
+    ],
+    "char_ur_keqing": [
+        "人类的命运，当由人类自己书写。",
+        "雷霆不快，只是你跟不上我的剑。",
+        "玉衡星的位置，我自己来争。"
+    ],
+    "char_ssr_fenghuang": [
+        "灰烬不是终点，是新生的温床。",
+        "每一次坠落，都是为了更炽烈地燃烧。",
+        "听，凤凰座在为我歌唱。"
+    ],
+    "char_ssr_xiangliu": [
+        "毒泽之上，连神明都不敢涉足。",
+        "九个脑袋，九种杀你的方式。",
+        "来，尝尝这杯瘟疫。"
+    ],
+    "char_ssr_leishen": [
+        "功率满格，审判开始。",
+        "雷霆不会审判，它只是执行。",
+        "我的核心在发烫——你最好躲远点。"
+    ],
+    "char_ssr_feilian": [
+        "风从不回头，我也是。",
+        "等你看见我的时候，已经来不及了。",
+        " fastest alive? 我只是懒得争辩。"
+    ],
+    "char_ssr_shangyang": [
+        "未来不是一条线，是无数裂隙交织的网。",
+        "我看见你的结局了……但它还能改。",
+        "星象从不撒谎，只会被误读。"
+    ],
+    "char_sr_suanni": [
+        "狮吼之下，敌魂皆碎。",
+        "守护这件事，我从没打算交给别人。",
+        "下次，换我当前锋。"
+    ],
+    "char_sr_jingwei": [
+        "一粒一粒，大海终会被填平。",
+        "世界碎了多少，我就补多少。",
+        "东海欠我的，我会一笔一笔讨回来。"
+    ],
+    "char_sr_qiongqi": [
+        "恶人？我最喜欢恶人了，嚼起来有嚼劲。",
+        "正义需要牙齿，而我刚好有一口好牙。",
+        "以暴制暴虽然老套，但好用。"
+    ],
+    "char_sr_xuanwu": [
+        "站到我身后。",
+        "玄甲不破，尔等无忧。",
+        "守，也是一种进攻。"
+    ],
+    "char_sr_bifang": [
+        "一足足以踏破苍穹。",
+        "雷火交加，才是毕方的舞步。",
+        "凤凰前辈看我的眼神，我很受用。"
+    ],
+    "char_r_lili": [
+        "小有小的好处，比如钻到你脚底下。",
+        "遁地不是逃，是找角度。",
+        "别看我小，挖洞我可是专业的。"
+    ],
+    "char_r_qinyuan": [
+        "嗡嗡——找到目标。",
+        "一针就够，别浪费。",
+        "蜂群从不多话，它们只行动。"
+    ],
+    "char_r_sishu": [
+        "夜晚是我的，你也是我的。",
+        "蛛丝感应不会骗我，但人会。",
+        "杂技不是表演，是杀人方式。"
+    ],
+    "char_r_luoyu": [
+        "深海之下，可没人听过你的祈祷。",
+        "水是温柔的，除非我在里面。",
+        "亚特兰蒂斯的回声，是我故乡的歌。"
+    ],
+    "char_r_dangang": [
+        "当康当康，丰收在望！",
+        "瑞兽也要上战场？没办法，世界不太平。",
+        "吃饱了，才有力气打架嘛。"
+    ],
+}
+
+VFX_WEAPON = {
+    "char_ur_zhulong": "sun_orb_flame",
+    "char_ur_wuxu": "void_rift_blade",
+    "ur_xingtian": "gear_axe_storm",
+    "char_ur_kikyo": "shadow_bow_arrow",
+    "char_ur_keqing": "lightning_dual_swords",
+    "char_ssr_fenghuang": "phoenix_wing_flame",
+    "char_ssr_xiangliu": "venom_fang_whip",
+    "char_ssr_leishen": "mjolnir_hammer_arc",
+    "char_ssr_feilian": "wind_blade_dash",
+    "char_ssr_shangyang": "star_oracle_sigil",
+    "char_sr_suanni": "roar_shock_claw",
+    "char_sr_jingwei": "wind_stone_projectile",
+    "char_sr_qiongqi": "regen_blast_cannon",
+    "char_sr_xuanwu": "shell_barrier_earth",
+    "char_sr_bifang": "thunder_feather_dive",
+    "char_r_lili": "earth_burrow_strike",
+    "char_r_qinyuan": "poison_stinger_swarm",
+    "char_r_sishu": "shadow_wire_tangle",
+    "char_r_luoyu": "water_trident_surge",
+    "char_r_dangang": "tusk_charge_wind",
+}
+
+VFX_AMBIENT = {
+    "char_ur_zhulong": "day_night_cycle_glow",
+    "char_ur_wuxu": "void_devour_particles",
+    "ur_xingtian": "scrap_storm_ironveil",
+    "char_ur_kikyo": "soul_petal_drift",
+    "char_ur_keqing": "thundercloud_city",
+    "char_ssr_fenghuang": "ember_rebirth_field",
+    "char_ssr_xiangliu": "poison_marsh_fog",
+    "char_ssr_leishen": "electric_coil_core",
+    "char_ssr_feilian": "wind_tunnel_speedlines",
+    "char_ssr_shangyang": "constellation_guidance",
+    "char_sr_suanni": "pride_aura_flame",
+    "char_sr_jingwei": "sea_stone_mist",
+    "char_sr_qiongqi": "blood_metal_smoke",
+    "char_sr_xuanwu": "jade_shield_earth",
+    "char_sr_bifang": "storm_feather_spark",
+    "char_r_lili": "dust_earth_burst",
+    "char_r_qinyuan": "mechanical_bee_cloud",
+    "char_r_sishu": "night_city_shadows",
+    "char_r_luoyu": "underwater_bubble_light",
+    "char_r_dangang": "harvest_wind_leaves",
+}
+
+STORY = {
+    "char_ur_zhulong": "烛龙是 Shinwa 的最高图腾之一，被视为昼夜的化身。金乌视其为兄长与竞争对手——前者代表光明的节律，后者代表光明的强度。当虚无逼近时，烛龙主动睁眼超过七日，以白昼之力压制裂隙扩张，却也导致神話世界河流干涸、草木焦枯。",
+    "char_ur_wuxu": "虚无并非传统意义上的邪恶，它只是在执行一种宇宙规律：一切存在终将归于无。以太议会曾试图封印它，却反而让它学会了人类的恐惧与野心。",
+    "ur_xingtian": "刑天是铁帷兵主军团的第一代实验体，也是最稳定的一个。他与蚩尤并称双璧，但刑天更忠诚于保护普通民众，而非铁帷高层。他胸口的能量核心会随情绪变亮，愤怒时如烈日。",
+    "char_ur_kikyo": "裂隙纪元中，桔梗从神話残片的幽冥边界苏醒，发现四魂之玉的力量与裂隙能量同源。她开始猎杀被裂隙污染的亡灵，也逐渐理解：自己的复活本身可能就是一次裂隙实验。她与女娲有某种精神共鸣——两者都与泥土/陶土重生有关。",
+    "char_ur_keqing": "裂隙纪元中，刻晴是被 Aether 议会召唤的异界行者。她的到来让以太学者首次确信：裂隙连接的不仅是世界，还有不同的可能性。她与烛龙有过激烈争论：神明是否还应被敬畏？刻晴的答案是被研究，被超越。",
+    "char_ssr_fenghuang": "凤凰是 Shinwa 的祥瑞象征，也是金乌的眷属。当虚无吞噬九日，凤凰主动承担守护剩余光明种子的使命。她的每一次涅槃都会在空中留下新的星座，被 Aether 学者称为凤凰座。",
+    "char_ssr_xiangliu": "相柳是虚无的先驱者之一，却并非其仆从。它享受毁灭本身，与饕餮形成毒与焰的毁灭同盟。",
+    "char_ssr_leishen": "雷神是铁帷城邦的能量核心守护者，负责维持城市运转。他的机械躯体不断吸收裂隙中的电能，变得越来越强大，也越来越不稳定。他尊敬刑天，却嫉妒蚩尤——因为后者被允许释放全力，而他必须时刻控制功率。",
+    "char_ssr_feilian": "飞廉是神話的信使与斥候，速度让他能穿越未稳定的裂隙。他与花妖在 Aether 浮岛相识，一个是疾风，一个是轻风。",
+    "char_ssr_shangyang": "商羊是 Aether 议会首席预言者，它预见了虚无与女娲的最终对决，却无法确定结局。这让它既痛苦又着迷。",
+    "char_sr_suanni": "狻猊是 Shinwa 的守护者，也是白虎的远亲后辈。它梦想有一天能像白虎一样独当一面。",
+    "char_sr_jingwei": "精卫对裂隙造成的海洋污染深恶痛绝，她相信哪怕世界破碎，也能一粒一粒补回来。她与女娲因修补的理念而成为忘年之交。",
+    "char_sr_qiongqi": "穷奇是铁帷雇佣兵，只接惩恶的任务。它认为自己的残暴是正义的必需品。",
+    "char_sr_xuanwu": "旋龟是女娲浮岛的守护者，它的背上驮着一座微型神庙。",
+    "char_sr_bifang": "毕方崇拜凤凰，梦想成为下一位涅槃者。",
+    "char_r_lili": "狸力是神話阵营最好的地下情报员，能钻进任何缝隙。",
+    "char_r_qinyuan": "钦原是铁帷的小型无人机原型机，后来产生了自我意识。",
+    "char_r_sishu": "跂踵是 Ironveil 贫民窟的义警，只在夜间行动。",
+    "char_r_luoyu": "蠃鱼守护着被裂隙污染的海洋，与精卫一起清理废墟。",
+    "char_r_dangang": "当康是神話农民的守护神，战争爆发后才拿起武器。",
+}
+
+# enrich existing characters
+for c in base["Characters"]:
+    cid = c["CharacterId"]
+    c["Faction"] = FACTION[c["World"]]
+    c["Story"] = STORY.get(cid, "")
+    c["Voices"] = VOICES.get(cid, ["……"])
+    c["WeaponVfx"] = VFX_WEAPON.get(cid, "generic_glow")
+    c["AmbientVfx"] = VFX_AMBIENT.get(cid, "generic_particles")
+
+# new 8 characters
+new_chars = [
+    {
+        "CharacterId": "char_ur_jinwu",
+        "DisplayName": "金乌 Jinwu",
+        "Title": "十日巡天",
+        "World": "Shinwa",
+        "Faction": "Shinwa",
+        "Element": "Flame",
+        "BaseRarity": 4,
+        "BaseStats": [168, 92, 1220, 20],
+        "MaxStars": 7,
+        "CanBreakthrough": True,
+        "Lore": "太阳的化身，山海经载其载日而行。裂隙纪元中，十日中的九日被虚无吞噬，仅剩金乌独自照耀神話残片。漫威太阳黑子的聚变之躯与DC火风暴的原子重构之力，在金乌羽翼中共鸣，使其每一次振翅都能点燃大气中的氧原子。",
+        "Story": "金乌与烛龙既是盟友也是镜像：烛龙司昼夜轮转，金乌司光明本身。当虚无逼近，金乌化作第二轮烈日，与烛龙并肩对抗终焉。",
+        "TalentTreeId": "tree_jinwu",
+        "Voices": [
+            "十日虽陨，我一盏足矣。",
+            "焚尽夜空的，从来不是恐惧，是光。",
+            "记住这温度，它叫黎明。"
+        ],
+        "WeaponVfx": "solar_orb_bow",
+        "AmbientVfx": "broken_suns_inferno",
+        "Skills": [
+            {"SkillId": "jinwu_1", "DisplayName": "日轮天罚", "Description": "射出凝聚太阳核心的等离子箭矢，对单体造成巨额火焰伤害并灼烧周围敌人", "Element": "Flame", "Type": "Ultimate", "Power": 94},
+            {"SkillId": "jinwu_2", "DisplayName": "耀斑冲击", "Description": "释放太阳耀斑，对全体敌人造成火焰伤害并附加致盲", "Element": "Flame", "Type": "Active", "Power": 72},
+            {"SkillId": "jinwu_3", "DisplayName": "不灭烈日", "Description": "生命低于30%时进入烈日形态，攻击与暴击大幅提升", "Element": "Flame", "Type": "Passive", "Power": 68},
+        ]
+    },
+    {
+        "CharacterId": "char_ur_nuwa",
+        "DisplayName": "女娲 Nuwa",
+        "Title": "泥塑苍天",
+        "World": "Aether",
+        "Faction": "Aether",
+        "Element": "Earth",
+        "BaseRarity": 4,
+        "BaseStats": [150, 135, 1400, 16],
+        "MaxStars": 7,
+        "CanBreakthrough": True,
+        "Lore": "创造人类的古神，以大地的五色石补天。裂隙纪元中，原初之环的碎片不断崩落，女娲以最后一块补天石为锚，在以太星空中托起一座浮岛，庇护流离的凡人。漫威凤凰女的生命念力与DC沼泽怪物的大地共鸣，使女娲能将泥土化为生命、将废墟重塑为壁垒。",
+        "Story": "她是虚无的反面：虚无吞噬存在，女娲创造存在。她与桔梗因泥土/陶土重生而精神共鸣，与精卫因修补理念成为忘年之交。",
+        "TalentTreeId": "tree_nuwa",
+        "Voices": [
+            "天塌了，我再补一次。",
+            "泥土记得所有生命最初的形状。",
+            "你们活下来了，这就够了。"
+        ],
+        "WeaponVfx": "five_color_stone_staff",
+        "AmbientVfx": "floating_island_aurora",
+        "Skills": [
+            {"SkillId": "nuwa_1", "DisplayName": "五色补天", "Description": "以五色石重塑战场，为全队回复大量生命并清除负面状态", "Element": "Earth", "Type": "Ultimate", "Power": 88},
+            {"SkillId": "nuwa_2", "DisplayName": "泥塑众生", "Description": "召唤土灵协助战斗，土灵会嘲讽敌人并分担伤害", "Element": "Earth", "Type": "Active", "Power": 70},
+            {"SkillId": "nuwa_3", "DisplayName": "大地母神", "Description": "每回合结束时为生命最低的队友回复生命", "Element": "Earth", "Type": "Passive", "Power": 62},
+        ]
+    },
+    {
+        "CharacterId": "char_ssr_chiyou",
+        "DisplayName": "蚩尤 Chiyou",
+        "Title": "兵主魔神",
+        "World": "Ironveil",
+        "Faction": "Ironveil",
+        "Element": "Metal",
+        "BaseRarity": 3,
+        "BaseStats": [135, 105, 1150, 15],
+        "MaxStars": 6,
+        "CanBreakthrough": False,
+        "Lore": "上古战神，铜头铁额，八肱八趾。铁帷城邦在大崩解后挖掘出蚩尤残躯，以合金与能量核心将其复活，编入兵主军团。漫威绿巨人的无限愤怒与DC毁灭日的进化杀戮本能，在蚩尤体内形成永不熄灭的战意。",
+        "Story": "蚩尤与刑天并称铁帷双璧：刑天是不死的盾牌，蚩尤是毁灭的长矛。他的复活并不完美，时常在战斗中听见远古战鼓，分不清自己是被唤醒的神明，还是被操控的武器。",
+        "TalentTreeId": "tree_chiyou",
+        "Voices": [
+            "兵主在此，谁敢接刀？",
+            "虎魄饮血，越战越狂。",
+            "这才是战场该有的味道。"
+        ],
+        "WeaponVfx": "tiger_soul_cleaver",
+        "AmbientVfx": "ruin_battlefield_banners",
+        "Skills": [
+            {"SkillId": "chiyou_1", "DisplayName": "虎魄裂天", "Description": "挥舞虎魄魔刀劈出金属碎片风暴，对前方敌人造成范围伤害", "Element": "Metal", "Type": "Ultimate", "Power": 84},
+            {"SkillId": "chiyou_2", "DisplayName": "兵主狂血", "Description": "损失生命以换取攻击力提升，击杀敌人后回复生命", "Element": "Metal", "Type": "Active", "Power": 66},
+            {"SkillId": "chiyou_3", "DisplayName": "铜头铁额", "Description": "受到伤害时概率减免并反弹部分伤害", "Element": "Metal", "Type": "Passive", "Power": 58},
+        ]
+    },
+    {
+        "CharacterId": "char_ssr_baihu",
+        "DisplayName": "白虎 Baihu",
+        "Title": "西方圣兽",
+        "World": "Shinwa",
+        "Faction": "Shinwa",
+        "Element": "Metal",
+        "BaseRarity": 3,
+        "BaseStats": [132, 88, 1020, 22],
+        "MaxStars": 6,
+        "CanBreakthrough": False,
+        "Lore": "四象之一，主杀伐与西方。在神話残片，白虎沉睡了千年，直到裂隙中的金属风暴撕裂山林，它才睁开金色的兽瞳。漫威黑豹的振金战甲与DC猫女的优雅致命，在白虎身上化为兼具力量与速度的金属圣兽。",
+        "Story": "白虎与狻猊有同族之谊：狻猊司震慑，白虎司裁决。它孤傲寡言，对邪恶绝不姑息，对伙伴却有隐秘的温柔。",
+        "TalentTreeId": "tree_baihu",
+        "Voices": [
+            "西方的风，只吹向该死之人。",
+            "这一爪，替你送行。",
+            "下一个。"
+        ],
+        "WeaponVfx": "vibranium_tiger_claw",
+        "AmbientVfx": "metal_storm_wasteland",
+        "Skills": [
+            {"SkillId": "baihu_1", "DisplayName": "西方白虎杀", "Description": "化作银色残影连续斩击单体，无视部分防御", "Element": "Metal", "Type": "Ultimate", "Power": 82},
+            {"SkillId": "baihu_2", "DisplayName": "金风破甲", "Description": "虎爪撕裂目标护甲，使其受到物理伤害增加", "Element": "Metal", "Type": "Active", "Power": 64},
+            {"SkillId": "baihu_3", "DisplayName": "圣兽之威", "Description": "对生命低于30%的敌人伤害提升", "Element": "Metal", "Type": "Passive", "Power": 56},
+        ]
+    },
+    {
+        "CharacterId": "char_sr_huayao",
+        "DisplayName": "花妖 Huayao",
+        "Title": "千瓣灵魅",
+        "World": "Aether",
+        "Faction": "Aether",
+        "Element": "Wind",
+        "BaseRarity": 2,
+        "BaseStats": [85, 78, 860, 18],
+        "MaxStars": 5,
+        "CanBreakthrough": False,
+        "Lore": "原是 Aether 浮空花园中一株千年灵植，因裂隙能量涌入而化形。漫威暴风女的大气操控与DC毒藤女的植物共鸣，使她可以呼唤风携带花瓣形成治愈或剧毒领域。",
+        "Story": "花妖性格天真，却对生死有超越人类的理解。她认为花开花落与战争胜负一样，都是自然的呼吸。与飞廉相识于浮岛，一个是疾风，一个是轻风。",
+        "TalentTreeId": "tree_huayao",
+        "Voices": [
+            "风会把花瓣送到该去的地方。",
+            "疼的话，就闻闻花香。",
+            "看，伤口开花了。"
+        ],
+        "WeaponVfx": "petal_ribbon_blade",
+        "AmbientVfx": "floating_garden_petals",
+        "Skills": [
+            {"SkillId": "huayao_1", "DisplayName": "千瓣愈风", "Description": "召唤花瓣之风为全队回复生命并提升速度", "Element": "Wind", "Type": "Active", "Power": 52},
+            {"SkillId": "huayao_2", "DisplayName": "毒藤缠绕", "Description": "用毒藤束缚单体敌人，造成持续伤害并降低其攻击", "Element": "Wind", "Type": "Active", "Power": 48},
+            {"SkillId": "huayao_3", "DisplayName": "花语轻喃", "Description": "受到致命伤害时化为花瓣规避一次（每场一次）", "Element": "Wind", "Type": "Passive", "Power": 40},
+        ]
+    },
+    {
+        "CharacterId": "char_sr_taotie",
+        "DisplayName": "饕餮 Taotie",
+        "Title": "贪食无厌",
+        "World": "Shinwa",
+        "Faction": "Shinwa",
+        "Element": "Flame",
+        "BaseRarity": 2,
+        "BaseStats": [98, 120, 1050, 10],
+        "MaxStars": 5,
+        "CanBreakthrough": False,
+        "Lore": "山海经中的贪食凶兽，有首无身，永不餍足。裂隙纪元中，饕餮被神話阵营封印于青铜巨鼎内，只在最危急的战局中被放出。漫威毒液的吞噬渴望与DC所罗门·格兰迪的无穷饥饿，使饕餮能吞噬敌人的攻击并转化为自身烈焰。",
+        "Story": "它与相柳并称两害：相柳以毒泽腐蚀大地，饕餮以贪焰吞噬一切。贪婪而直率，只要喂饱它，它会意外地忠诚。",
+        "TalentTreeId": "tree_taotie",
+        "Voices": [
+            "饿了。你们都别跑。",
+            "这个，我吃了。",
+            "还没饱……但你们先凑合。"
+        ],
+        "WeaponVfx": "bronze_greed_flame",
+        "AmbientVfx": "broken_bronze_ash",
+        "Skills": [
+            {"SkillId": "taotie_1", "DisplayName": "贪食天地", "Description": "吞噬前方敌人，造成火焰伤害并回复自身生命", "Element": "Flame", "Type": "Active", "Power": 54},
+            {"SkillId": "taotie_2", "DisplayName": "青铜业火", "Description": "喷出青铜色烈焰，对全体敌人造成灼烧", "Element": "Flame", "Type": "Active", "Power": 50},
+            {"SkillId": "taotie_3", "DisplayName": "永不餍足", "Description": "受到伤害时概率将部分伤害转化为生命", "Element": "Flame", "Type": "Passive", "Power": 42},
+        ]
+    },
+    {
+        "CharacterId": "char_r_shanxiao",
+        "DisplayName": "山魈 Shanxiao",
+        "Title": "机械林精",
+        "World": "Ironveil",
+        "Faction": "Ironveil",
+        "Element": "Earth",
+        "BaseRarity": 1,
+        "BaseStats": [75, 68, 740, 17],
+        "MaxStars": 4,
+        "CanBreakthrough": False,
+        "Lore": "本是山林小鬼，大崩解时被铁帷的机械风暴卷入工厂废墟，身体与废弃机械融合。漫威火箭浣熊的机械天赋与DC野兽小子的野性本能，让它成为能在钢铁丛林中快速穿行的小个子战士。",
+        "Story": "山魈喜欢用废旧零件布置陷阱，对体型巨大的敌人尤其兴奋。调皮、话痨、记仇，但关键时刻会为了保护同伴拼命。",
+        "TalentTreeId": "tree_shanxiao",
+        "Voices": [
+            "嘿，大个子，脚下有东西哦。",
+            "送你个小礼物——boom！",
+            "捡破烂也能赢，气不气？"
+        ],
+        "WeaponVfx": "scrap_claw_mine",
+        "AmbientVfx": "ruin_jungle_parts",
+        "Skills": [
+            {"SkillId": "shanxiao_1", "DisplayName": "零件陷阱", "Description": "布置机械陷阱，触发时造成伤害并眩晕", "Element": "Earth", "Type": "Active", "Power": 40},
+            {"SkillId": "shanxiao_2", "DisplayName": "废土闪避", "Description": "受到攻击时概率遁入废墟闪避", "Element": "Earth", "Type": "Passive", "Power": 32},
+            {"SkillId": "shanxiao_3", "DisplayName": "拆解专家", "Description": "对机械敌人伤害提升", "Element": "Earth", "Type": "Passive", "Power": 28},
+        ]
+    },
+    {
+        "CharacterId": "char_r_yecha",
+        "DisplayName": "夜叉 Yecha",
+        "Title": "裂隙低语",
+        "World": "Aether",
+        "Faction": "Aether",
+        "Element": "Shadow",
+        "BaseRarity": 1,
+        "BaseStats": [78, 58, 680, 19],
+        "MaxStars": 4,
+        "CanBreakthrough": False,
+        "Lore": "Aether 裂隙中最常见的低等虚空生物，由迷失者的影子凝聚而成。漫威夜魔侠的感官增强与DC暗影侠的黑暗潜行，使夜叉能在阴影中无声移动，用低语瓦解敌人意志。",
+        "Story": "它们数量庞大、单体不强，但成群出现时能让整支军队陷入恐惧。阴郁、顺从、群体意识强，单独时怯懦，成群时残忍。",
+        "TalentTreeId": "tree_yecha",
+        "Voices": [
+            "……影子来了。",
+            "嘘，别回头。",
+            "黑暗记得你。"
+        ],
+        "WeaponVfx": "shadow_dagger_whisper",
+        "AmbientVfx": "rift_shadow_motes",
+        "Skills": [
+            {"SkillId": "yecha_1", "DisplayName": "影袭", "Description": "从阴影中突袭单体，造成暗影伤害", "Element": "Shadow", "Type": "Active", "Power": 42},
+            {"SkillId": "yecha_2", "DisplayName": "恐惧低语", "Description": "降低单个敌人攻击并使其有概率混乱", "Element": "Shadow", "Type": "Active", "Power": 36},
+            {"SkillId": "yecha_3", "DisplayName": "群影战术", "Description": "场上每存在一个夜叉，自身伤害提升", "Element": "Shadow", "Type": "Passive", "Power": 26},
+        ]
+    },
+]
+
+base["Characters"].extend(new_chars)
+
+# add new chars to main pool; flame up also gets relevant chars
+def entry_for(c):
+    return {"CharacterId": c["CharacterId"], "RarityIndex": c["BaseRarity"], "Weight": 1 if c["BaseRarity"] == 4 else 8 if c["BaseRarity"] == 3 else 40 if c["BaseRarity"] == 2 else 100}
+
+for pool in base["Pools"]:
+    for nc in new_chars:
+        if pool["PoolId"] == "pool_main":
+            pool["Entries"].append(entry_for(nc))
+        elif pool["PoolId"] == "pool_flame":
+            if nc["Element"] == "Flame" or nc["BaseRarity"] >= 3:
+                pool["Entries"].append(entry_for(nc))
+
+# sync TalentTrees: just ensure every character has a tree entry (empty nodes are fine)
+existing_tree_ids = {t["TreeId"] for t in base["TalentTrees"]}
+for c in base["Characters"]:
+    if c["TalentTreeId"] not in existing_tree_ids:
+        base["TalentTrees"].append({
+            "TreeId": c["TalentTreeId"],
+            "BranchIds": ["branch_power", "branch_defense", "branch_utility"],
+            "Nodes": []
+        })
+        existing_tree_ids.add(c["TalentTreeId"])
+
+out = json.dumps(base, ensure_ascii=False, indent=2)
+for p in paths:
+    p.write_text(out, encoding="utf-8")
+
+print(f"Wrote {len(base['Characters'])} characters to both data.json locations.")

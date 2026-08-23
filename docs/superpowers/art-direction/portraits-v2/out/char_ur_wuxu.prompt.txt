@@ -1,0 +1,19 @@
+# 虚无 Wuxu · 万象终焉
+# rarity=UR world=Aether element=Shadow
+# canvas=1536x2304 aspect=2:3
+# anchors={'A': '神话原型: 无面无相（**面部为光滑暗色镜面，映照星空**）', 'B': '道具指纹: 胸口微型黑洞（**缓慢旋转，吞食周围光线**）', 'C': '解剖签名: 暗物质星云构成的身体（**边缘不断溶解为粒子**）'}
+
+Full-body character portrait of Wuxu, the primordial void entity from Chinese mythology. Genderless humanoid figure 9-head proportion, body composed of swirling dark matter nebula, edges constantly dissolving into particles. Face is a smooth dark mirror surface (no eyes, no nose, no mouth), reflecting faint distant starfield. Chest contains a miniature black hole slowly rotating clockwise with golden accretion disk. Long slender arms with nebula-vortex fingertips (6-7 swirling turns at each finger).
+
+Dynamic pose P1 (deity hovering) + body leaning forward 20 degrees looking down at viewer + arms slightly spread. Tattered cosmic robe woven from starlight, hem continuously dispersing stardust. Dark matter trail trailing below feet (no ground contact), trail length 30% of body height. Top of head is a swirling nebula vortex (not hair).
+
+Atmosphere: cosmic horror, existential dread, the end of all things. Background: TRANSPARENT (PNG alpha). Behind body: faint void-purple radial halo (UR rarity color tinted to purple). Floating particles: stardust fragments, void motes, faint cosmic strings. Mood: omniscient, indifferent, eternal hunger.
+
+Aether world style: semi-realistic dark rendering, deep purple and void black palette (#0D0221 base). Wet nebula texture on body surface. Ethereal particle effects. Cosmic horror atmosphere. Rim lighting from behind-lower using UR molten gold #FFC857 (subtle). Fill light from upper left with faint blue starlight #4A90D9. Dramatic silhouette. High detail, gacha game character art, 2:3 vertical aspect ratio, transparent background, full body with feet visible (no ground).
+
+Key elements: faceless_mirror_face_no_features, miniature_black_hole_chest_rotating, dark_matter_nebula_body_dissolving_edges.
+
+negative_prompt: human face, eyes visible, mouth, nose visible, 
+   half-body, bust, cropped, white background,
+   text, watermark, multiple characters, cute, kawaii,
+   bright colors, warm tones, daylight, sunny

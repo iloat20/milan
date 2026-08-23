@@ -15,15 +15,21 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Snackbar
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
@@ -54,8 +60,11 @@ import com.milan.game.ui.nav.toNavRoute
 import com.milan.game.ui.progression.ProgressionScreen
 import com.milan.game.ui.shop.ShopScreen
 import com.milan.game.ui.settings.SettingsScreen
+import com.milan.game.ui.feedback.Feedback
+import com.milan.game.ui.feedback.LocalFeedback
 import com.milan.game.ui.theme.AppTheme
 import com.milan.game.ui.theme.MilanTheme
+import com.milan.game.ui.GameState
 
 /**
  * 单一宿主的游戏入口（C# 多 Activity 结构的 Compose 单 Activity 等价物）。
@@ -68,15 +77,24 @@ import com.milan.game.ui.theme.MilanTheme
  */
 class MainActivity : ComponentActivity() {
 
+    companion object {
+        /** Glance 小组件深链参数（I9）：值为 [NAV_GACHA] 时启动直达抽卡页。 */
+        const val EXTRA_NAVIGATE = "milan.navigate"
+
+        /** [EXTRA_NAVIGATE] 取值：直达抽卡页。 */
+        const val NAV_GACHA = "gacha"
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         CrashReporter.boot("main.onCreate")
         // targetSdk≥35 强制 edge-to-edge：内容延伸到系统栏区域，由各组件用 insets 内边距避让
         enableEdgeToEdge()
         MilanAudio.playBgm("theme") // 启动 BGM（无资源静默，见 MilanAudio）
+        val openGacha = intent?.getStringExtra(EXTRA_NAVIGATE) == NAV_GACHA
         setContent {
             MilanTheme {
-                MilanNavHost()
+                MilanNavHost(openGachaOnStart = openGacha)
             }
         }
     }
@@ -100,16 +118,19 @@ class MainActivity : ComponentActivity() {
 /** 导航宿主（Navigation Compose 2.9 类型安全路由）：tab 切换 + 子页压栈覆盖。
  *  SharedTransitionLayout 提供立绘共享元素过渡作用域。 */
 @Composable
-private fun MilanNavHost() {
+private fun MilanNavHost(openGachaOnStart: Boolean = false) {
     val navController = rememberNavController()
 
-    // P3-10：EventBus 宿主级兜底派发——GameService 写操作内联 dispatch 之外的来源
-    // （未来 widget/后台/其他模块 publish）也能被消费，防事件滞留队列（上限 512 只是保险丝）。
-    LaunchedEffect(Unit) {
-        while (true) {
-            com.milan.game.infrastructure.eventbus.EventBus.dispatch()
-            kotlinx.coroutines.delay(250)
+    // P3-11 配套：内容/存档已在 Application 后台线程初始化（见 MilanApp）。
+    // 就绪前整棵导航树不组合——所有屏幕都直读 GameState.service，门控在此一处收口。
+    // 附带移除旧「EventBus 每 250ms 兜底派发」空转轮询：全工程已零订阅者，
+    // GameService 所有发布点均内联 dispatch，事件队列不存在滞留风险。
+    val ready by GameState.ready.collectAsStateWithLifecycle()
+    if (!ready) {
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Text(text = "加载中…", fontSize = 14.sp, color = AppTheme.Text2)
         }
+        return
     }
 
     // ── 导航辅助（C# 语义翻译）──
@@ -121,6 +142,11 @@ private fun MilanNavHost() {
             launchSingleTop = true
             restoreState = true
         }
+    }
+
+    // I9：Glance 小组件点按直达抽卡页（启动即切 tab；正常启动 openGachaOnStart=false 无副作用）
+    LaunchedEffect(Unit) {
+        if (openGachaOnStart) navigateToTab(NavItem.Gacha)
     }
 
     /** 打开角色详情：子页压栈（可从任一 tab / 列表进入）。 */
@@ -139,7 +165,13 @@ private fun MilanNavHost() {
         }
     }
 
-    SharedTransitionLayout(Modifier.fillMaxSize()) {
+    // R3 / I4：统一反馈宿主——全树经 LocalFeedback 取 Snackbar 入口（配 AppTheme 配色），
+    // 替代各处 Toast/局部 toast 四套写法。Snackbar 浮层置于底部导航之上。
+    val snackbarHost = remember { SnackbarHostState() }
+    val feedback = remember { Feedback(snackbarHost) }
+    CompositionLocalProvider(LocalFeedback provides feedback) {
+        Box(Modifier.fillMaxSize()) {
+            SharedTransitionLayout(Modifier.fillMaxSize()) {
         // Compose 1.11：SharedTransitionLayout 的 content 以 SharedTransitionScope 为 receiver，
         // 官方 LocalSharedTransitionScope 已移除，改用自建 CompositionLocal 注入（见 SharedTransitionLocals.kt）
         val sharedScope = this
@@ -170,6 +202,7 @@ private fun MilanNavHost() {
                     DeckScreen(
                         onNav = ::navigateToTab,
                         onOpenCharacter = ::openCharacter,
+                        animatedVisibilityScope = this,
                     )
                 }
                 composable<ShopRoute> {
@@ -220,4 +253,18 @@ private fun MilanNavHost() {
             }
         }
     }
+    SnackbarHost(
+        hostState = snackbarHost,
+        modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 84.dp),
+        snackbar = { data ->
+            Snackbar(
+                snackbarData = data,
+                containerColor = AppTheme.BgMid,
+                contentColor = AppTheme.Text1,
+                actionColor = AppTheme.Gold,
+            )
+        },
+    )
+}
+}
 }

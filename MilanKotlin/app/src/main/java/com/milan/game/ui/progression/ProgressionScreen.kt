@@ -1,6 +1,5 @@
 package com.milan.game.ui.progression
 
-import android.widget.Toast
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -39,7 +38,6 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.text.TextStyle
@@ -66,6 +64,7 @@ import com.milan.game.ui.components.PortraitImage
 import com.milan.game.ui.components.SectionTitle
 import com.milan.game.ui.components.WoWDivider
 import com.milan.game.ui.theme.AppTheme
+import com.milan.game.ui.feedback.LocalFeedback
 import com.milan.game.ui.theme.ElementTheme
 import java.util.Locale
 import kotlinx.coroutines.launch
@@ -76,7 +75,7 @@ import kotlinx.coroutines.launch
  * 布局：Hero（立绘 + 底部渐隐 + 铭牌 + 返回 / 左右切换）→ 资源条（星尘 + 星魂碎片）
  * → 五个玻璃面板：等级与经验 / 突破 / 升星 / 属性 / 天赋树。
  *
- * 所有消费操作走 [GameState.service]（先校验后扣、落盘失败回滚），失败用 Toast 提示
+ * 所有消费操作走 [GameState.service]（先校验后扣、落盘失败回滚），失败用 Snackbar 提示
  * 并保持面板原状；成功路径由 GameService 同步广播 CurrencyChanged / ProgressionChanged，
  * 本屏订阅后自动重组刷新（与 C# OnResume 订阅 / OnPause 退订等价）。
  */
@@ -87,7 +86,8 @@ fun ProgressionScreen(
     onSwitchCharacter: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val context = LocalContext.current
+    // R3/I4：反馈统一走 LocalFeedback（由 MainActivity 提供的 Snackbar 宿主）。
+    val feedback = LocalFeedback.current
 
     // 状态快照刷新节拍（2026-08 现代化）：GameService 成功写操作后推进 snapshot.revision，
     // 组合中读取 revision 建立重组依赖 → 全屏重读最新存档（替代「EventBus tick 轻标记」）。
@@ -105,7 +105,8 @@ fun ProgressionScreen(
     }
 
     // 每次重组重新查存档：GameService 原地修改，直接读最新值（勿 remember 缓存）
-    val ownedSave = GameState.service.saveData.ownedCharacters.firstOrNull { it?.characterId == characterId }
+    // 路径 B：ownedSaves 随快照刷新（写操作后自动更新），替代 saveData.ownedCharacters.firstOrNull 直读
+    val ownedSave = snap.ownedSaves[characterId]
     val owned = ownedSave != null
     // C# 未拥有兜底存档（Level/Stage/Stars=1），保证面板可渲染、按钮禁用
     val save = ownedSave ?: CharacterSaveState(characterId = characterId, level = 1, stage = 1, stars = 1)
@@ -122,14 +123,22 @@ fun ProgressionScreen(
         onSwitchCharacter(chars[next].characterId)
     }
 
-    fun toast(msg: String) = Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
-
     // 2026-08 主线程 IO 异步化：养成写操作为 suspend（落盘在 IO 线程），用页面协程调用
     val scope = rememberCoroutineScope()
+    // I13：in-flight 防重入——养成写操作落盘期间禁用二次触发，避免快速双击重复扣费。
+    var busy by remember { mutableStateOf(false) }
+    // R3/I4：反馈统一走 LocalFeedback（Snackbar 宿主）。
+    fun toast(msg: String) { scope.launch { feedback.show(msg) } }
+    /** 包裹一次养成写操作：自带 in-flight 防重入 + 落盘后复位。 */
+    fun runProgression(block: suspend () -> Unit) {
+        if (busy) return
+        busy = true
+        scope.launch { try { block() } finally { busy = false } }
+    }
 
     fun onLevel(n: Int) {
         if (!owned) { toast("未拥有该角色"); return }
-        scope.launch {
+        runProgression {
             when (GameState.service.levelUp(characterId, n)) {
                 WriteOutcome.Success -> {}
                 WriteOutcome.Rejected -> {
@@ -143,7 +152,7 @@ fun ProgressionScreen(
 
     fun onAscend() {
         if (!owned) { toast("未拥有该角色"); return }
-        scope.launch {
+        runProgression {
             when (GameState.service.ascend(characterId)) {
                 WriteOutcome.Success -> {}
                 WriteOutcome.Rejected -> {
@@ -157,7 +166,7 @@ fun ProgressionScreen(
 
     fun onStarUp() {
         if (!owned) { toast("未拥有该角色"); return }
-        scope.launch {
+        runProgression {
             when (GameState.service.starUp(characterId)) {
                 WriteOutcome.Success -> {}
                 WriteOutcome.Rejected -> toast(if (save.stars >= def.maxStars) "已满星" else "星魂碎片不足")
@@ -168,7 +177,7 @@ fun ProgressionScreen(
 
     fun onTalent(nodeId: String) {
         if (!owned) { toast("未拥有该角色"); return }
-        scope.launch {
+        runProgression {
             when (GameState.service.allocateTalent(characterId, nodeId)) {
                 WriteOutcome.Success -> {}
                 WriteOutcome.Rejected -> toast("无法满足前置或天赋点不足")
@@ -312,8 +321,8 @@ private fun HeroRegion(
                 .padding(horizontal = 12.dp, vertical = 8.dp)
                 .clickable(onClick = onBack),
         )
-        GlassArrow("‹", Modifier.align(Alignment.CenterStart), onPrev)
-        GlassArrow("›", Modifier.align(Alignment.CenterEnd), onNext)
+        GlassArrow("‹", Modifier.align(Alignment.CenterStart), onPrev, contentDescription = "上一个")
+        GlassArrow("›", Modifier.align(Alignment.CenterEnd), onNext, contentDescription = "下一个")
     }
 }
 
@@ -328,7 +337,7 @@ private fun n0(v: Int): String = String.format(Locale.US, "%,d", v)
 
 @Composable
 private fun ResourceBar() {
-    val soft = GameState.service.saveData.softCurrency
+    val soft = GameState.service.snapshot.value.softCurrency
     val frags = GameState.service.getStarFragments()
 
     Row(
@@ -372,7 +381,7 @@ private fun LevelPanel(
 ) {
     val save = view.save
     val cap = GameState.service.maxLevelForStage(save.stage)
-    val soft = GameState.service.saveData.softCurrency
+    val soft = GameState.service.snapshot.value.softCurrency
     val (cur, need) = GameState.service.expProgress(save.characterId)
 
     val canLevel = owned && save.level < cap && soft >= GameState.service.levelCost(save.level)
@@ -477,7 +486,7 @@ private fun AscendPanel(
     onAscend: () -> Unit,
 ) {
     val save = view.save
-    val soft = GameState.service.saveData.softCurrency
+    val soft = GameState.service.snapshot.value.softCurrency
     val frags = GameState.service.getStarFragments()
     val atMax = save.stage >= defMaxStage
     val aFrag = GameState.service.ascendFragments(save.stage)

@@ -1,6 +1,5 @@
 package com.milan.game.ui.characters
 
-import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -34,25 +33,14 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.milan.game.ui.GameState
-import com.milan.game.ui.LocalSharedTransitionScope
-import com.milan.game.ui.OwnedCharacterView
+import com.milan.game.ui.components.CharacterCard
 import com.milan.game.ui.components.ListFilter
 import com.milan.game.ui.components.ListFilterBar
 import com.milan.game.ui.components.ListSortMode
 import com.milan.game.ui.components.PageBackground
-import com.milan.game.ui.components.PortraitImage
-import com.milan.game.ui.components.PortraitTarget
 import com.milan.game.ui.nav.AppTopBar
 import com.milan.game.ui.theme.AppTheme
 import com.milan.game.ui.theme.ElementTheme
-
-/** 稀有度标签（C# CharacterCard.RarityName：4=UR 3=SSR 2=SR 其余=R）。 */
-private fun rarityName(r: Int): String = when (r) {
-    4 -> "UR"
-    3 -> "SSR"
-    2 -> "SR"
-    else -> "R"
-}
 
 /**
  * 角色列表屏（C# CharacterListActivity 的 Compose 版）：
@@ -76,13 +64,15 @@ fun CharacterListScreen(
     var sort by rememberSaveable { mutableStateOf(ListSortMode.RarityDesc) }
 
     val elements = remember(owned) { owned.map { it.element }.distinct() }
-    val visible = ListFilter.filterSort(
-        owned, rarityFilter, elementFilter, searchText, sort,
-        getName = { it.name },
-        getRarity = { it.rarity },
-        getElement = { it.element },
-        getGroupKey = { it.world },
-    )
+    val visible = remember(owned, rarityFilter, elementFilter, searchText, sort) {
+        ListFilter.filterSort(
+            owned, rarityFilter, elementFilter, searchText, sort,
+            getName = { it.name },
+            getRarity = { it.rarity },
+            getElement = { it.element },
+            getGroupKey = { it.world },
+        )
+    }
 
     PageBackground(modifier = modifier) {
         Column(Modifier.fillMaxSize()) {
@@ -131,7 +121,23 @@ fun CharacterListScreen(
                     horizontalArrangement = Arrangement.spacedBy(0.dp),
                 ) {
                     itemsIndexed(visible, key = { _, ch -> ch.save.characterId }) { _, ch ->
-                        ListCard(ch, animatedVisibilityScope) { onOpenCharacter(ch.save.characterId) }
+                        CharacterCard(
+                            characterId = ch.save.characterId,
+                            name = ch.name,
+                            title = ch.title,
+                            rarity = ch.rarity,
+                            element = ch.element,
+                            onClick = { onOpenCharacter(ch.save.characterId) },
+                            animatedVisibilityScope = animatedVisibilityScope,
+                            footer = {
+                                Text(
+                                    text = "★".repeat(ch.save.stars.coerceAtLeast(1)),
+                                    fontSize = 11.sp,
+                                    color = AppTheme.Gold,
+                                    modifier = Modifier.padding(top = 3.dp),
+                                )
+                            },
+                        )
                     }
                 }
             }
@@ -140,98 +146,7 @@ fun CharacterListScreen(
 }
 
 /**
- * 列表卡片（C# CharacterCard.ListCard）：
- * 外层稀有度描边圆角（α110 填充 + 18 圆角 + 2dp 描边），内层 Surface 圆角面板，
- * 立绘 + 名称 + 职阶 + 稀有度/元素行 + 星级。
+ * 列表卡片（C# CharacterCard.ListCard）：已收敛至共享组件 CharacterCard（R1/I1）。
+ * 见 ui/components/CharacterCard.kt——外层稀有度描边、立绘框（共享元素过渡）、
+ * 名称/称号/稀有度/元素行统一实现，本页差异（星级）走 footer 插槽。
  */
-@Composable
-private fun ListCard(
-    ch: OwnedCharacterView,
-    animatedVisibilityScope: androidx.compose.animation.AnimatedVisibilityScope,
-    onClick: () -> Unit,
-) {
-    val rarityCol = AppTheme.rarityColor(ch.rarity)
-    val elem = ElementTheme.forElement(ch.element)
-    // Shared Element 作用域：AnimatedContent 提供（null 时退化为普通渲染，安全降级）
-    val sharedScope = LocalSharedTransitionScope.current
-    // 立绘 Box：sharedBounds（key 全局唯一 = "portrait_${characterId}"，与详情 Hero 同 key 配对）
-    val portraitModifier = if (sharedScope != null) {
-        with(sharedScope) {
-            Modifier.sharedBounds(
-                sharedContentState = rememberSharedContentState(key = "portrait_${ch.save.characterId}"),
-                animatedVisibilityScope = animatedVisibilityScope,
-                resizeMode = SharedTransitionScope.ResizeMode.RemeasureToBounds,
-            )
-        }
-    } else Modifier
-
-    Column(
-        modifier = Modifier
-            .padding(5.dp) // C# margin 5dp
-            .clip(RoundedCornerShape(18.dp))
-            .background(rarityCol.copy(alpha = 110f / 255f), RoundedCornerShape(18.dp))
-            .border(2.dp, rarityCol, RoundedCornerShape(18.dp))
-            .clickable(onClick = onClick)
-            .padding(3.dp),
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(16.dp))
-                .background(AppTheme.Surface, RoundedCornerShape(16.dp))
-                .padding(12.dp),
-        ) {
-            // 立绘框：元素淡色底 + 头像（缺图时回退稀有度渐变 + 首字）
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(58.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(elem.from.copy(alpha = 0.22f), RoundedCornerShape(12.dp))
-                    .then(portraitModifier),
-            ) {
-                PortraitImage(
-                    characterId = ch.save.characterId,
-                    rarity = ch.rarity,
-                    name = ch.name,
-                    modifier = Modifier.fillMaxSize(),
-                    target = PortraitTarget.Thumb,
-                    aura = true,
-                    glowScale = 0.7f,
-                )
-            }
-            Spacer(Modifier.height(8.dp))
-            Text(
-                text = ch.name,
-                fontSize = 15.sp,
-                fontWeight = FontWeight.Bold,
-                color = AppTheme.Text1,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-            Text(
-                text = ch.title,
-                fontSize = 11.sp,
-                color = AppTheme.Text2,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-            Row(Modifier.padding(top = 2.dp)) {
-                Text(
-                    text = rarityName(ch.rarity),
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = rarityCol,
-                    modifier = Modifier.padding(end = 8.dp),
-                )
-                Text(text = elem.glyph + " " + ch.element, fontSize = 11.sp, color = elem.from)
-            }
-            Text(
-                text = "★".repeat(ch.save.stars.coerceAtLeast(1)),
-                fontSize = 11.sp,
-                color = AppTheme.Gold,
-                modifier = Modifier.padding(top = 3.dp),
-            )
-        }
-    }
-}

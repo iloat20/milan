@@ -1,0 +1,20 @@
+# 金乌 Jinwu · 十日巡天
+# rarity=UR world=Shinwa element=Flame
+# canvas=1536x2304 aspect=2:3
+# anchors={'A': '神话原型: 三足金乌（三足乌鸦/三足太阳鸟，**足部必须为三趾**）', 'B': '道具指纹: 曜日神弓（**长弓 + 太阳耀斑形弓梢 + 浓缩等离子箭**）', 'C': '解剖签名: 金橙白三色羽毛披肩（**双肩、背后展开凤凰火焰羽翼**）'}
+
+Full-body character portrait of Jinwu, the three-legged golden crow sun deity from Chinese mythology (Shanhaijing). Young male figure 8-head proportion, slender and godlike. Long flowing hair, gold (#FFD700) roots transitioning to red, white-hot tips. Golden eyes (#FFD700), proud yet sorrowful, with tear-light reflection in pupils. Golden battle armor in molten gold (#FFC857) and vermilion (#E34234), with sun-core glowing gem. Phoenix flame wings (semi-transparent fire) spreading from shoulders and back, each feather tip gradient gold-orange-white. THREE LEGS visible: two human legs + one bird leg with three black claws (golden claw tips).
+
+Dynamic pose P1 (deity hovering) + bow drawn fully + head tilted up 20 degrees. Body floating, left foot planted on broken sun fragment (half-circle remnant of destroyed sun), right foot hovering on golden light disc. Three-legged crow feature: bird leg curling slightly behind. Long bow (Yao Ri Shen Gong) drawn at full: bow-tips shaped like solar flares (multi-petal flame), bowstring is condensed plasma (gold-white glowing), arrow is condensed plasma sphere.
+
+Atmosphere: tragic glory, sole survivor of ten suns. Background: TRANSPARENT (PNG alpha). Behind body: massive molten gold radial halo (full screen, UR rarity color). Floating particles: golden sun-flare fragments, broken sun remnants (9 silhouettes), ember sparks. No detailed environment — only light. Mood: proud, sorrowful, eternal duty.
+
+Shinwa world style: cel-shaded anime with Chinese ink-wash outlines, flowing brush-stroke lines, gold leaf accents. Semi-realistic facial detail with golden eye glow. Dramatic lighting from upper left (multiple overlapping light sources simulating solar radiance). Fill light from upper right using Shinwa vermilion #E34234 (faint). Rim light from behind-lower using UR molten gold #FFC857 (strong). High detail, gacha game character art, 2:3 vertical aspect ratio, transparent background, full body with three legs visible.
+
+Key elements: three_legs_two_human_one_bird_with_three_claws, long_bow_with_solar_flare_bowtips, phoenix_flame_wings_gold_orange_white_gradient.
+
+negative_prompt: two legs only, four legs, human legs only (must have bird leg),
+   half-body, bust, cropped, white background,
+   text, watermark, multiple characters, cute kawaii,
+   dark palette, gloomy, shadow (must be golden bright),
+   bow without solar flare tips, modern weapon

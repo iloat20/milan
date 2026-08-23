@@ -1,0 +1,369 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<title>武器特效拉满预览 · 主题粒子+极光环+冲击波</title>
+<style>
+  html,body{margin:0;background:#0a0a12;color:#cfd2dc;font-family:system-ui,"PingFang SC",sans-serif}
+  .wrap{max-width:1000px;margin:0 auto;padding:24px}
+  h1{font-size:20px;font-weight:700;color:#f0e6c8;letter-spacing:1px;margin:0}
+  p.note{font-size:13px;color:#8a8fa0;margin:6px 0 16px;line-height:1.6}
+  canvas{width:100%;height:auto;display:block;background:#0a0a12;border-radius:14px;box-shadow:0 8px 40px rgba(0,0,0,.5)}
+  .tags{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+  .tag{font-size:12px;padding:4px 10px;border-radius:999px;background:#16161f;border:1px solid #2c2c3e;color:#aab}
+  b{color:#e9c879}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>专属武器 · 特效拉满版预览</h1>
+  <p class="note">与 APK 同一套绘制逻辑的浏览器移植。每张卡现在带：<b>呼吸式核心辉光 + 元素主题粒子（火升腾/雷炸裂/冰飘落/风旋飞/光上浮/暗涡流/水气泡/土浮石）+ 稀有度极光环 + 周期冲击波 + 旋转流动光弧 + 武器悬浮微动</b>。
+  详情页武器此前是“冻住”的（phase 写死常量），现已接入动画时钟，与抽卡一样实时流动。</p>
+  <canvas id="c" width="960" height="640"></canvas>
+  <div class="tags">
+    <span class="tag">烛龙·昼夜神环 (UR)</span>
+    <span class="tag">虚无·无相裂隙刃 (UR)</span>
+    <span class="tag">商羊·卜天星谶盘 (SSR)</span>
+    <span class="tag">饕餮·青铜巨鼎 (SSR)</span>
+    <span class="tag">精卫·衔石填海 (SSR)</span>
+    <span class="tag">金乌·曜日神弓 (UR)</span>
+    <span class="tag">刻晴·雷楔双剑 (SSR)</span>
+    <span class="tag">刑天·干戚齿轮 (UR)</span>
+  </div>
+</div>
+<script>
+const cv = document.getElementById('c');
+const ctx = cv.getContext('2d');
+const W = cv.width, H = cv.height;
+
+function rgba(c,a){ return `rgba(${c[0]},${c[1]},${c[2]},${a})`; }
+function glowDisc(x,y,r,col,a){
+  if(r<=0) return;
+  const g=ctx.createRadialGradient(x,y,0,x,y,r);
+  g.addColorStop(0, rgba(col,a));
+  g.addColorStop(1, rgba(col,0));
+  ctx.fillStyle=g; ctx.beginPath(); ctx.arc(x,y,r,0,7); ctx.fill();
+}
+function glowStroke(path,col,blur){
+  ctx.save();
+  ctx.strokeStyle=rgba(col,0.95); ctx.lineWidth=2.2; ctx.lineCap='round'; ctx.lineJoin='round';
+  ctx.shadowColor=rgba(col,0.95); ctx.shadowBlur=blur;
+  ctx.stroke(path);
+  ctx.shadowBlur=0; ctx.strokeStyle='rgba(255,255,255,0.9)'; ctx.lineWidth=1; ctx.stroke(path);
+  ctx.restore();
+}
+function roundRect(x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
+function hash(i){ const x=Math.sin(i*12.9898+78.233); return x-Math.floor(x); }
+
+// ——— 元素主题粒子系统（对应 C# DrawElementParticles）———
+function fireParticles(cx,cy,u,col,t){
+  const baseY=cy+u*0.34, topY=cy-u*0.40, h=baseY-topY, N=9;
+  for(let i=0;i<N;i++){
+    const s=hash(i*7+3), tt=(t*0.5+s)%1;
+    const x=cx+(hash(i*13+1)-0.5)*u*0.5+Math.sin(t*3+s*6)*u*0.03;
+    const y=baseY-tt*h, flick=0.55+0.45*Math.sin(t*9+s*12), r=u*0.014*(1-tt*0.4);
+    glowDisc(x,y,r*2.2,[255,140,40],1.2*flick*(1-tt));
+    ctx.fillStyle=`rgba(255,${200+Math.round(40*flick)},120,${2.3*flick*(1-tt)})`;
+    ctx.beginPath(); ctx.arc(x,y,r,0,7); ctx.fill();
+  }
+}
+function thunderParticles(cx,cy,u,col,t){
+  const N=10;
+  for(let i=0;i<N;i++){
+    const s=hash(i*5+2), flash=Math.sin(t*10+s*22);
+    if(flash<0.25) continue;
+    const a=s*6.283, r0=u*0.10, len=u*(0.14+0.12*hash(i*3+9));
+    const x0=cx+Math.cos(a)*r0, y0=cy+Math.sin(a)*r0, x1=cx+Math.cos(a)*(r0+len), y1=cy+Math.sin(a)*(r0+len);
+    const mx=(x0+x1)/2+Math.cos(a+1.5)*u*0.04, my=(y0+y1)/2+Math.sin(a+1.5)*u*0.04;
+    const p=new Path2D(); p.moveTo(x0,y0); p.lineTo(mx,my); p.lineTo(x1,y1);
+    ctx.save(); ctx.strokeStyle=rgba(col,(2.3*(flash-0.25)/0.75)); ctx.lineWidth=1.6; ctx.lineCap='round';
+    ctx.shadowColor=rgba(col,0.9); ctx.shadowBlur=6; ctx.stroke(p); ctx.restore();
+    ctx.fillStyle='rgba(255,255,255,0.95)'; ctx.beginPath(); ctx.arc(x1,y1,1.6,0,7); ctx.fill();
+  }
+}
+function iceParticles(cx,cy,u,col,t){
+  const topY=cy-u*0.42, botY=cy+u*0.36, h=botY-topY, N=14;
+  for(let i=0;i<N;i++){
+    const s=hash(i*11+4), tt=(t*0.22+s)%1;
+    const x=cx+(hash(i*17+6)-0.5)*u*0.7+Math.sin(t*2+s*6)*u*0.04;
+    const y=topY+tt*h, r=u*0.010, tw=0.5+0.5*Math.sin(t*5+s*9);
+    ctx.fillStyle=`rgba(230,245,255,${2*(1-tt*0.5)})`; ctx.beginPath(); ctx.arc(x,y,r,0,7); ctx.fill();
+    ctx.strokeStyle=`rgba(255,255,255,${1.5*tw})`; ctx.lineWidth=0.8;
+    ctx.beginPath(); ctx.moveTo(x-r*1.8,y); ctx.lineTo(x+r*1.8,y); ctx.moveTo(x,y-r*1.8); ctx.lineTo(x,y+r*1.8); ctx.stroke();
+  }
+}
+function windParticles(cx,cy,u,col,t){
+  const N=10;
+  for(let i=0;i<N;i++){
+    const s=hash(i*9+5), a=s*6.283+t*1.3;
+    const x=cx+Math.cos(a)*u*0.34, y=cy+Math.sin(a)*u*0.21, r=u*0.012;
+    ctx.fillStyle=`rgba(220,240,255,${1.8+0.4*Math.sin(t*3+s*6)})`; ctx.beginPath(); ctx.arc(x,y,r,0,7); ctx.fill();
+    ctx.strokeStyle=rgba(col,0.9); ctx.lineWidth=1;
+    const p=new Path2D(); p.moveTo(x,y); p.quadraticCurveTo(x+u*0.03,y-u*0.02,x+u*0.05,y); ctx.stroke(p);
+  }
+}
+function lightParticles(cx,cy,u,col,t){
+  const baseY=cy+u*0.34, topY=cy-u*0.40, h=baseY-topY, N=10;
+  for(let i=0;i<N;i++){
+    const s=hash(i*6+8), tt=(t*0.4+s)%1;
+    const x=cx+(hash(i*14+2)-0.5)*u*0.6+Math.sin(t*2+s*5)*u*0.02, y=baseY-tt*h, r=u*0.010*(1-tt*0.3);
+    glowDisc(x,y,r*2.4,[255,240,200],1.2*(1-tt));
+    ctx.fillStyle=`rgba(255,250,235,${2.3*(1-tt)})`; ctx.beginPath(); ctx.arc(x,y,r,0,7); ctx.fill();
+  }
+  for(let i=0;i<3;i++){
+    const s=hash(i*23+11), tw=0.5+0.5*Math.sin(t*4+s*15); if(tw<0.5) continue;
+    const x=cx+Math.cos(s*6.283)*u*0.30, y=cy+Math.sin(s*6.283)*u*0.30, g=u*0.03*tw;
+    ctx.fillStyle=`rgba(255,250,230,${2*tw})`; ctx.beginPath(); ctx.arc(x,y,1.4,0,7); ctx.fill();
+    ctx.strokeStyle=`rgba(255,250,230,${1.6*tw})`; ctx.lineWidth=0.8;
+    ctx.beginPath(); ctx.moveTo(x-g,y); ctx.lineTo(x+g,y); ctx.moveTo(x,y-g); ctx.lineTo(x,y+g); ctx.stroke();
+  }
+}
+function voidParticles(cx,cy,u,col,t){
+  const N=9;
+  for(let i=0;i<N;i++){
+    const s=hash(i*8+7), a=s*6.283-t*0.9;
+    const x=cx+Math.cos(a)*u*0.30, y=cy+Math.sin(a)*u*0.30*0.92, rs=u*(0.03+0.02*hash(i*5+3));
+    ctx.fillStyle='rgba(0,0,0,0.24)'; ctx.beginPath(); ctx.arc(x,y,rs,0,7); ctx.fill();
+    glowDisc(x,y,rs*1.6,col,0.9+0.6*Math.sin(t*3+s*5));
+    ctx.fillStyle=rgba(col,0.8); ctx.beginPath(); ctx.arc(x,y,1.2,0,7); ctx.fill();
+  }
+}
+function waterParticles(cx,cy,u,col,t){
+  const baseY=cy+u*0.34, topY=cy-u*0.40, h=baseY-topY, N=12;
+  for(let i=0;i<N;i++){
+    const s=hash(i*10+12), tt=(t*0.35+s)%1;
+    const x=cx+(hash(i*15+9)-0.5)*u*0.55+Math.sin(t*3+s*4)*u*0.02, y=baseY-tt*h, r=u*0.012*(1-tt*0.3);
+    ctx.fillStyle=rgba(col,0.4*(1-tt)); ctx.beginPath(); ctx.arc(x,y,r*1.4,0,7); ctx.fill();
+    ctx.strokeStyle=`rgba(190,230,255,${1.7*(1-tt)})`; ctx.lineWidth=1; ctx.beginPath(); ctx.arc(x,y,r,0,7); ctx.stroke();
+    ctx.fillStyle='rgba(255,255,255,0.8)'; ctx.beginPath(); ctx.arc(x-r*0.3,y-r*0.3,r*0.3,0,7); ctx.fill();
+  }
+}
+function earthParticles(cx,cy,u,col,t){
+  const N=8;
+  for(let i=0;i<N;i++){
+    const s=hash(i*7+15), a=s*6.283+t*0.5;
+    const x=cx+Math.cos(a)*u*0.28, y=cy+Math.sin(a)*u*0.28*0.82+Math.sin(t*2+s*4)*u*0.02, rs=u*0.018;
+    ctx.fillStyle='rgba(120,96,70,0.7)'; roundRect(x-rs,y-rs*0.7,rs*2,rs*1.4,1.5); ctx.fill();
+  }
+}
+function genericRing(cx,cy,u,col,t){
+  const N=9, spin=t*0.5;
+  for(let i=0;i<N;i++){
+    const a=i*2*Math.PI/N+spin, ringR=u*0.33+u*0.025*Math.sin(t*2+i);
+    const x=cx+Math.cos(a)*ringR, y=cy+Math.sin(a)*ringR*0.94, pr=Math.max(0.6,u*0.010+u*0.006*Math.sin(t*3+i*1.7));
+    glowDisc(x,y,6+pr*3,col,1); ctx.fillStyle='rgba(255,250,245,0.9)'; ctx.beginPath(); ctx.arc(x,y,pr,0,7); ctx.fill();
+  }
+}
+function elementParticles(cx,cy,u,col,t,el){
+  if(/fire|flame|ember|inferno|burn|sun|pyro/.test(el)) fireParticles(cx,cy,u,col,t);
+  else if(/thunder|lightning|electric|storm|volt/.test(el)) thunderParticles(cx,cy,u,col,t);
+  else if(/ice|frost|snow|cold|cryo/.test(el)) iceParticles(cx,cy,u,col,t);
+  else if(/wind|air|gale|leaf|petal|anemo/.test(el)) windParticles(cx,cy,u,col,t);
+  else if(/light|holy|radiance|lum|day/.test(el)) lightParticles(cx,cy,u,col,t);
+  else if(/void|shadow|dark|abyss|night/.test(el)) voidParticles(cx,cy,u,col,t);
+  else if(/water|sea|aqua|ocean|hydro|bubble/.test(el)) waterParticles(cx,cy,u,col,t);
+  else if(/earth|stone|rock|dust|terra|geo/.test(el)) earthParticles(cx,cy,u,col,t);
+  else genericRing(cx,cy,u,col,t);
+}
+function spectralRing(cx,cy,u,legendary,t){
+  const ringR=u*(legendary?0.48:0.44);
+  const cols=[[255,90,120],[255,190,90],[120,255,170],[100,205,255],[190,140,255],[255,140,220]];
+  const cg=ctx.createConicGradient(t*40*Math.PI/180, cx, cy);
+  cols.forEach((c,i)=>cg.addColorStop(i/cols.length, `rgb(${c[0]},${c[1]},${c[2]})`));
+  cg.addColorStop(1, `rgb(${cols[0][0]},${cols[0][1]},${cols[0][2]})`);
+  ctx.save(); ctx.strokeStyle=cg; ctx.lineWidth=legendary?3:1.8; ctx.lineCap='round';
+  ctx.shadowColor='rgba(255,255,255,0.6)'; ctx.shadowBlur=legendary?6:3;
+  ctx.beginPath(); ctx.arc(cx,cy,ringR,0,7); ctx.stroke(); ctx.restore();
+}
+// 新版通用炫酷能量层（对应 C# AddAura）
+function drawAura(cx,cy,u,col,t,el,legendary){
+  const breathe=0.5+0.5*Math.sin(t*1.5);
+  glowDisc(cx,cy,u*(0.30+0.05*breathe),col,0.22+0.12*breathe);
+  glowDisc(cx,cy,u*(0.15+0.03*breathe),[255,255,255],0.34*breathe);
+  const baseY=cy+u*0.34;
+  const g=ctx.createRadialGradient(cx,baseY,0,cx,baseY,u*0.30);
+  g.addColorStop(0, rgba(col,0.5)); g.addColorStop(1, rgba(col,0));
+  ctx.save(); ctx.translate(cx,baseY); ctx.scale(1,0.18); ctx.fillStyle=g; ctx.beginPath(); ctx.arc(0,0,u*0.30,0,7); ctx.fill(); ctx.restore();
+  elementParticles(cx,cy,u,col,t,el);
+  spectralRing(cx,cy,u,legendary,t);
+  for(let k=0;k<2;k++){
+    const tt=(t*0.5+k*0.5)%1, rr=u*(0.16+tt*0.50);
+    ctx.save(); ctx.strokeStyle=rgba(col,1.1*(1-tt)); ctx.lineWidth=2*(1-tt);
+    ctx.shadowColor=rgba(col,0.8); ctx.shadowBlur=6; ctx.beginPath(); ctx.arc(cx,cy,rr,0,7); ctx.stroke(); ctx.restore();
+  }
+  ctx.save(); ctx.strokeStyle=rgba(col,0.9); ctx.lineWidth=2.4; ctx.lineCap='round';
+  ctx.shadowColor=rgba(col,0.9); ctx.shadowBlur=8; ctx.setLineDash([16,22]); ctx.lineDashOffset=-(t*70)%38;
+  ctx.beginPath(); ctx.ellipse(cx,cy,u*0.40,u*0.40*0.94,0, t*1.2, t*1.2+Math.PI*1.1); ctx.stroke();
+  ctx.setLineDash([]); ctx.shadowBlur=0; ctx.restore();
+}
+
+// ——— 武器绘制（简化矢量，忠实几何，沿用上一版）———
+function drawSunHalo(cx,cy,u,col,t){
+  const r=u*0.20, day=[255,196,92], night=[150,92,220];
+  glowDisc(cx,cy,r*2.4,col,0.5);
+  ctx.strokeStyle='rgba(246,216,138,1)'; ctx.lineWidth=2.6; ctx.beginPath(); ctx.arc(cx,cy,r,0,7); ctx.stroke();
+  const p1=new Path2D(); p1.arc(cx,cy,r*1.06,Math.PI,2*Math.PI); glowStroke(p1,day,10);
+  const p2=new Path2D(); p2.arc(cx,cy,r*1.06,0,Math.PI); glowStroke(p2,night,10);
+  glowDisc(cx,cy,r*0.62,col,1);
+  ctx.fillStyle='rgb(20,12,34)'; ctx.beginPath(); ctx.ellipse(cx,cy,r*0.16,r*0.46,0,0,7); ctx.fill();
+  ctx.fillStyle=rgba(col,1); ctx.beginPath(); ctx.ellipse(cx,cy,r*0.11,r*0.40,0,0,7); ctx.fill();
+  ctx.fillStyle='rgba(255,255,255,0.8)'; ctx.beginPath(); ctx.arc(cx-r*0.04,cy-r*0.16,r*0.05,0,7); ctx.fill();
+  for(let i=0;i<14;i++){ const a=i*Math.PI/7+t*0.4, r1=r*1.30, r2=r*(1.5+0.12*Math.sin(t*2+i));
+    const p=new Path2D(); p.moveTo(cx+Math.cos(a)*r1,cy+Math.sin(a)*r1); p.lineTo(cx+Math.cos(a)*r2,cy+Math.sin(a)*r2);
+    glowStroke(p,[246,216,138],6); }
+}
+function drawVoidBlade(cx,cy,u,col,t){
+  glowDisc(cx,cy,u*0.30,[40,18,70],0.5);
+  ctx.strokeStyle='rgba(165,95,235,0.5)'; ctx.lineWidth=1.4;
+  for(let i=0;i<3;i++){ const rr=u*(0.10+i*0.07), a0=t*(1.2-i*0.3)+i*2; ctx.beginPath(); ctx.arc(cx,cy,rr,a0,a0+4.9); ctx.stroke(); }
+  const tipY=cy-u*0.40, botY=cy+u*0.34, bw=u*0.07;
+  const blade=new Path2D();
+  blade.moveTo(cx,tipY); blade.quadraticCurveTo(cx+bw*1.8,cy-u*0.10,cx+bw*0.7,botY);
+  blade.lineTo(cx-bw*0.7,botY); blade.quadraticCurveTo(cx-bw*1.8,cy-u*0.10,cx,tipY);
+  const g=ctx.createLinearGradient(cx-bw*2,tipY,cx+bw*2,botY);
+  g.addColorStop(0,'rgb(165,95,235)'); g.addColorStop(0.5,'rgb(40,18,70)'); g.addColorStop(1,'rgb(165,95,235)');
+  ctx.fillStyle=g; ctx.fill(blade);
+  for(let i=0;i<6;i++){ const tt=(t*0.3+i*0.17)%1; const px=cx+((i%2)?-1:1)*bw*(0.4+0.4*Math.sin(t+i)); const py=tipY+tt*(botY-tipY);
+    ctx.fillStyle=`rgba(230,220,255,${0.8*(1-tt)})`; ctx.beginPath(); ctx.arc(px,py,1.6,0,7); ctx.fill(); }
+  glowStroke(blade,[165,95,235],10);
+}
+function drawAstrolabe(cx,cy,u,col,t){
+  const r=u*0.30;
+  ctx.strokeStyle='rgba(246,216,138,1)'; ctx.lineWidth=2.6; ctx.beginPath(); ctx.arc(cx,cy,r,0,7); ctx.stroke();
+  ctx.lineWidth=1.4; ctx.strokeStyle='rgba(246,216,138,0.7)'; ctx.beginPath(); ctx.arc(cx,cy,r*0.82,0,7); ctx.stroke();
+  for(let i=0;i<36;i++){ const a=i*Math.PI/18, r0=r*0.90, r1=(i%3===0)?r:r*0.95;
+    ctx.beginPath(); ctx.moveTo(cx+Math.cos(a)*r0,cy+Math.sin(a)*r0); ctx.lineTo(cx+Math.cos(a)*r1,cy+Math.sin(a)*r1); ctx.stroke(); }
+  for(let i=0;i<6;i++){ const a=i*Math.PI/3+t*0.6, sx=cx+Math.cos(a)*r*0.62, sy=cy+Math.sin(a)*r*0.62;
+    glowDisc(sx,sy,4,col,1); ctx.fillStyle='rgba(255,250,240,0.9)'; ctx.beginPath(); ctx.arc(sx,sy,1.8,0,7); ctx.fill(); }
+  glowDisc(cx,cy,r*0.5,col,1);
+  ctx.fillStyle='rgba(255,252,245,0.9)'; ctx.beginPath(); ctx.arc(cx,cy,r*0.20,0,7); ctx.fill();
+  ctx.strokeStyle=rgba(col,0.85); ctx.lineWidth=1.4;
+  ctx.beginPath(); ctx.moveTo(cx,cy-r*0.30); ctx.lineTo(cx,cy+r*0.30); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(cx-r*0.16,cy-r*0.12); ctx.lineTo(cx+r*0.16,cy-r*0.12); ctx.stroke();
+}
+function drawBronzeCauldron(cx,cy,u,col,t){
+  const bR=u*0.20, bT=cy-u*0.14, bB=cy+u*0.16;
+  const g=ctx.createLinearGradient(cx-bR,bT,cx+bR,bB);
+  g.addColorStop(0,'rgb(214,168,110)'); g.addColorStop(1,'rgb(120,84,44)');
+  ctx.fillStyle=g; roundRect(cx-bR,bT,bR*2,bB-bT,10); ctx.fill();
+  ctx.strokeStyle='rgba(60,40,18,0.6)'; ctx.lineWidth=1.6;
+  const my=bT+(bB-bT)*0.4; ctx.beginPath(); ctx.moveTo(cx-bR*0.7,my); ctx.lineTo(cx+bR*0.7,my); ctx.stroke();
+  ctx.fillStyle='rgb(214,168,110)'; ctx.beginPath(); ctx.arc(cx-bR-2,bT+2,4,0,7); ctx.fill();
+  ctx.beginPath(); ctx.arc(cx+bR+2,bT+2,4,0,7); ctx.fill();
+  ctx.strokeStyle='rgb(120,84,44)'; ctx.lineWidth=4.5; ctx.lineCap='round';
+  ctx.beginPath(); ctx.moveTo(cx-bR*0.6,bB); ctx.lineTo(cx-bR*0.7,bB+u*0.16); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(cx,bB); ctx.lineTo(cx,bB+u*0.18); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(cx+bR*0.6,bB); ctx.lineTo(cx+bR*0.7,bB+u*0.16); ctx.stroke();
+  glowDisc(cx,bT,bR*1.1,col,1);
+  for(let i=0;i<5;i++){ const a=i*2*Math.PI/5+t*0.8; const fx=cx+Math.cos(a)*bR*0.8, fy=bT-u*0.02+Math.sin(t*3+i)*4;
+    ctx.fillStyle=rgba(col,0.7); ctx.beginPath(); ctx.arc(fx,fy,2.4,0,7); ctx.fill(); }
+  ctx.fillStyle='rgba(30,10,50,0.8)'; ctx.beginPath(); ctx.ellipse(cx,bT-u*0.0,bR*0.8,u*0.05,0,0,7); ctx.fill();
+}
+function drawStoneBeak(cx,cy,u,col,t){
+  const hR=u*0.13, hX=cx-u*0.04, hY=cy-u*0.16;
+  ctx.fillStyle='rgb(150,166,190)'; ctx.beginPath(); ctx.arc(hX,hY,hR,0,7); ctx.fill();
+  const bX=hX+u*0.20, bY=hY+u*0.04;
+  const beak=new Path2D(); beak.moveTo(hX+hR*0.4,hY-u*0.03); beak.lineTo(bX,bY); beak.lineTo(hX+hR*0.5,hY+u*0.05); beak.closePath();
+  ctx.fillStyle='rgb(246,216,138)'; ctx.fill(beak);
+  glowDisc(bX,bY,10,col,1);
+  ctx.fillStyle='rgba(200,220,240,0.9)'; ctx.beginPath(); ctx.arc(bX,bY,4.5,0,7); ctx.fill();
+  ctx.fillStyle=rgba(col,0.6); ctx.beginPath(); ctx.arc(bX,bY,2.4,0,7); ctx.fill();
+  for(let i=0;i<4;i++){ const a=i*Math.PI/2+t*0.7, sx=cx+Math.cos(a)*u*0.26, sy=cy+Math.sin(a)*u*0.24;
+    glowDisc(sx,sy,5,col,1); ctx.fillStyle='rgba(180,190,210,0.85)'; ctx.beginPath(); ctx.arc(sx,sy,2.6,0,7); ctx.fill(); }
+}
+function drawBow(cx,cy,u,col,t){
+  const hh=u*0.40, gx=cx+u*0.12;
+  const limb=new Path2D();
+  limb.moveTo(gx,cy-hh);
+  limb.quadraticCurveTo(gx+hh*0.85,cy-hh*0.45,gx+hh*0.35,cy-hh*0.12);
+  limb.quadraticCurveTo(gx+hh*0.55,cy,gx+hh*0.35,cy+hh*0.12);
+  limb.quadraticCurveTo(gx+hh*0.85,cy+hh*0.45,gx,cy+hh);
+  ctx.strokeStyle='rgba(246,216,138,1)'; ctx.lineWidth=5; ctx.lineJoin='round'; ctx.stroke(limb);
+  glowStroke(limb,col,8);
+  ctx.fillStyle=rgba(col,1); ctx.beginPath(); ctx.arc(gx+hh*0.35,cy-hh*0.12,3,0,7); ctx.fill();
+  ctx.beginPath(); ctx.arc(gx+hh*0.35,cy+hh*0.12,3,0,7); ctx.fill();
+  const pull=(t*0.5)%1, nock=gx-pull*hh*0.45;
+  ctx.strokeStyle='rgba(235,235,255,0.8)'; ctx.lineWidth=1.4;
+  ctx.beginPath(); ctx.moveTo(gx,cy-hh); ctx.lineTo(nock,cy); ctx.lineTo(gx,cy+hh); ctx.stroke();
+  const tipX=gx-hh;
+  glowDisc(tipX,cy,12,col,0.7); ctx.fillStyle=rgba(col,1); ctx.beginPath(); ctx.arc(tipX,cy,5,0,7); ctx.fill();
+}
+function drawSwordShape(cx,cy,u,col,t,ang){
+  ctx.save(); ctx.translate(cx,cy); ctx.rotate(ang);
+  const tipY=-u*0.42, gY=u*0.02, pY=u*0.17, bw=u*0.05;
+  const blade=new Path2D(); blade.moveTo(0,tipY); blade.lineTo(bw,gY-u*0.04); blade.lineTo(bw*0.78,gY); blade.lineTo(-bw*0.78,gY); blade.lineTo(-bw,gY-u*0.04); blade.closePath();
+  const g=ctx.createLinearGradient(-bw,tipY,bw,gY); g.addColorStop(0,'rgb(233,239,247)'); g.addColorStop(0.5,'rgb(150,166,190)'); g.addColorStop(1,'rgb(84,100,126)');
+  ctx.fillStyle=g; ctx.fill(blade);
+  glowStroke(blade,col,8);
+  ctx.fillStyle='rgb(246,216,138)'; ctx.fillRect(-u*0.052,gY,u*0.104,u*0.034);
+  ctx.fillStyle=rgba(col,1); ctx.beginPath(); ctx.arc(0,pY+u*0.03,u*0.026,0,7); ctx.fill();
+  ctx.restore();
+}
+function drawTwin(cx,cy,u,col,t){
+  const strike=(t*0.6)%1;
+  drawSwordShape(cx,cy,u,col,t,-24*Math.PI/180-strike*16*Math.PI/180);
+  drawSwordShape(cx,cy,u,col,t, 24*Math.PI/180-strike*16*Math.PI/180);
+}
+function drawAxe(cx,cy,u,col,t){
+  for(let gN=0;gN<2;gN++){ const gr=u*(0.30+gN*0.12), spin=t*(gN===0?1:-1.4)*30;
+    ctx.save(); ctx.translate(cx,cy); ctx.rotate(spin*Math.PI/180); ctx.strokeStyle='rgba(150,140,160,0.5)'; ctx.lineWidth=1.6;
+    for(let i=0;i<10;i++){ const a0=i*2*Math.PI/10; ctx.beginPath(); ctx.moveTo(Math.cos(a0)*gr,Math.sin(a0)*gr); ctx.lineTo(Math.cos(a0+Math.PI/10)*(gr+4),Math.sin(a0+Math.PI/10)*(gr+4)); ctx.stroke(); }
+    ctx.beginPath(); ctx.arc(0,0,gr*0.6,0,7); ctx.stroke(); ctx.restore(); }
+  const ax=cx+u*0.16, ay=cy-u*0.30;
+  ctx.strokeStyle='rgb(110,84,64)'; ctx.lineWidth=4; ctx.lineCap='round';
+  ctx.beginPath(); ctx.moveTo(ax,ay+u*0.04); ctx.lineTo(cx-u*0.04,cy+u*0.28); ctx.stroke();
+  const blade=new Path2D(); blade.moveTo(ax,ay);
+  blade.quadraticCurveTo(ax+u*0.20,ay-u*0.12,ax+u*0.20,ay+u*0.02);
+  blade.quadraticCurveTo(ax+u*0.10,ay+u*0.10,ax+u*0.04,ay+u*0.20);
+  blade.quadraticCurveTo(ax-u*0.02,ay+u*0.10,ax,ay+u*0.04); blade.closePath();
+  const g=ctx.createLinearGradient(ax,ay-u*0.12,ax+u*0.20,ay+u*0.20); g.addColorStop(0,'rgb(233,239,247)'); g.addColorStop(1,'rgb(84,100,126)');
+  ctx.fillStyle=g; ctx.fill(blade); glowStroke(blade,col,8);
+  const shx=cx-u*0.18, shy=cy+u*0.06, sr=u*0.13;
+  ctx.fillStyle='rgb(150,166,190)'; ctx.beginPath(); ctx.arc(shx,shy,sr,0,7); ctx.fill();
+  ctx.strokeStyle='rgba(246,216,138,1)'; ctx.lineWidth=2.4; ctx.beginPath(); ctx.arc(shx,shy,sr,0,7); ctx.stroke();
+  ctx.fillStyle=rgba(col,1); ctx.beginPath(); ctx.arc(shx,shy,sr*0.42,0,7); ctx.fill();
+}
+
+const items=[
+  {name:'烛龙', sub:'昼夜神环·竖瞳', col:[255,170,70], el:'fire', leg:true,  draw:drawSunHalo},
+  {name:'虚无', sub:'无相裂隙刃',     col:[170,100,240],el:'void', leg:true,  draw:drawVoidBlade},
+  {name:'商羊', sub:'卜天星谶盘',     col:[120,160,255],el:'light',leg:true,  draw:drawAstrolabe},
+  {name:'饕餮', sub:'青铜巨鼎·吞噬',  col:[120,220,120],el:'fire', leg:true,  draw:drawBronzeCauldron},
+  {name:'精卫', sub:'衔石填海',       col:[120,210,230],el:'water',leg:true,  draw:drawStoneBeak},
+  {name:'金乌', sub:'曜日神弓',       col:[255,180,80], el:'fire', leg:true,  draw:drawBow},
+  {name:'刻晴', sub:'雷楔双剑',       col:[180,120,255],el:'thunder',leg:true,draw:drawTwin},
+  {name:'刑天', sub:'干戚·齿轮',      col:[180,190,210],el:'earth',leg:true,  draw:drawAxe},
+];
+const cols=4, rows=2, cw=W/cols, ch=H/rows;
+
+function drawCard(i,t){
+  const cxi=(i%cols+0.5)*cw, cyi=(Math.floor(i/cols)+0.5)*ch, u=Math.min(cw,ch)*0.62;
+  const stageG=ctx.createRadialGradient(cxi,cyi-u*0.1,0,cxi,cyi,u*0.9);
+  stageG.addColorStop(0, rgba(items[i].col,0.16)); stageG.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.fillStyle=stageG; ctx.fillRect((i%cols)*cw,Math.floor(i/cols)*ch,cw,ch);
+  ctx.strokeStyle=rgba(items[i].col,0.5); ctx.lineWidth=1.5;
+  roundRect((i%cols)*cw+12,Math.floor(i/cols)*ch+12,cw-24,ch-24,14); ctx.stroke();
+  // 武器悬浮微动（与 APK 一致：上下轻浮 + 极缓旋转）
+  const bob=Math.sin(t*1.3)*u*0.020, rot=Math.sin(t*0.9)*0.045;
+  ctx.save(); ctx.translate(0,bob); ctx.translate(cxi,cyi); ctx.rotate(rot); ctx.translate(-cxi,-cyi);
+  items[i].draw(cxi,cyi,u,items[i].col,t);
+  ctx.restore();
+  drawAura(cxi,cyi,u,items[i].col,t,items[i].el,items[i].leg);
+  ctx.fillStyle='#f0e6c8'; ctx.font='bold 15px system-ui'; ctx.textAlign='center';
+  ctx.fillText(items[i].name, cxi, Math.floor(i/cols)*ch+ch-26);
+  ctx.fillStyle='#8a8fa0'; ctx.font='12px system-ui';
+  ctx.fillText(items[i].sub, cxi, Math.floor(i/cols)*ch+ch-10);
+}
+
+let start=performance.now();
+function frame(now){
+  const t=(now-start)/1000;
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle='#0a0a12'; ctx.fillRect(0,0,W,H);
+  for(let i=0;i<items.length;i++) drawCard(i,t);
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

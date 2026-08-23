@@ -1,5 +1,7 @@
 # SSR 角色设计稿（5位）— 高规格
 
+> ⚠️ **已废弃 DEPRECATED（v1.0 / MAUI 时代）**：本稿每档仅 5 位、共 20 角色、旧元素体系，已被 `portraits-v2/` 全套方案取代。新立绘以 `portraits-v2/02-character-portrait-SSR.md` 为准，**请勿按本稿生图**。
+
 > SSR = 3★，高稀有度。立绘规格较高，细节丰富，构图有冲击力。
 
 ---

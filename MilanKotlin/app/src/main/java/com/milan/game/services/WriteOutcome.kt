@@ -19,6 +19,21 @@ sealed interface WriteOutcome {
 }
 
 /**
+ * 将 [WriteOutcome] 收口为反馈文案（R3）：成功用调用点传入的 [success]，
+ * 被拒 / 落盘失败用统一默认（调用点可按需覆盖 [rejected] / [saveFailed]）。
+ * 配合 [com.milan.game.ui.feedback.LocalFeedback] 统一展示。
+ */
+fun WriteOutcome.toMessage(
+    success: String,
+    rejected: String = "操作失败",
+    saveFailed: String = "保存失败，请重试",
+): String = when (this) {
+    WriteOutcome.Success -> success
+    WriteOutcome.Rejected -> rejected
+    WriteOutcome.SaveFailed -> saveFailed
+}
+
+/**
  * 抽卡结果（2026-08 类型化：替代「空列表 = 失败」的隐式约定）。
  *
  * 空列表语义此前在 UI 层被笼统提示为「卡池数据异常」，实际可能是余额不足

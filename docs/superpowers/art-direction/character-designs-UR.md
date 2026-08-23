@@ -1,5 +1,7 @@
 # UR 角色设计稿（5位）— 最高规格
 
+> ⚠️ **已废弃 DEPRECATED（v1.0 / MAUI 时代）**：本稿每档仅 5 位、共 20 角色、旧元素体系，已被 `portraits-v2/` 全套方案取代。新立绘以 `portraits-v2/00-master-spec.md` 及 `01-character-portrait-UR.md` 为准，**请勿按本稿生图**。
+
 > UR = 4★，最高稀有度。立绘规格最高，需要最精细的细节和最具冲击力的构图。
 > 每个角色的生图 Prompt 都包含了完整的世界风格指定。
 

@@ -163,7 +163,7 @@ private fun NavCell(
         Column(
             modifier = Modifier.fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = androidx.compose.foundation.layout.Arrangement.Center,
+            verticalArrangement = Arrangement.Center,
         ) {
             Icon(
                 imageVector = item.icon,

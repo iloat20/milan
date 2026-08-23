@@ -62,6 +62,15 @@ object AppTheme {
     /** 印章点缀红（中西融合母题保留项）。 */
     val SealRed = Color(0xFFC8252A)
 
+    /** 浮层底部铭牌渐变起笔（透明 → 深紫黑，HeroNameplate 等底部渐隐；M15 收口硬编码色）。 */
+    val ScrimTop = Color(0x000B0612)
+
+    /** 浮层底部铭牌渐变收尾（深紫黑 α≈0.75，与 BgDeepest 同调）。 */
+    val ScrimBottom = Color(0xBE07040F)
+
+    /** 嵌套玻璃面板底色（#251242 @ α≈0.59，GlassPanel nested 态；M15 收口硬编码色）。 */
+    val SurfaceNested = Color(0x96251242)
+
     /** 稀有度色板 — 诸神黄昏·东方 调性（UR 熔金 / SSR 暮紫 / SR 霜蓝 / R 苍白）。 */
     fun rarityColor(rarity: Int): Color = when (rarity) {
         1 -> Color(0xFFE8E2F2)   // R  - 苍白

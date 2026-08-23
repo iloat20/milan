@@ -1,0 +1,19 @@
+# 刑天 Xingtian · 不死战神
+# rarity=UR world=Ironveil element=Metal
+# canvas=1536x2304 aspect=2:3
+# anchors={'A': '神话原型: 断首以乳为目以脐为口（**胸口双眼发光 + 腹部格栅口**）', 'B': '道具指纹: 干戚双武器（**左手巨盾"干" + 右手巨斧"戚"**）', 'C': '解剖签名: 颈部金属铸造截面（**战损划痕与焊接修补痕迹**）'}
+
+Full-body character portrait of Xingtian, the headless immortal warrior from Chinese mythology reimagined as Ironveil mechanized berserker. NO HEAD — neck is a cast metal cross-section with weld marks and battle scratches. Eyes are TWO glowing orange-red optical sensors on the chest (Doomsday-style horizontal pupils). Mouth is a circular metal grille on the abdomen with pulsing red light. Muscular male body covered in heavy battle mecha armor, gunmetal gray (#4A4A5A) and copper (#B87333), covered in battle damage, weld repair, and impact dents. Exposed mechanical spine on back with 7 pulsing energy tubes.
+
+Dynamic pose P2 (battle charge) + body leaning forward 30 degrees breaking frame + giant axe raised high overhead + shield held at left side. Left foot forward, right foot planted on broken enemy mecha debris. Axe length 4/5 of body height, blade glowing molten red (#FF4500) like adamantium. Shield diameter 1/3 body height, face carved with Wolverine claw marks (3 parallel gouges) and Doomsday runes. Axe handle wrapped in iron chain.
+
+Atmosphere: battlefield fury, immortal rage. Background: TRANSPARENT (PNG alpha). Behind body: Ironveil rust-orange radial halo (UR rarity color). Floating particles: metal sparks, oil drops, steel fragments, dust from impact. Ground crack visible only beneath right foot (small explosion circle). Mood: unstoppable, wrathful, eternal.
+
+Ironveil world style: hard-surface mechanical design, industrial realism, gunmetal and copper palette, rivets and panel lines, sparks and steam. Semi-realistic rendering with cel-shading highlights on metal edges. Dramatic orange battle lighting from upper left. Rim light from behind-lower using UR molten gold #FFC857. Hard shadow edges (theatrical). High detail, gacha game character art, 2:3 vertical aspect ratio, transparent background, full body with feet visible, 7-head proportion.
+
+Key elements: no_head_neck_is_metal_cross_section.
+
+negative_prompt: human head, face visible, normal eyes on head, normal mouth on face,
+   half-body, bust, cropped, white background,
+   text, watermark, multiple characters, cute, kawaii,
+   pristine armor, clean metal, futuristic sleek

@@ -10,14 +10,14 @@ import com.milan.game.services.CharacterDataEntry
  *   1) 在 libs.versions.toml 增加 `mediapipeGenai = "0.10.22"`，并在 [libraries] 增加
  *      `androidx-mediapipe-genai = { group = "com.google.mediapipe", name = "tasks-genai", version.ref = "mediapipeGenai" }`
  *   2) 在 app/build.gradle.kts 增加 `implementation(libs.androidx.mediapipe.genai)`
- *   3) 把本文件移动到 `app/src/main/java/...`，并将 OnDeviceAgent.current 指向本实现
+ *   3) 把本文件移动到 `app/src/main/java/...`，并将 FortuneAgentRegistry.activeAgent 指向本实现
  *   4) 将 Gemma-2B-int4 模型 .bin 放入设备可读路径（APK +200~500MB；试验田可接受）
  *
  * 设备不支持 / 模型缺失时，回到 [StubOnDeviceAgent]（在调用方用 supportsOnDevice() 判断）。
  */
 class MediaPipeOnDeviceAgent(
     private val modelPath: String,
-) : OnDeviceAgent {
+) : FortuneAgent {
 
     // LlmInference 懒加载：首次推理前创建，避免冷启动 ANR
     private val inference by lazy {

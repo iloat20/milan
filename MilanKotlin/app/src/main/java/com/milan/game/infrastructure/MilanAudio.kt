@@ -130,17 +130,23 @@ object MilanAudio {
     fun playSfx(name: String) {
         val c = appContext ?: return
         val pool = sfxPool ?: return
-        val id = sfxIds[name] ?: try {
-            c.assets.openFd("audio/sfx/$name.ogg").use { afd ->
-                pool.load(afd, 1).also { loaded ->
-                    if (loaded > 0) {
-                        sfxIds[name] = loaded
-                        loadingSfx[loaded] = name // 加载完成回调据此补放首次触发
-                    }
+        // 加载失败（资源缺失/损坏）缓存 -1 哨兵：此前失败不落表，同名缺失音效每次触发
+        // 都重新 openFd + 抛异常（按钮高频音效路径上反复 IO）。哨兵随 release() 一并清空。
+        val id = sfxIds[name] ?: run {
+            val loaded = try {
+                c.assets.openFd("audio/sfx/$name.ogg").use { afd ->
+                    pool.load(afd, 1)
                 }
+            } catch (_: Exception) {
+                -1 // 资源缺失：静默
             }
-        } catch (_: Exception) {
-            -1 // 资源缺失：静默
+            if (loaded > 0) {
+                sfxIds[name] = loaded
+                loadingSfx[loaded] = name // 加载完成回调据此补放首次触发
+            } else {
+                sfxIds[name] = -1
+            }
+            loaded
         }
         if (id > 0) pool.play(id, sfxVolume, sfxVolume, 1, 0, 1f)
     }

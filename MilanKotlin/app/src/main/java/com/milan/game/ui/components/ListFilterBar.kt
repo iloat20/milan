@@ -123,11 +123,11 @@ fun ListFilterBar(
         // ── 稀有度 ──
         SectionLabel("稀有度")
         Row(Modifier.horizontalScroll(rememberScrollState())) {
-            ChipRow(-1, "全部", rarityFilter == -1) { onRarityFilterChange(-1) }
-            ChipRow(1, "R", rarityFilter == 1) { onRarityFilterChange(1) }
-            ChipRow(2, "SR", rarityFilter == 2) { onRarityFilterChange(2) }
-            ChipRow(3, "SSR", rarityFilter == 3) { onRarityFilterChange(3) }
-            ChipRow(4, "UR", rarityFilter == 4) { onRarityFilterChange(4) }
+            FilterChip("全部", rarityFilter == -1) { onRarityFilterChange(-1) }
+            FilterChip("R", rarityFilter == 1) { onRarityFilterChange(1) }
+            FilterChip("SR", rarityFilter == 2) { onRarityFilterChange(2) }
+            FilterChip("SSR", rarityFilter == 3) { onRarityFilterChange(3) }
+            FilterChip("UR", rarityFilter == 4) { onRarityFilterChange(4) }
         }
         Spacer(Modifier.height(6.dp))
 
@@ -152,12 +152,6 @@ fun ListFilterBar(
             FilterChip("元素", sort == ListSortMode.ElementAsc) { onSortChange(ListSortMode.ElementAsc) }
         }
     }
-}
-
-/** 稀有度行专用 chip（值域固定，避免在循环里闭包捕获可变值）。 */
-@Composable
-private fun ChipRow(rarity: Int, label: String, active: Boolean, onClick: () -> Unit) {
-    FilterChip(label, active, onClick)
 }
 
 /** 单个筛选 chip（C# ListFilterBar.AddChip：选中金底 / 未选玻璃底，12sp 加粗）。 */

@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Milan · 暗夜神性 调性样张</title>
+<style>
+  :root{
+    --void:#0B0612; --night:#160A26; --surface:#1E0E33;
+    --gold:#E8B84B; --gold-hi:#FFC857; --gold-deep:#C9962E;
+    --frost:#7FC4FF; --frost-deep:#4A90D9; --violet:#9A6BFF;
+    --t1:#F3ECFF; --t2:#B7A6CF; --t3:#6E5C8A;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{
+    background:#EDEAF4; color:#2C2C3A;
+    font-family:-apple-system,"Segoe UI",Roboto,"PingFang SC","Microsoft YaHei",sans-serif;
+    display:flex; flex-direction:column; align-items:center; gap:22px; padding:32px 16px 48px;
+  }
+  .caption{font-size:13px;color:#6E5C8A;letter-spacing:.5px;}
+  .caption b{color:#3C3489;font-weight:600;}
+
+  /* ---- phone frame ---- */
+  .phone{
+    width:360px; height:760px; border-radius:42px; overflow:hidden; position:relative;
+    background:var(--void); border:1px solid rgba(232,184,75,.22);
+    box-shadow:0 30px 80px rgba(60,30,110,.45);
+  }
+  .bg{position:absolute;inset:0;
+    background:
+      radial-gradient(120% 75% at 50% 16%, #3A1466 0%, #1A0A30 46%, var(--void) 100%);
+  }
+  .bg::after{content:"";position:absolute;inset:0;
+    background:radial-gradient(58% 38% at 50% 6%, rgba(232,184,75,.22), transparent 70%);}
+  .stars{position:absolute;inset:0;opacity:.7;
+    background-image:
+      radial-gradient(1.5px 1.5px at 20% 12%, #fff, transparent),
+      radial-gradient(1.5px 1.5px at 70% 9%, #cdbcff, transparent),
+      radial-gradient(1px 1px at 40% 22%, #fff, transparent),
+      radial-gradient(1.5px 1.5px at 85% 28%, #fff, transparent),
+      radial-gradient(1px 1px at 15% 35%, #bcdcff, transparent),
+      radial-gradient(1.5px 1.5px at 60% 40%, #fff, transparent);
+  }
+  .screen{position:relative;height:100%;padding:18px 16px 22px;display:flex;flex-direction:column;}
+
+  /* top bar */
+  .topbar{display:flex;justify-content:space-between;align-items:center;}
+  .logo{font-weight:800;letter-spacing:4px;font-size:18px;
+    background:linear-gradient(90deg,var(--gold-hi),var(--gold),var(--gold-deep));
+    -webkit-background-clip:text;color:transparent;}
+  .logo .dia{color:var(--gold-hi);-webkit-text-fill-color:var(--gold-hi);}
+  .res{display:flex;gap:8px;}
+  .pill{display:flex;align-items:center;gap:5px;font-size:12px;padding:5px 11px;border-radius:14px;}
+  .pill.star{background:rgba(232,184,75,.12);border:1px solid rgba(232,184,75,.38);color:#FFE9A8;}
+  .pill.gem{background:rgba(127,196,255,.12);border:1px solid rgba(127,196,255,.38);color:#BFE0FF;}
+
+  /* hero portrait */
+  .hero{margin-top:22px;flex:1;display:flex;justify-content:center;align-items:center;position:relative;}
+  .portrait{width:208px;height:312px;border-radius:20px;position:relative;overflow:hidden;
+    background:linear-gradient(160deg,#5B2E8F,#2A1450);
+    box-shadow:0 0 60px rgba(154,107,255,.4);}
+  .rim{position:absolute;inset:0;background:linear-gradient(105deg,rgba(255,200,87,.30),transparent 38%);}
+  .figure{position:absolute;bottom:0;left:50%;transform:translateX(-50%);
+    width:128px;height:210px;border-radius:64px 64px 22px 22px;
+    background:radial-gradient(58% 58% at 50% 28%, #D9BEFF, #7B4FB8 68%, transparent);}
+  .grade{position:absolute;inset:0; /* cool desat + vignette */
+    background:
+      radial-gradient(78% 78% at 50% 42%, transparent 38%, rgba(11,6,18,.88) 100%),
+      linear-gradient(0deg, rgba(74,144,217,.10), rgba(154,107,255,.06));}
+  .halo{position:absolute;top:46%;left:50%;transform:translate(-50%,-50%);
+    width:240px;height:240px;border-radius:50%;
+    background:radial-gradient(circle, rgba(232,184,75,.18), transparent 62%);}
+
+  .nameplate{text-align:center;margin-top:8px;}
+  .name{font-size:21px;font-weight:700;color:var(--t1);}
+  .name .title{font-size:13px;font-weight:400;color:var(--t2);margin-left:6px;}
+  .rar{display:inline-block;margin-top:8px;font-size:11px;letter-spacing:3px;font-weight:700;
+    color:#0B0612;background:linear-gradient(90deg,var(--gold-hi),var(--gold));
+    padding:3px 14px;border-radius:10px;}
+
+  /* nav */
+  .nav{display:flex;gap:10px;margin-top:18px;}
+  .navitem{flex:1;text-align:center;padding:15px 0;border-radius:16px;font-size:13px;}
+  .navitem.on{background:rgba(30,14,51,.62);border:1px solid rgba(232,184,75,.55);
+    color:#FFE9A8;font-weight:600;position:relative;}
+  .navitem.on::after{content:"";position:absolute;left:50%;bottom:6px;transform:translateX(-50%);
+    width:22px;height:2px;border-radius:2px;background:var(--gold-hi);}
+  .navitem.off{background:rgba(30,14,51,.42);border:1px solid rgba(255,255,255,.08);color:var(--t2);}
+
+  /* palette strip */
+  .pal{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;max-width:380px;}
+  .sw{width:78px;border-radius:12px;overflow:hidden;border:1px solid rgba(0,0,0,.06);}
+  .sw .c{height:46px;}
+  .sw .l{font-size:10px;color:#444;padding:4px 6px;background:#fff;}
+  .sw .l b{display:block;color:#222;font-weight:600;font-size:11px;}
+</style>
+</head>
+<body>
+  <div class="caption"><b>Milan · 暗夜神性（诸神黄昏·东方）</b> — Home 调性样张 · 克制的金 / 电影纵深 / 唯一调色板</div>
+
+  <div class="phone">
+    <div class="bg"></div>
+    <div class="stars"></div>
+    <div class="screen">
+      <div class="topbar">
+        <div class="logo">MILAN <span class="dia">◆</span></div>
+        <div class="res">
+          <div class="pill star">✦ 12,480</div>
+          <div class="pill gem">◆ 320</div>
+        </div>
+      </div>
+
+      <div class="hero">
+        <div class="halo"></div>
+        <div class="portrait">
+          <div class="figure"></div>
+          <div class="rim"></div>
+          <div class="grade"></div>
+        </div>
+      </div>
+
+      <div class="nameplate">
+        <div class="name">烛龙<span class="title">昼夜之主</span></div>
+        <div class="rar">UR</div>
+      </div>
+
+      <div class="nav">
+        <div class="navitem on">抽卡</div>
+        <div class="navitem off">角色</div>
+        <div class="navitem off">收藏</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="pal">
+    <div class="sw"><div class="c" style="background:#0B0612"></div><div class="l"><b>void</b>#0B0612</div></div>
+    <div class="sw"><div class="c" style="background:#160A26"></div><div class="l"><b>night</b>#160A26</div></div>
+    <div class="sw"><div class="c" style="background:#1E0E33"></div><div class="l"><b>surface</b>#1E0E33</div></div>
+    <div class="sw"><div class="c" style="background:#E8B84B"></div><div class="l"><b>gold</b>#E8B84B</div></div>
+    <div class="sw"><div class="c" style="background:#FFC857"></div><div class="l"><b>gold-hi</b>#FFC857</div></div>
+    <div class="sw"><div class="c" style="background:#7FC4FF"></div><div class="l"><b>frost</b>#7FC4FF</div></div>
+    <div class="sw"><div class="c" style="background:#9A6BFF"></div><div class="l"><b>violet</b>#9A6BFF</div></div>
+    <div class="sw"><div class="c" style="background:#F3ECFF"></div><div class="l"><b>text-1</b>#F3ECFF</div></div>
+  </div>
+</body>
+</html>

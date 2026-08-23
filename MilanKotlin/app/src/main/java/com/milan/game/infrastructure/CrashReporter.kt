@@ -14,6 +14,8 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 import java.util.concurrent.Executors
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 /**
  * 崩溃取证与留痕（C# CrashReporter 翻译）。
@@ -211,15 +213,19 @@ object CrashReporter {
         return text
     }
 
-    /** 历史累计崩溃次数（crash_count.txt，跨启动累计，含 EventBus 等非致命留痕）。 */
-    fun crashCount(): Int {
-        try { synchronized(gate) { return File(baseDir, "crash_count.txt").readText().trim().toIntOrNull() ?: 0 } }
-        catch (_: Exception) { return 0 }
+    /** 历史累计崩溃次数（crash_count.txt，跨启动累计，含 EventBus 等非致命留痕）。
+     *  挂起版：脱离主线程读文件，SettingsScreen 合成期/点击调用。 */
+    suspend fun crashCount(): Int = withContext(Dispatchers.IO) {
+        try { synchronized(gate) { File(baseDir, "crash_count.txt").readText().trim().toIntOrNull() ?: 0 } }
+        catch (_: Exception) { 0 }
     }
 
-    /** 同步导出全部取证（最近崩溃 + 历史归档 + 启动面包屑）到外部镜像目录（adb 可读）。
-     *  崩溃对话框「导出」按钮调用；返回导出目录路径，失败返回 null。 */
-    fun exportAll(): String? {
+    /** 导出全部取证（最近崩溃 + 历史归档 + 启动面包屑）到外部镜像目录（adb 可读）。
+     *  挂起版：脱离主线程 IO，SettingsScreen「导出」调用；返回导出目录路径，失败返回 null。 */
+    suspend fun exportAll(): String? = withContext(Dispatchers.IO) { exportAllBlocking() }
+
+    /** 同步导出（崩溃对话框等无法挂起的取证路径使用）。逻辑与 [exportAll] 一致。 */
+    private fun exportAllBlocking(): String? {
         try {
             val d = externalDir ?: return null
             synchronized(gate) {
@@ -330,7 +336,7 @@ object CrashReporter {
                         }
                         .setNeutralButton("导出") { _, _ ->
                             try {
-                                val path = exportAll()
+                                val path = exportAllBlocking()
                                 Toast.makeText(
                                     act,
                                     if (path != null) "已导出取证到 $path" else "导出失败（无外部存储）",

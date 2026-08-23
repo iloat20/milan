@@ -1,0 +1,587 @@
+{
+  "dir": "./out",
+  "count": 24,
+  "summary": {
+    "PASS": 11,
+    "WARN": 0,
+    "FAIL": 13
+  },
+  "items": [
+    {
+      "id": "Full_body_character_portrait_o_2026-08-13T02-55-16",
+      "rarity": "R",
+      "size": 717442,
+      "alpha": true,
+      "geometry": {
+        "opacity_ratio": 0.374,
+        "height_frac": 0.909,
+        "center_dx": 0.004,
+        "foot_present": true,
+        "w": 832,
+        "h": 1216
+      },
+      "issues": [],
+      "level": "PASS",
+      "anchors_human_check": {},
+      "key_elements_human_check": []
+    },
+    {
+      "id": "Full_body_character_portrait_o_2026-08-13T03-37-04",
+      "rarity": "R",
+      "size": 548530,
+      "alpha": true,
+      "geometry": {
+        "opacity_ratio": 0.337,
+        "height_frac": 0.974,
+        "center_dx": 0.004,
+        "foot_present": true,
+        "w": 832,
+        "h": 1216
+      },
+      "issues": [],
+      "level": "PASS",
+      "anchors_human_check": {},
+      "key_elements_human_check": []
+    },
+    {
+      "id": "Full_body_character_portrait_o_2026-08-13T03-37-37",
+      "rarity": "R",
+      "size": 754644,
+      "alpha": true,
+      "geometry": {
+        "opacity_ratio": 0.413,
+        "height_frac": 0.954,
+        "center_dx": -0.012,
+        "foot_present": true,
+        "w": 832,
+        "h": 1216
+      },
+      "issues": [],
+      "level": "PASS",
+      "anchors_human_check": {},
+      "key_elements_human_check": []
+    },
+    {
+      "id": "Full_body_character_portrait_o_2026-08-13T03-38-15",
+      "rarity": "R",
+      "size": 500068,
+      "alpha": true,
+      "geometry": {
+        "opacity_ratio": 0.331,
+        "height_frac": 0.811,
+        "center_dx": -0.059,
+        "foot_present": true,
+        "w": 832,
+        "h": 1216
+      },
+      "issues": [],
+      "level": "PASS",
+      "anchors_human_check": {},
+      "key_elements_human_check": []
+    },
+    {
+      "id": "Full_body_character_portrait_o_2026-08-13T03-38-55",
+      "rarity": "R",
+      "size": 751894,
+      "alpha": true,
+      "geometry": {
+        "opacity_ratio": 0.494,
+        "height_frac": 0.93,
+        "center_dx": -0.001,
+        "foot_present": true,
+        "w": 832,
+        "h": 1216
+      },
+      "issues": [],
+      "level": "PASS",
+      "anchors_human_check": {},
+      "key_elements_human_check": []
+    },
+    {
+      "id": "Full_body_character_portrait_o_2026-08-13T03-39-34",
+      "rarity": "R",
+      "size": 887136,
+      "alpha": true,
+      "geometry": {
+        "opacity_ratio": 0.448,
+        "height_frac": 0.965,
+        "center_dx": -0.001,
+        "foot_present": true,
+        "w": 832,
+        "h": 1216
+      },
+      "issues": [],
+      "level": "PASS",
+      "anchors_human_check": {},
+      "key_elements_human_check": []
+    },
+    {
+      "id": "Full_body_character_portrait_o_2026-08-13T03-40-12",
+      "rarity": "R",
+      "size": 600640,
+      "alpha": true,
+      "geometry": {
+        "opacity_ratio": 0.371,
+        "height_frac": 0.899,
+        "center_dx": 0.004,
+        "foot_present": true,
+        "w": 832,
+        "h": 1216
+      },
+      "issues": [],
+      "level": "PASS",
+      "anchors_human_check": {},
+      "key_elements_human_check": []
+    },
+    {
+      "id": "Full_body_character_portrait_o_2026-08-13T03-40-39",
+      "rarity": "R",
+      "size": 989302,
+      "alpha": true,
+      "geometry": {
+        "opacity_ratio": 0.544,
+        "height_frac": 0.859,
+        "center_dx": 0.001,
+        "foot_present": true,
+        "w": 832,
+        "h": 1216
+      },
+      "issues": [],
+      "level": "PASS",
+      "anchors_human_check": {},
+      "key_elements_human_check": []
+    },
+    {
+      "id": "Full_body_character_portrait_o_2026-08-13T03-41-07",
+      "rarity": "R",
+      "size": 842540,
+      "alpha": true,
+      "geometry": {
+        "opacity_ratio": 0.471,
+        "height_frac": 0.912,
+        "center_dx": -0.007,
+        "foot_present": true,
+        "w": 832,
+        "h": 1216
+      },
+      "issues": [],
+      "level": "PASS",
+      "anchors_human_check": {},
+      "key_elements_human_check": []
+    },
+    {
+      "id": "Full_body_character_portrait_o_2026-08-13T03-41-34",
+      "rarity": "R",
+      "size": 790560,
+      "alpha": true,
+      "geometry": {
+        "opacity_ratio": 0.418,
+        "height_frac": 0.923,
+        "center_dx": 0.026,
+        "foot_present": true,
+        "w": 832,
+        "h": 1216
+      },
+      "issues": [],
+      "level": "PASS",
+      "anchors_human_check": {},
+      "key_elements_human_check": []
+    },
+    {
+      "id": "Full_body_character_portrait_o_2026-08-13T03-42-03",
+      "rarity": "R",
+      "size": 580852,
+      "alpha": true,
+      "geometry": {
+        "opacity_ratio": 0.402,
+        "height_frac": 0.914,
+        "center_dx": -0.024,
+        "foot_present": true,
+        "w": 832,
+        "h": 1216
+      },
+      "issues": [],
+      "level": "PASS",
+      "anchors_human_check": {},
+      "key_elements_human_check": []
+    },
+    {
+      "id": "char_sr_suanni",
+      "rarity": "SR",
+      "size": 42059,
+      "alpha": false,
+      "geometry": {
+        "opacity_ratio": 1.0,
+        "height_frac": 1.0,
+        "center_dx": -0.001,
+        "foot_present": true,
+        "w": 627,
+        "h": 940
+      },
+      "issues": [
+        "FAIL:no-alpha-channel",
+        "WARN:size-too-small(42059<120000)",
+        "WARN:opacity-high-bg?(1.0)"
+      ],
+      "level": "FAIL",
+      "anchors_human_check": {
+        "A": "神话原型: 狮面人身（**必须是狮头人身，金鬃环绕，**绝不**是猪**）",
+        "B": "道具指纹: 振金战甲（**黑豹风格 + 蝙蝠侠披风**）",
+        "C": "解剖签名: 金色鬃毛（**金黑条纹狮鬃，鬓角垂至肩**）"
+      },
+      "key_elements_human_check": [
+        "LION_HEAD_not_pig_not_wolf",
+        "vibranium_armor_gold_circuits",
+        "batman_cape_dark_bown",
+        "golden_lion_mane_black_stripes"
+      ]
+    },
+    {
+      "id": "char_ssr_fenghuang",
+      "rarity": "SSR",
+      "size": 42147,
+      "alpha": false,
+      "geometry": {
+        "opacity_ratio": 1.0,
+        "height_frac": 1.0,
+        "center_dx": -0.001,
+        "foot_present": true,
+        "w": 627,
+        "h": 940
+      },
+      "issues": [
+        "FAIL:no-alpha-channel",
+        "WARN:size-too-small(42147<150000)",
+        "WARN:opacity-high-bg?(1.0)"
+      ],
+      "level": "FAIL",
+      "anchors_human_check": {
+        "A": "神话原型: 五色羽（**赤/橙/黄/绿/蓝五色凤凰羽翼**，每根羽毛末端不同色火焰）",
+        "B": "道具指纹: 焚羽·涅槃翼（**羽翼融合双刃，可作翅可作刃**）",
+        "C": "解剖签名: 五色长发渐变（**红→橙→黄→绿→蓝，如火焰燃烧**）"
+      },
+      "key_elements_human_check": [
+        "five_color_wings_each_feather_different_color",
+        "five_color_long_hair_red_orange_yellow_green_blue",
+        "phoenix_crown_huadian_forehead",
+        "hands_pressed_chest_white_hot_core"
+      ]
+    },
+    {
+      "id": "char_ssr_leishen",
+      "rarity": "SSR",
+      "size": 45871,
+      "alpha": false,
+      "geometry": {
+        "opacity_ratio": 1.0,
+        "height_frac": 1.0,
+        "center_dx": -0.001,
+        "foot_present": true,
+        "w": 627,
+        "h": 940
+      },
+      "issues": [
+        "FAIL:no-alpha-channel",
+        "WARN:size-too-small(45871<150000)",
+        "WARN:opacity-high-bg?(1.0)"
+      ],
+      "level": "FAIL",
+      "anchors_human_check": {
+        "A": "神话原型: 龙身人头（**人头上身 + 机械龙尾下身**）",
+        "B": "道具指纹: 雷神之锤（**锤面闪电符文 + 缠绕电弧**）",
+        "C": "解剖签名: 雷鼓腹部（**腹部圆形\"雷鼓\"，发光，可见内部闪电**）"
+      },
+      "key_elements_human_check": [
+        "dragon_horns_forehead_electric_hair",
+        "thunder_drum_abdomen_glowing",
+        "mechanical_dragon_tail",
+        "mjolnir_hammer_lightning_runes"
+      ]
+    },
+    {
+      "id": "char_ssr_xiangliu",
+      "rarity": "SSR",
+      "size": 51007,
+      "alpha": false,
+      "geometry": {
+        "opacity_ratio": 1.0,
+        "height_frac": 1.0,
+        "center_dx": -0.001,
+        "foot_present": true,
+        "w": 627,
+        "h": 940
+      },
+      "issues": [
+        "FAIL:no-alpha-channel",
+        "WARN:size-too-small(51007<150000)",
+        "WARN:opacity-high-bg?(1.0)"
+      ],
+      "level": "FAIL",
+      "anchors_human_check": {
+        "A": "神话原型: 九首蛇身（**九蛇颈呈扇形展开，每个蛇首表情不同**）",
+        "B": "道具指纹: 毒液共生体覆盖（**湿润光泽的暗紫黑色 + 绿色荧光血管**）",
+        "C": "解剖签名: 半人半蛇（**上半身人形 + 下半身蛇尾**）"
+      },
+      "key_elements_human_check": [
+        "nine_serpent_necks_fan_shaped",
+        "venom_symbiote_white_spiral_green_veins",
+        "corrosive_venom_dripping_claws"
+      ]
+    },
+    {
+      "id": "char_ur_jinwu",
+      "rarity": "UR",
+      "size": 39266,
+      "alpha": false,
+      "geometry": {
+        "opacity_ratio": 1.0,
+        "height_frac": 1.0,
+        "center_dx": -0.001,
+        "foot_present": true,
+        "w": 627,
+        "h": 940
+      },
+      "issues": [
+        "FAIL:no-alpha-channel",
+        "WARN:size-too-small(39266<200000)",
+        "WARN:opacity-high-bg?(1.0)"
+      ],
+      "level": "FAIL",
+      "anchors_human_check": {
+        "A": "神话原型: 三足金乌（三足乌鸦/三足太阳鸟，**足部必须为三趾**）",
+        "B": "道具指纹: 曜日神弓（**长弓 + 太阳耀斑形弓梢 + 浓缩等离子箭**）",
+        "C": "解剖签名: 金橙白三色羽毛披肩（**双肩、背后展开凤凰火焰羽翼**）"
+      },
+      "key_elements_human_check": [
+        "three_legs_two_human_one_bird_with_three_claws",
+        "long_bow_with_solar_flare_bowtips",
+        "phoenix_flame_wings_gold_orange_white_gradient"
+      ]
+    },
+    {
+      "id": "char_ur_keqing",
+      "rarity": "UR",
+      "size": 38232,
+      "alpha": false,
+      "geometry": {
+        "opacity_ratio": 1.0,
+        "height_frac": 1.0,
+        "center_dx": -0.001,
+        "foot_present": true,
+        "w": 627,
+        "h": 940
+      },
+      "issues": [
+        "FAIL:no-alpha-channel",
+        "WARN:size-too-small(38232<200000)",
+        "WARN:opacity-high-bg?(1.0)"
+      ],
+      "level": "FAIL",
+      "anchors_human_check": {
+        "A": "联动原型: 双马尾发型（**深紫色长发双马尾，发尾有雷电尖**）",
+        "B": "道具指纹: 雷楔双剑（**双剑交叉背持或双持，紫色雷电缠绕剑身**）",
+        "C": "解剖签名: 紫色眼眸（`#7E57C2`，坚定自信，不信神明的神态）"
+      },
+      "key_elements_human_check": [
+        "twin_tail_hairstyle_purple_electric_blue_tips",
+        "dual_swords_crossed_V_shape_lightning_wrapped",
+        "purple_eyes_determined_upward_gaze",
+        "thunder_symbol_hologram_above_head"
+      ]
+    },
+    {
+      "id": "char_ur_kikyo",
+      "rarity": "UR",
+      "size": 44581,
+      "alpha": false,
+      "geometry": {
+        "opacity_ratio": 1.0,
+        "height_frac": 1.0,
+        "center_dx": -0.001,
+        "foot_present": true,
+        "w": 627,
+        "h": 940
+      },
+      "issues": [
+        "FAIL:no-alpha-channel",
+        "WARN:size-too-small(44581<200000)",
+        "WARN:opacity-high-bg?(1.0)"
+      ],
+      "level": "FAIL",
+      "anchors_human_check": {
+        "A": "联动原型: 巫女标准服饰（**白色小袖 + 朱红袴裤 + 注连绳**）",
+        "B": "道具指纹: 破魔灵弓（**神木 + 白色符咒 + 净化光之箭**）",
+        "C": "解剖签名: 黑色长直发（**及腰、左侧一缕垂于胸前**）+ 深紫色清冷眼眸"
+      },
+      "key_elements_human_check": [
+        "miko_attire_white_kosode_vermilion_hakama",
+        "yumi_bow_with_white_ofuda_talismans",
+        "long_straight_black_hair_waist_length",
+        "shimenawa_rope_right_arm"
+      ]
+    },
+    {
+      "id": "char_ur_nuwa",
+      "rarity": "UR",
+      "size": 35622,
+      "alpha": false,
+      "geometry": {
+        "opacity_ratio": 1.0,
+        "height_frac": 1.0,
+        "center_dx": -0.001,
+        "foot_present": true,
+        "w": 627,
+        "h": 940
+      },
+      "issues": [
+        "FAIL:no-alpha-channel",
+        "WARN:size-too-small(35622<200000)",
+        "WARN:opacity-high-bg?(1.0)"
+      ],
+      "level": "FAIL",
+      "anchors_human_check": {
+        "A": "神话原型: 人首蛇身（**上半身人形 + 下半身蛇尾**，与烛龙同构但更柔和）",
+        "B": "道具指纹: 五色石（**掌心悬浮青/赤/黄/白/黑五色补天石**）",
+        "C": "解剖签名: 大地母神长袍（**袍面绣有山河纹样，会缓慢移动**）"
+      },
+      "key_elements_human_check": [
+        "serpent_tail_with_five_color_scales",
+        "five_color_stones_in_palms_cyan_vermilion_yellow_white_black",
+        "mountain_river_embroidery_on_robe",
+        "earth_mother_crown"
+      ]
+    },
+    {
+      "id": "char_ur_wuxu",
+      "rarity": "UR",
+      "size": 52028,
+      "alpha": false,
+      "geometry": {
+        "opacity_ratio": 1.0,
+        "height_frac": 1.0,
+        "center_dx": -0.001,
+        "foot_present": true,
+        "w": 627,
+        "h": 940
+      },
+      "issues": [
+        "FAIL:no-alpha-channel",
+        "WARN:size-too-small(52028<200000)",
+        "WARN:opacity-high-bg?(1.0)"
+      ],
+      "level": "FAIL",
+      "anchors_human_check": {
+        "A": "神话原型: 无面无相（**面部为光滑暗色镜面，映照星空**）",
+        "B": "道具指纹: 胸口微型黑洞（**缓慢旋转，吞食周围光线**）",
+        "C": "解剖签名: 暗物质星云构成的身体（**边缘不断溶解为粒子**）"
+      },
+      "key_elements_human_check": [
+        "faceless_mirror_face_no_features",
+        "miniature_black_hole_chest_rotating",
+        "dark_matter_nebula_body_dissolving_edges"
+      ]
+    },
+    {
+      "id": "char_ur_xingtian",
+      "rarity": "UR",
+      "size": 37831,
+      "alpha": false,
+      "geometry": {
+        "opacity_ratio": 1.0,
+        "height_frac": 1.0,
+        "center_dx": -0.001,
+        "foot_present": true,
+        "w": 627,
+        "h": 940
+      },
+      "issues": [
+        "FAIL:no-alpha-channel",
+        "WARN:size-too-small(37831<200000)",
+        "WARN:opacity-high-bg?(1.0)"
+      ],
+      "level": "FAIL",
+      "anchors_human_check": {
+        "A": "神话原型: 断首以乳为目以脐为口（**胸口双眼发光 + 腹部格栅口**）",
+        "B": "道具指纹: 干戚双武器（**左手巨盾\"干\" + 右手巨斧\"戚\"**）",
+        "C": "解剖签名: 颈部金属铸造截面（**战损划痕与焊接修补痕迹**）"
+      },
+      "key_elements_human_check": [
+        "no_head_neck_is_metal_cross_section"
+      ]
+    },
+    {
+      "id": "char_ur_zhulong",
+      "rarity": "UR",
+      "size": 50959,
+      "alpha": false,
+      "geometry": {
+        "opacity_ratio": 1.0,
+        "height_frac": 1.0,
+        "center_dx": -0.001,
+        "foot_present": true,
+        "w": 627,
+        "h": 940
+      },
+      "issues": [
+        "FAIL:no-alpha-channel",
+        "WARN:size-too-small(50959<200000)",
+        "WARN:opacity-high-bg?(1.0)"
+      ],
+      "level": "FAIL",
+      "anchors_human_check": {
+        "A": "神话原型: 人面蛇身（**蛇尾必须从腰部延伸，鳞片为赤金渐变**）",
+        "B": "道具指纹: 阖辟神瞳·昼夜轮（**半面熔金半面虚空的圆轮**，环心有永不闭合的竖瞳）",
+        "C": "解剖签名: 异色瞳（**左金瞳太阳纹，右银瞳月轮**）"
+      },
+      "key_elements_human_check": [
+        "snake_tail_coiling_three_loops",
+        "day_night_wheel_half_gold_half_void",
+        "heterochromatic_eyes_gold_sun_silver_moon"
+      ]
+    },
+    {
+      "id": "test2",
+      "rarity": "R",
+      "size": 44668,
+      "alpha": false,
+      "geometry": {
+        "opacity_ratio": 1.0,
+        "height_frac": 1.0,
+        "center_dx": -0.001,
+        "foot_present": true,
+        "w": 627,
+        "h": 940
+      },
+      "issues": [
+        "FAIL:no-alpha-channel",
+        "WARN:size-too-small(44668<90000)",
+        "WARN:opacity-high-bg?(1.0)"
+      ],
+      "level": "FAIL",
+      "anchors_human_check": {},
+      "key_elements_human_check": []
+    },
+    {
+      "id": "test_suanni",
+      "rarity": "R",
+      "size": 57156,
+      "alpha": false,
+      "geometry": {
+        "opacity_ratio": 1.0,
+        "height_frac": 1.0,
+        "center_dx": -0.001,
+        "foot_present": true,
+        "w": 627,
+        "h": 940
+      },
+      "issues": [
+        "FAIL:no-alpha-channel",
+        "WARN:size-too-small(57156<90000)",
+        "WARN:opacity-high-bg?(1.0)"
+      ],
+      "level": "FAIL",
+      "anchors_human_check": {},
+      "key_elements_human_check": []
+    }
+  ]
+}

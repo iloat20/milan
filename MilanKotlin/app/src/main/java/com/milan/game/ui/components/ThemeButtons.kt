@@ -17,8 +17,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Outline
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.Shape
-import androidx.compose.ui.graphics.drawscope.DrawScope
-import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
@@ -30,9 +28,8 @@ import com.milan.game.ui.theme.AppTheme
 /**
  * Obsidian & Gold 按钮体系（C# ThemeButtons.cs 翻译，ui-redesign-plan.md §2.1）：
  * - GoldButton: 金色主按钮（斜切角 + 垂直渐变 + 双描边 + 周期扫光）
- * - DangerButton: 危险按钮（红渐变斜切角）
  * - NeonButton: 霓虹描边次按钮
- * - IconCircle: 44dp 玻璃图标圆钮（在 UIComponents.kt）
+ * （I2 清理：DangerButton 零调用已删；危险操作统一用 NeonButton(color = AppTheme.Danger) 染红。）
  */
 
 /** 左上/右下 6dp 斜切角形状（C# CutCornerButton.BuildPath）。
@@ -83,38 +80,6 @@ fun GoldButton(
             fontSize = textSize,
             fontWeight = FontWeight.Bold,
             color = AppTheme.GoldTextOn,
-        )
-    }
-}
-
-/** 危险按钮：分解 / 放弃战斗（红渐变三档由 Danger 派生；C# ThemeButtons.Danger）。 */
-@Composable
-fun DangerButton(
-    text: String,
-    modifier: Modifier = Modifier,
-    onClick: () -> Unit,
-    textSize: TextUnit = 16.sp,
-) {
-    // 由单一语义色派生高光 / 暗部（C# Mix 的 Compose lerp 等价），避免散落硬编码色。
-    val top = lerp(AppTheme.Danger, Color.White, 0.28f)
-    val bottom = lerp(AppTheme.Danger, Color.Black, 0.35f)
-    Box(
-        modifier = modifier
-            .clip(CutShape)
-            .background(
-                Brush.verticalGradient(listOf(top, AppTheme.Danger, bottom)),
-                CutShape,
-            )
-            .border(1.dp, Color.White.copy(alpha = 0.40f), CutShape)
-            .clickable(onClick = onClick)
-            .padding(horizontal = 32.dp, vertical = 13.dp),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(
-            text = text,
-            fontSize = textSize,
-            fontWeight = FontWeight.Bold,
-            color = Color.White,
         )
     }
 }

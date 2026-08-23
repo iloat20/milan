@@ -839,4 +839,52 @@ class GameServiceTest {
         assertEquals(null, provider.loadBackup()) // 备份链随重置清空
         assertTrue(service.saveData.ownedCharacters.isEmpty())
     }
+
+    // ── 路径 B：快照携带角色级数据（UI 读快照替代 saveData 直读）──
+
+    @Test
+    fun pull_updatesSnapshot_pityAndOwnedSaves() = runTest {
+        // 契约：每次成功写操作后快照刷新——pityByPool 与存档口径一致，ownedSaves 携带新角色
+        val service = makeService()
+
+        val outcome = service.pull("pool_test", tenPull = false)
+        assertTrue(outcome is PullOutcome.Success)
+
+        val snap = service.snapshot.value
+        // 保底计数：单 SSR 池自然出货重置计数器 → 快照与存档实时值一致（0）
+        assertEquals(service.saveData.getGachaCounter("pool_test"), snap.pityByPool["pool_test"])
+        // ownedSaves 携带新拥有角色，且为独立拷贝（非存档同一引用）
+        assertEquals(1, snap.ownedSaves.size)
+        assertEquals(1, snap.ownedSaves["char_a"]?.level)
+        assertEquals(1, snap.ownedSaves["char_a"]?.stage)
+        assertTrue(snap.ownedSaves["char_a"] !== service.getSave("char_a"))
+    }
+
+    @Test
+    fun levelUp_updatesSnapshot_ownedSaves() = runTest {
+        // 契约：养成写操作后快照角色存档同步更新（UI 无需重读存档）
+        val service = makeService()
+        service.pull("pool_test", tenPull = true)
+
+        assertEquals(WriteOutcome.Success, service.levelUp("char_a"))
+
+        val save = service.getSave("char_a")!!
+        val snap = service.snapshot.value
+        assertEquals(2, snap.ownedSaves["char_a"]?.level) // 与存档一致
+        assertEquals(save.level, snap.ownedSaves["char_a"]?.level)
+        assertEquals(save.unspentPoints, snap.ownedSaves["char_a"]?.unspentPoints)
+    }
+
+    @Test
+    fun resetSave_clearsSnapshot_ownedSavesAndPity() = runTest {
+        // 契约：resetSave 整体替换存档后快照角色级数据同步清空（拷贝语义防陈旧引用）
+        val service = makeService()
+        service.pull("pool_test", tenPull = true)
+        assertEquals(1, service.snapshot.value.ownedSaves.size)
+
+        assertTrue(service.resetSave())
+
+        assertTrue(service.snapshot.value.ownedSaves.isEmpty())
+        assertEquals(0, service.snapshot.value.pityByPool["pool_test"] ?: -1)
+    }
 }

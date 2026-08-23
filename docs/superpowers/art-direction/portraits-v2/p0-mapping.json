@@ -1,0 +1,23 @@
+{
+  "count": 11,
+  "note": "timestamp suffix (ImageGen export) -> canonical character id + canvas + rarity. Produced by reading each gen/ image and matching anchors (e.g. day-night wheel+serpent tail = zhulong; faceless mirror+wuxu; headless metal+xingtian; miko yumi+kikyo; twin-tails+dual swords+lightning = keqing; phoenix wings+solar bow+bird-claw leg = jinwu; five-color serpent+five stones = nuwa; five-color wings+hair+fenghuang crown = fenghuang; nine serpent necks+venom symbiote = xiangliu; dragon horns+thunder drum+mech tail+hammer = leishen; golden lion head+vibranium+batcape = suanni).",
+  "canvas_ladder": {
+    "UR": "1536x2304",
+    "SSR": "1280x1920",
+    "SR": "1024x1536",
+    "R": "832x1248"
+  },
+  "items": [
+    {"src": "Full_body_character_portrait_o_2026-08-13T02-55-16.png", "id": "char_ur_zhulong",   "name_cn": "烛龙", "rarity": "UR", "canvas": "1536x2304"},
+    {"src": "Full_body_character_portrait_o_2026-08-13T03-37-04.png", "id": "char_ur_wuxu",      "name_cn": "虚无", "rarity": "UR", "canvas": "1536x2304"},
+    {"src": "Full_body_character_portrait_o_2026-08-13T03-37-37.png", "id": "char_ur_xingtian",  "name_cn": "刑天", "rarity": "UR", "canvas": "1536x2304"},
+    {"src": "Full_body_character_portrait_o_2026-08-13T03-38-15.png", "id": "char_ur_kikyo",     "name_cn": "桔梗", "rarity": "UR", "canvas": "1536x2304"},
+    {"src": "Full_body_character_portrait_o_2026-08-13T03-38-55.png", "id": "char_ur_keqing",    "name_cn": "刻晴", "rarity": "UR", "canvas": "1536x2304"},
+    {"src": "Full_body_character_portrait_o_2026-08-13T03-39-34.png", "id": "char_ur_jinwu",     "name_cn": "金乌", "rarity": "UR", "canvas": "1536x2304"},
+    {"src": "Full_body_character_portrait_o_2026-08-13T03-40-12.png", "id": "char_ur_nuwa",      "name_cn": "女娲", "rarity": "UR", "canvas": "1536x2304"},
+    {"src": "Full_body_character_portrait_o_2026-08-13T03-40-39.png", "id": "char_ssr_fenghuang","name_cn": "凤凰", "rarity": "SSR","canvas": "1280x1920"},
+    {"src": "Full_body_character_portrait_o_2026-08-13T03-41-07.png", "id": "char_ssr_xiangliu", "name_cn": "相柳", "rarity": "SSR","canvas": "1280x1920"},
+    {"src": "Full_body_character_portrait_o_2026-08-13T03-41-34.png", "id": "char_ssr_leishen",  "name_cn": "雷神", "rarity": "SSR","canvas": "1280x1920"},
+    {"src": "Full_body_character_portrait_o_2026-08-13T03-42-03.png", "id": "char_sr_suanni",    "name_cn": "狻猊", "rarity": "SR", "canvas": "1024x1536"}
+  ]
+}

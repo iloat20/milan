@@ -1,0 +1,19 @@
+# 桔梗 Kikyo · 悲运的巫女
+# rarity=UR world=Shinwa element=Shadow
+# canvas=1536x2304 aspect=2:3
+# anchors={'A': '联动原型: 巫女标准服饰（**白色小袖 + 朱红袴裤 + 注连绳**）', 'B': '道具指纹: 破魔灵弓（**神木 + 白色符咒 + 净化光之箭**）', 'C': '解剖签名: 黑色长直发（**及腰、左侧一缕垂于胸前**）+ 深紫色清冷眼眸'}
+
+Full-body character portrait of Kikyo, the legendary shrine maiden from Inuyasha. Female figure 7.5-head proportion, slender and elegant. Long straight black hair reaching waist, no bangs, one long strand falling over left chest. Deep purple eyes (#4B0082), cold and compassionate, half-lidded gaze. Classic miko attire: white kosode shirt + vermilion hakama pants (red #C41E3A) + white obi belt. Left shoulder has damaged iron armor plate. Right arm wrapped with shimenawa sacred rope (straw rope with white paper streamers).
+
+Dynamic pose P2 (battle charge) + full draw bow stance + body in 3/4 turn to viewer. Left foot forward, right foot back in archer lunge. Left hand holding yumi bow extending left, right hand pulling bowstring to right ear. Arrow nocked and pointing up-right outside frame. Hamaya (purifying arrow) with light-blue (#4A90D9) glowing arrowhead. Bare feet standing on spiritual light lotus array.
+
+Atmosphere: tragic beauty, moonlit solemnity, purifying power. Background: TRANSPARENT (PNG alpha). Behind body: faint moonlight halo + scattered firefly-like spiritual light points. Floating particles: white paper streamers (from shimenawa), soul-petal drifts, blue arrow glow trails. Mood: resolute, sorrowful, divine.
+
+Shinwa world style: cel-shaded anime with clean ink outlines, white and vermilion red palette with blue spiritual accents. Ethereal moonlight lighting from upper left. Soft shadow edges (graceful). Fill light from upper right using Shinwa purple #9A6BFF (faint). Rim light from behind-lower using UR molten gold #FFC857 (very subtle). High detail especially on face and eyes. Gacha game character art, 2:3 vertical aspect ratio, transparent background, full body with bare feet visible.
+
+Key elements: miko_attire_white_kosode_vermilion_hakama, yumi_bow_with_white_ofuda_talismans, long_straight_black_hair_waist_length, shimenawa_rope_right_arm.
+
+negative_prompt: half-body, bust, cropped, white background, colored background,
+   modern clothing, kimono with bright patterns,
+   text, watermark, multiple characters, weapon other than bow,
+   shoes (must be bare feet), short hair, twintails

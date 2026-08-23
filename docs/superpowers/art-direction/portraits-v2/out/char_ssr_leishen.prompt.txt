@@ -1,0 +1,10 @@
+# 雷神 Leishen · 雷霆裁决
+# rarity=SSR world=Ironveil element=Thunder
+# canvas=1280x1920 aspect=2:3
+# anchors={'A': '神话原型: 龙身人头（**人头上身 + 机械龙尾下身**）', 'B': '道具指纹: 雷神之锤（**锤面闪电符文 + 缠绕电弧**）', 'C': '解剖签名: 雷鼓腹部（**腹部圆形"雷鼓"，发光，可见内部闪电**）'}
+
+Full-body character portrait of Leishen, the thunder beast from Chinese mythology reimagined as mechanized storm god. Muscular male figure 6.5-head proportion, dragon horns extending from forehead, hair electric blue-white standing upright like lightning. Upper body human with mechanical chest armor, abdomen has circular "thunder drum" glowing with visible lightning inside. Lower body mechanical dragon tail covered in metal scales, tail tip lightning-shaped. Right hand holds Mjolnir hammer high overhead with lightning runes on face, electric arcs wrapping. Left hand open summoning lightning. Shoulder pauldrons dragon-head shaped, back has mechanical wings (metal frame + energy membrane).
+
+Ironveil world style: hard-surface mechanical design, gunmetal and electric blue palette. Dramatic lightning illumination from upper left. Hard shadow edges. Rim light from behind-lower using SSR purple #C79BFF. High detail, gacha game character art, 2:3 vertical aspect ratio, transparent background, full body with dragon tail visible.
+
+negative_prompt: no horns, no dragon features, half-body, cropped, white background, sword, polearm, bow, gun, plain tail, text, watermark, cute kawaii

@@ -3,8 +3,10 @@ package com.milan.game.ui.components
 import android.content.res.Resources
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import com.milan.game.infrastructure.CrashReporter
 import java.util.concurrent.ConcurrentHashMap
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -56,6 +58,8 @@ class PortraitLruCache<V : Any>(
     private val sizeOf: (V) -> Int,
 ) {
     private val map = LinkedHashMap<PortraitKey, V>(0, 0.75f, true)
+    // I8：维护运行时字节计数器，避免每次 put/trim 全表 sumOf（驱逐 k 个时原实现 k×n）。
+    private var bytes = 0
 
     @Synchronized
     fun get(key: PortraitKey): V? = map[key]
@@ -63,6 +67,8 @@ class PortraitLruCache<V : Any>(
     @Synchronized
     fun put(key: PortraitKey, value: V): V? {
         val previous = map.put(key, value)
+        if (previous != null) bytes -= sizeOf(previous)
+        bytes += sizeOf(value)
         trimToSize()
         return previous
     }
@@ -72,25 +78,25 @@ class PortraitLruCache<V : Any>(
 
     /** P3-7：清空缓存（onLowMemory / 内存压力临界档位）。 */
     @Synchronized
-    fun clear() = map.clear()
+    fun clear() { map.clear(); bytes = 0 }
 
     /** P3-7：按比例收缩缓存（保留 [keepFraction] 的字节上限，如 0.5 = 剩 12MB）。 */
     @Synchronized
     fun trimFraction(keepFraction: Float) {
         val target = (maxBytes * keepFraction.coerceIn(0f, 1f)).toInt()
-        while (true) {
-            val total = map.entries.sumOf { sizeOf(it.value) }
-            if (total <= target || map.isEmpty()) return
-            map.remove(map.entries.iterator().next().key)
+        while (bytes > target && map.isNotEmpty()) {
+            val victim = map.entries.iterator().next().key
+            val removed = map.remove(victim) ?: return
+            bytes -= sizeOf(removed)
         }
     }
 
     /** 从最久未用开始逐出，直到总占用 ≤ 上限。 */
     private fun trimToSize() {
-        while (true) {
-            val total = map.entries.sumOf { sizeOf(it.value) }
-            if (total <= maxBytes || map.isEmpty()) return
-            map.remove(map.entries.iterator().next().key)
+        while (bytes > maxBytes && map.isNotEmpty()) {
+            val victim = map.entries.iterator().next().key
+            val removed = map.remove(victim) ?: return
+            bytes -= sizeOf(removed)
         }
     }
 }
@@ -102,6 +108,17 @@ object PortraitLoader {
 
     /** 解码中（in-flight）任务表：同一键只允许一个解码协程，其余协程复用其结果（并发去重）。 */
     private val inflight = ConcurrentHashMap<PortraitKey, CompletableDeferred<Bitmap?>>()
+
+    /** 资源 id 探测结果进程级记忆化（I11 补充）：Lazy 网格反复滚入滚出不再每次主线程反射查表。
+     *  单包应用，name 即唯一键；getOrPut 非原子但幂等，并发双写无害。 */
+    private val identifierCache = ConcurrentHashMap<String, Int>()
+
+    /** 记忆化 drawable 探测：缺失返回 0（与 [android.content.res.Resources.getIdentifier] 语义一致）。 */
+    fun resourceIdOf(
+        resources: android.content.res.Resources,
+        packageName: String,
+        name: String,
+    ): Int = identifierCache.getOrPut(name) { resources.getIdentifier(name, "drawable", packageName) }
 
     /**
      * 内存压力回调（P3-7）：PortraitImage 组合期注册到 applicationContext，
@@ -133,24 +150,32 @@ object PortraitLoader {
             val key = PortraitKey(resId, target.sample)
             try {
                 cache.get(key) ?: decodeOnce(res, key, target)
-            } catch (e: Exception) {
-                null // 与旧 runCatching 语义一致：任何异常都不上抛
+            } catch (t: Throwable) {
+                // C2：OutOfMemoryError 是 Error 非 Exception，必须在此兜底，否则低端机解码直接闪退。
+                // 取消异常原样上抛以维持结构化并发语义；其余异常留痕后返回占位（宁可难看也不崩）。
+                if (t is CancellationException) throw t
+                CrashReporter.traceNonFatal("PortraitLoader.load(${key.resId})", t)
+                null
             }
         }
 
     /** 单飞解码：占 in-flight 槽 → 解码 → 入缓存 → 完成；已有请求在解则直接等其结果。 */
     private suspend fun decodeOnce(res: Resources, key: PortraitKey, target: PortraitTarget): Bitmap? {
         val deferred = CompletableDeferred<Bitmap?>()
-        val mine = inflight.putIfAbsent(key, deferred) == null
-        if (!mine) return inflight[key]?.await()
+        // C3：直接用 putIfAbsent 的返回值；丢弃返回值再二次查表会在持有者已释放槽的间隙拿到 null，
+        // 上层误判解码失败长期占位。这里 existing 即既有 deferred，非空则复用其结果。
+        val existing = inflight.putIfAbsent(key, deferred)
+        if (existing != null) return existing.await()
         try {
             val opts = BitmapFactory.Options().apply { inSampleSize = target.sample }
             val bmp = BitmapFactory.decodeResource(res, key.resId, opts)
             if (bmp != null) cache.put(key, bmp)
             deferred.complete(bmp)
             return bmp
-        } catch (e: Exception) {
-            // 失败也 complete(null)：等待者立即拿到占位，不悬挂；槽随后清空允许下次重试
+        } catch (t: Throwable) {
+            // C2：OOM(Error) 一并兜底；取消异常原样上抛，其余留痕后占位。
+            if (t is CancellationException) throw t
+            CrashReporter.traceNonFatal("PortraitLoader.decode(${key.resId})", t)
             deferred.complete(null)
             return null
         } finally {

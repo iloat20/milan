@@ -67,9 +67,17 @@ fun MissingCharacter(onBack: () -> Unit, modifier: Modifier = Modifier) {
     }
 }
 
-/** 左右切换箭头（C# BuildArrow：44dp 圆角玻璃按钮 + 金色高光阴影）。P2-6：补方向语义。 */
+/** 左右切换箭头（C# BuildArrow：44dp 圆角玻璃按钮 + 金色高光阴影）。
+ *  P2-6：补方向语义；M14：语义文案显式入参（默认按字形反推兜底）。 */
 @Composable
-fun GlassArrow(text: String, modifier: Modifier = Modifier, onClick: () -> Unit) {
+fun GlassArrow(
+    text: String,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit,
+    contentDescription: String? = null,
+) {
+    // 捕获到独立名，避免 semantics 块内 receiver.contentDescription 与参数同名遮蔽（见 GameNavBar 同款坑）
+    val desc = contentDescription ?: if (text == "‹") "上一个" else "下一个"
     Text(
         text,
         fontSize = 32.sp,
@@ -82,7 +90,7 @@ fun GlassArrow(text: String, modifier: Modifier = Modifier, onClick: () -> Unit)
             .background(AppTheme.Surface)
             .border(1.dp, AppTheme.Gold.copy(alpha = 0.65f), RoundedCornerShape(22.dp))
             .clickable(onClick = onClick)
-            .semantics { contentDescription = if (text == "‹") "上一个" else "下一个" },
+            .semantics { this.contentDescription = desc },
     )
 }
 
@@ -99,7 +107,7 @@ fun HeroNameplate(
         modifier = modifier
             .fillMaxWidth()
             .height(156.dp)
-            .background(Brush.verticalGradient(listOf(Color(0x000B0612), Color(0xBE07040F))))
+            .background(Brush.verticalGradient(listOf(AppTheme.ScrimTop, AppTheme.ScrimBottom)))
             .padding(start = 20.dp, end = 20.dp, bottom = 18.dp),
         verticalArrangement = Arrangement.Bottom,
     ) {

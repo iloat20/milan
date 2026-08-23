@@ -1,0 +1,20 @@
+# 刻晴 Keqing · 玉衡星
+# rarity=UR world=Aether element=Thunder
+# canvas=1536x2304 aspect=2:3
+# anchors={'A': '联动原型: 双马尾发型（**深紫色长发双马尾，发尾有雷电尖**）', 'B': '道具指纹: 雷楔双剑（**双剑交叉背持或双持，紫色雷电缠绕剑身**）', 'C': '解剖签名: 紫色眼眸（`#7E57C2`，坚定自信，不信神明的神态）'}
+
+Full-body character portrait of Keqing, the Yuheng of the Liyue Qixing from Genshin Impact. Young female figure 7-head proportion, slender but powerful. Signature twin-tail hairstyle, deep purple long hair with tips fading to electric blue-white. Purple eyes (#7E57C2), determined and confident, gazing up 15 degrees. Improved Liyue-style outfit in purple (#7E57C2) and gold: purple and gold-trimmed top, purple short skirt, white tights, purple long boots. Gold trims with lightning pattern decorations. Thunder element symbol hologram floating above head (purple glow).
+
+Dynamic pose P2 (battle charge) + dual swords crossed in V-shape in front of body + body in 3/4 turn to viewer + left foot forward. Twin-tails flowing backward. Two swords (Lei Qin Yun Lai) crossed at chest level, blades pointing diagonally up-forward, purple lightning wrapping each blade. Sword guards shaped like lightning bolts. Right hand forms sword-seal gesture near hip (signature pose) with electric arcs jumping between fingers.
+
+Atmosphere: defiant confidence, storm-touched elegance. Background: TRANSPARENT (PNG alpha). Behind body: purple lightning radial halo (UR rarity color tinted purple). Floating particles: purple lightning fragments, white thunder sparks, storm clouds. Distant silhouette of Jade Chamber (Qun Yu Pavilion) only as faint purple light form (not detailed). Mood: determined, proud, "humanity governs its own fate".
+
+Aether world style: semi-realistic rendering with deep purple palette, electric blue and gold accents. Dramatic storm lighting with purple lightning flashes from upper left. Soft shadow edges (elegant). Rim light from behind-lower using UR molten gold #FFC857. High detail especially on face and sword blades. Gacha game character art, 2:3 vertical aspect ratio, transparent background, full body with boots visible.
+
+Key elements: twin_tail_hairstyle_purple_electric_blue_tips, dual_swords_crossed_V_shape_lightning_wrapped, purple_eyes_determined_upward_gaze, thunder_symbol_hologram_above_head.
+
+negative_prompt: half-body, bust, cropped, white background,
+   single sword, polearm, catalyst, bow (must be dual swords),
+   text, watermark, multiple characters, cute chibi,
+   modern clothing, school uniform, casual wear,
+   different hair color, short hair, single tail, ponytail

@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
@@ -89,15 +88,9 @@ private fun PortraitImageContent(
 ) {
     val resources = LocalResources.current
     val context = LocalContext.current
-    // P3-7：注册系统内存压力回调（24MB LRU 立绘缓存随压力收缩/清空）；
-    // 同一进程多个 PortraitImage 各自注册/注销同一监听实例，引用计数由系统管理。
-    val appContext = context.applicationContext
-    DisposableEffect(appContext) {
-        appContext.registerComponentCallbacks(PortraitLoader.memoryCallbacks)
-        onDispose { appContext.unregisterComponentCallbacks(PortraitLoader.memoryCallbacks) }
-    }
     val portraitId = remember(characterId) {
-        resources.getIdentifier(characterId, "drawable", context.packageName)
+        // I11 补充：进程级记忆化（PortraitLoader.resourceIdOf），Lazy 网格不再每次反射查表
+        PortraitLoader.resourceIdOf(resources, context.packageName, characterId)
     }
 
     if (portraitId == 0) {

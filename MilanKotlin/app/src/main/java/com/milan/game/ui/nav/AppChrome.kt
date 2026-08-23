@@ -26,12 +26,13 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.milan.game.ui.GameState
+import com.milan.game.ui.formatCount
 import com.milan.game.ui.theme.AppTheme
-import java.text.NumberFormat
 
 /**
  * 统一顶栏（子页面用）：返回箭头 + 标题 + 资源胶囊（C# AppChrome.AppTopBar 翻译）。
@@ -73,6 +74,8 @@ fun AppTopBar(
             fontWeight = FontWeight.Bold,
             color = AppTheme.Text1,
             letterSpacing = 0.5.sp,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
             style = TextStyle(
                 shadow = Shadow(
                     color = AppTheme.Gold.copy(alpha = 0.6f),
@@ -132,7 +135,7 @@ private fun Chip(glyph: String, value: Int, color: Color) {
             modifier = Modifier.padding(end = 4.dp),
         )
         Text(
-            text = NumberFormat.getIntegerInstance().format(animated.toLong()),
+            text = formatCount(animated),
             fontSize = 14.sp,
             fontWeight = FontWeight.Bold,
             color = AppTheme.Text1,

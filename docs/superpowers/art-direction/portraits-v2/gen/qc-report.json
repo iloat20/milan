@@ -1,0 +1,253 @@
+{
+  "dir": "gen",
+  "count": 11,
+  "summary": {
+    "PASS": 0,
+    "WARN": 0,
+    "FAIL": 11
+  },
+  "items": [
+    {
+      "id": "Full_body_character_portrait_o_2026-08-13T02-55-16",
+      "rarity": "R",
+      "size": 1628261,
+      "alpha": false,
+      "geometry": {
+        "opacity_ratio": 1.0,
+        "height_frac": 1.0,
+        "center_dx": -0.001,
+        "foot_present": true,
+        "w": 832,
+        "h": 1216
+      },
+      "issues": [
+        "FAIL:no-alpha-channel",
+        "WARN:size-too-large(1628261>1200000)",
+        "WARN:opacity-high-bg?(1.0)"
+      ],
+      "level": "FAIL",
+      "anchors_human_check": {},
+      "key_elements_human_check": []
+    },
+    {
+      "id": "Full_body_character_portrait_o_2026-08-13T03-37-04",
+      "rarity": "R",
+      "size": 1465097,
+      "alpha": false,
+      "geometry": {
+        "opacity_ratio": 1.0,
+        "height_frac": 1.0,
+        "center_dx": -0.001,
+        "foot_present": true,
+        "w": 832,
+        "h": 1216
+      },
+      "issues": [
+        "FAIL:no-alpha-channel",
+        "WARN:size-too-large(1465097>1200000)",
+        "WARN:opacity-high-bg?(1.0)"
+      ],
+      "level": "FAIL",
+      "anchors_human_check": {},
+      "key_elements_human_check": []
+    },
+    {
+      "id": "Full_body_character_portrait_o_2026-08-13T03-37-37",
+      "rarity": "R",
+      "size": 1695240,
+      "alpha": false,
+      "geometry": {
+        "opacity_ratio": 1.0,
+        "height_frac": 1.0,
+        "center_dx": -0.001,
+        "foot_present": true,
+        "w": 832,
+        "h": 1216
+      },
+      "issues": [
+        "FAIL:no-alpha-channel",
+        "WARN:size-too-large(1695240>1200000)",
+        "WARN:opacity-high-bg?(1.0)"
+      ],
+      "level": "FAIL",
+      "anchors_human_check": {},
+      "key_elements_human_check": []
+    },
+    {
+      "id": "Full_body_character_portrait_o_2026-08-13T03-38-15",
+      "rarity": "R",
+      "size": 1361556,
+      "alpha": false,
+      "geometry": {
+        "opacity_ratio": 1.0,
+        "height_frac": 1.0,
+        "center_dx": -0.001,
+        "foot_present": true,
+        "w": 832,
+        "h": 1216
+      },
+      "issues": [
+        "FAIL:no-alpha-channel",
+        "WARN:size-too-large(1361556>1200000)",
+        "WARN:opacity-high-bg?(1.0)"
+      ],
+      "level": "FAIL",
+      "anchors_human_check": {},
+      "key_elements_human_check": []
+    },
+    {
+      "id": "Full_body_character_portrait_o_2026-08-13T03-38-55",
+      "rarity": "R",
+      "size": 1731317,
+      "alpha": false,
+      "geometry": {
+        "opacity_ratio": 1.0,
+        "height_frac": 1.0,
+        "center_dx": -0.001,
+        "foot_present": true,
+        "w": 832,
+        "h": 1216
+      },
+      "issues": [
+        "FAIL:no-alpha-channel",
+        "WARN:size-too-large(1731317>1200000)",
+        "WARN:opacity-high-bg?(1.0)"
+      ],
+      "level": "FAIL",
+      "anchors_human_check": {},
+      "key_elements_human_check": []
+    },
+    {
+      "id": "Full_body_character_portrait_o_2026-08-13T03-39-34",
+      "rarity": "R",
+      "size": 1706242,
+      "alpha": false,
+      "geometry": {
+        "opacity_ratio": 1.0,
+        "height_frac": 1.0,
+        "center_dx": -0.001,
+        "foot_present": true,
+        "w": 832,
+        "h": 1216
+      },
+      "issues": [
+        "FAIL:no-alpha-channel",
+        "WARN:size-too-large(1706242>1200000)",
+        "WARN:opacity-high-bg?(1.0)"
+      ],
+      "level": "FAIL",
+      "anchors_human_check": {},
+      "key_elements_human_check": []
+    },
+    {
+      "id": "Full_body_character_portrait_o_2026-08-13T03-40-12",
+      "rarity": "R",
+      "size": 1715899,
+      "alpha": false,
+      "geometry": {
+        "opacity_ratio": 1.0,
+        "height_frac": 1.0,
+        "center_dx": -0.001,
+        "foot_present": true,
+        "w": 832,
+        "h": 1216
+      },
+      "issues": [
+        "FAIL:no-alpha-channel",
+        "WARN:size-too-large(1715899>1200000)",
+        "WARN:opacity-high-bg?(1.0)"
+      ],
+      "level": "FAIL",
+      "anchors_human_check": {},
+      "key_elements_human_check": []
+    },
+    {
+      "id": "Full_body_character_portrait_o_2026-08-13T03-40-39",
+      "rarity": "R",
+      "size": 1941994,
+      "alpha": false,
+      "geometry": {
+        "opacity_ratio": 1.0,
+        "height_frac": 1.0,
+        "center_dx": -0.001,
+        "foot_present": true,
+        "w": 832,
+        "h": 1216
+      },
+      "issues": [
+        "FAIL:no-alpha-channel",
+        "WARN:size-too-large(1941994>1200000)",
+        "WARN:opacity-high-bg?(1.0)"
+      ],
+      "level": "FAIL",
+      "anchors_human_check": {},
+      "key_elements_human_check": []
+    },
+    {
+      "id": "Full_body_character_portrait_o_2026-08-13T03-41-07",
+      "rarity": "R",
+      "size": 1651611,
+      "alpha": false,
+      "geometry": {
+        "opacity_ratio": 1.0,
+        "height_frac": 1.0,
+        "center_dx": -0.001,
+        "foot_present": true,
+        "w": 832,
+        "h": 1216
+      },
+      "issues": [
+        "FAIL:no-alpha-channel",
+        "WARN:size-too-large(1651611>1200000)",
+        "WARN:opacity-high-bg?(1.0)"
+      ],
+      "level": "FAIL",
+      "anchors_human_check": {},
+      "key_elements_human_check": []
+    },
+    {
+      "id": "Full_body_character_portrait_o_2026-08-13T03-41-34",
+      "rarity": "R",
+      "size": 1760228,
+      "alpha": false,
+      "geometry": {
+        "opacity_ratio": 1.0,
+        "height_frac": 1.0,
+        "center_dx": -0.001,
+        "foot_present": true,
+        "w": 832,
+        "h": 1216
+      },
+      "issues": [
+        "FAIL:no-alpha-channel",
+        "WARN:size-too-large(1760228>1200000)",
+        "WARN:opacity-high-bg?(1.0)"
+      ],
+      "level": "FAIL",
+      "anchors_human_check": {},
+      "key_elements_human_check": []
+    },
+    {
+      "id": "Full_body_character_portrait_o_2026-08-13T03-42-03",
+      "rarity": "R",
+      "size": 1633458,
+      "alpha": false,
+      "geometry": {
+        "opacity_ratio": 1.0,
+        "height_frac": 1.0,
+        "center_dx": -0.001,
+        "foot_present": true,
+        "w": 832,
+        "h": 1216
+      },
+      "issues": [
+        "FAIL:no-alpha-channel",
+        "WARN:size-too-large(1633458>1200000)",
+        "WARN:opacity-high-bg?(1.0)"
+      ],
+      "level": "FAIL",
+      "anchors_human_check": {},
+      "key_elements_human_check": []
+    }
+  ]
+}

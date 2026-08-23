@@ -1,0 +1,10 @@
+# 相柳 Xiangliu · 九首毒厄
+# rarity=SSR world=Aether element=Shadow
+# canvas=1280x1920 aspect=2:3
+# anchors={'A': '神话原型: 九首蛇身（**九蛇颈呈扇形展开，每个蛇首表情不同**）', 'B': '道具指纹: 毒液共生体覆盖（**湿润光泽的暗紫黑色 + 绿色荧光血管**）', 'C': '解剖签名: 半人半蛇（**上半身人形 + 下半身蛇尾**）'}
+
+Full-body character portrait of Xiangliu, the nine-headed serpent of Chinese mythology fused with Venom symbiote. Half-human half-serpent: upper body is male torso with white symbiote spiral patterns on dark purple-black wet skin, green glowing veins. Nine serpent necks extending from waist in fan-shaped attack formation, each head showing different expression (anger, maniacal laughter, growl, sadistic grin, etc.), forked tongues. Hands are massive symbiote claws with corrosive green venom dripping. Lower serpent body black scales with green venom seeping.
+
+Aether world style: semi-realistic dark rendering, deep purple and toxic green palette, wet symbiote texture. Dramatic green underlighting from below. Rim light from behind-lower using SSR purple #C79BFF. High detail, gacha game character art, 2:3 vertical aspect ratio, transparent background, full body with serpent tail visible.
+
+negative_prompt: single head, two heads, normal human, no serpent tail, half-body, cropped, white background, cute, kawaii, clean appearance, dry skin, text, watermark

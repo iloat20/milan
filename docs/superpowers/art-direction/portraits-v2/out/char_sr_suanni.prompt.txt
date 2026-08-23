@@ -1,0 +1,12 @@
+# 狻猊 Suanni · 狮吼震魂
+# rarity=SR world=Shinwa element=Flame
+# canvas=1024x1536 aspect=2:3
+# anchors={'A': '神话原型: 狮面人身（**必须是狮头人身，金鬃环绕，**绝不**是猪**）', 'B': '道具指纹: 振金战甲（**黑豹风格 + 蝙蝠侠披风**）', 'C': '解剖签名: 金色鬃毛（**金黑条纹狮鬃，鬓角垂至肩**）'}
+
+Full-body character portrait of Suanni, the lion spirit from Chinese mythology (Shanhaijing "lion body, leopard step") fused with Black Panther vibranium armor and Batman tactical gear. MUST be LION HEAD (not wolf, not tiger, not pig — golden lion head with black mane stripes, golden cat eyes). Muscular male human body. Wearing Black Panther-style vibranium armor (#1A1A1A) with golden circuit lines, plus Batman-style dark blue cape (#1E90FF) and tactical utility belt. Lion claw gauntlets (5 golden claws). Dynamic roar pose: arms spread wide, cape billowing behind, lion mouth open roaring with visible fangs.
+
+Shinwa world style: cel-shaded anime with ink-wash outlines, black and gold palette with blue cape accent. Dramatic warm lighting from upper left. Soft shadow edges. Rim light from behind-lower using SR frost blue #7FC4FF. High detail, gacha game character art, 2:3 vertical aspect ratio, transparent background, full body with feet visible.
+
+negative_prompt: PIG HEAD, BOAR HEAD, WOLF HEAD, TIGER HEAD, BEAR HEAD,
+   half-body, bust, cropped, white background, modern clothing,
+   text, watermark, cute kawaii, human head, helmet

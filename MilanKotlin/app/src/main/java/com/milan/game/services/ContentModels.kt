@@ -1,5 +1,6 @@
 package com.milan.game.services
 
+import com.milan.game.data.CharacterSaveState
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -125,6 +126,15 @@ data class GameSnapshot(
     val hardCurrency: Int = 0,
     val starFragments: Int = 0,
     val ownedCount: Int = 0,
+    // I5：设置开关纳入快照，SettingsScreen 从快照派生（单一事实来源，去除 UI 本地镜像 + 手工回滚）。
+    val soundEnabled: Boolean = true,
+    val vibrationEnabled: Boolean = true,
+    val pushEnabled: Boolean = true,
+    // 路径 B（2026-08）：角色级数据纳入快照，UI 从快照读替代 saveData 直读 firstOrNull。
+    // pityByPool：poolId → 保底计数（GachaScreen 保底进度显示/余额预拦截）；
+    // ownedSaves：characterId → 角色存档拷贝（CharacterSaveState 为可变字段，拷贝防快照持有陈旧引用）。
+    val pityByPool: Map<String, Int> = emptyMap(),
+    val ownedSaves: Map<String, CharacterSaveState> = emptyMap(),
 )
 
 /**

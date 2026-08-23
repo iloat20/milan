@@ -24,19 +24,18 @@ class PityCounter(val threshold: Int) {
     /**
      * 保底掷稀有度。
      *
-     * @param minRarityForPity 保底目标稀有度，**Rarity.value 语义**（SSR=3），
+     * @param minRarityForPity 保底目标稀有度（[Rarity] 类型，直接传 [Rarity.SSR] 等具名值），
      *   不是 [Rarity.entries] 的下标（下标 3 是 UR）。与 [GachaEngine.rollRarity]
-     *   的 entries 下标语义不同——两者在值 0..3 内恰好重合，极易混淆，调用方务必传
-     *   `Rarity.SSR.value` 这类具名表达式。
+     *   的 entries 下标语义不同——两者在值 0..3 内恰好重合，类型化后调用方不会再误传下标。
      */
-    fun rollWithPity(rng: Random, rarityWeights: IntArray, minRarityForPity: Int): Rarity {
+    fun rollWithPity(rng: Random, rarityWeights: IntArray, minRarityForPity: Rarity): Rarity {
         if (threshold <= 0) {
             return GachaEngine(rng).rollRarity(rarityWeights)
         }
         counter++
         if (counter >= threshold) {
             counter = 0
-            return Rarity.fromValue(minRarityForPity) ?: Rarity.R
+            return minRarityForPity
         }
         // 自然出货不在此处判定重置：交付档位可能被降档，见类 KDoc（P1-3）。
         return GachaEngine(rng).rollRarity(rarityWeights)
@@ -47,8 +46,8 @@ class PityCounter(val threshold: Int) {
      * 调用方在完成「掷稀有度 → 按候选升/降档」之后，以**实际交付**档位判定——
      * 只有交付档位 ≥ 保底档才重置计数；掷出保底档但被降档时不重置，保底进度保留。
      */
-    fun onNaturalPityOrAbove(deliveredRarity: Rarity, minRarityForPity: Int) {
-        if (deliveredRarity.value >= minRarityForPity) counter = 0
+    fun onNaturalPityOrAbove(deliveredRarity: Rarity, minRarityForPity: Rarity) {
+        if (deliveredRarity.value >= minRarityForPity.value) counter = 0
     }
 
     fun reset() {

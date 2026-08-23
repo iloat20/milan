@@ -75,8 +75,27 @@ class GameService(
             hardCurrency = saveData.hardCurrency,
             starFragments = getStarFragments(),
             ownedCount = saveData.ownedCharacters.size,
+            soundEnabled = saveData.soundEnabled,
+            vibrationEnabled = saveData.vibrationEnabled,
+            pushEnabled = saveData.pushEnabled,
+            // 路径 B：角色级数据随每次写操作刷新——保底计数 + 角色存档拷贝
+            //（显式构造拷贝：CharacterSaveState 为普通 class 无 copy()；拷贝防快照与存档
+            //  共享可变引用，避免 resetSave 后快照持有陈旧对象）。
+            pityByPool = pools.associate { it.poolId to saveData.getGachaCounter(it.poolId) },
+            ownedSaves = saveData.ownedCharacters.filterNotNull().associate { it.characterId to it.toSnapshotCopy() },
         )
     }
+
+    /** 快照拷贝：显式构造 CharacterSaveState 副本（普通 class 无 copy()；防快照持有可变存档引用，resetSave 后陈旧）。 */
+    private fun CharacterSaveState.toSnapshotCopy(): CharacterSaveState = CharacterSaveState(
+        characterId = characterId,
+        level = level,
+        stage = stage,
+        stars = stars,
+        totalExp = totalExp,
+        unspentPoints = unspentPoints,
+        talentPoints = talentPoints,
+    )
 
     /**
      * 进程级存档引用（与 SaveManager.current 同一对象，写操作原地修改后 [save] 持久化）。
@@ -222,12 +241,12 @@ class GameService(
         for (i in 0 until count) {
             // 掷出的稀有度段在本池可能没有候选角色（如 UP 池没有 R 角色）：
             // 就近向上升档（保证玩家不亏），全部向上无候选再向下回退。
-            // minRarityForPity 传 Rarity.value 语义（SSR=3）而非 entries 下标（3=UR），见 PityCounter KDoc。
-            val rolledRarity = pity.rollWithPity(rng, pool.rarityWeights.toIntArray(), Rarity.SSR.value).value
+            // minRarityForPity 直接传 Rarity 类型（SSR），类型化后不再有 value/下标歧义，见 PityCounter KDoc。
+            val rolledRarity = pity.rollWithPity(rng, pool.rarityWeights.toIntArray(), Rarity.SSR).value
             val effectiveRarity = resolveRarityWithCandidates(pool, rolledRarity)
             // P1-3：保底重置以「实际交付档位」判定——掷出保底档但该档无候选被降档时
             // 不重置计数，避免 90 抽保底被低稀有度产出吞掉（onNaturalPityOrAbove 见 PityCounter KDoc）。
-            pity.onNaturalPityOrAbove(Rarity.fromValue(effectiveRarity) ?: Rarity.R, Rarity.SSR.value)
+            pity.onNaturalPityOrAbove(Rarity.fromValue(effectiveRarity) ?: Rarity.R, Rarity.SSR)
             val entries = pool.entries.filter { it.rarityIndex == effectiveRarity }
             val id = pickFromEntries(entries)
             if (id.isNullOrEmpty()) continue // 该稀有度无候选，跳过（不影响其它抽）
@@ -426,7 +445,9 @@ class GameService(
             tag = "setting",
             mutate = { write(newValue) },
             rollback = { write(old) },
-            onCommit = { /* 设置项无事件广播；UI 层自行同步音频等副作用 */ },
+            // 设置项无事件广播，但需刷新状态快照：SettingsScreen 从 GameSnapshot 派生开关，
+            // 成功落盘后由 refreshSnapshot 推进，UI 立即反映新值（I5）。
+            onCommit = { refreshSnapshot() },
         )
     }
 

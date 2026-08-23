@@ -28,7 +28,7 @@ private val TwilightColors = darkColorScheme(
     onPrimaryContainer = Color(0xFFE8E4F2),
     inversePrimary = Color(0xFFC9B8FF),
 
-    secondary = Color(0xFFD9A95C),        // 熔金
+    secondary = AppTheme.Gold,             // 熔金（单一事实来源见 AppTheme.Gold；I3 去除双源）
     onSecondary = Color(0xFF3A2800),
     secondaryContainer = Color(0xFF4A3A1E),
     onSecondaryContainer = Color(0xFFF3E8CF),

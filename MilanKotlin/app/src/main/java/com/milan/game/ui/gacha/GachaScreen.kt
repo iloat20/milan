@@ -2,14 +2,12 @@ package com.milan.game.ui.gacha
 
 import android.os.Build
 import android.view.HapticFeedbackConstants
-import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -31,12 +29,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.layout.offset
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.PathEffect
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -49,9 +42,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import com.milan.game.ui.effects.GpuRevealLayer
-import com.milan.game.ui.effects.HolographicFoilOverlay
-import com.milan.game.ai.OnDeviceAgent
+import com.milan.game.ai.FortuneAgentRegistry
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -59,12 +50,11 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.milan.game.infrastructure.CrashReporter
 import com.milan.game.infrastructure.MilanAudio
 import com.milan.game.services.CharacterDataEntry
@@ -74,6 +64,7 @@ import com.milan.game.services.PullResult
 import com.milan.game.ui.GameState
 import com.milan.game.ui.components.GlassPanel
 import com.milan.game.ui.components.GoldButton
+import com.milan.game.ui.feedback.LocalFeedback
 import com.milan.game.ui.components.NeonButton
 import com.milan.game.ui.components.PageBackground
 import com.milan.game.ui.components.PortraitImage
@@ -103,10 +94,15 @@ fun GachaScreen(
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
+    // R3/I4：反馈统一走 LocalFeedback（由 MainActivity 提供的 Snackbar 宿主）。
+    val feedback = LocalFeedback.current
     val scope = rememberCoroutineScope()
     val pool = remember { GameState.service.pools.firstOrNull() }
+    // 路径 B：订阅状态快照——保底进度/余额/振动开关从快照派生（写操作后自动刷新），
+    // 替代 saveData 直读 + 手动 pity 维护。
+    val snap by GameState.snapshot.collectAsStateWithLifecycle()
 
-    var pity by remember { mutableIntStateOf(0) }
+    val pity = pool?.let { snap.pityByPool[it.poolId] } ?: 0
     var busy by remember { mutableStateOf(false) }
     // P3-8：结果列表与摘要用 rememberSaveable——旋转（配置变更）后恢复，
     // 玩家不会丢掉已付费抽卡的结果展示（PullResult 经 PullResultsSaver 编码为字符串列表）。
@@ -120,21 +116,19 @@ fun GachaScreen(
     var revealDef by remember { mutableStateOf<CharacterDataEntry?>(null) }
     var revealRarity by remember { mutableIntStateOf(1) }
     var showReveal by remember { mutableStateOf(false) }
+    // 2026-08-20 赛博霓虹演出：阶段机（Charge 蓄能 → Beam 光柱 → Single/Ten 揭晓 → Done）
+    var revealStage by remember { mutableStateOf(RevealStage.Done) }
     var fortune by remember { mutableStateOf("") }
     var cardIn by remember { mutableStateOf(false) }
     var flashVisible by remember { mutableStateOf(false) }
     var flashColor by remember { mutableStateOf(Color.White) }
-    var riftSwell by remember { mutableStateOf(false) }
     var entered by remember { mutableStateOf(false) }
 
-    LaunchedEffect(pool) {
-        pity = pool?.let { GameState.service.saveData.getGachaCounter(it.poolId) } ?: 0
-    }
     LaunchedEffect(Unit) { entered = true }
 
     /** 触觉反馈（View 级，兼容非 Composable 路径；设备不支持或设置关闭振动时静默）。 */
     fun buzz(effect: Int) {
-        if (!GameState.service.saveData.vibrationEnabled) return
+        if (!snap.vibrationEnabled) return
         try {
             val view = (context as? android.app.Activity)?.window?.decorView ?: return
             view.performHapticFeedback(effect)
@@ -148,11 +142,10 @@ fun GachaScreen(
             results = list
             summary = buildSummary(list)
             batch++
-            pity = pool?.let { GameState.service.saveData.getGachaCounter(it.poolId) } ?: pity
         }
         showReveal = false
+        revealStage = RevealStage.Done
         flashVisible = false
-        riftSwell = false
         staged = null
         revealDef = null
         busy = false
@@ -176,8 +169,8 @@ fun GachaScreen(
         if (busy) return
         val p = pool ?: return
         val cost = if (tenPull) p.tenCost else p.singleCost
-        if (GameState.service.saveData.softCurrency < cost) {
-            Toast.makeText(context, "星尘不足", Toast.LENGTH_SHORT).show()
+        if (snap.softCurrency < cost) {
+            scope.launch { feedback.show("星尘不足") }
             return
         }
         busy = true
@@ -189,14 +182,14 @@ fun GachaScreen(
                 is PullOutcome.Rejected -> {
                     // 被拒绝：余额不足（前面已拦截）或卡池无候选产出；留痕 + 复位，绝不闪退
                     busy = false
-                    Toast.makeText(context, "抽卡失败，请重试", Toast.LENGTH_SHORT).show()
+                    feedback.show("抽卡失败，请重试")
                     try { CrashReporter.boot("gacha.pull.rejected poolId=${p.poolId}") } catch (_: Exception) { }
                     return@launch
                 }
                 is PullOutcome.SaveFailed -> {
                     // 落盘失败：扣款与发货已回滚，可安全重试（原因由 CrashReporter 留痕区分）
                     busy = false
-                    Toast.makeText(context, "保存失败，请重试", Toast.LENGTH_SHORT).show()
+                    feedback.show("保存失败，请重试")
                     try { CrashReporter.boot("gacha.pull.saveFailed poolId=${p.poolId}") } catch (_: Exception) { }
                     return@launch
                 }
@@ -205,32 +198,34 @@ fun GachaScreen(
             if (best == null || best.characterId == null) {
                 // Success 契约下理论不可达（plan 空会走 Rejected），防御性保留兜底
                 busy = false
-                Toast.makeText(context, "抽卡失败，请重试", Toast.LENGTH_SHORT).show()
+                feedback.show("抽卡失败，请重试")
                 try { CrashReporter.boot("gacha.pull.empty poolId=${p.poolId}") } catch (_: Exception) { }
                 return@launch
             }
             staged = pulled
             buzz(HapticFeedbackConstants.KEYBOARD_TAP)
             MilanAudio.playSfx("gacha_pull")
-            revealDef = best.characterId?.let { GameState.service.character(it) }
+            revealDef = best.characterId.let { GameState.service.character(it) }
             revealRarity = best.rarity
             flashColor = AppTheme.rarityColor(best.rarity)
             // 端侧 AI 签文（默认 Stub：离线、确定性；seed 含 token 保证每抽不同但可复现）
             val token = revealToken + 1
-            fortune = revealDef?.let { OnDeviceAgent.current.fortune(it, it.characterId.hashCode().toLong() + token) } ?: ""
+            fortune = revealDef?.let { FortuneAgentRegistry.activeAgent.fortune(it, it.characterId.hashCode().toLong() + token) } ?: ""
             cardIn = false
             revealToken = token
-            // 阶段一：法阵脉冲
-            riftSwell = true
+            // 阶段一：蓄能（粒子汇聚 + 弧线环绕，CyberStage.ChargeCore）
+            revealStage = RevealStage.Charge
             delay(420); if (token != revealToken) return@launch
-            // 阶段二：稀有度白闪（淡入淡出由 animateFloatAsState 处理）
+            // 阶段二：次元光柱爆发（RiftBeam + 稀有度白闪叠放增强）
+            revealStage = RevealStage.Beam
             flashVisible = true
             delay(480); if (token != revealToken) return@launch
             flashVisible = false
             delay(120); if (token != revealToken) return@launch
-            // 阶段三：大立绘卡弹出（SSR/UR 重触觉 + reveal 音效）
+            // 阶段三：揭晓（单抽大立绘卡 / 十连 2×5 牌桌逐张翻开，onFlip 逐张反馈）
             cardIn = true
             showReveal = true
+            revealStage = if (tenPull) RevealStage.Ten else RevealStage.Single
             MilanAudio.playSfx("gacha_reveal")
             // CONFIRM 需 API 30（minSdk 29）：低版本回退 LONG_PRESS，其余路径不变
             if (revealRarity >= 3) {
@@ -240,7 +235,7 @@ fun GachaScreen(
             } else {
                 buzz(HapticFeedbackConstants.VIRTUAL_KEY)
             }
-            delay(1500); if (token != revealToken) return@launch
+            delay(if (tenPull) 3600L else 1500L); if (token != revealToken) return@launch
             // 阶段四：结果
             finishReveal()
         }
@@ -256,13 +251,6 @@ fun GachaScreen(
         animationSpec = tween(420),
         label = "flash",
     )
-    // 开包 GPU 演出进度（0→1，与翻牌阶段同步），驱动能量环扩张
-    val revealProgress by animateFloatAsState(
-        targetValue = if (showReveal) 1f else 0f,
-        animationSpec = tween(1500),
-        label = "revealProgress",
-    )
-
     PageBackground(modifier = modifier) {
         Column(
             modifier = Modifier
@@ -286,7 +274,7 @@ fun GachaScreen(
 
             if (pool != null) {
                 // ── 卡池信息面板（池名 / 概率 / 保底进度，保底行霜蓝）──
-                GlassPanel(modifier = Modifier.fillMaxWidth(), gold = true) {
+                GlassPanel(modifier = Modifier.fillMaxWidth(), highlighted = true) {
                     Column(Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
                         Text(
                             text = pool.displayName.ifEmpty { "常驻卡池" },
@@ -340,8 +328,8 @@ fun GachaScreen(
             }
             Spacer(Modifier.height(14.dp))
 
-            // ── 召唤法阵（C# RiftPortal 升级：中西融合法阵，八卦/回纹/符箓 + 紫金霓虹）──
-            RitualArrayPortal(swell = riftSwell)
+            // ── 待机能量枢纽（2026-08-20 赛博霓虹演出：替换旧八卦法阵）──
+            CyberHerald(modifier = Modifier.align(Alignment.CenterHorizontally))
             Spacer(Modifier.height(16.dp))
 
             Text(
@@ -409,154 +397,27 @@ fun GachaScreen(
             )
         }
 
-        // ── 翻牌演出层：全屏遮罩 + 稀有度光晕 + 大立绘卡 + 跳过（C# FlipCardView 简化）──
+        // ── 翻牌演出层（2026-08-20 赛博霓虹：蓄能 → 光柱 → 揭晓逐张，整屏点击可跳过）──
         if (showReveal) {
-            GpuRevealLayer(active = true, progress = revealProgress) {
-            val def = revealDef
-            val rc = AppTheme.rarityColor(revealRarity)
-            val cardScale by animateFloatAsState(
-                targetValue = if (cardIn) 1f else 0.80f,
-                animationSpec = spring(dampingRatio = 0.72f, stiffness = 300f),
-                label = "card",
-            )
-            val cardAlpha by animateFloatAsState(
-                targetValue = if (cardIn) 1f else 0f,
-                animationSpec = tween(200),
-                label = "cardAlpha",
-            )
-            // SSR/UR 光晕脉动（P0-2 演出分级）：稀有度≥3 时呼吸发光 + 光晕缩放，R/SR 保持静态
-            val isEpic = revealRarity >= 3
-            val glowTransition = rememberInfiniteTransition(label = "glow")
-            val glowAlpha by glowTransition.animateFloat(
-                initialValue = 0.35f,
-                targetValue = 0.85f,
-                animationSpec = infiniteRepeatable(tween(750), RepeatMode.Reverse),
-                label = "glowAlpha",
-            )
-            val glowScale by glowTransition.animateFloat(
-                initialValue = 0.92f,
-                targetValue = 1.10f,
-                animationSpec = infiniteRepeatable(tween(750), RepeatMode.Reverse),
-                label = "glowScale",
-            )
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color.Black.copy(alpha = 0.74f))
-                    // P2-6 无障碍：全屏可点遮罩给 TalkBack 明确语义，避免读到下层页面内容
-                    .semantics { contentDescription = "抽卡揭晓，点击跳过" }
-                    .clickable(onClick = ::skipReveal),
-                contentAlignment = Alignment.Center,
-            ) {
-                // 稀有度光晕（径向渐变全屏；SSR/UR 脉动呼吸 + 缩放，UR 追加熔金叠层）
-                Box(
-                    Modifier
-                        .fillMaxSize()
-                        .graphicsLayer {
-                            scaleX = if (isEpic) glowScale else 1f
-                            scaleY = if (isEpic) glowScale else 1f
-                        }
-                        .background(
-                            Brush.radialGradient(
-                                listOf(
-                                    rc.copy(alpha = if (isEpic) glowAlpha else 0.50f),
-                                    Color.Transparent,
-                                )
-                            )
-                        ),
-                )
-                // UR 专属：熔金爆发叠层（金光盖过紫光，配 UR 金色立绘边框）
-                if (revealRarity >= 4) {
-                    Box(
-                        Modifier
-                            .fillMaxSize()
-                            .background(
-                                Brush.radialGradient(
-                                    listOf(AppTheme.GoldHi.copy(alpha = glowAlpha * 0.8f), Color.Transparent)
-                                )
-                            ),
-                    )
-                }
-                // 大立绘卡 220x312（C# FlipCardView 尺寸）+ 全息箔叠层
-                Box(Modifier.size(width = 220.dp, height = 312.dp)) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .graphicsLayer { scaleX = cardScale; scaleY = cardScale; alpha = cardAlpha }
-                        .clip(RoundedCornerShape(18.dp))
-                        .background(
-                            Brush.verticalGradient(
-                                listOf(rc.copy(alpha = 0.34f), AppTheme.BgDeepest, AppTheme.BgDeepest),
-                            ),
-                        )
-                        .border(2.dp, rc.copy(alpha = 0.85f), RoundedCornerShape(18.dp)),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                ) {
-                    if (def != null) {
-                        PortraitImage(
-                            characterId = def.characterId,
-                            rarity = revealRarity,
-                            name = def.displayName,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .weight(1f)
-                                .padding(horizontal = 12.dp, vertical = 14.dp),
-                            aura = true, // v2：抽卡揭晓稀有度光环
-                        )
-                    } else {
-                        Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
-                            Text(AppTheme.rarityName(revealRarity), fontSize = 40.sp, fontWeight = FontWeight.Bold, color = rc)
-                        }
+            CyberRevealLayer(
+                stage = revealStage,
+                singleDef = revealDef,
+                singleRarity = revealRarity,
+                fortune = fortune,
+                batch = staged ?: emptyList(),
+                cardIn = cardIn,
+                onSkip = ::skipReveal,
+                onFlip = { r ->
+                    // 逐张翻开反馈：SSR/UR 才振 + 音效，R/SR 静默避免十连全程震动
+                    if (r >= 3) {
+                        buzz(if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R)
+                            HapticFeedbackConstants.CONFIRM else HapticFeedbackConstants.LONG_PRESS)
+                        MilanAudio.playSfx("gacha_reveal")
                     }
-                    // 底部铭牌：角色名 + 稀有度名
-                    Box(
-                        Modifier
-                            .fillMaxWidth()
-                            .background(rc.copy(alpha = 0.16f))
-                            .padding(vertical = 10.dp),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Text(def?.displayName ?: "", fontSize = 17.sp, fontWeight = FontWeight.Bold, color = AppTheme.Text1)
-                    }
-                    Text(
-                        text = AppTheme.rarityName(revealRarity),
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = rc,
-                        modifier = Modifier.padding(vertical = 8.dp),
-                    )
-                    // 端侧 AI 命运签文（离线确定性生成；接大模型时自动升级）
-                    if (fortune.isNotEmpty()) {
-                        Text(
-                            text = fortune,
-                            fontSize = 10.sp,
-                            color = AppTheme.Text2,
-                            lineHeight = 15.sp,
-                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 2.dp),
-                        )
-                    }
-                }
-                HolographicFoilOverlay(
-                    Modifier.matchParentSize().clip(RoundedCornerShape(18.dp)),
-                    alpha = 0.30f,
-                )
-                }
-                // 跳过按钮（整屏也可点跳过）
-                Text(
-                    text = "跳过 ▶",
-                    fontSize = 13.sp,
-                    color = AppTheme.Gold,
-                    modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .padding(top = 22.dp, end = 18.dp)
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(AppTheme.Surface)
-                        .border(1.dp, AppTheme.Gold.copy(alpha = 0.5f), RoundedCornerShape(10.dp))
-                    .clickable(onClick = ::skipReveal)
-                    .padding(horizontal = 14.dp, vertical = 8.dp),
-                )
-            }
-            }
+                },
+                onOpenCharacter = onOpenCharacter,
+                modifier = Modifier.fillMaxSize(),
+            )
         }
     }
 }
@@ -584,109 +445,6 @@ private val PullResultsSaver = listSaver<List<PullResult>, String>(
     } },
 )
 
-/**
- * 中西融合法阵（C# RiftPortal 升级）：八卦外环 + 回纹中环 + 符箓内环，紫金霓虹、缓旋。
- * 环与八卦刻度随 spin 旋转，八卦卦象与中心辉光保持正立，避免字号倒置。
- */
-@Composable
-private fun RitualArrayPortal(swell: Boolean) {
-    val scale by animateFloatAsState(
-        targetValue = if (swell) 1.45f else 1f,
-        animationSpec = tween(700),
-        label = "riftScale",
-    )
-    val spin by rememberInfiniteTransition(label = "arraySpin").animateFloat(
-        initialValue = 0f,
-        targetValue = 360f,
-        animationSpec = infiniteRepeatable(tween(28000), RepeatMode.Restart),
-        label = "spin",
-    )
-    val trigrams = listOf("☰", "☱", "☲", "☳", "☴", "☵", "☶", "☷")
-    val talismans = listOf("敕", "令", "罡", "玦")
-    Box(
-        Modifier.size(190.dp).graphicsLayer { scaleX = scale; scaleY = scale },
-        contentAlignment = Alignment.Center,
-    ) {
-        // 旋转法阵环（外庚金环 + 回纹虚线中环 + 内庚金环 + 八卦刻度）
-        Canvas(Modifier.fillMaxSize().graphicsLayer { rotationZ = spin }) {
-            val cx = size.width / 2f
-            val cy = size.height / 2f
-            val R = size.minDimension / 2f
-            drawCircle(
-                color = AppTheme.Gold,
-                radius = R * 0.95f,
-                center = Offset(cx, cy),
-                style = Stroke(width = 2.dp.toPx()),
-            )
-            drawCircle(
-                color = AppTheme.Violet,
-                radius = R * 0.76f,
-                center = Offset(cx, cy),
-                style = Stroke(width = 2.dp.toPx(), pathEffect = PathEffect.dashPathEffect(floatArrayOf(7f, 6f), 0f)),
-            )
-            drawCircle(
-                color = AppTheme.Gold,
-                radius = R * 0.5f,
-                center = Offset(cx, cy),
-                style = Stroke(width = 1.5.dp.toPx()),
-            )
-            for (i in 0 until 8) {
-                val a = Math.toRadians((i * 45).toDouble())
-                val x1 = cx + R * 0.78f * Math.sin(a).toFloat()
-                val y1 = cy - R * 0.78f * Math.cos(a).toFloat()
-                val x2 = cx + R * 0.92f * Math.sin(a).toFloat()
-                val y2 = cy - R * 0.92f * Math.cos(a).toFloat()
-                drawLine(
-                    color = AppTheme.Gold,
-                    start = Offset(x1, y1),
-                    end = Offset(x2, y2),
-                    strokeWidth = 1.5.dp.toPx(),
-                )
-            }
-        }
-        // 八卦卦象（正立，不随环旋转）
-        trigrams.forEachIndexed { i, g ->
-            val a = Math.toRadians((i * 45).toDouble())
-            val rx = (78f * Math.sin(a)).toFloat()
-            val ry = (-78f * Math.cos(a)).toFloat()
-            Text(
-                g,
-                Modifier.align(Alignment.Center).offset(x = rx.dp, y = ry.dp),
-                color = AppTheme.Gold,
-                fontSize = 13.sp,
-            )
-        }
-        // 中心能量辉光
-        Box(
-            Modifier.fillMaxSize().clip(CircleShape).background(
-                Brush.radialGradient(
-                    listOf(
-                        AppTheme.Violet.copy(alpha = 0.55f),
-                        AppTheme.Gold.copy(alpha = 0.18f),
-                        Color.Transparent,
-                    ),
-                ),
-            ),
-        )
-        // 符箓内环（4 字，缓慢逆向旋转营造咒文流转）
-        Box(Modifier.size(150.dp).graphicsLayer { rotationZ = -spin * 0.5f }, contentAlignment = Alignment.Center) {
-            talismans.forEachIndexed { i, t ->
-                val a = Math.toRadians((i * 90).toDouble())
-                val rx = (46f * Math.sin(a)).toFloat()
-                val ry = (-46f * Math.cos(a)).toFloat()
-                Text(
-                    t,
-                    Modifier.align(Alignment.Center).offset(x = rx.dp, y = ry.dp),
-                    color = AppTheme.Gold.copy(alpha = 0.7f),
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Bold,
-                )
-            }
-        }
-        Text(text = "✦", fontSize = 44.sp, color = AppTheme.Gold, modifier = Modifier.align(Alignment.Center))
-    }
-}
-
 /** 单张抽卡结果 chip（C# CharacterCard.GachaChip 翻译）：立绘 + 稀有度名 + 角色名，高稀有度渐变发光底。 */
 @Composable
 private fun GachaChip(
@@ -697,6 +455,18 @@ private fun GachaChip(
     modifier: Modifier = Modifier,
 ) {
     val rc = AppTheme.rarityColor(r.rarity)
+    // 2026-08-20 霓虹化：SSR+ chip 呼吸发光（isEpic 在 chip 生命周期内不变，条件 remember 分支稳定安全）
+    val isEpic = r.rarity >= 3
+    val glowA by if (isEpic) {
+        rememberInfiniteTransition(label = "chipGlow").animateFloat(
+            initialValue = 0.35f,
+            targetValue = 1f,
+            animationSpec = infiniteRepeatable(tween(900), RepeatMode.Reverse),
+            label = "chipGlowA",
+        )
+    } else {
+        remember { mutableStateOf(0.7f) }
+    }
     // 每批次演出后重放入场动画（batch 变化重置 shown）
     var shown by remember(batch) { mutableStateOf(false) }
     LaunchedEffect(batch) {
@@ -719,13 +489,13 @@ private fun GachaChip(
             .graphicsLayer { scaleX = chipScale; scaleY = chipScale; alpha = chipAlpha }
             .clip(RoundedCornerShape(12.dp))
             .background(
-                if (r.rarity >= 3) {
-                    Brush.verticalGradient(listOf(rc.copy(alpha = 0.30f), AppTheme.Surface))
+                if (isEpic) {
+                    Brush.verticalGradient(listOf(rc.copy(alpha = 0.30f + 0.35f * glowA), AppTheme.Surface))
                 } else {
                     Brush.verticalGradient(listOf(AppTheme.Surface, AppTheme.Surface.copy(alpha = 0.55f)))
                 },
             )
-            .border(1.dp, rc.copy(alpha = 0.55f), RoundedCornerShape(12.dp))
+            .border(1.dp, rc.copy(alpha = if (isEpic) glowA else 0.55f), RoundedCornerShape(12.dp))
             .clickable(onClick = onOpen)
             .padding(vertical = 10.dp, horizontal = 4.dp),
         horizontalAlignment = Alignment.CenterHorizontally,

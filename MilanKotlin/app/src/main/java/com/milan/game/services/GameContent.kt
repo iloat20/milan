@@ -335,7 +335,9 @@ internal object GameContent {
 
     // ------------------------------------------------------------------ pools
 
-    /** 构建兜底卡池：常驻「诸神黄昏」+ UP「业火轮盘」。权重与 data.json 的池模型一致（160/1600）。 */
+    /** 构建兜底卡池：常驻「次元裂缝」+ UP「业火轮盘」。
+     *  常驻池显示名与权重对齐 data.json 主来源（防止离线回退时出现与主来源不一致的漂移）；
+     *  UP 池为兜底独有设计（data.json 无此池，见 DataJsonContentTest 固化意图）。 */
     fun buildPools(characters: List<CharacterDataEntry>): List<GachaPoolDataEntry> {
         fun entryFor(c: CharacterDataEntry) = GachaPoolEntry(
             characterId = c.characterId,
@@ -350,7 +352,7 @@ internal object GameContent {
         val all = characters.map(::entryFor)
         return listOf(
             GachaPoolDataEntry(
-                poolId = "pool_main", displayName = "诸神黄昏 · 常驻",
+                poolId = "pool_main", displayName = "次元裂缝 · 常驻",
                 rarityWeights = listOf(400, 300, 200, 100), hardPity = 90,
                 singleCost = 160, tenCost = 1600, entries = all,
             ),

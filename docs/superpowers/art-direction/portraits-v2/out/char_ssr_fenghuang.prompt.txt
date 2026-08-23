@@ -1,0 +1,10 @@
+# 凤凰 Fenghuang · 涅槃圣禽
+# rarity=SSR world=Shinwa element=Flame
+# canvas=1280x1920 aspect=2:3
+# anchors={'A': '神话原型: 五色羽（**赤/橙/黄/绿/蓝五色凤凰羽翼**，每根羽毛末端不同色火焰）', 'B': '道具指纹: 焚羽·涅槃翼（**羽翼融合双刃，可作翅可作刃**）', 'C': '解剖签名: 五色长发渐变（**红→橙→黄→绿→蓝，如火焰燃烧**）'}
+
+Full-body character portrait of Fenghuang, the Chinese mythological phoenix of virtue. Female figure 7-head proportion, majestic and noble. Long hair in five-color gradient (red-orange-yellow-green-blue) flowing upward like flame. Giant phoenix wings spread (wingspan 3x body height), each feather tip burning in different colors. Wearing five-color feathered robes dominated by red, skirt hem dispersing like flames. Flame crown on head, phoenix-pattern huadian on forehead. Hands pressed together at chest, palms converging phoenix fire (white-hot core, five-color outer flames). Floating on five-color flame lotus, feet not touching ground. Expression: compassionate and majestic, divine presence.
+
+Shinwa world style: cel-shaded anime with ink-wash outlines, five-color palette with gold accents, dramatic fire lighting from upper left. Soft shadow edges. Fill light from upper right using Shinwa vermilion #E34234. Rim light from behind-lower using SSR purple #C79BFF. High detail, gacha game character art, 2:3 vertical aspect ratio, transparent background, full body with feet visible (hovering).
+
+negative_prompt: half-body, bust, cropped, white background, single wing color, single hair color, modern clothing, text, watermark, multiple characters, cute kawaii

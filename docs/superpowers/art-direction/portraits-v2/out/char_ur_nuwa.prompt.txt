@@ -1,0 +1,20 @@
+# 女娲 Nuwa · 泥塑苍天
+# rarity=UR world=Aether element=Earth
+# canvas=1536x2304 aspect=2:3
+# anchors={'A': '神话原型: 人首蛇身（**上半身人形 + 下半身蛇尾**，与烛龙同构但更柔和）', 'B': '道具指纹: 五色石（**掌心悬浮青/赤/黄/白/黑五色补天石**）', 'C': '解剖签名: 大地母神长袍（**袍面绣有山河纹样，会缓慢移动**）'}
+
+Full-body character portrait of Nuwa, the creator goddess from Chinese mythology who mended the sky with five-color stones. Female deity figure 8-head proportion, dignified and maternal. Black long straight hair reaching waist with five-color highlights (cyan, vermilion, yellow, white, black). Earth-mother crown on head with five-color stones inlaid. Deep brown eyes (#5C3317), serene and compassionate. Earth-mother style long robe, jade green (#2E8B57) and ochre (#8B4513), with embroidered mountain-river patterns on robe surface (subtle moving pattern), five-color silk embroidery on collar and cuffs.
+
+Dynamic pose P1 (deity hovering) + hands pressed together at chest holding five stones + head slightly bowed looking down at viewer + body floating. Serpent tail S-shape coiling three loops (white base with cyan-vermilion-yellow-black scale pattern in alternating rows), tail tip pointing forward at viewer. Floating island aura beneath feet (radial glow only, no solid island).
+
+Atmosphere: maternal creation, cosmic restoration, life-giving force. Background: TRANSPARENT (PNG alpha). Behind body: massive five-color aurora halo (cyan + vermilion + yellow + white + black vertical bands, soft). Floating particles: five-color stone fragments, floating petal motes, life-spirit wisps. No solid environment — only light and particles. Mood: serene, eternal, protective.
+
+Aether world style: semi-realistic rendering with jade green and earth-tone palette, five-color stone accents. Soft ethereal lighting. Gentle gradients. Fill light from upper right using Aether purple #C79BFF (faint). Rim light from behind-lower using UR molten gold #FFC857 (strong). High detail especially on face and five stones. Gacha game character art, 2:3 vertical aspect ratio, transparent background, full body with serpent tail visible.
+
+Key elements: serpent_tail_with_five_color_scales, five_color_stones_in_palms_cyan_vermilion_yellow_white_black, mountain_river_embroidery_on_robe, earth_mother_crown.
+
+negative_prompt: human legs only, no serpent tail,
+   half-body, bust, cropped, white background,
+   text, watermark, multiple characters, cute kawaii,
+   dark palette, gloomy, single robe color,
+   five stones missing or wrong colors

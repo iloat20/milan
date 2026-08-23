@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>专属武器展示卡 · 改版预览</title>
+<style>
+  body{margin:0;font-family:-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+       background:#f4f1ea;color:#23242a;padding:32px;}
+  h1{font-size:20px;letter-spacing:.04em;margin:0 0 4px}
+  p.sub{margin:0 0 24px;color:#6b6f78;font-size:13px}
+  .row{display:flex;gap:20px;flex-wrap:wrap}
+  .card{width:240px;}
+  .stage{position:relative;height:200px;border-radius:16px;overflow:hidden;
+         background:radial-gradient(circle at 50% 50%, rgba(255,210,120,.22), rgba(10,10,18,.96) 70%);
+         border:2px solid rgba(255,200,87,.85);box-shadow:0 10px 30px rgba(0,0,0,.25);}
+  .stage svg{position:absolute;inset:0;width:100%;height:100%}
+  .meta{padding:10px 4px 0}
+  .name{font-size:15px;font-weight:700;color:#b9892f}
+  .tag{display:inline-block;margin-top:4px;font-size:10px;color:#c8a24a;
+       border:1px solid rgba(200,162,74,.6);border-radius:6px;padding:2px 8px}
+  .desc{margin-top:8px;font-size:12px;color:#555;line-height:1.5}
+</style>
+</head>
+<body>
+  <h1>专属武器展示卡 · 改版预览</h1>
+  <p class="sub">立绘上不再叠加武器；武器移到下方独立舞台卡，干净呈现。下图按新渲染风格示意。</p>
+  <div class="row">
+
+    <div class="card">
+      <div class="stage">
+        <svg viewBox="0 0 240 200">
+          <!-- 曜日神弓 -->
+          <path d="M150 60 Q190 100 150 140" fill="none" stroke="#ffd278" stroke-width="7" stroke-linecap="round"/>
+          <path d="M150 60 Q190 100 150 140" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
+          <line x1="150" y1="60" x2="120" y2="100" stroke="#e6f0ff" stroke-width="3"/>
+          <line x1="120" y1="100" x2="150" y2="140" stroke="#e6f0ff" stroke-width="3"/>
+          <rect x="92" y="97" width="28" height="6" rx="3" fill="#ffcf6e"/>
+          <circle cx="90" cy="100" r="9" fill="#ffdc78"/>
+          <circle cx="90" cy="100" r="4" fill="#fff3c4"/>
+        </svg>
+      </div>
+      <div class="meta">
+        <div class="name">曜日神弓·金乌</div>
+        <span class="tag">UR 专属</span>
+        <div class="desc">金乌拉满的恒星之弓，蓄能时箭簇凝缩成微型曜日。</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="stage" style="border-color:rgba(155,120,235,.85);background:radial-gradient(circle at 50% 50%, rgba(150,120,235,.22), rgba(10,10,18,.96) 70%);">
+        <svg viewBox="0 0 240 200">
+          <!-- 五色补天杖 -->
+          <rect x="117" y="40" width="6" height="120" rx="3" fill="#cdd2eb"/>
+          <circle cx="120" cy="40" r="9" fill="#e14a4a"/>
+          <circle cx="133" cy="48" r="9" fill="#4682eb"/>
+          <circle cx="128" cy="62" r="9" fill="#f5d746"/>
+          <circle cx="112" cy="62" r="9" fill="#f0f0f5"/>
+          <circle cx="107" cy="48" r="9" fill="#785f96"/>
+          <circle cx="120" cy="52" r="6" fill="#fff"/>
+        </svg>
+      </div>
+      <div class="meta">
+        <div class="name">五色补天杖</div>
+        <span class="tag">UR 专属</span>
+        <div class="desc">女娲遗杖，顶端五色石流转上浮，光尘不熄。</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="stage" style="border-color:rgba(95,200,255,.85);background:radial-gradient(circle at 50% 50%, rgba(95,200,255,.22), rgba(10,10,18,.96) 70%);">
+        <svg viewBox="0 0 240 200">
+          <!-- 雷楔双剑 -->
+          <g transform="rotate(-26 120 100)">
+            <path d="M117 50 L123 50 L121.5 96 L118.5 96 Z" fill="#e1ebf5"/>
+            <path d="M117 50 L123 50 L121.5 96 L118.5 96 Z" fill="none" stroke="#fff" stroke-width="1.5"/>
+            <rect x="112" y="96" width="16" height="5" fill="#5fc8ff"/>
+            <rect x="118" y="101" width="4" height="22" fill="#5a506e"/>
+          </g>
+          <g transform="rotate(26 120 100)">
+            <path d="M117 50 L123 50 L121.5 96 L118.5 96 Z" fill="#e1ebf5"/>
+            <path d="M117 50 L123 50 L121.5 96 L118.5 96 Z" fill="none" stroke="#fff" stroke-width="1.5"/>
+            <rect x="112" y="96" width="16" height="5" fill="#5fc8ff"/>
+            <rect x="118" y="101" width="4" height="22" fill="#5a506e"/>
+          </g>
+        </svg>
+      </div>
+      <div class="meta">
+        <div class="name">雷楔双剑·云来</div>
+        <span class="tag">UR 专属</span>
+        <div class="desc">刻晴双剑交击，沿刃游走雷光，斩出湛蓝雷弧。</div>
+      </div>
+    </div>
+
+  </div>
+</body>
+</html>

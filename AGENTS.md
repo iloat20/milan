@@ -8,15 +8,23 @@
 - 工程在 `MilanKotlin/`（Gradle 9 系 + AGP 9.3.0 + Kotlin 2.4.10，AGP 9 内置 built-in Kotlin，不再应用 kotlin-android 插件），用 wrapper，无需本地安装 Gradle：
   ```powershell
   .\gradlew.bat :app:assembleDebug          # 构建 Debug APK
+  .\gradlew.bat :app:assembleRelease        # 构建 Release APK（minify+shrinkResources）
   .\gradlew.bat :app:testDebugUnitTest      # 运行单测（JUnit4 + kotlinx-coroutines-test）
   ```
-- 产物：`MilanKotlin/app/build/outputs/apk/debug/app-debug.apk`。需 JDK 17+（PATH 上有 Temurin 17 即可）。
+- 产物：`MilanKotlin/app/build/outputs/apk/debug/app-debug.apk`（~90MB）/ `release/app-release.apk`（~49MB）。需 JDK 17+（PATH 上有 Temurin 17 即可）。
 - **DSH 沙箱环境专用**：`%USERPROFILE%\.gradle` 与 `%USERPROFILE%\.android` 不可写，必须用
   `pwsh -NoProfile -File .\run-gradle.ps1 <gradle 参数>`（内部把 GRADLE_USER_HOME / ANDROID_USER_HOME
   重定向到 workspace 内 `.gradle-home/`、`.android-home/`，两者已入根 .gitignore）。Kotlin daemon
   标记写入 `%LOCALAPPDATA%\kotlin\daemon` 被拒会自动回退 in-process 编译（有噪音，构建仍成功）。
 - 版本号集中在 `MilanKotlin/gradle/libs.versions.toml`（AGP / Kotlin / Compose BOM 2026.06.01 / kotlinx-serialization 1.11.0 / coroutines 1.11.0 / navigation-compose 2.9.8 / media3 1.11.0 / glance 1.1.1 / lifecycle 2.11.0）；`minSdk=29, targetSdk=37, compileSdk=37`（compileSdk 37 为 BOM 2026.06.01 的 ui 1.12.0-alpha03 强制要求），JVM target 17。
 - Release 构建开 minify + shrinkResources。`MilanKotlin/app/proguard-rules.pro` 除 kotlinx.serialization 规则外，**必须保留 WorkManager keep 规则**（`androidx.work.impl.WorkDatabase_Impl` + `ListenableWorker` 构造器）：AGP 9 R8 严格化会把反射实例化的 WorkDatabase_Impl 裁掉，导致 release 启动闪退 `Failed to create an instance of androidx.work.impl.WorkDatabase`（debug 正常；Google Issue 348590028，2026-02 社区 workaround）。
+
+## Compose 编译陷阱（高频踩坑）
+
+- **`withFrameNanos` import 必须是 `androidx.compose.runtime.withFrameNanos`**，不是 `kotlinx.coroutines.withFrameNanos`（后者不存在）。错误 import 不会立即报错，直到 LaunchedEffect 内调用才报 `Unresolved reference`。
+- **GraphicsLayerScope 属性名遮蔽**：`graphicsLayer { scaleX = x }` 里的 `scaleX`/`scaleY`/`alpha`/`translationY` 是隐式 receiver 成员。如果外部有同名 `val`/`var`，Kotlin 隐式规则会优先绑定局部变量，导致 `'val' cannot be reassigned`。解决方案：重命名外部变量（如 `scaleX` → `animX`，`alpha` → `cardAlpha`）。
+- **`val x by mutableFloatStateOf(0f)` 不能赋值**：委托属性用 `val` 声明时，即使委托有 `setValue`，编译器也会拒绝 `x = ...`。动画时间线等场景必须用 `var x by remember { mutableFloatStateOf(0f) }`。
+- **`matchParentSize` 不需要 import**：它是 `BoxScope` 的成员修饰符，在 BoxScope 内部直接用 `Modifier.matchParentSize()`，import 反而报 `Unresolved reference`。
 
 ## 代码红线（动它们会破坏构建/运行）
 

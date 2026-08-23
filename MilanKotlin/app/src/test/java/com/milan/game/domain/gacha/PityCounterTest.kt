@@ -22,7 +22,7 @@ class PityCounterTest {
     fun invalidThreshold_neverTriggersPity_andDoesNotCount() {
         val pity = PityCounter(threshold = 0)
         repeat(50) {
-            assertEquals(Rarity.R, pity.rollWithPity(Random(1), alwaysR, minRarityForPity = 3))
+            assertEquals(Rarity.R, pity.rollWithPity(Random(1), alwaysR, minRarityForPity = Rarity.SSR))
         }
         assertEquals(0, pity.counter)
     }
@@ -30,7 +30,7 @@ class PityCounterTest {
     @Test
     fun negativeThreshold_treatedAsInvalid() {
         val pity = PityCounter(threshold = -1)
-        assertEquals(Rarity.R, pity.rollWithPity(Random(1), alwaysR, minRarityForPity = 3))
+        assertEquals(Rarity.R, pity.rollWithPity(Random(1), alwaysR, minRarityForPity = Rarity.SSR))
         assertEquals(0, pity.counter)
     }
 
@@ -39,11 +39,11 @@ class PityCounterTest {
         val pity = PityCounter(threshold = 5)
         // 前 4 抽都是自然 R（低于保底档），counter 递增 1..4
         repeat(4) { i ->
-            assertEquals(Rarity.R, pity.rollWithPity(Random(2), alwaysR, minRarityForPity = 3))
+            assertEquals(Rarity.R, pity.rollWithPity(Random(2), alwaysR, minRarityForPity = Rarity.SSR))
             assertEquals(i + 1, pity.counter)
         }
         // 第 5 抽触发保底 → SSR 且 counter 归零
-        assertEquals(Rarity.SSR, pity.rollWithPity(Random(2), alwaysR, minRarityForPity = 3))
+        assertEquals(Rarity.SSR, pity.rollWithPity(Random(2), alwaysR, minRarityForPity = Rarity.SSR))
         assertEquals(0, pity.counter)
     }
 
@@ -52,9 +52,9 @@ class PityCounterTest {
         // 每次自然抽都是 SSR（保底档）→ 交付后判定重置 → 计数器始终为 0，永不触发保底
         val pity = PityCounter(threshold = 3)
         repeat(10) {
-            val rolled = pity.rollWithPity(Random(3), alwaysSsr, minRarityForPity = 3)
+            val rolled = pity.rollWithPity(Random(3), alwaysSsr, minRarityForPity = Rarity.SSR)
             assertEquals(Rarity.SSR, rolled)
-            pity.onNaturalPityOrAbove(rolled, minRarityForPity = 3)
+            pity.onNaturalPityOrAbove(rolled, minRarityForPity = Rarity.SSR)
             assertEquals(0, pity.counter)
         }
     }
@@ -64,14 +64,14 @@ class PityCounterTest {
         // P1-3 回归：掷出保底档但实际交付被降档（如 SR）→ 保底计数不重置
         val pity = PityCounter(threshold = 90)
         repeat(3) {
-            pity.rollWithPity(Random(1), alwaysSsr, minRarityForPity = 3)
+            pity.rollWithPity(Random(1), alwaysSsr, minRarityForPity = Rarity.SSR)
         }
         assertEquals(3, pity.counter)
         // 交付 SR（< 3）→ 不重置
-        pity.onNaturalPityOrAbove(Rarity.SR, minRarityForPity = 3)
+        pity.onNaturalPityOrAbove(Rarity.SR, minRarityForPity = Rarity.SSR)
         assertEquals(3, pity.counter)
         // 交付 SSR（>= 3）→ 重置
-        pity.onNaturalPityOrAbove(Rarity.SSR, minRarityForPity = 3)
+        pity.onNaturalPityOrAbove(Rarity.SSR, minRarityForPity = Rarity.SSR)
         assertEquals(0, pity.counter)
     }
 
@@ -79,20 +79,20 @@ class PityCounterTest {
     fun mixedSequence_counterAccumulatesUntilNaturalHit() {
         val pity = PityCounter(threshold = 10)
         // 2 发自然 R → counter=2；再一发自然 SSR（交付即保底档）→ 判定重置为 0
-        assertEquals(Rarity.R, pity.rollWithPity(Random(4), alwaysR, minRarityForPity = 3))
-        assertEquals(Rarity.R, pity.rollWithPity(Random(4), alwaysR, minRarityForPity = 3))
+        assertEquals(Rarity.R, pity.rollWithPity(Random(4), alwaysR, minRarityForPity = Rarity.SSR))
+        assertEquals(Rarity.R, pity.rollWithPity(Random(4), alwaysR, minRarityForPity = Rarity.SSR))
         assertEquals(2, pity.counter)
-        val hit = pity.rollWithPity(Random(4), alwaysSsr, minRarityForPity = 3)
+        val hit = pity.rollWithPity(Random(4), alwaysSsr, minRarityForPity = Rarity.SSR)
         assertEquals(Rarity.SSR, hit)
-        pity.onNaturalPityOrAbove(hit, minRarityForPity = 3)
+        pity.onNaturalPityOrAbove(hit, minRarityForPity = Rarity.SSR)
         assertEquals(0, pity.counter)
     }
 
     @Test
     fun reset_clearsCounter() {
         val pity = PityCounter(threshold = 5)
-        pity.rollWithPity(Random(5), alwaysR, minRarityForPity = 3)
-        pity.rollWithPity(Random(5), alwaysR, minRarityForPity = 3)
+        pity.rollWithPity(Random(5), alwaysR, minRarityForPity = Rarity.SSR)
+        pity.rollWithPity(Random(5), alwaysR, minRarityForPity = Rarity.SSR)
         assertEquals(2, pity.counter)
         pity.reset()
         assertEquals(0, pity.counter)

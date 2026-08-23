@@ -2,6 +2,7 @@ package com.milan.game.ui.characters
 
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import androidx.collection.LruCache
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
@@ -104,7 +105,8 @@ fun CharacterDetailScreen(
     val snap by GameState.snapshot.collectAsStateWithLifecycle()
     @Suppress("UNUSED_EXPRESSION")
     snap.revision
-    val ownedSave = GameState.service.saveData.ownedCharacters.firstOrNull { it?.characterId == characterId }
+    // 路径 B：ownedSaves 随快照刷新（写操作后自动更新），替代 saveData.ownedCharacters.firstOrNull 直读
+    val ownedSave = snap.ownedSaves[characterId]
     val owned = ownedSave != null
     // 未拥有兜底存档（Level/Stage/Stars=1）：纯渲染模型，按角色缓存即可（拥有后 ownedSave 优先）。
     val fallbackSave = remember(characterId) {
@@ -286,8 +288,8 @@ private fun HeroRegion(
                 .padding(horizontal = 12.dp, vertical = 8.dp)
                 .clickable(onClick = onBack),
         )
-        GlassArrow("‹", Modifier.align(Alignment.CenterStart), onPrev)
-        GlassArrow("›", Modifier.align(Alignment.CenterEnd), onNext)
+        GlassArrow("‹", Modifier.align(Alignment.CenterStart), onPrev, contentDescription = "上一个")
+        GlassArrow("›", Modifier.align(Alignment.CenterEnd), onNext, contentDescription = "下一个")
         if (owned) {
             Text(
                 "养 成 ▲",
@@ -320,7 +322,7 @@ private fun WeaponPanel(
 ) {
     val (eFrom, _, _, eGlyph) = ElementTheme.forElement(view.element)
 
-    GlassPanel(modifier = Modifier.fillMaxWidth(), gold = owned) {
+    GlassPanel(modifier = Modifier.fillMaxWidth(), highlighted = owned) {
         Column(Modifier.padding(horizontal = 16.dp, vertical = 14.dp)) {
             // 武器舞台：全稀有度展示专属武器（SR/R 武器现已补齐 lore）
             if (def.weaponVfx.isNotBlank()) {
@@ -397,6 +399,13 @@ private fun WeaponPanel(
 }
 
 /**
+ * 武器概念图内存缓存：详情页左右切换角色会高频重进 [WeaponStage]，
+ * 无缓存时每次都重复 IO 解码 512² WebP（约 1MB/张）。LRU 上限 8 张 ≈ 8MB，
+ * 超出自动驱逐最旧；键为武器 vfx 名。
+ */
+private val WeaponArtCache = LruCache<String, Bitmap>(8)
+
+/**
  * 武器舞台：圆角暗底 + 元素径向晕染 + 稀有度描边光环（C# WeaponPreviewView 静态帧）。
  * 优先显示 AI 概念图 PNG（assets/weapons/{vfx}.png），缺失回退武器名（C# 的 Canvas 几何回退为 P2）。
  */
@@ -414,12 +423,12 @@ private fun WeaponStage(
         // P1-2：key（weaponVfx）变化时先清空旧值，否则切角色瞬间会闪一瞬上一角色的武器图
         value = null
         value = withContext(Dispatchers.IO) {
-            runCatching {
+            WeaponArtCache.get(weaponVfx) ?: runCatching {
                 context.assets.open("weapons/$weaponVfx.webp").use { ins ->
                     val opts = BitmapFactory.Options().apply { inSampleSize = 2 }
                     BitmapFactory.decodeStream(ins, null, opts)
                 }
-            }.getOrNull()
+            }.getOrNull()?.also { WeaponArtCache.put(weaponVfx, it) }
         }
     }
 

@@ -1,6 +1,5 @@
 package com.milan.game.ui.settings
 
-import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -23,7 +22,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -41,6 +42,7 @@ import com.milan.game.ui.components.SectionTitle
 import com.milan.game.ui.nav.AppTopBar
 import com.milan.game.ui.nav.GameNavBar
 import com.milan.game.ui.nav.NavItem
+import com.milan.game.ui.feedback.LocalFeedback
 import com.milan.game.ui.theme.AppTheme
 import kotlinx.coroutines.launch
 
@@ -57,11 +59,13 @@ fun SettingsScreen(
 ) {
     val service = GameState.service
     val context = LocalContext.current
-    var sound by remember { mutableStateOf(service.saveData.soundEnabled) }
-    var vibration by remember { mutableStateOf(service.saveData.vibrationEnabled) }
-    var push by remember { mutableStateOf(service.saveData.pushEnabled) }
-    var showResetDialog by remember { mutableStateOf(false) }
-    var toast by remember { mutableStateOf<String?>(null) }
+    // I5：开关状态从 GameSnapshot 派生（单一事实来源）。toggle 成功即由 persistSetting→refreshSnapshot
+    // 推进快照，重置存档后快照自动复位，无需本地镜像与手工回滚。
+    val snap = service.snapshot.collectAsStateWithLifecycle()
+    val feedback = LocalFeedback.current
+    // I13：in-flight 防重入——设置项落盘期间禁用二次触发，避免快速双击造成重复写。
+    var busy by remember { mutableStateOf(false) }
+    var showResetDialog by rememberSaveable { mutableStateOf(false) }
 
     val version = remember {
         runCatching {
@@ -69,12 +73,6 @@ fun SettingsScreen(
         }.getOrNull() ?: "1.0"
     }
 
-    LaunchedEffect(toast) {
-        toast?.let {
-            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
-            toast = null
-        }
-    }
     // 2026-08 主线程 IO 异步化：设置/重置为 suspend（落盘在 IO 线程），用页面协程调用
     val scope = rememberCoroutineScope()
 
@@ -92,16 +90,19 @@ fun SettingsScreen(
                 SettingSwitchRow(
                     title = "音效",
                     subtitle = "战斗与抽卡音效",
-                    checked = sound,
+                    checked = snap.value.soundEnabled,
                     onCheckedChange = { enabled ->
+                        if (busy) return@SettingSwitchRow
+                        busy = true
                         scope.launch {
-                            when (service.setSoundEnabled(enabled)) {
-                                WriteOutcome.Success -> {
-                                    MilanAudio.setSfxVolume(if (enabled) 0.9f else 0f)
-                                    sound = enabled
+                            try {
+                                when (service.setSoundEnabled(enabled)) {
+                                    WriteOutcome.Success -> MilanAudio.setSfxVolume(if (enabled) 0.9f else 0f)
+                                    WriteOutcome.Rejected -> feedback.show("设置失败")
+                                    WriteOutcome.SaveFailed -> feedback.show("保存失败，请重试")
                                 }
-                                WriteOutcome.Rejected -> toast = "设置失败"
-                                WriteOutcome.SaveFailed -> toast = "保存失败，请重试"
+                            } finally {
+                                busy = false
                             }
                         }
                     },
@@ -109,13 +110,19 @@ fun SettingsScreen(
                 SettingSwitchRow(
                     title = "振动",
                     subtitle = "抽卡演出触觉反馈",
-                    checked = vibration,
+                    checked = snap.value.vibrationEnabled,
                     onCheckedChange = { enabled ->
+                        if (busy) return@SettingSwitchRow
+                        busy = true
                         scope.launch {
-                            when (service.setVibrationEnabled(enabled)) {
-                                WriteOutcome.Success -> vibration = enabled
-                                WriteOutcome.Rejected -> toast = "设置失败"
-                                WriteOutcome.SaveFailed -> toast = "保存失败，请重试"
+                            try {
+                                when (service.setVibrationEnabled(enabled)) {
+                                    WriteOutcome.Success -> { /* 快照已推进，UI 从 snapshot 派生 */ }
+                                    WriteOutcome.Rejected -> feedback.show("设置失败")
+                                    WriteOutcome.SaveFailed -> feedback.show("保存失败，请重试")
+                                }
+                            } finally {
+                                busy = false
                             }
                         }
                     },
@@ -123,13 +130,19 @@ fun SettingsScreen(
                 SettingSwitchRow(
                     title = "推送",
                     subtitle = "推送功能开发中",
-                    checked = push,
+                    checked = snap.value.pushEnabled,
                     onCheckedChange = { enabled ->
+                        if (busy) return@SettingSwitchRow
+                        busy = true
                         scope.launch {
-                            when (service.setPushEnabled(enabled)) {
-                                WriteOutcome.Success -> push = enabled
-                                WriteOutcome.Rejected -> toast = "设置失败"
-                                WriteOutcome.SaveFailed -> toast = "保存失败，请重试"
+                            try {
+                                when (service.setPushEnabled(enabled)) {
+                                    WriteOutcome.Success -> { /* 快照已推进，UI 从 snapshot 派生 */ }
+                                    WriteOutcome.Rejected -> feedback.show("设置失败")
+                                    WriteOutcome.SaveFailed -> feedback.show("保存失败，请重试")
+                                }
+                            } finally {
+                                busy = false
                             }
                         }
                     },
@@ -155,9 +168,12 @@ fun SettingsScreen(
                         )
                     }
                 }
-                CrashLogCard(onExport = {
-                    val path = CrashReporter.exportAll()
-                    toast = path?.let { "已导出至 $it" } ?: "无崩溃日志可导出"
+                CrashLogCard(                onExport = {
+                    // P0-C4：导出走挂起版脱离主线程 IO（大文件读 + 写镜像目录）
+                    scope.launch {
+                        val path = CrashReporter.exportAll()
+                        feedback.show(path?.let { "已导出至 $it" } ?: "无崩溃日志可导出")
+                    }
                 })
 
                 SectionTitle("关于")
@@ -180,39 +196,47 @@ fun SettingsScreen(
         }
     }
 
-    if (showResetDialog) {
-        AlertDialog(
-            onDismissRequest = { showResetDialog = false },
-            title = { Text("重置存档", fontWeight = FontWeight.Bold) },
-            text = { Text("将清除所有角色、货币与进度，且无法恢复。确定继续吗？") },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        scope.launch {
-                            val ok = service.resetSave()
-                            if (ok) {
-                                // 开关状态随新档复位
-                                sound = true
-                                vibration = true
-                                push = true
-                                toast = "已重置存档"
-                            } else {
-                                toast = "重置失败，请重试"
-                            }
-                            showResetDialog = false
-                        }
-                    },
-                ) {
-                    Text("确 定", color = AppTheme.Danger, fontWeight = FontWeight.Bold)
+    ResetSaveDialog(
+        show = showResetDialog,
+        onDismiss = { showResetDialog = false },
+        onConfirm = {
+            scope.launch {
+                val ok = service.resetSave()
+                if (ok) {
+                    // 开关状态随新档复位：resetSave 已 refreshSnapshot，UI 从 snapshot 派生自动复位
+                    feedback.show("已重置存档")
+                } else {
+                    feedback.show("重置失败，请重试")
                 }
-            },
-            dismissButton = {
-                TextButton(onClick = { showResetDialog = false }) {
-                    Text("取 消", color = AppTheme.Text2)
-                }
-            },
-        )
-    }
+                showResetDialog = false
+            }
+        },
+    )
+}
+
+/** 重置存档确认对话框（I12：从 SettingsScreen 主函数抽出，收窄主函数职责）。 */
+@Composable
+private fun ResetSaveDialog(
+    show: Boolean,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    if (!show) return
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("重置存档", fontWeight = FontWeight.Bold) },
+        text = { Text("将清除所有角色、货币与进度，且无法恢复。确定继续吗？") },
+        confirmButton = {
+            TextButton(onClick = onConfirm) {
+                Text("确 定", color = AppTheme.Danger, fontWeight = FontWeight.Bold)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("取 消", color = AppTheme.Text2)
+            }
+        },
+    )
 }
 
 /** 设置开关行：标题 + 副文案 + Material 开关（开启态金色，与主题一致）。 */
@@ -252,7 +276,9 @@ private fun SettingSwitchRow(
 /** 崩溃日志行：有未导出崩溃时提示数量，导出写入日志文件（无崩溃提示空）。 */
 @Composable
 private fun CrashLogCard(onExport: () -> Unit) {
-    val crashCount = remember { CrashReporter.crashCount() }
+    // P0-C4：崩溃计数脱离主线程读取（crashCount 已挂起），挂载时一次性拉取
+    var crashCount by remember { mutableStateOf(0) }
+    LaunchedEffect(Unit) { crashCount = CrashReporter.crashCount() }
     GlassPanel {
         Row(
             modifier = Modifier.fillMaxWidth().padding(14.dp),

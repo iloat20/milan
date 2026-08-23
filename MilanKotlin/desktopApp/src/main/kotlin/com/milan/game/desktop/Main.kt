@@ -24,7 +24,7 @@ fun main() {
     // 保底 90 抽，自然出货/硬保底语义与 App 内完全一致
     val pity = PityCounter(threshold = 90)
     repeat(10) { i ->
-        val rarity = pity.rollWithPity(Random(20260813L + i), weights, minRarityForPity = Rarity.SSR.value)
+        val rarity = pity.rollWithPity(Random(20260813L + i), weights, minRarityForPity = Rarity.SSR)
         println("第 ${i + 1} 抽 -> ${names[rarity.value - 1]}（保底计数 ${pity.counter}）")
     }
 

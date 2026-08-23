@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<title>武器重做预览 · 魔兽风 + 通用炫光</title>
+<style>
+  html,body{margin:0;background:#0a0a12;color:#cfd2dc;font-family:system-ui,"PingFang SC",sans-serif}
+  .wrap{max-width:1000px;margin:0 auto;padding:24px}
+  h1{font-size:20px;font-weight:700;color:#f0e6c8;letter-spacing:1px;margin:0}
+  p.note{font-size:13px;color:#8a8fa0;margin:6px 0 16px;line-height:1.5}
+  canvas{width:100%;height:auto;display:block;background:#0a0a12;border-radius:14px;box-shadow:0 8px 40px rgba(0,0,0,.5)}
+  .tags{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+  .tag{font-size:12px;padding:4px 10px;border-radius:999px;background:#16161f;border:1px solid #2c2c3e;color:#aab}
+  b{color:#e9c879}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>专属武器 · 魔兽风重做 + 通用炫光层</h1>
+  <p class="note">浏览器内忠实移植的几何（与 APK 同一套绘制逻辑）。每张卡带：<b>悬浮光台 + 外发光晕 + 环绕元素粒子 + 旋转流动光弧</b>。
+  其中 5 个不贴背景故事的武器已按 lore 重画：烛龙昼夜神环竖瞳、虚无无相裂隙刃、商羊星谶盘、饕餮青铜巨鼎、精卫衔石。</p>
+  <canvas id="c" width="960" height="640"></canvas>
+  <div class="tags">
+    <span class="tag">烛龙·昼夜神环竖瞳</span>
+    <span class="tag">虚无·无相裂隙刃</span>
+    <span class="tag">商羊·卜天星谶盘</span>
+    <span class="tag">饕餮·青铜巨鼎吞噬</span>
+    <span class="tag">精卫·衔石填海</span>
+    <span class="tag">金乌·曜日神弓</span>
+    <span class="tag">刻晴·雷楔双剑</span>
+    <span class="tag">刑天·干戚齿轮</span>
+  </div>
+</div>
+<script>
+const cv = document.getElementById('c');
+const ctx = cv.getContext('2d');
+const W = cv.width, H = cv.height;
+
+function rgba(c,a){ return `rgba(${c[0]},${c[1]},${c[2]},${a})`; }
+function glowDisc(x,y,r,col,a){
+  if(r<=0) return;
+  const g=ctx.createRadialGradient(x,y,0,x,y,r);
+  g.addColorStop(0, rgba(col,a));
+  g.addColorStop(1, rgba(col,0));
+  ctx.fillStyle=g; ctx.beginPath(); ctx.arc(x,y,r,0,7); ctx.fill();
+}
+function glowStroke(path,col,blur){
+  ctx.save();
+  ctx.strokeStyle=rgba(col,0.95); ctx.lineWidth=2.2; ctx.lineCap='round'; ctx.lineJoin='round';
+  ctx.shadowColor=rgba(col,0.95); ctx.shadowBlur=blur;
+  ctx.stroke(path);
+  ctx.shadowBlur=0; ctx.strokeStyle='rgba(255,255,255,0.9)'; ctx.lineWidth=1; ctx.stroke(path);
+  ctx.restore();
+}
+
+// 通用炫光层（对应 C# AddAura）
+function drawAura(cx,cy,u,col,t){
+  glowDisc(cx,cy,u*0.46,col,0.14);
+  const baseY=cy+u*0.34;
+  const g=ctx.createRadialGradient(cx,baseY,0,cx,baseY,u*0.30);
+  g.addColorStop(0, rgba(col,0.5)); g.addColorStop(1, rgba(col,0));
+  ctx.fillStyle=g; ctx.save(); ctx.translate(cx,baseY); ctx.scale(1,0.18);
+  ctx.beginPath(); ctx.arc(0,0,u*0.30,0,7); ctx.fill(); ctx.restore();
+  const N=9, spin=t*0.5;
+  for(let i=0;i<N;i++){
+    const a=i*2*Math.PI/N+spin;
+    const ringR=u*0.33+u*0.025*Math.sin(t*2+i);
+    const x=cx+Math.cos(a)*ringR, y=cy+Math.sin(a)*ringR*0.94;
+    const pr=Math.max(0.6,u*0.010+u*0.006*Math.sin(t*3+i*1.7));
+    glowDisc(x,y,6+pr*3,col,1);
+    ctx.fillStyle='rgba(255,250,245,0.9)';
+    ctx.beginPath(); ctx.arc(x,y,pr,0,7); ctx.fill();
+  }
+  ctx.save();
+  ctx.strokeStyle=rgba(col,0.9); ctx.lineWidth=2.4; ctx.lineCap='round';
+  ctx.shadowColor=rgba(col,0.9); ctx.shadowBlur=8;
+  ctx.setLineDash([16,22]); ctx.lineDashOffset=-(t*70)%38;
+  ctx.beginPath();
+  ctx.ellipse(cx,cy,u*0.40,u*0.40*0.94,0, t*1.2, t*1.2+Math.PI*1.1);
+  ctx.stroke();
+  ctx.setLineDash([]); ctx.shadowBlur=0; ctx.restore();
+}
+
+// —— 武器绘制（简化矢量，忠实几何）——
+function drawSunHalo(cx,cy,u,col,t){
+  const r=u*0.20, day=[255,196,92], night=[150,92,220];
+  glowDisc(cx,cy,r*2.4,col,0.5);
+  ctx.strokeStyle='rgba(246,216,138,1)'; ctx.lineWidth=2.6; ctx.beginPath(); ctx.arc(cx,cy,r,0,7); ctx.stroke();
+  const p1=new Path2D(); p1.arc(cx,cy,r*1.06,Math.PI,2*Math.PI); glowStroke(p1,day,10);
+  const p2=new Path2D(); p2.arc(cx,cy,r*1.06,0,Math.PI); glowStroke(p2,night,10);
+  glowDisc(cx,cy,r*0.62,col,1);
+  ctx.fillStyle='rgb(20,12,34)'; ctx.beginPath(); ctx.ellipse(cx,cy,r*0.16,r*0.46,0,0,7); ctx.fill();
+  ctx.fillStyle=rgba(col,1); ctx.beginPath(); ctx.ellipse(cx,cy,r*0.11,r*0.40,0,0,7); ctx.fill();
+  ctx.fillStyle='rgba(255,255,255,0.8)'; ctx.beginPath(); ctx.arc(cx-r*0.04,cy-r*0.16,r*0.05,0,7); ctx.fill();
+  for(let i=0;i<14;i++){
+    const a=i*Math.PI/7+t*0.4, r1=r*1.30, r2=r*(1.5+0.12*Math.sin(t*2+i));
+    const p=new Path2D(); p.moveTo(cx+Math.cos(a)*r1,cy+Math.sin(a)*r1); p.lineTo(cx+Math.cos(a)*r2,cy+Math.sin(a)*r2);
+    glowStroke(p,[246,216,138],6);
+  }
+}
+function drawVoidBlade(cx,cy,u,col,t){
+  glowDisc(cx,cy,u*0.30,[40,18,70],0.5);
+  ctx.strokeStyle='rgba(165,95,235,0.5)'; ctx.lineWidth=1.4;
+  for(let i=0;i<3;i++){ const rr=u*(0.10+i*0.07), a0=t*(1.2-i*0.3)+i*2;
+    ctx.beginPath(); ctx.arc(cx,cy,rr,a0,a0+4.9); ctx.stroke(); }
+  const tipY=cy-u*0.40, botY=cy+u*0.34, bw=u*0.07;
+  const blade=new Path2D();
+  blade.moveTo(cx,tipY);
+  blade.quadraticCurveTo(cx+bw*1.8,cy-u*0.10,cx+bw*0.7,botY);
+  blade.lineTo(cx-bw*0.7,botY);
+  blade.quadraticCurveTo(cx-bw*1.8,cy-u*0.10,cx,tipY);
+  const g=ctx.createLinearGradient(cx-bw*2,tipY,cx+bw*2,botY);
+  g.addColorStop(0,'rgb(165,95,235)'); g.addColorStop(0.5,'rgb(40,18,70)'); g.addColorStop(1,'rgb(165,95,235)');
+  ctx.fillStyle=g; ctx.fill(blade);
+  for(let i=0;i<6;i++){ const tt=(t*0.3+i*0.17)%1; const px=cx+((i%2)?-1:1)*bw*(0.4+0.4*Math.sin(t+i)); const py=tipY+tt*(botY-tipY);
+    ctx.fillStyle=`rgba(230,220,255,${0.8*(1-tt)})`; ctx.beginPath(); ctx.arc(px,py,1.6,0,7); ctx.fill(); }
+  glowStroke(blade,[165,95,235],10);
+}
+function drawAstrolabe(cx,cy,u,col,t){
+  const r=u*0.30;
+  ctx.strokeStyle='rgba(246,216,138,1)'; ctx.lineWidth=2.6; ctx.beginPath(); ctx.arc(cx,cy,r,0,7); ctx.stroke();
+  ctx.lineWidth=1.4; ctx.strokeStyle='rgba(246,216,138,0.7)'; ctx.beginPath(); ctx.arc(cx,cy,r*0.82,0,7); ctx.stroke();
+  for(let i=0;i<36;i++){ const a=i*Math.PI/18, r0=r*0.90, r1=(i%3===0)?r:r*0.95;
+    ctx.beginPath(); ctx.moveTo(cx+Math.cos(a)*r0,cy+Math.sin(a)*r0); ctx.lineTo(cx+Math.cos(a)*r1,cy+Math.sin(a)*r1); ctx.stroke(); }
+  for(let i=0;i<6;i++){ const a=i*Math.PI/3+t*0.6, sx=cx+Math.cos(a)*r*0.62, sy=cy+Math.sin(a)*r*0.62;
+    glowDisc(sx,sy,4,col,1); ctx.fillStyle='rgba(255,250,240,0.9)'; ctx.beginPath(); ctx.arc(sx,sy,1.8,0,7); ctx.fill(); }
+  glowDisc(cx,cy,r*0.5,col,1);
+  ctx.fillStyle='rgba(255,252,245,0.9)'; ctx.beginPath(); ctx.arc(cx,cy,r*0.20,0,7); ctx.fill();
+  ctx.strokeStyle=rgba(col,0.85); ctx.lineWidth=1.4;
+  ctx.beginPath(); ctx.moveTo(cx,cy-r*0.30); ctx.lineTo(cx,cy+r*0.30); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(cx-r*0.16,cy-r*0.12); ctx.lineTo(cx+r*0.16,cy-r*0.12); ctx.stroke();
+}
+function drawBronzeCauldron(cx,cy,u,col,t){
+  const bR=u*0.20, bT=cy-u*0.14, bB=cy+u*0.16;
+  const g=ctx.createLinearGradient(cx-bR,bT,cx+bR,bB);
+  g.addColorStop(0,'rgb(214,168,110)'); g.addColorStop(1,'rgb(120,84,44)');
+  ctx.fillStyle=g; roundRect(cx-bR,bT,bR*2,bB-bT,10); ctx.fill();
+  ctx.strokeStyle='rgba(60,40,18,0.6)'; ctx.lineWidth=1.6;
+  const my=bT+(bB-bT)*0.4; ctx.beginPath(); ctx.moveTo(cx-bR*0.7,my); ctx.lineTo(cx+bR*0.7,my); ctx.stroke();
+  ctx.fillStyle='rgb(214,168,110)';
+  ctx.beginPath(); ctx.arc(cx-bR-2,bT+2,4,0,7); ctx.fill();
+  ctx.beginPath(); ctx.arc(cx+bR+2,bT+2,4,0,7); ctx.fill();
+  ctx.strokeStyle='rgb(120,84,44)'; ctx.lineWidth=4.5; ctx.lineCap='round';
+  ctx.beginPath(); ctx.moveTo(cx-bR*0.6,bB); ctx.lineTo(cx-bR*0.7,bB+u*0.16); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(cx,bB); ctx.lineTo(cx,bB+u*0.18); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(cx+bR*0.6,bB); ctx.lineTo(cx+bR*0.7,bB+u*0.16); ctx.stroke();
+  glowDisc(cx,bT,bR*1.1,col,1);
+  for(let i=0;i<5;i++){ const a=i*2*Math.PI/5+t*0.8; const fx=cx+Math.cos(a)*bR*0.8, fy=bT-u*0.02+Math.sin(t*3+i)*4;
+    ctx.fillStyle=rgba(col,0.7); ctx.beginPath(); ctx.arc(fx,fy,2.4,0,7); ctx.fill(); }
+  ctx.fillStyle='rgba(30,10,50,0.8)'; ctx.beginPath(); ctx.ellipse(cx,bT-u*0.0,bR*0.8,u*0.05,0,0,7); ctx.fill();
+}
+function drawStoneBeak(cx,cy,u,col,t){
+  const hR=u*0.13, hX=cx-u*0.04, hY=cy-u*0.16;
+  ctx.fillStyle='rgb(150,166,190)'; ctx.beginPath(); ctx.arc(hX,hY,hR,0,7); ctx.fill();
+  const bX=hX+u*0.20, bY=hY+u*0.04;
+  const beak=new Path2D(); beak.moveTo(hX+hR*0.4,hY-u*0.03); beak.lineTo(bX,bY); beak.lineTo(hX+hR*0.5,hY+u*0.05); beak.closePath();
+  ctx.fillStyle='rgb(246,216,138)'; ctx.fill(beak);
+  glowDisc(bX,bY,10,col,1);
+  ctx.fillStyle='rgba(200,220,240,0.9)'; ctx.beginPath(); ctx.arc(bX,bY,4.5,0,7); ctx.fill();
+  ctx.fillStyle=rgba(col,0.6); ctx.beginPath(); ctx.arc(bX,bY,2.4,0,7); ctx.fill();
+  for(let i=0;i<4;i++){ const a=i*Math.PI/2+t*0.7, sx=cx+Math.cos(a)*u*0.26, sy=cy+Math.sin(a)*u*0.24;
+    glowDisc(sx,sy,5,col,1); ctx.fillStyle='rgba(180,190,210,0.85)'; ctx.beginPath(); ctx.arc(sx,sy,2.6,0,7); ctx.fill(); }
+}
+function drawBow(cx,cy,u,col,t){
+  const hh=u*0.40, gx=cx+u*0.12;
+  const limb=new Path2D();
+  limb.moveTo(gx,cy-hh);
+  limb.quadraticCurveTo(gx+hh*0.85,cy-hh*0.45,gx+hh*0.35,cy-hh*0.12);
+  limb.quadraticCurveTo(gx+hh*0.55,cy,gx+hh*0.35,cy+hh*0.12);
+  limb.quadraticCurveTo(gx+hh*0.85,cy+hh*0.45,gx,cy+hh);
+  ctx.strokeStyle='rgba(246,216,138,1)'; ctx.lineWidth=5; ctx.lineJoin='round'; ctx.stroke(limb);
+  glowStroke(limb,col,8);
+  ctx.fillStyle=rgba(col,1); ctx.beginPath(); ctx.arc(gx+hh*0.35,cy-hh*0.12,3,0,7); ctx.fill();
+  ctx.beginPath(); ctx.arc(gx+hh*0.35,cy+hh*0.12,3,0,7); ctx.fill();
+  const pull=(t*0.5)%1, nock=gx-pull*hh*0.45;
+  ctx.strokeStyle='rgba(235,235,255,0.8)'; ctx.lineWidth=1.4;
+  ctx.beginPath(); ctx.moveTo(gx,cy-hh); ctx.lineTo(nock,cy); ctx.lineTo(gx,cy+hh); ctx.stroke();
+  const tipX=gx-hh;
+  glowDisc(tipX,cy,12,col,0.7); ctx.fillStyle=rgba(col,1); ctx.beginPath(); ctx.arc(tipX,cy,5,0,7); ctx.fill();
+}
+function drawSwordShape(cx,cy,u,col,t,ang){
+  ctx.save(); ctx.translate(cx,cy); ctx.rotate(ang);
+  const tipY=-u*0.42, gY=u*0.02, pY=u*0.17, bw=u*0.05;
+  const blade=new Path2D(); blade.moveTo(0,tipY); blade.lineTo(bw,gY-u*0.04); blade.lineTo(bw*0.78,gY); blade.lineTo(-bw*0.78,gY); blade.lineTo(-bw,gY-u*0.04); blade.closePath();
+  const g=ctx.createLinearGradient(-bw,tipY,bw,gY); g.addColorStop(0,'rgb(233,239,247)'); g.addColorStop(0.5,'rgb(150,166,190)'); g.addColorStop(1,'rgb(84,100,126)');
+  ctx.fillStyle=g; ctx.fill(blade);
+  glowStroke(blade,col,8);
+  ctx.fillStyle='rgb(246,216,138)'; ctx.fillRect(-u*0.052,gY,u*0.104,u*0.034);
+  ctx.fillStyle=rgba(col,1); ctx.beginPath(); ctx.arc(0,pY+u*0.03,u*0.026,0,7); ctx.fill();
+  ctx.restore();
+}
+function drawTwin(cx,cy,u,col,t){
+  const strike=(t*0.6)%1;
+  drawSwordShape(cx,cy,u,col,t,-24*Math.PI/180-strike*16*Math.PI/180);
+  drawSwordShape(cx,cy,u,col,t, 24*Math.PI/180-strike*16*Math.PI/180);
+}
+function drawAxe(cx,cy,u,col,t){
+  for(let gN=0;gN<2;gN++){ const gr=u*(0.30+gN*0.12), spin=t*(gN===0?1:-1.4)*30;
+    ctx.save(); ctx.translate(cx,cy); ctx.rotate(spin*Math.PI/180); ctx.strokeStyle='rgba(150,140,160,0.5)'; ctx.lineWidth=1.6;
+    for(let i=0;i<10;i++){ const a0=i*2*Math.PI/10; ctx.beginPath(); ctx.moveTo(Math.cos(a0)*gr,Math.sin(a0)*gr); ctx.lineTo(Math.cos(a0+Math.PI/10)*(gr+4),Math.sin(a0+Math.PI/10)*(gr+4)); ctx.stroke(); }
+    ctx.beginPath(); ctx.arc(0,0,gr*0.6,0,7); ctx.stroke(); ctx.restore(); }
+  const ax=cx+u*0.16, ay=cy-u*0.30;
+  ctx.strokeStyle='rgb(110,84,64)'; ctx.lineWidth=4; ctx.lineCap='round';
+  ctx.beginPath(); ctx.moveTo(ax,ay+u*0.04); ctx.lineTo(cx-u*0.04,cy+u*0.28); ctx.stroke();
+  const blade=new Path2D(); blade.moveTo(ax,ay);
+  blade.quadraticCurveTo(ax+u*0.20,ay-u*0.12,ax+u*0.20,ay+u*0.02);
+  blade.quadraticCurveTo(ax+u*0.10,ay+u*0.10,ax+u*0.04,ay+u*0.20);
+  blade.quadraticCurveTo(ax-u*0.02,ay+u*0.10,ax,ay+u*0.04); blade.closePath();
+  const g=ctx.createLinearGradient(ax,ay-u*0.12,ax+u*0.20,ay+u*0.20); g.addColorStop(0,'rgb(233,239,247)'); g.addColorStop(1,'rgb(84,100,126)');
+  ctx.fillStyle=g; ctx.fill(blade); glowStroke(blade,col,8);
+  const shx=cx-u*0.18, shy=cy+u*0.06, sr=u*0.13;
+  ctx.fillStyle='rgb(150,166,190)'; ctx.beginPath(); ctx.arc(shx,shy,sr,0,7); ctx.fill();
+  ctx.strokeStyle='rgba(246,216,138,1)'; ctx.lineWidth=2.4; ctx.beginPath(); ctx.arc(shx,shy,sr,0,7); ctx.stroke();
+  ctx.fillStyle=rgba(col,1); ctx.beginPath(); ctx.arc(shx,shy,sr*0.42,0,7); ctx.fill();
+}
+function roundRect(x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
+
+const items=[
+  {name:'烛龙', sub:'昼夜神环·竖瞳', col:[255,170,70], draw:drawSunHalo},
+  {name:'虚无', sub:'无相裂隙刃', col:[170,100,240], draw:drawVoidBlade},
+  {name:'商羊', sub:'卜天星谶盘', col:[120,160,255], draw:drawAstrolabe},
+  {name:'饕餮', sub:'青铜巨鼎·吞噬', col:[120,220,120], draw:drawBronzeCauldron},
+  {name:'精卫', sub:'衔石填海', col:[120,210,230], draw:drawStoneBeak},
+  {name:'金乌', sub:'曜日神弓', col:[255,180,80], draw:drawBow},
+  {name:'刻晴', sub:'雷楔双剑', col:[180,120,255], draw:drawTwin},
+  {name:'刑天', sub:'干戚·齿轮', col:[180,190,210], draw:drawAxe},
+];
+const cols=4, rows=2, cw=W/cols, ch=H/rows;
+
+function drawCard(i,t){
+  const cxi=(i%cols+0.5)*cw, cyi=(Math.floor(i/cols)+0.5)*ch, u=Math.min(cw,ch)*0.62;
+  // 舞台
+  const stageG=ctx.createRadialGradient(cxi,cyi-u*0.1,0,cxi,cyi,u*0.9);
+  stageG.addColorStop(0, rgba(items[i].col,0.16)); stageG.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.fillStyle=stageG; ctx.fillRect((i%cols)*cw,Math.floor(i/cols)*ch,cw,ch);
+  ctx.strokeStyle=rgba(items[i].col,0.5); ctx.lineWidth=1.5;
+  roundRect((i%cols)*cw+12,Math.floor(i/cols)*ch+12,cw-24,ch-24,14); ctx.stroke();
+  items[i].draw(cxi,cyi,u,items[i].col,t);
+  drawAura(cxi,cyi,u,items[i].col,t);
+  ctx.fillStyle='#f0e6c8'; ctx.font='bold 15px system-ui'; ctx.textAlign='center';
+  ctx.fillText(items[i].name, cxi, Math.floor(i/cols)*ch+ch-26);
+  ctx.fillStyle='#8a8fa0'; ctx.font='12px system-ui';
+  ctx.fillText(items[i].sub, cxi, Math.floor(i/cols)*ch+ch-10);
+}
+
+let start=performance.now();
+function frame(now){
+  const t=(now-start)/1000;
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle='#0a0a12'; ctx.fillRect(0,0,W,H);
+  for(let i=0;i<items.length;i++) drawCard(i,t);
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

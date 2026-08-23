@@ -4,6 +4,7 @@ import com.milan.game.data.CharacterSaveState
 import com.milan.game.data.SaveProvider
 import com.milan.game.domain.battle.UnitStats
 import com.milan.game.domain.progression.ProgressionEngine
+import com.milan.game.domain.progression.StatsCalculator
 import com.milan.game.domain.progression.TalentEngine
 import com.milan.game.infrastructure.CrashReporter
 import com.milan.game.infrastructure.eventbus.EventBus
@@ -12,6 +13,9 @@ import com.milan.game.services.GameService
 import com.milan.game.services.GameSnapshot
 import com.milan.game.services.TalentTreeData
 import kotlin.math.max
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 
 /**
  * 进程级游戏状态单例（C# GameState.cs 翻译）。
@@ -31,6 +35,13 @@ object GameState {
     @Volatile
     private var initialized = false
     private var serviceRef: GameService? = null
+
+    // 就绪信号（2026-08 启动异步化配套）：内容/存档初始化移入后台线程后，
+    // UI 宿主（MilanNavHost）在 ready=true 前不组合任何直读 service 的屏幕。
+    // StateFlow 提供可见性保证：读侧见到 true 必然可见 serviceRef 的发布。
+    private val _ready = MutableStateFlow(false)
+    val ready: StateFlow<Boolean> = _ready.asStateFlow()
+
     private val talentEngine = TalentEngine()
     // P2-7：ProgressionEngine 无状态纯函数，进程级单例复用一份实例——
     // 此前 computeStatsAt 每次调用 new ProgressionEngine()，详情页/养成页每次重组重复分配。
@@ -60,6 +71,8 @@ object GameState {
                     try { CrashReporter.traceNonFatal("EventBus.${type.name}", ex) } catch (_: Exception) { }
                 }
             }
+            // 最后发布就绪：保证读侧见到 true 时 serviceRef / 内容索引 / 存档全部可见
+            _ready.value = true
         }
     }
 
@@ -95,32 +108,27 @@ object GameState {
     fun computeStatsAt(ch: OwnedCharacterView, level: Int, stage: Int, stars: Int = -1): UnitStats {
         val def = ch.def
         val save = ch.save
-        val stg = max(1, stage)
-        val lv = max(1, level)
-        val st = if (stars < 0) save.stars.coerceAtLeast(1) else stars
-        // 星级小幅加成：每星 +5%（1★→×1.0，满 7★→×1.30）。并入 StatAtLevel 的倍率槽。
-        val starMul = ProgressionEngine.starMultiplier(st)
         if (def == null)
             return UnitStats(atk = 0, def = 0, hp = 1, spd = 0, characterId = save.characterId)
 
-        // BaseStats 来自外部 data.json，长度不可信。越界会直接抛异常，
-        // 而本方法在详情页/检视页/战斗页的构建路径上被调用 —— 抛了就是闪退，一律兜底。
-        val bs = def.baseStats
-        fun base(i: Int, fallback: Int): Int = if (i < bs.size) bs[i] else fallback
-
-        // 天赋加成数值下沉 domain 层（TalentEngine.talentMultipliers，单一事实来源）。
+        // stars 缺省（<0）时取实时星级；养成页「下一级/下一阶/升星」预测传显式值。
+        val st = if (stars < 0) save.stars.coerceAtLeast(1) else stars
+        // 天赋分支映射（TalentTreeData 为 app 侧内容类型，映射留在适配器层）。
         // 树为 null → 空分支列表 → 全 0，与旧实现行为一致。
         val branchIds = ch.talent?.nodes.orEmpty()
             .filter { save.talentPoints.contains(it.nodeId) }
             .map { it.branchId }
-        val m = talentEngine.talentMultipliers(branchIds)
-
-        return UnitStats(
-            atk = (progressionEngine.statAtLevel(base(0, 100), lv, stg, starMul) * (1 + m.atk)).toInt(),
-            def = (progressionEngine.statAtLevel(base(1, 80), lv, stg, starMul) * (1 + m.def)).toInt(),
-            hp = (progressionEngine.statAtLevel(base(2, 1000), lv, stg, starMul) * (1 + m.hp)).toInt(),
-            spd = (progressionEngine.statAtLevel(base(3, 12), lv, stg, starMul) * (1 + m.spd)).toInt(),
+        // 属性公式单一事实来源下沉 shared domain（StatsCalculator）：
+        // 桌面模拟器 / 未来战斗页与 App 同口径；此处仅做 app 类型 → 领域参数的适配。
+        return StatsCalculator.compute(
+            baseStats = def.baseStats,
+            level = level,
+            stage = stage,
+            stars = st,
+            branchIds = branchIds,
             characterId = save.characterId,
+            progression = progressionEngine,
+            talent = talentEngine,
         )
     }
 }
