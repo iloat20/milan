@@ -23,3 +23,18 @@ dotnet-install.ps1
 
 # Workspace-local Android user home (debug keystore; sandbox: %USERPROFILE%\.android not writable)
 .android-home/
+
+# Agent / tool runtime state (local only)
+.cache/
+.omc/
+.omo/
+.reasonix/
+.workbuddy/
+
+# Python bytecode caches
+__pycache__/
+
+# Ad-hoc scratch artifacts
+classes.jar
+MilanKotlin/out*.txt
+MilanKotlin/gradle-out-*.txt
