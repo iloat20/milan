@@ -38,3 +38,18 @@ __pycache__/
 classes.jar
 MilanKotlin/out*.txt
 MilanKotlin/gradle-out-*.txt
+
+# 立绘生成中间产物（候选池/去背中间态，成品在 zp-final/ zp2-final/ 与 res/drawable-nodpi）
+docs/superpowers/art-direction/portraits-v2/zp-gen/
+docs/superpowers/art-direction/portraits-v2/zp2-gen/
+docs/superpowers/art-direction/portraits-v2/zp-test/
+docs/superpowers/art-direction/portraits-v2/zp-pick/
+docs/superpowers/art-direction/portraits-v2/zp2-pick/
+docs/superpowers/art-direction/portraits-v2/zp-nobg/
+docs/superpowers/art-direction/portraits-v2/zp2-nobg/
+docs/superpowers/art-direction/portraits-v2/v224-gen/
+docs/superpowers/art-direction/portraits-v2/v224-test/
+docs/superpowers/art-direction/portraits-v2/v224-nobg/
+docs/superpowers/art-direction/portraits-v2/v224-final/
+docs/superpowers/art-direction/portraits-v2/*.log
+docs/superpowers/art-direction/portraits-v2/*.err

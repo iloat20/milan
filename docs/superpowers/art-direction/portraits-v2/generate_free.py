@@ -69,8 +69,16 @@ def load_chars(export_path, only_ids=None):
     return chars
 
 
+# 2D 卡牌风格前缀（2026-08-25 用户定调：只要 2D、卡牌人物感、精致）。
+# 放在 prompt 最前——早期 token 权重最高，先把画风钉死再进主体。
+STYLE_PREFIX = (
+    "2D anime trading-card character illustration, crisp lineart, cel shading, "
+    "vivid colors, polished gacha splash-art finish. "
+)
+
+
 def build_free_prompt(char: dict, include_tags: bool = True, include_pose: bool = True) -> str:
-    """浓缩 prompt（v2.2.3）：优先级 = 主体段 > 姿态段(道具/动势载荷) > 卡牌指令 > 中文 LORE。
+    """浓缩 prompt（v2.2.4）：风格前缀 > 主体段 > 姿态段(道具/动势载荷) > 卡牌指令 > 中文 LORE。
 
     教训链（2026-08-24 实测）：
     - 404 是内容过滤且「分块单发均过、特定组合即拒」（涌现式，无法逐词定位）——
@@ -79,6 +87,7 @@ def build_free_prompt(char: dict, include_tags: bool = True, include_pose: bool 
     - pose 字段含道具与异形解剖的关键描述（拉弓/双剑/蛇尾/五色石），
       丢弃 pose = 道具锚点全灭——必须以精简散文并入。"""
     parts: list[str] = []
+    parts.append(STYLE_PREFIX)
 
     # 1) 英文主体段（解剖签名/配色）+ 并入去蛇形 key_elements
     subject = (char.get("prompt", {}).get("subject") or "").strip()
@@ -97,7 +106,7 @@ def build_free_prompt(char: dict, include_tags: bool = True, include_pose: bool 
         pose_txt = "; ".join(c.lstrip("| ").strip() for c in clauses)
         parts.append(pose_txt)
 
-    # 3) 卡牌构图+光影精简指令
+    # 3) 卡牌构图+光影精简指令（2026-08-25 用户定调：只要 2D、卡牌人物感、精致）
     r = char["rarity"]
     tier = {
         "UR": "molten-gold god-ray accents",
@@ -106,10 +115,13 @@ def build_free_prompt(char: dict, include_tags: bool = True, include_pose: bool 
         "R": "soft bright lighting",
     }.get(r, "")
     parts.append(
-        f"Dynamic card-game illustration ({r}), three-quarter view, low-angle hero shot, "
-        f"full-body or waist-up as fits the design, subject fills 75-85% of frame, "
-        f"face never cropped; strong key light upper-left, rim light in element color "
-        f"from back-left, {tier}; transparent background, no scenery."
+        f"Exquisite 2D anime trading-card character art ({r}), crisp clean lineart, cel shading, "
+        f"vibrant saturated colors, polished gacha-game splash-art finish, three-quarter view, "
+        f"low-angle hero shot, full-body or waist-up as fits the design, subject fills 75-85% of frame, "
+        f"face never cropped; key light upper-left, rim light in element color from back-left, {tier}; "
+        f"transparent background, no scenery, no card frame, no border, no text, no letters, "
+        f"no watermark, no logo. Character palette strictly follows the description above. "
+        f"Flat 2D illustration only: no 3D render, not photorealistic."
     )
 
     # 4) 中文 LORE 尾注（氛围参考；超限最先牺牲）
@@ -124,13 +136,13 @@ def build_free_prompt(char: dict, include_tags: bool = True, include_pose: bool 
     return out
 
 
-def generate_with_pollinations(prompt, output_path):
+def generate_with_pollinations(prompt, output_path, model="flux"):
     encoded = urllib.parse.quote(prompt)
     # seed 每次尝试随机：① 同 prompt 重跑不会命中服务端缓存拿回旧图（实测缓存键=prompt URL，
     # 不带 seed 的重 roll 是空转）；② 重试时自动换新 roll。
     seed = random.randint(1, 10**9)
     url = (f"https://image.pollinations.ai/prompt/{encoded}"
-           f"?width={WIDTH}&height={HEIGHT}&nologo=true&seed={seed}")
+           f"?width={WIDTH}&height={HEIGHT}&nologo=true&seed={seed}&model={model}")
     last_err = ""
     for attempt in range(1, RETRIES + 1):
         try:
@@ -160,6 +172,7 @@ def main():
     ap.add_argument("--ids", help="逗号分隔 id 白名单")
     ap.add_argument("--all", action="store_true", help="全部 28 张")
     ap.add_argument("--out", default=OUT_DIR, help="输出目录（默认 out/；v2.2 重跑建议新目录避免混入旧产物）")
+    ap.add_argument("--model", default="flux", help="Pollinations 模型（flux=默认 / turbo=更快更二次元）")
     args = ap.parse_args()
 
     os.makedirs(args.out, exist_ok=True)
@@ -190,7 +203,7 @@ def main():
         for label, inc_tags, inc_pose in LADDER:
             prompt = build_free_prompt(char, include_tags=inc_tags, include_pose=inc_pose)
             print(f"  [{label}] prompt={len(prompt)}字")
-            success, err = generate_with_pollinations(prompt, out_path)
+            success, err = generate_with_pollinations(prompt, out_path, model=args.model)
             if success:
                 used = label
                 break
