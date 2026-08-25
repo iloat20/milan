@@ -3,6 +3,11 @@
 """
 extract_prompts.py — 把 portraits-v2 4 份角色设计稿解析为结构化生图导出文件。
 
+v2.1（2026-08）：导出时自动注入「卡牌立绘」构图/光影指令层并修订负面表。
+v2.2（2026-08-23）：叙事优先——解禁完整脚部入镜；注入角色背景故事（data.json Lore）
+作为最高优先级段，立绘与头像的一切视觉要素须可溯源到背景故事
+（详见 06-card-art-composition.md；原角色稿内容不动）。
+
 输出: portraits-v2/prompts-export.json
        portraits-v2/prompts-export.csv  (便于在表格/生图平台里批量粘贴)
 
@@ -37,6 +42,79 @@ RARITY_FILES = {
 
 # 画布阶梯（与 00-master-spec.md §1.1 对齐）
 CANVAS = {"UR": "1536x2304", "SSR": "1280x1920", "SR": "1024x1536", "R": "832x1248"}
+
+# ── v2.2 卡牌立绘注入层（单一事实来源：06-card-art-composition.md）──
+# 目标：卡面插画范式 + 背景故事最高优先级。景别不再硬性规定——叙事优先，
+# 全身（脚部可入镜）与腰上皆可，选最能讲出该角色故事的构图。
+
+CARD_DIRECTIVE = (
+    "CARD ART COMPOSITION (v2.2): dynamic card-game illustration. "
+    "COMPOSITION SERVES THE STORY: choose full-body (feet may be visible) OR waist-up framing — "
+    "whichever best tells this character's backstory; "
+    "subject fills 75-85% of frame height either way. "
+    "Slight 5-degree low-angle hero shot, three-quarter view preferred, "
+    "at least one diagonal energy line (weapon trail / cape / hair / tail flow), "
+    "weapon or hand may subtly break the frame edge, "
+    "head large and readable at thumbnail size, face never cropped by frame, "
+    "core identity anchors kept inside the central 60% safe zone. "
+)
+
+CARD_LIGHTING = (
+    "LIGHTING: single strong key light from upper-left with sharp shadow terminators, "
+    "deep volumetric shadows shaping the figure, "
+    "strong rim light in the character's element color from back-left separating silhouette from background, "
+    "crisp specular highlights on metal and wet surfaces, soft diffuse on skin and cloth, "
+    "natural light falloff toward frame edges so the figure reads inside a card frame. "
+)
+
+# 稀有度光效档（追加在指令块尾部，对齐 00-master-spec §4.2）
+RARITY_LIGHT_TIER = {
+    "UR": "UR tier: epic molten-gold god-ray accents, ultra-fine detail density, subtle holographic sheen on armor.",
+    "SSR": "SSR tier: violet twilight glow accents, rich saturated palette, arcane particle motes.",
+    "SR": "SR tier: clean heroic lighting, balanced contrast, confident readability.",
+    "R": "R tier: soft clean lighting, approachable and bright, gentle contrast.",
+}
+
+# 负面表（v2.2）：脚部已解禁；新增「脸被画框裁切」禁令保障安全区铁律
+CARD_NEGATIVE = (
+    "tiny distant figure, wide establishing shot, head cropped by frame, "
+    "flat even lighting, washed-out low contrast, static symmetrical pose, "
+)
+_CONFLICTING_NEG_TOKENS = re.compile(r"(half-body|bust|cropped)\s*,?\s*", re.I)
+
+# 原稿正文清洗：仅替换开头句为卡面插画口径（feet/8-head 清洗已随 v2.2 解禁移除）
+_BODY_SCRUB = [
+    (re.compile(r"Full-body character portrait of"), "Card-game illustration of"),
+    (re.compile(r"full-body character portrait of"), "card-game illustration of"),
+]
+
+# 背景故事符合性段（v2.2 最高优先级：置于 full_prompt 最前）
+_LORE_TEMPLATE = (
+    "LORE FIDELITY (HIGHEST PRIORITY): every visible element must be traceable to this character's "
+    "backstory. Backstory (Chinese, translate its meaning): \"{lore}\" "
+    "The expression and gaze must convey the personality described there — this face will also be used "
+    "as the avatar thumbnail, so the emotion must read clearly. Costume, props, pose and light effects "
+    "need narrative justification from that story; power resonances mentioned in it must become "
+    "VISIBLE dual-source motifs, not generic glow."
+)
+
+
+def apply_card_art_directive(prompt: dict, rarity: str, lore: str | None = None) -> dict:
+    """把 v2.2 指令层套到单个角色的 prompt 结构上：
+    [LORE 保真段（若有）] → [卡牌构图+光影+稀有度档] → [清洗后的原稿正文]；
+    负面表统一重写。原角色稿 md 文件不改动。"""
+    parts: list[str] = []
+    if lore:
+        parts.append(_LORE_TEMPLATE.format(lore=" ".join(lore.split())))
+    parts.append(CARD_DIRECTIVE + CARD_LIGHTING + RARITY_LIGHT_TIER.get(rarity.upper(), ""))
+    body = prompt["full_prompt"]
+    for pat, repl in _BODY_SCRUB:
+        body = pat.sub(repl, body)
+    parts.append(body)
+    prompt["full_prompt"] = "\n\n".join(parts)
+    neg = _CONFLICTING_NEG_TOKENS.sub("", prompt.get("negative_prompt", ""))
+    prompt["negative_prompt"] = CARD_NEGATIVE + neg
+    return prompt
 
 
 def gcd(a, b):
@@ -142,7 +220,7 @@ def parse_prompt_block(block: str):
     }
 
 
-def parse_file(path: str, rarity: str):
+def parse_file(path: str, rarity: str, lore_map: dict | None = None):
     text = open(path, encoding="utf-8").read()
     canvas = file_canvas(text, rarity)
     asp = aspect(canvas)
@@ -162,6 +240,9 @@ def parse_file(path: str, rarity: str):
         prompt = parse_prompt_block(chunk)
         if not prompt:
             continue
+        # v2.2 卡牌化注入（06-card-art-composition.md；原稿内容不动）
+        lore = (lore_map or {}).get(cid)
+        prompt = apply_card_art_directive(prompt, rarity, lore)
         characters.append(
             {
                 "id": cid,
@@ -174,6 +255,7 @@ def parse_file(path: str, rarity: str):
                 "canvas": canvas,
                 "aspect_ratio": asp,
                 "anchors": anchors,
+                "lore": lore or "",
                 "prompt": prompt,
                 "negative_prompt": prompt["negative_prompt"],
                 "full_prompt": prompt["full_prompt"],
@@ -182,12 +264,43 @@ def parse_file(path: str, rarity: str):
     return characters
 
 
+def default_lore_json(src: str) -> str:
+    """自动探测仓库内 data.json（portraits-v2 向上 4 级为仓库根）。不存在返回空串。"""
+    cand = os.path.normpath(
+        os.path.join(src, "..", "..", "..", "..",
+                     "MilanKotlin", "app", "src", "main", "assets", "data.json")
+    )
+    return cand if os.path.exists(cand) else ""
+
+
+def load_lore_map(path: str) -> dict:
+    """data.json → {CharacterId: Lore}（v2.2 背景故事权威源，与运行时详情页同文）。"""
+    data = json.load(open(path, encoding="utf-8"))
+    return {c.get("CharacterId", ""): (c.get("Lore") or "").strip()
+            for c in data.get("Characters", [])}
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--src", default=os.path.dirname(os.path.abspath(__file__)),
                     help="portraits-v2 目录")
+    ap.add_argument("--lore-json", default="",
+                    help="data.json 路径（默认自动探测仓库内 MilanKotlin assets；传 'none' 禁用 Lore 注入）")
     args = ap.parse_args()
     src = args.src
+
+    lore_path = args.lore_json
+    if lore_path.lower() == "none":
+        lore_path = ""
+    elif not lore_path:
+        lore_path = default_lore_json(src)
+
+    lore_map: dict = {}
+    if lore_path:
+        lore_map = load_lore_map(lore_path)
+        print(f"[lore] 注入源 {lore_path}（{len(lore_map)} 条）")
+    else:
+        print("[warn] 未找到 data.json——跳过 LORE FIDELITY 注入（--lore-json 可手动指定）", file=sys.stderr)
 
     all_chars = []
     for rarity, fname in RARITY_FILES.items():
@@ -195,7 +308,10 @@ def main():
         if not os.path.exists(fpath):
             print(f"[warn] 缺失 {fpath}", file=sys.stderr)
             continue
-        chars = parse_file(fpath, rarity)
+        chars = parse_file(fpath, rarity, lore_map)
+        missing = [c["id"] for c in chars if not c["lore"]]
+        if lore_map and missing:
+            print(f"[warn] {rarity}: 无 Lore 的角色 {'、'.join(missing)}（已跳过 LORE 段）")
         print(f"[ok] {rarity}: 解析 {len(chars)} 个角色 -> {fname}")
         all_chars.extend(chars)
 

@@ -50,7 +50,7 @@
 
 ### 生图 Prompt
 ```
-Full-body character portrait of Suanni, the lion spirit from Chinese mythology (Shanhaijing "lion body, leopard step") fused with Black Panther vibranium armor and Batman tactical gear. MUST be LION HEAD (not wolf, not tiger, not pig — golden lion head with black mane stripes, golden cat eyes). Muscular male human body. Wearing Black Panther-style vibranium armor (#1A1A1A) with golden circuit lines, plus Batman-style dark blue cape (#1E90FF) and tactical utility belt. Lion claw gauntlets (5 golden claws). Dynamic roar pose: arms spread wide, cape billowing behind, lion mouth open roaring with visible fangs.
+Full-body character portrait of Suanni, a golden LION-HEADED beast warrior — his head is a true lion's head with round golden cat eyes and a thick golden mane with black stripes (never a wolf head, never a tiger, never a pig, no other animal snout) — fused with Black Panther vibranium armor and Batman tactical gear. Muscular male human body. Wearing Black Panther-style vibranium armor (#1A1A1A) with golden circuit lines, plus Batman-style dark blue cape (#1E90FF) and tactical utility belt. Lion claw gauntlets (5 golden claws). Dynamic roar pose: arms spread wide, cape billowing behind, lion mouth open roaring with visible fangs.
 
 Shinwa world style: cel-shaded anime with ink-wash outlines, black and gold palette with blue cape accent. Dramatic warm lighting from upper left. Soft shadow edges. Rim light from behind-lower using SR frost blue #7FC4FF. High detail, gacha game character art, 2:3 vertical aspect ratio, transparent background, full body with feet visible.
 
