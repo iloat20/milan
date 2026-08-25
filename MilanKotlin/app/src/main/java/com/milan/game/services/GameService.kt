@@ -3,11 +3,13 @@ package com.milan.game.services
 import com.milan.game.data.BattleRecord
 import com.milan.game.data.CharacterSaveState
 import com.milan.game.data.ItemSaveState
+import com.milan.game.data.PullLogEntry
 import com.milan.game.data.Rarity
 import com.milan.game.data.SaveData
 import com.milan.game.data.SaveManager
 import com.milan.game.data.SaveProvider
 import com.milan.game.domain.battle.BattleSimulator
+import com.milan.game.domain.battle.StrikeEvent
 import com.milan.game.domain.battle.TeamResonance
 import com.milan.game.domain.battle.UnitStats
 import com.milan.game.domain.gacha.GachaEngine
@@ -35,13 +37,17 @@ import kotlinx.serialization.decodeFromString
 sealed interface TowerOutcome {
     /**
      * 战斗已完成。[victory] 时 [rewardSoft] 为本次发放的星尘奖励；
-     * [bestFloorAfter] 为结算后的历史最高层（刷新纪录或保持不变）。
+     * [rewardHard] 仅在首次攻克 5 的倍数层时>0（里程碑钻石，见 [EconomyFormulas.towerRewardHard]）；
+     * [bestFloorAfter] 为结算后的历史最高层（刷新纪录或保持不变）；
+     * [log] 为逐回合攻击事件流（战报展示用，不落盘）。
      */
     data class Completed(
         val victory: Boolean,
         val turns: Int,
         val rewardSoft: Int,
+        val rewardHard: Int = 0,
         val bestFloorAfter: Int,
+        val log: List<StrikeEvent> = emptyList(),
     ) : TowerOutcome
 
     /** 拒绝：floor 非法 / 编队为空 / 队伍构建失败。 */
@@ -140,6 +146,8 @@ class GameService(
             formation = saveData.getFormationIds(),
             towerBestFloor = saveData.towerBestFloor,
             battleTickets = itemCount(BattleTicketItemId),
+            // UP 定轨状态（2026-08 三期）：GachaScreen 展示「下次必中」标记
+            featuredLostByPool = pools.associate { it.poolId to saveData.isFeaturedGuaranteed(it.poolId) },
         )
     }
 
@@ -267,6 +275,9 @@ class GameService(
     /** 重复角色按稀有度补偿的星魂碎片数量。公式在 [EconomyFormulas]（纯领域、可单测）。 */
     fun fragmentsForRarity(rarity: Int): Int = EconomyFormulas.fragmentsForRarity(rarity)
 
+    /** 抽卡历史快照（时间正序，最旧在前；UI 自行倒序展示）。读操作：列表引用替换式更新，无撕裂风险。 */
+    fun pullHistory(): List<PullLogEntry> = saveData.pullHistoryEntries()
+
     /**
      * 抽卡（单抽 / 十连），整体事务：
      * 先算出全部产出（不扣款、不改存档）——任何配置错误只导致「少抽」，
@@ -289,6 +300,11 @@ class GameService(
 
         // 先算产出（不扣款）：展示稀有度与补偿碎片统一用抽中角色的真实稀有度（#11）。
         val pity = PityCounter(pool.hardPity).apply { counter = saveData.getGachaCounter(poolId) }
+        // UP 定轨（2026-08 三期）：池声明了 UP 角色时，命中池内最高稀有度走 50/50（歪一次必中）。
+        // guaranteedNext 以存档标记为初值、随本批逐抽演进——十连内歪了再出最高稀有度同样吃必中。
+        val topRarity = pool.entries.maxOfOrNull { it.rarityIndex } ?: 0
+        val featuredId = pool.featuredCharacterId.ifEmpty { null }
+        var guaranteedNext = saveData.isFeaturedGuaranteed(poolId)
         val plan = mutableListOf<PlanItem>()
         // 本批已确认的新角色集合：同一次十连内同一未拥有角色重复出现时，
         // 第二次起按「重复角色」补偿碎片、发货只追加一条拥有条目——
@@ -305,7 +321,16 @@ class GameService(
             // 不重置计数，避免 90 抽保底被低稀有度产出吞掉（onNaturalPityOrAbove 见 PityCounter KDoc）。
             pity.onNaturalPityOrAbove(Rarity.fromValue(effectiveRarity) ?: Rarity.R, Rarity.SSR)
             val entries = pool.entries.filter { it.rarityIndex == effectiveRarity }
-            val id = pickFromEntries(entries)
+            var pickedId: String? = pickFromEntries(entries)
+            if (effectiveRarity == topRarity && featuredId != null && entries.isNotEmpty()) {
+                // 定轨掷选：命中 UP 或歪出其他候选；pickedId=null 表示池无有效 UP，回退普通加权抽取
+                val pick = GachaEngine(rng).pickFeatured(entries.map { it.characterId }, featuredId, guaranteedNext)
+                if (pick.pickedId != null) {
+                    pickedId = pick.pickedId
+                    guaranteedNext = pick.guaranteedNext
+                }
+            }
+            val id = pickedId
             if (id.isNullOrEmpty()) continue // 该稀有度无候选，跳过（不影响其它抽）
 
             val def = character(id)
@@ -321,6 +346,9 @@ class GameService(
         // 确认有产出后再扣款 + 落盘；落盘失败回滚本次扣款与发货（#5）。
         val originalCurrency = saveData.softCurrency
         val originalCounter = saveData.getGachaCounter(poolId)
+        // 抽卡历史与定轨状态随事务落盘：整体替换式列表，回滚恢复原引用即可（对齐 recordBattle 范式）
+        val originalPullHistory = saveData.pullHistory
+        val originalFeaturedLost = saveData.gachaFeaturedLost
         // 碎片条目在本次抽卡前是否已存在：决定回滚时是「减回数量」还是「整条移除」，
         // 否则首次抽到重复角色且落盘失败，会在存档里留下一条数量为 0 的幽灵道具。
         val fragItemExisted = saveData.items.any { it?.itemId == StarFragmentItemId }
@@ -351,6 +379,23 @@ class GameService(
                 }
                 saveData.softCurrency -= cost
                 saveData.setGachaCounter(poolId, pity.counter)
+                // 定轨状态随事务落盘（本批逐抽演进后的终值）
+                saveData.setFeaturedGuaranteed(poolId, guaranteedNext)
+                // 抽卡历史：成功才留痕；时间戳仅展示用。results 在上方循环中已填充完毕。
+                val now = System.currentTimeMillis()
+                for (r in results) {
+                    saveData.appendPullHistory(
+                        PullLogEntry(
+                            poolId = poolId,
+                            characterId = r.characterId.orEmpty(),
+                            characterName = r.characterName,
+                            rarity = r.rarity,
+                            isNew = r.isNew,
+                            fragmentsAwarded = r.fragmentsAwarded,
+                            timestamp = now,
+                        ),
+                    )
+                }
             },
             rollback = {
                 saveData.softCurrency = originalCurrency
@@ -367,6 +412,9 @@ class GameService(
                         saveData.items = saveData.items.filterNot { it?.itemId == StarFragmentItemId }
                     }
                 }
+                // 历史与定轨标记同样回滚：只退钱不撤记录会让「历史页显示出货但角色没到账」
+                saveData.pullHistory = originalPullHistory
+                saveData.gachaFeaturedLost = originalFeaturedLost
             },
             onCommit = { publishCurrencyChanged() },
         )
@@ -495,18 +543,20 @@ class GameService(
     /**
      * 设置项持久化通用事务：先写入新值 → 落盘 → 失败回滚旧值。
      * （对齐存档事务范式：落盘失败回滚本次内存改动并返回 SaveFailed，回滚不广播事件。）
+     * 整体持锁：old 快照读取移入临界区，防「读到过期值后回滚覆盖他人改动」。
      */
-    private suspend fun <T> persistSetting(read: () -> T, write: (T) -> Unit, newValue: T): WriteOutcome {
-        val old = read()
-        return transaction(
-            tag = "setting",
-            mutate = { write(newValue) },
-            rollback = { write(old) },
-            // 设置项无事件广播，但需刷新状态快照：SettingsScreen 从 GameSnapshot 派生开关，
-            // 成功落盘后由 refreshSnapshot 推进，UI 立即反映新值（I5）。
-            onCommit = { refreshSnapshot() },
-        )
-    }
+    private suspend fun <T> persistSetting(read: () -> T, write: (T) -> Unit, newValue: T): WriteOutcome =
+        writeMutex.withLock {
+            val old = read()
+            transactionLocked(
+                tag = "setting",
+                mutate = { write(newValue) },
+                rollback = { write(old) },
+                // 设置项无事件广播，但需刷新状态快照：SettingsScreen 从 GameSnapshot 派生开关，
+                // 成功落盘后由 refreshSnapshot 推进，UI 立即反映新值（I5）。
+                onCommit = { refreshSnapshot() },
+            )
+        }
 
     /** 音效开关持久化（UI 层负责同步 MilanAudio 音量）。 */
     suspend fun setSoundEnabled(enabled: Boolean): WriteOutcome = persistSetting(
@@ -552,15 +602,18 @@ class GameService(
      */
     suspend fun recordBattle(rec: BattleRecord?) {
         if (rec == null) return
-        // 快照追加前列表：回滚时整体恢复。注意不能 dropLast——若「追加→超上限丢最旧→落盘失败」，
-        // dropLast(1) 会把列表缩到 49 条，而存档仍是 50 条，内存与存档不一致（下次保存永久丢一条战绩）。
-        val original = saveData.battleRecords
-        transaction(
-            tag = "battle",
-            mutate = { appendBattleRecordCapped(rec) },
-            rollback = { saveData.battleRecords = original }, // 整体回滚，避免内存与存档不一致
-            onCommit = { /* 战绩非经济，无事件广播 */ },
-        )
+        writeMutex.withLock {
+            // 快照追加前列表：回滚时整体恢复。注意不能 dropLast——若「追加→超上限丢最旧→落盘失败」，
+            // dropLast(1) 会把列表缩到 49 条，而存档仍是 50 条，内存与存档不一致（下次保存永久丢一条战绩）。
+            // original 读取在临界区内：防「读到过期快照后回滚抹掉并发已落盘的记录」。
+            val original = saveData.battleRecords
+            transactionLocked(
+                tag = "battle",
+                mutate = { appendBattleRecordCapped(rec) },
+                rollback = { saveData.battleRecords = original }, // 整体回滚，避免内存与存档不一致
+                onCommit = { /* 战绩非经济，无事件广播 */ },
+            )
+        }
     }
 
     /** 战绩追加（须已在 [writeMutex] 临界区内调用；上限契约同上，禁止就地写 50）。 */
@@ -629,11 +682,14 @@ class GameService(
 
         val reward = if (result.victory) EconomyFormulas.towerRewardSoft(floor) else 0
         val newBest = if (result.victory && floor > saveData.towerBestFloor) floor else null
+        // 里程碑钻石：仅「首次攻克」5 的倍数层发放（复刷已通层不发）——2026-08 钻石产出口径
+        val rewardHard = if (newBest != null) EconomyFormulas.towerRewardHard(floor) else 0
         // 战票净变动：入场 -cost；胜利 +rewardTickets（通常恰好抵消，净 0）
         val ticketDelta = -ticketCost +
             (if (result.victory) EconomyFormulas.towerRewardTickets() else 0)
 
         val originalSoft = saveData.softCurrency
+        val originalHard = saveData.hardCurrency
         val originalBest = saveData.towerBestFloor
         val originalRecords = saveData.battleRecords
 
@@ -642,6 +698,7 @@ class GameService(
             mutate = {
                 if (newBest != null) saveData.towerBestFloor = newBest
                 if (reward > 0) saveData.softCurrency += reward
+                if (rewardHard > 0) saveData.hardCurrency += rewardHard
                 addItemDelta(BattleTicketItemId, ticketDelta)
                 appendBattleRecordCapped(
                     BattleRecord(
@@ -656,12 +713,13 @@ class GameService(
             },
             rollback = {
                 saveData.softCurrency = originalSoft
+                saveData.hardCurrency = originalHard
                 saveData.towerBestFloor = originalBest
                 saveData.battleRecords = originalRecords
                 restoreItemCount(BattleTicketItemId, ticketsExisted, origTickets)
             },
             onCommit = {
-                if (reward > 0 || ticketDelta != 0) publishCurrencyChanged()
+                if (reward > 0 || rewardHard > 0 || ticketDelta != 0) publishCurrencyChanged()
             },
         )
 
@@ -670,7 +728,9 @@ class GameService(
                 victory = result.victory,
                 turns = result.turns,
                 rewardSoft = reward,
+                rewardHard = rewardHard,
                 bestFloorAfter = newBest ?: saveData.towerBestFloor,
+                log = result.log,
             )
             WriteOutcome.Rejected -> TowerOutcome.Rejected // 防御：前置校验已全部拦截
             WriteOutcome.SaveFailed -> TowerOutcome.SaveFailed
@@ -822,6 +882,10 @@ class GameService(
         if (offer.costSoft > 0 && saveData.softCurrency < offer.costSoft) {
             return@withLock WriteOutcome.Rejected
         }
+        // 免费补给的正收入同样防 Int 溢出（对齐 applyCurrencyDelta 的 P2-5：接近上限时 +2000 会翻负）
+        if (softDelta > 0 && saveData.softCurrency.toLong() + softDelta > Int.MAX_VALUE) {
+            return@withLock WriteOutcome.Rejected
+        }
 
         val origSoft = saveData.softCurrency
         val ticketsExisted = saveData.items.any { it?.itemId == BattleTicketItemId }
@@ -883,6 +947,7 @@ class GameService(
         if (!def.unlocked(achievementProgressSnapshot())) return@withLock WriteOutcome.Rejected
 
         val origSoft = saveData.softCurrency
+        val origHard = saveData.hardCurrency
         val ticketsExisted = saveData.items.any { it?.itemId == BattleTicketItemId }
         val origTickets = itemCount(BattleTicketItemId)
         val origClaimed = saveData.claimedAchievements
@@ -891,11 +956,13 @@ class GameService(
             tag = "achievement",
             mutate = {
                 if (def.rewardSoft > 0) saveData.softCurrency += def.rewardSoft
+                if (def.rewardHard > 0) saveData.hardCurrency += def.rewardHard
                 if (def.rewardTickets > 0) addItemDelta(BattleTicketItemId, def.rewardTickets)
                 saveData.claimedAchievements = saveData.claimedAchievements + id
             },
             rollback = {
                 saveData.softCurrency = origSoft
+                saveData.hardCurrency = origHard
                 restoreItemCount(BattleTicketItemId, ticketsExisted, origTickets)
                 saveData.claimedAchievements = origClaimed
             },
@@ -948,48 +1015,89 @@ class GameService(
     // 购买遵循与 Pull 一致的事务范式：预算校验 → 改内存 → 落盘 → 失败回滚 → 仅成功才广播。
     // 定价一律走 EconomyFormulas（单一事实来源），禁止就地写数字。
 
-    /** 购买星魂碎片包（pack=1 小包 / 2 大包）。非法档位、星尘不足 → Rejected；落盘失败 → SaveFailed。 */
-    suspend fun buyFragmentPack(pack: Int): WriteOutcome {
+    /**
+     * 购买星魂碎片包（pack=1 小包 / 2 大包）。非法档位、星尘不足 → Rejected；落盘失败 → SaveFailed。
+     * 并发契约（2026-08 审查修复）：预算校验必须在 [writeMutex] 临界区内完成——
+     * 校验在锁外、扣减在锁内的写法存在竞态窗口（落盘挂起点让出线程期间，
+     * 另一入口可插入并通过过期校验 → 负余额），与 pull/runTowerFloor 的整体持锁范式对齐。
+     */
+    suspend fun buyFragmentPack(pack: Int): WriteOutcome = writeMutex.withLock {
         val frags = EconomyFormulas.fragmentPackSize(pack)
         val cost = EconomyFormulas.fragmentPackCost(pack)
-        if (frags <= 0 || cost <= 0) return WriteOutcome.Rejected
-        if (saveData.softCurrency < cost) return WriteOutcome.Rejected
+        if (frags <= 0 || cost <= 0) return@withLock WriteOutcome.Rejected
+        if (saveData.softCurrency < cost) return@withLock WriteOutcome.Rejected
 
         val origSoft = saveData.softCurrency
-        val item = saveData.items.firstOrNull { it?.itemId == StarFragmentItemId }
-        return transaction(
+        val itemExisted = saveData.items.any { it?.itemId == StarFragmentItemId }
+        val origFrags = itemCount(StarFragmentItemId)
+        transactionLocked(
             tag = "shop",
             mutate = {
                 saveData.softCurrency -= cost
-                if (item != null) item.count += frags
-                else saveData.items = saveData.items + ItemSaveState(itemId = StarFragmentItemId, count = frags)
+                addItemDelta(StarFragmentItemId, frags)
             },
             rollback = {
-                // 回滚（不广播）：新增条目整体移除（对齐 Pull 的 fragItemExisted 语义），既有条目减回
+                // 回滚（不广播）：restoreItemCount 统一处理「新增条目整条移除 / 既有条目恢复数量」
                 saveData.softCurrency = origSoft
-                if (item != null) item.count -= frags
-                else saveData.items = saveData.items.filterNot { it?.itemId == StarFragmentItemId }
+                restoreItemCount(StarFragmentItemId, itemExisted, origFrags)
             },
             onCommit = { publishCurrencyChanged() },
         )
     }
 
-    /** 钻石兑换星尘。钻石不足 → Rejected；落盘失败 → SaveFailed。 */
-    suspend fun buyDiamondExchange(): WriteOutcome {
+    /**
+     * 钻石兑换星尘。钻石不足 → Rejected；落盘失败 → SaveFailed。
+     * 整体持锁（同 buyFragmentPack 的并发契约）；星尘收入带 Int 溢出拦截
+     * （对齐 applyCurrencyDelta 的 P2-5：接近上限时兑换会翻负，拒绝优于破坏性改写）。
+     */
+    suspend fun buyDiamondExchange(): WriteOutcome = writeMutex.withLock {
         val cost = EconomyFormulas.diamondExchangeCost()
         val yield = EconomyFormulas.diamondExchangeYield()
-        if (saveData.hardCurrency < cost) return WriteOutcome.Rejected
+        if (saveData.hardCurrency < cost) return@withLock WriteOutcome.Rejected
+        if (saveData.softCurrency.toLong() + yield > Int.MAX_VALUE) return@withLock WriteOutcome.Rejected
 
         val origHard = saveData.hardCurrency
-        return transaction(
+        val origSoft = saveData.softCurrency
+        transactionLocked(
             tag = "shop",
             mutate = {
                 saveData.hardCurrency -= cost
                 saveData.softCurrency += yield
             },
             rollback = {
+                // 回滚（不广播）：统一「保存原值恢复」范式（此前减法恢复虽数学等价，但与全局不一致）
                 saveData.hardCurrency = origHard
-                saveData.softCurrency -= yield
+                saveData.softCurrency = origSoft
+            },
+            onCommit = { publishCurrencyChanged() },
+        )
+    }
+
+    /**
+     * 星魂碎片兑换星尘（2026-08 三期）：碎片过剩玩家的回收阀门。
+     * 汇率单一事实来源在 [EconomyFormulas.fragmentExchangeBatch]/[fragmentExchangeYield]
+     * （回收单价 80 ✦/片 < 商店购入价 100 ✦/片，双向流通必有损耗防套利）。
+     */
+    suspend fun exchangeFragmentsForSoft(): WriteOutcome = writeMutex.withLock {
+        val batch = EconomyFormulas.fragmentExchangeBatch()
+        val yield = EconomyFormulas.fragmentExchangeYield()
+        if (batch <= 0 || yield <= 0) return@withLock WriteOutcome.Rejected
+        if (itemCount(StarFragmentItemId) < batch) return@withLock WriteOutcome.Rejected
+        if (saveData.softCurrency.toLong() + yield > Int.MAX_VALUE) return@withLock WriteOutcome.Rejected
+
+        val origSoft = saveData.softCurrency
+        // 预检已保证碎片条目存在且数量 ≥ batch：直接原地减，不产生新条目、不会出现幽灵零道具
+        val itemExisted = true
+        val origFrags = itemCount(StarFragmentItemId)
+        transactionLocked(
+            tag = "shop",
+            mutate = {
+                saveData.items.firstOrNull { it?.itemId == StarFragmentItemId }?.let { it.count -= batch }
+                saveData.softCurrency += yield
+            },
+            rollback = {
+                saveData.softCurrency = origSoft
+                restoreItemCount(StarFragmentItemId, itemExisted, origFrags)
             },
             onCommit = { publishCurrencyChanged() },
         )
@@ -998,16 +1106,17 @@ class GameService(
     /**
      * 升级 n 级（默认 1）。星尘不足或已达等级上限时尽可能少升；一级都升不了返回 Rejected。
      * 每升 1 级 +1 天赋点。落盘失败回滚（SaveFailed）。
+     * 整体持锁：planLevelUp 依赖的 level/余额必须在临界区内读取（防过期校验竞态）。
      */
-    suspend fun levelUp(charId: String, n: Int = 1): WriteOutcome {
-        val save = getSave(charId) ?: return WriteOutcome.Rejected
-        if (n <= 0) return WriteOutcome.Rejected
+    suspend fun levelUp(charId: String, n: Int = 1): WriteOutcome = writeMutex.withLock {
+        val save = getSave(charId) ?: return@withLock WriteOutcome.Rejected
+        if (n <= 0) return@withLock WriteOutcome.Rejected
 
         // 预算规划抽到纯领域（EconomyFormulas.planLevelUp），边界行为由单元测试锁死。
         val (gained, cost) = EconomyFormulas.planLevelUp(
             save.level, maxLevelForStage(save.stage), saveData.softCurrency, n,
         )
-        if (gained <= 0) return WriteOutcome.Rejected // 一级都升不了（资源不足 / 已满级）
+        if (gained <= 0) return@withLock WriteOutcome.Rejected // 一级都升不了（资源不足 / 已满级）
 
         val target = save.level + gained
         // 货币升级等价于「买下已完成等级的累计经验」：累加而非覆写，
@@ -1018,7 +1127,7 @@ class GameService(
         // 否则 addExp 攒下的经验零头会在「落盘失败回滚」时从内存消失，
         // 与磁盘旧档分叉，下次成功保存即永久丢失（P1-1）。
         val origTotal = save.totalExp
-        return transaction(
+        transactionLocked(
             tag = "levelUp",
             mutate = {
                 saveData.softCurrency -= cost
@@ -1046,11 +1155,12 @@ class GameService(
      * 本方法是经验条真正能推进的根因修复（#1）。
      *
      * 落盘失败回滚本次经验与可能的自动升级（不广播）。
+     * 整体持锁：orig 快照与目标等级推导都在临界区内完成，防并发交错回滚抹掉他人改动。
      * @return 实际升的级数（0 = 仅积累经验、未升级；负数永不返回）
      */
-    suspend fun addExp(charId: String, amount: Int): Int {
-        if (amount <= 0) return 0
-        val save = getSave(charId) ?: return 0
+    suspend fun addExp(charId: String, amount: Int): Int = writeMutex.withLock {
+        if (amount <= 0) return@withLock 0
+        val save = getSave(charId) ?: return@withLock 0
         val cap = maxLevelForStage(save.stage)
 
         val origTotal = save.totalExp
@@ -1061,7 +1171,7 @@ class GameService(
         val newLevel = if (derived > cap) cap else derived
         val gained = newLevel - origLevel
 
-        val outcome = transaction(
+        val outcome = transactionLocked(
             tag = "addExp",
             mutate = {
                 save.totalExp += amount
@@ -1076,32 +1186,33 @@ class GameService(
             },
             onCommit = { publishProgressionChanged() },
         )
-        return if (outcome == WriteOutcome.Success) gained else 0
+        if (outcome == WriteOutcome.Success) gained else 0
     }
 
     /** 突破（Stage+1）。需未达 MaxStage 且星魂碎片 + 星尘充足。落盘失败回滚（SaveFailed）。
      *  P2-12：突破后按已积累经验重推导等级（上限随阶段提高）——此前玩家带「银行经验」
-     *  突破后等级停留在旧上限，再用星尘 levelUp 会为已经用经验换到的等级再付一次钱。 */
-    suspend fun ascend(charId: String): WriteOutcome {
-        val save = getSave(charId) ?: return WriteOutcome.Rejected
-        val def = character(charId) ?: return WriteOutcome.Rejected
-        if (save.stage >= def.maxStage) return WriteOutcome.Rejected
+     *  突破后等级停留在旧上限，再用星尘 levelUp 会为已经用经验换到的等级再付一次钱。
+     *  整体持锁：碎片/星尘余额校验必须在临界区内读取（防过期校验竞态）。 */
+    suspend fun ascend(charId: String): WriteOutcome = writeMutex.withLock {
+        val save = getSave(charId) ?: return@withLock WriteOutcome.Rejected
+        val def = character(charId) ?: return@withLock WriteOutcome.Rejected
+        if (save.stage >= def.maxStage) return@withLock WriteOutcome.Rejected
 
         val frags = ascendFragments(save.stage)
         val soft = ascendSoft(save.stage)
         val have = getStarFragments()
-        if (have < frags || saveData.softCurrency < soft) return WriteOutcome.Rejected
+        if (have < frags || saveData.softCurrency < soft) return@withLock WriteOutcome.Rejected
 
         val origSoft = saveData.softCurrency
         val origFrags = have
         val origLevel = save.level
         val origPoints = save.unspentPoints
-        val item = saveData.items.firstOrNull { it?.itemId == StarFragmentItemId }
-        return transaction(
+        val itemExisted = saveData.items.any { it?.itemId == StarFragmentItemId }
+        transactionLocked(
             tag = "ascend",
             mutate = {
                 saveData.softCurrency -= soft
-                if (item != null) item.count -= frags
+                addItemDelta(StarFragmentItemId, -frags)
                 save.stage += 1
                 // 突破后重推导：totalExp 是经验唯一真值，等级 = min(expToLevel(totalExp), 新上限)，
                 // 差额级数补发天赋点（与 addExp 的升级语义一致）
@@ -1115,7 +1226,7 @@ class GameService(
             },
             rollback = {
                 saveData.softCurrency = origSoft
-                if (item != null) item.count = origFrags
+                restoreItemCount(StarFragmentItemId, itemExisted, origFrags)
                 save.level = origLevel
                 save.unspentPoints = origPoints
                 save.stage -= 1
@@ -1127,26 +1238,27 @@ class GameService(
         )
     }
 
-    /** 升星（Stars+1）。需未达 MaxStars 且星魂碎片充足。落盘失败回滚（SaveFailed）。每次仅 +1 星。 */
-    suspend fun starUp(charId: String): WriteOutcome {
-        val save = getSave(charId) ?: return WriteOutcome.Rejected
-        val def = character(charId) ?: return WriteOutcome.Rejected
-        if (save.stars >= def.maxStars) return WriteOutcome.Rejected
+    /** 升星（Stars+1）。需未达 MaxStars 且星魂碎片充足。落盘失败回滚（SaveFailed）。每次仅 +1 星。
+     *  整体持锁：碎片余额校验必须在临界区内读取（防过期校验竞态）。 */
+    suspend fun starUp(charId: String): WriteOutcome = writeMutex.withLock {
+        val save = getSave(charId) ?: return@withLock WriteOutcome.Rejected
+        val def = character(charId) ?: return@withLock WriteOutcome.Rejected
+        if (save.stars >= def.maxStars) return@withLock WriteOutcome.Rejected
 
         val cost = starUpFragments(save.stars)
         val have = getStarFragments()
-        if (have < cost) return WriteOutcome.Rejected
+        if (have < cost) return@withLock WriteOutcome.Rejected
 
         val origFrags = have
-        val item = saveData.items.firstOrNull { it?.itemId == StarFragmentItemId }
-        return transaction(
+        val itemExisted = saveData.items.any { it?.itemId == StarFragmentItemId }
+        transactionLocked(
             tag = "starUp",
             mutate = {
-                if (item != null) item.count -= cost
+                addItemDelta(StarFragmentItemId, -cost)
                 save.stars += 1
             },
             rollback = {
-                if (item != null) item.count = origFrags
+                restoreItemCount(StarFragmentItemId, itemExisted, origFrags)
                 save.stars -= 1
             },
             onCommit = {
@@ -1193,17 +1305,18 @@ class GameService(
     }
 
     /** 点亮天赋节点：校验前置（TalentEngine）与天赋点余额，扣点并落盘。
-     * 已点过 / 点不够 / 前置未满足 / 落盘失败分别返回 Rejected / SaveFailed。 */
-    suspend fun allocateTalent(charId: String, nodeId: String): WriteOutcome {
-        val check = talentCheck(charId, nodeId) ?: return WriteOutcome.Rejected
+     * 已点过 / 点不够 / 前置未满足 / 落盘失败分别返回 Rejected / SaveFailed。
+     * 整体持锁：talentCheck 读取的存档状态必须在临界区内（防过期校验竞态）。 */
+    suspend fun allocateTalent(charId: String, nodeId: String): WriteOutcome = writeMutex.withLock {
+        val check = talentCheck(charId, nodeId) ?: return@withLock WriteOutcome.Rejected
         val save = check.save
         val node = check.node
         if (!talent.canAllocate(nodeId, save.talentPoints.filterNotNull(), prereqMap(check.tree))) {
-            return WriteOutcome.Rejected
+            return@withLock WriteOutcome.Rejected
         }
 
         val origPoints = save.unspentPoints
-        return transaction(
+        transactionLocked(
             tag = "talent",
             mutate = {
                 save.unspentPoints -= node.cost

@@ -167,6 +167,7 @@ private fun AchievementCard(
 private fun rewardText(def: AchievementDef): String {
     val parts = mutableListOf<String>()
     if (def.rewardSoft > 0) parts += "星尘 +${def.rewardSoft}"
+    if (def.rewardHard > 0) parts += "钻石 ×${def.rewardHard}"
     if (def.rewardTickets > 0) parts += "战票 ×${def.rewardTickets}"
     return "奖励：" + parts.joinToString(" ＋ ").ifEmpty { "无" }
 }

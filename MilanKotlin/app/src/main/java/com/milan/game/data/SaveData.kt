@@ -42,6 +42,11 @@ class SaveData(
     @SerialName("DailyShopBought") var dailyShopBought: List<Int?> = emptyList(),
     /** 已领取奖励的成就 id（重复领取在服务层拒绝）。 */
     @SerialName("ClaimedAchievements") var claimedAchievements: List<String?> = emptyList(),
+    // ── 2026-08 三期新增（带默认值：旧档缺字段自动落默认，向后兼容）──
+    /** 抽卡历史（追加式，上限 [Companion.MAX_PULL_HISTORY] 丢最旧；仅展示用途）。 */
+    @SerialName("PullHistory") var pullHistory: List<PullLogEntry?> = emptyList(),
+    /** UP 定轨「上次歪了」的池标记（true = 下次最高稀有度必中 UP 角色）。 */
+    @SerialName("GachaFeaturedLost") var gachaFeaturedLost: List<PoolFlagEntry?> = emptyList(),
 ) {
     /** 序列化为 JSON（prettyPrint 对齐 C# WriteIndented）。 */
     fun toJson(): String = json.encodeToString(serializer(), this)
@@ -130,6 +135,18 @@ class SaveData(
             .filter { it.isNotEmpty() }
             .filter { seenAchievements.add(it) }
             .toList()
+
+        // 抽卡历史（2026-08 三期）：滤 null、钳上限（超量丢最旧，对齐战绩裁剪契约）。
+        pullHistory = pullHistory.filterNotNull().let { list ->
+            if (list.size > MAX_PULL_HISTORY) list.drop(list.size - MAX_PULL_HISTORY) else list
+        }.toMutableList()
+
+        // UP 定轨标记：滤空 id、同池去重保首条。
+        val seenFlagPools = HashSet<String>()
+        gachaFeaturedLost = gachaFeaturedLost.filterNotNull()
+            .filter { it.poolId.isNotEmpty() }
+            .filter { seenFlagPools.add(it.poolId) }
+            .toMutableList()
     }
 
     /** 编队 characterId 列表（已滤空槽；顺序即槽位顺序）。 */
@@ -138,9 +155,36 @@ class SaveData(
     /** 已领取的成就 id 列表（已滤空；命名避开 claimedAchievements 属性的 JVM getter 签名）。 */
     fun claimedAchievementIds(): List<String> = claimedAchievements.filterNotNull()
 
+    /** 该池是否处于「UP 必中」状态（上次抽到最高稀有度但歪出了别的角色）。 */
+    fun isFeaturedGuaranteed(poolId: String): Boolean =
+        gachaFeaturedLost.firstOrNull { it?.poolId == poolId }?.flag ?: false
+
+    /** 写入该池的 UP 定轨状态（不存在则新建条目，与 setGachaCounter 同范式）。 */
+    fun setFeaturedGuaranteed(poolId: String, flag: Boolean) {
+        val entry = gachaFeaturedLost.firstOrNull { it?.poolId == poolId }
+        if (entry != null) entry.flag = flag
+        else gachaFeaturedLost = gachaFeaturedLost + PoolFlagEntry(poolId = poolId, flag = flag)
+    }
+
+    /**
+     * 追加一条抽卡历史并裁剪到上限（超限丢最旧）。
+     * 整体替换列表引用而非原地改——与 recordBattle 的回滚语义配套（整体恢复原引用即可）。
+     */
+    fun appendPullHistory(entry: PullLogEntry) {
+        pullHistory = (pullHistory.filterNotNull() + entry).let { list ->
+            if (list.size > MAX_PULL_HISTORY) list.drop(list.size - MAX_PULL_HISTORY) else list
+        }
+    }
+
+    /** 抽卡历史快照（已滤空；时间正序，最旧在前；UI 自行倒序展示）。 */
+    fun pullHistoryEntries(): List<PullLogEntry> = pullHistory.filterNotNull()
+
     companion object {
         /** 战绩列表上限（recordBattle 与 sanitize 共用同一契约，禁止就地写 50）。 */
         const val MAX_BATTLE_RECORDS = 50
+
+        /** 抽卡历史上限（appendPullHistory 与 sanitize 共用同一契约；约等于 10 次十连的回顾窗口）。 */
+        const val MAX_PULL_HISTORY = 100
 
         /** 出战编队槽位上限（setFormation 与 sanitize 共用同一契约，禁止就地写 5）。 */
         const val MAX_FORMATION_SIZE = 5

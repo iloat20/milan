@@ -335,9 +335,9 @@ internal object GameContent {
 
     // ------------------------------------------------------------------ pools
 
-    /** 构建兜底卡池：常驻「次元裂缝」+ UP「业火轮盘」。
+    /** 构建兜底卡池：常驻「次元裂缝」+ UP「业火轮盘」（含定轨角色，与 data.json 主来源同构）。
      *  常驻池显示名与权重对齐 data.json 主来源（防止离线回退时出现与主来源不一致的漂移）；
-     *  UP 池为兜底独有设计（data.json 无此池，见 DataJsonContentTest 固化意图）。 */
+     *  UP 池定轨角色 = 烛龙（Flame UR，契合「业火」主题），2026-08 三期起两路径口径收敛。 */
     fun buildPools(characters: List<CharacterDataEntry>): List<GachaPoolDataEntry> {
         fun entryFor(c: CharacterDataEntry) = GachaPoolEntry(
             characterId = c.characterId,
@@ -360,6 +360,7 @@ internal object GameContent {
                 poolId = "pool_flame", displayName = "业火轮盘 · UP",
                 rarityWeights = listOf(400, 300, 200, 100), hardPity = 80,
                 singleCost = 160, tenCost = 1600,
+                featuredCharacterId = "char_ur_zhulong",
                 entries = characters.filter { it.element == "Flame" || it.baseRarity >= 3 }.map(::entryFor),
             ),
         )

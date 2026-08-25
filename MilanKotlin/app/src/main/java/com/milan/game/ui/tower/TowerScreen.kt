@@ -2,6 +2,7 @@ package com.milan.game.ui.tower
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -10,7 +11,9 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -25,9 +28,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.milan.game.domain.battle.ElementChart
+import com.milan.game.domain.battle.StrikeEvent
 import com.milan.game.domain.progression.EconomyFormulas
 import com.milan.game.services.TowerOutcome
 import com.milan.game.ui.GameState
@@ -37,6 +43,7 @@ import com.milan.game.ui.components.NeonButton
 import com.milan.game.ui.components.PageBackground
 import com.milan.game.ui.nav.AppTopBar
 import com.milan.game.ui.theme.AppTheme
+import com.milan.game.ui.theme.ElementTheme
 import kotlinx.coroutines.launch
 
 /**
@@ -201,10 +208,18 @@ fun TowerScreen(
                         )
                         if (done.victory) {
                             Text(text = "星尘 +${done.rewardSoft}", fontSize = 13.sp, color = AppTheme.Text1)
+                            if (done.rewardHard > 0) {
+                                Text(
+                                    text = "◆ 钻石 +${done.rewardHard}（首次攻克里程碑）",
+                                    fontSize = 13.sp,
+                                    color = AppTheme.Frost,
+                                )
+                            }
                             if (done.bestFloorAfter >= nextFloor) {
                                 Text(text = "纪录推进至第 ${done.bestFloorAfter} 层", fontSize = 12.sp, color = AppTheme.Text2)
                             }
                         }
+                        BattleReportSection(done.log)
                         Text(
                             text = "提示：敌方元素随层数轮转，用克制元素编队能显著降低损血。",
                             fontSize = 11.sp,
@@ -232,4 +247,84 @@ fun TowerScreen(
             }
         }
     }
+}
+
+// ── 战报（2026-08：BattleSimulator 回合明细 → 折叠式逐回合攻击流水）──
+
+/** 战报折叠区：默认收起，展开后限高内部滚动（外层 verticalScroll 不受嵌套滚动干扰）。 */
+@Composable
+private fun BattleReportSection(log: List<StrikeEvent>) {
+    if (log.isEmpty()) return
+    // result 每次挑战整体替换 → remember(result 实例) 以 log 身份作 key，新战斗自动折叠复位
+    var expanded by remember(log) { mutableStateOf(false) }
+    Text(
+        text = if (expanded) "▾ 收起战报" else "▸ 查看战报（${log.size} 次攻击）",
+        fontSize = 11.sp,
+        fontWeight = FontWeight.Bold,
+        color = AppTheme.Frost,
+        modifier = Modifier
+            .padding(top = 4.dp)
+            .clickable { expanded = !expanded },
+    )
+    if (expanded) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(max = 220.dp)
+                .clip(RoundedCornerShape(10.dp))
+                .background(AppTheme.BgDeepest.copy(alpha = 0.55f))
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 10.dp, vertical = 6.dp),
+        ) {
+            log.forEach { e -> StrikeRow(e) }
+        }
+    }
+}
+
+/** 单条攻击流水行：「R回合 攻击者 → 目标 -伤害 [克制] †」。 */
+@Composable
+private fun StrikeRow(e: StrikeEvent) {
+    val counterMul = ElementChart.damageMultiplier(e.attackerElement, e.targetElement)
+    val counter = counterMul > 1.05
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
+    ) {
+        Text(
+            text = "R${e.turn}",
+            fontSize = 10.sp,
+            color = AppTheme.Text3,
+            modifier = Modifier.width(30.dp),
+        )
+        Text(
+            text = "${unitLabel(e.attackerId, e.attackerElement)} → ${unitLabel(e.targetId, e.targetElement)}",
+            fontSize = 11.sp,
+            color = AppTheme.Text2,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f),
+        )
+        Text(
+            text = buildString {
+                append("-${e.damage}")
+                if (counter) append(" 克制")
+                if (e.targetDefeated) append(" †")
+            },
+            fontSize = 11.sp,
+            fontWeight = FontWeight.Bold,
+            color = when {
+                counter -> AppTheme.Gold
+                else -> AppTheme.Text1
+            },
+            style = androidx.compose.ui.text.TextStyle(fontFeatureSettings = "tnum"),
+        )
+    }
+}
+
+/** 战报单位显示名：我方取内容表短名；程序化敌方 tower_f{floor}_e{i} 显示「敌方N·元素」。 */
+private fun unitLabel(characterId: String, element: String): String = when {
+    characterId.startsWith("tower_f") ->
+        "敌方·${ElementTheme.forElement(element).glyph}"
+    else ->
+        GameState.service.character(characterId)?.displayName?.substringBefore(' ') ?: "未知"
 }

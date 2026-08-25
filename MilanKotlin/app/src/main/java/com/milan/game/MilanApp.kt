@@ -55,6 +55,10 @@ class MilanApp : Application() {
                     }.getOrNull(),
                     onTrace = { CrashReporter.boot(it) },
                 )
+                // 冷启动同步音效开关（2026-08 bug 审查修复）：sfxVolume 默认 0.9f，
+                // 此前只有设置页开关联动 setSfxVolume——存档「音效关」的玩家重启后
+                // 音效照常响，直到再进设置页拨动开关（UI 显示关 / 实际行为开的错位）。
+                if (!GameState.service.saveData.soundEnabled) MilanAudio.setSfxVolume(0f)
                 CrashReporter.boot("app.init.done")
             } catch (e: Exception) {
                 CrashReporter.write("MilanApp.onCreate", e)

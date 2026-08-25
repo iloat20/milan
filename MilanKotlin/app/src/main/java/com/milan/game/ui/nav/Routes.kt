@@ -54,6 +54,10 @@ data object TowerRoute
 @Serializable
 data object AchievementRoute
 
+/** 抽卡历史（2026-08 三期）：子页，盖住底部 tab，返回回抽卡页。 */
+@Serializable
+data object PullHistoryRoute
+
 /** [NavItem] → 对应 tab 路由（底部导航统一映射入口；命名 toNavRoute 避免与 androidx.navigation.toRoute 扩展同名）。 */
 fun NavItem.toNavRoute(): TabRoute = when (this) {
     NavItem.Home -> HomeRoute

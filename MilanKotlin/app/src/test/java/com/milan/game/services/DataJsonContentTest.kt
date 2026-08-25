@@ -54,9 +54,12 @@ class DataJsonContentTest {
             traces.any { it.startsWith("content.loaded.from.json") },
         )
         assertEquals(28, service.characters.size)
-        assertEquals(1, service.pools.size)
-        assertEquals("pool_main", service.pools.first().poolId)
-        assertEquals(28, service.pools.first().entries.size)
+        // 2026-08 三期：UP 定轨进主来源，data.json 与兜底同为「常驻 + UP」双池
+        assertEquals(2, service.pools.size)
+        val mainPool = service.pools.first { it.poolId == "pool_main" }
+        val upPool = service.pools.first { it.poolId == "pool_flame" }
+        assertEquals(28, mainPool.entries.size)
+        assertEquals("char_ur_zhulong", upPool.featuredCharacterId)
         // data.json 的 28 棵天赋树 Nodes 全空 → loadContent 丢弃后由 buildTalentTrees 兜底补全
         assertEquals(28, service.talentTrees.size)
 
@@ -85,9 +88,9 @@ class DataJsonContentTest {
         assertTrue("应走兜底路径：${traces.joinToString(" | ")}", traces.any { it == "content.load.fallback" })
         assertEquals(28, fallbackService.characters.size)
         assertEquals(jsonService.characters.size, fallbackService.characters.size)
-        // 池总数差异是内容设计（兜底多一个 UP 池 pool_flame，data.json 无此池），非口径 bug：
-        // 固化「兜底 = 2 池（常驻 + UP）」行为，仅对两路径共有的 pool_main 做逐字段口径断言
-        assertEquals(1, jsonService.pools.size)
+        // 2026-08 三期收敛：UP 定轨进主来源，两路径同为「常驻 + UP」双池（消除兜底独有差异）；
+        // 仍仅对 pool_main 做逐字段口径断言（UP 池条目集允许内容方演进，只固化定轨角色一致）
+        assertEquals(2, jsonService.pools.size)
         assertEquals(2, fallbackService.pools.size)
         val jsonMain = jsonService.pools.first { it.poolId == "pool_main" }
         val fallbackMain = fallbackService.pools.first { it.poolId == "pool_main" }
@@ -96,6 +99,10 @@ class DataJsonContentTest {
         assertEquals(jsonMain.hardPity, fallbackMain.hardPity)
         assertEquals(jsonMain.singleCost, fallbackMain.singleCost)
         assertEquals(jsonMain.tenCost, fallbackMain.tenCost)
+        val jsonUp = jsonService.pools.first { it.poolId == "pool_flame" }
+        val fallbackUp = fallbackService.pools.first { it.poolId == "pool_flame" }
+        assertEquals(jsonUp.featuredCharacterId, fallbackUp.featuredCharacterId)
+        assertEquals("char_ur_zhulong", jsonUp.featuredCharacterId)
         assertEquals(jsonService.talentTrees.size, fallbackService.talentTrees.size)
 
         // 逐角色逐字段一致性：包括「SR/R 武器名两路径同为空」的现状（不固化空值，只固化一致性）

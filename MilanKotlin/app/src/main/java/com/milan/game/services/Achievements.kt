@@ -9,6 +9,8 @@ data class AchievementDef(
     val desc: String,
     val rewardSoft: Int = 0,
     val rewardTickets: Int = 0,
+    /** 钻石奖励（2026-08 引入：与爬塔里程碑共同构成钻石产出，激活商店钻石兑换闭环）。 */
+    val rewardHard: Int = 0,
     val unlocked: (Achievements.Progress) -> Boolean,
 )
 
@@ -48,6 +50,7 @@ object Achievements {
             title = "诸神入门",
             desc = "拥有 10 位角色",
             rewardSoft = 2000,
+            rewardHard = EconomyFormulas.achievementRewardHard(2),
             unlocked = { it.ownedCount >= 10 },
         ),
         AchievementDef(
@@ -55,6 +58,7 @@ object Achievements {
             title = "寻访百次",
             desc = "累计寻访 100 抽",
             rewardSoft = 3000,
+            rewardHard = EconomyFormulas.achievementRewardHard(2),
             unlocked = { it.totalPulls >= 100 },
         ),
         AchievementDef(
@@ -69,6 +73,7 @@ object Achievements {
             title = "登塔十阶",
             desc = "无尽之塔抵达第 10 层",
             rewardSoft = 5000,
+            rewardHard = EconomyFormulas.achievementRewardHard(3),
             unlocked = { it.towerBestFloor >= 10 },
         ),
         AchievementDef(
@@ -83,6 +88,7 @@ object Achievements {
             title = "富甲一方",
             desc = "持有星尘 100000",
             rewardSoft = 3000,
+            rewardHard = EconomyFormulas.achievementRewardHard(1),
             unlocked = { it.softCurrency >= 100_000 },
         ),
         AchievementDef(
@@ -90,6 +96,7 @@ object Achievements {
             title = "满级大师",
             desc = "练成 1 位当前阶段满级角色（等级上限随突破提升，当前 Stage4 → ${EconomyFormulas.maxLevelForStage(4)} 级）",
             rewardSoft = 5000,
+            rewardHard = EconomyFormulas.achievementRewardHard(2),
             unlocked = { it.fullLeveledChars >= 1 },
         ),
     )

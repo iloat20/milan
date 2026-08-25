@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <!-- 每日补给本地提醒（API 33+ 运行时请求；低版本自动生效） -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
     <application
         android:name=".MilanApp"
         android:allowBackup="true"
@@ -29,6 +32,17 @@
                 android:name="android.appwidget.provider"
                 android:resource="@xml/glance_widget_info" />
         </receiver>
+
+        <!-- 抽卡结果分享图（2026-08 三期）：cacheDir/share 只读授权给接收方应用 -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
     </application>
 
 </manifest>

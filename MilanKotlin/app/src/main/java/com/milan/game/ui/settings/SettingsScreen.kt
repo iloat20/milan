@@ -1,5 +1,9 @@
 package com.milan.game.ui.settings
 
+import android.Manifest
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -32,6 +36,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.milan.game.infrastructure.CrashReporter
+import com.milan.game.infrastructure.DailySupplyNotifier
 import com.milan.game.infrastructure.MilanAudio
 import com.milan.game.services.WriteOutcome
 import com.milan.game.ui.GameState
@@ -75,6 +80,14 @@ fun SettingsScreen(
 
     // 2026-08 主线程 IO 异步化：设置/重置为 suspend（落盘在 IO 线程），用页面协程调用
     val scope = rememberCoroutineScope()
+
+    // 推送（API 33+）运行时权限请求：拒绝不回滚开关，仅提示提醒将静默
+    // （launcher 回调非协程上下文，feedback.show 为 suspend 需经 scope.launch）
+    val notifPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission(),
+    ) { granted ->
+        if (!granted) scope.launch { feedback.show("未授予通知权限，补给提醒将不会显示") }
+    }
 
     PageBackground {
         Column(Modifier.fillMaxSize()) {
@@ -129,7 +142,7 @@ fun SettingsScreen(
                 )
                 SettingSwitchRow(
                     title = "推送",
-                    subtitle = "推送功能开发中",
+                    subtitle = "每日补给刷新时本地提醒（12:00）",
                     checked = snap.value.pushEnabled,
                     onCheckedChange = { enabled ->
                         if (busy) return@SettingSwitchRow
@@ -137,7 +150,16 @@ fun SettingsScreen(
                         scope.launch {
                             try {
                                 when (service.setPushEnabled(enabled)) {
-                                    WriteOutcome.Success -> { /* 快照已推进，UI 从 snapshot 派生 */ }
+                                    WriteOutcome.Success -> {
+                                        // 排程/撤销 WorkManager 周期任务（持久化，跨重启有效）
+                                        DailySupplyNotifier.setEnabled(context, enabled)
+                                        if (enabled && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                                            !DailySupplyNotifier.canNotify(context)
+                                        ) {
+                                            // API 33+ 运行时权限：未授权时发起请求（拒绝则提醒静默，不回滚开关）
+                                            notifPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                                        }
+                                    }
                                     WriteOutcome.Rejected -> feedback.show("设置失败")
                                     WriteOutcome.SaveFailed -> feedback.show("保存失败，请重试")
                                 }
@@ -200,15 +222,24 @@ fun SettingsScreen(
         show = showResetDialog,
         onDismiss = { showResetDialog = false },
         onConfirm = {
+            // I13 对齐：重置是全档破坏性写操作，确认键补 busy 防双击（其余写操作均有，此前此处漏了）
+            if (busy) return@ResetSaveDialog
+            busy = true
             scope.launch {
-                val ok = service.resetSave()
-                if (ok) {
-                    // 开关状态随新档复位：resetSave 已 refreshSnapshot，UI 从 snapshot 派生自动复位
-                    feedback.show("已重置存档")
-                } else {
-                    feedback.show("重置失败，请重试")
+                try {
+                    val ok = service.resetSave()
+                    if (ok) {
+                        // 开关状态随新档复位：resetSave 已 refreshSnapshot，UI 从 snapshot 派生自动复位；
+                        // pushEnabled 复位为 false → 撤销每日补给提醒任务（否则幽灵任务继续跑）
+                        DailySupplyNotifier.setEnabled(context, false)
+                        feedback.show("已重置存档")
+                    } else {
+                        feedback.show("重置失败，请重试")
+                    }
+                } finally {
+                    busy = false
+                    showResetDialog = false
                 }
-                showResetDialog = false
             }
         },
     )

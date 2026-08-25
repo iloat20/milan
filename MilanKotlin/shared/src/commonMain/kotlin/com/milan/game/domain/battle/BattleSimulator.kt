@@ -21,6 +21,8 @@ class BattleSimulator(private val rng: Random) {
         // P3-6：maxTurns<=0 会让 `1..0` 空循环并返回 turns=0 的非正结果（调用方可能除零/显示异常），
         // 钳到至少 1 回合（单回合语义 = 双方各行动一轮后结算）。
         val turns = maxTurns.coerceAtLeast(1)
+        // 战报事件流：只追加记录，不影响任何随机数消耗与结算路径（确定性断言保持可复现）。
+        val log = mutableListOf<StrikeEvent>()
 
         for (turn in 1..turns) {
             // 排序前先为每个存活单位预生成一次随机 tiebreaker（Spd 相同时用）。
@@ -42,22 +44,39 @@ class BattleSimulator(private val rng: Random) {
                 // 元素克制在结算点乘算（ElementChart 单一事实来源），保底 1 点防 0 伤。
                 val base = strikeDamage(actor.stats, target.stats)
                 val mul = ElementChart.damageMultiplier(actor.stats.element, target.stats.element)
-                target.hp -= (base * mul).toInt().coerceAtLeast(1)
+                val damage = (base * mul).toInt().coerceAtLeast(1)
+                target.hp -= damage
+                log += StrikeEvent(
+                    turn = turn,
+                    attackerId = actor.stats.characterId,
+                    attackerElement = actor.stats.element,
+                    targetId = target.stats.characterId,
+                    targetElement = target.stats.element,
+                    damage = damage,
+                    targetDefeated = target.hp <= 0,
+                )
             }
 
             // 空队伍无法"全部死亡"，必须要求队伍非空，否则空 teamB 会被误判为胜利。
-            if (b.isNotEmpty() && b.all { it.hp <= 0 }) return done(true, turn, a, b)
-            if (a.isNotEmpty() && a.all { it.hp <= 0 }) return done(false, turn, a, b)
+            if (b.isNotEmpty() && b.all { it.hp <= 0 }) return done(true, turn, a, b, log)
+            if (a.isNotEmpty() && a.all { it.hp <= 0 }) return done(false, turn, a, b, log)
         }
 
-        return done(false, turns, a, b)
+        return done(false, turns, a, b, log)
     }
 
-    private fun done(victory: Boolean, turns: Int, a: List<S>, b: List<S>): BattleResult = BattleResult(
+    private fun done(
+        victory: Boolean,
+        turns: Int,
+        a: List<S>,
+        b: List<S>,
+        log: List<StrikeEvent>,
+    ): BattleResult = BattleResult(
         victory = victory,
         turns = turns,
         remainingHp = a.sumOf { it.hp.coerceAtLeast(0) },
         opponentRemainingHp = b.sumOf { it.hp.coerceAtLeast(0) },
+        log = log.toList(),
     )
 
     companion object {

@@ -71,6 +71,8 @@ data class GachaPoolDataEntry(
     @SerialName("HardPity") var hardPity: Int = 90,
     @SerialName("SingleCost") var singleCost: Int = 100,
     @SerialName("TenCost") var tenCost: Int = 1000,
+    /** UP 角色（空 = 无定轨；命中池内最高稀有度时 50/50，歪一次后下次必中，见 GachaEngine.pickFeatured）。 */
+    @SerialName("FeaturedCharacterId") var featuredCharacterId: String = "",
     @SerialName("Entries") var entries: List<GachaPoolEntry> = emptyList(),
 )
 
@@ -141,6 +143,8 @@ data class GameSnapshot(
     val towerBestFloor: Int = 0,
     // 2026-08 二期：战票余额（道具系统聚合值；商店礼包/爬塔门槛展示用）。
     val battleTickets: Int = 0,
+    // 2026-08 三期：UP 定轨状态 poolId →「上次歪了」；true = 下次最高稀有度必中 UP。
+    val featuredLostByPool: Map<String, Boolean> = emptyMap(),
 )
 
 /**

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- FileProvider 授权路径：仅开放抽卡分享图的暂存目录（cacheDir/share/） -->
+<paths>
+    <cache-path
+        name="share"
+        path="share/" />
+</paths>

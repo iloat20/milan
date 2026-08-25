@@ -163,4 +163,45 @@ class EconomyFormulasTest {
         assertTrue(EconomyFormulas.diamondExchangeCost() > 0)
         assertTrue(EconomyFormulas.diamondExchangeYield() > 0)
     }
+
+    // ── 爬塔里程碑钻石（2026-08 钻石产出闭环）──
+
+    @Test
+    fun towerRewardHard_milestoneFloorsOnly() {
+        assertEquals(0, EconomyFormulas.towerRewardHard(1))
+        assertEquals(0, EconomyFormulas.towerRewardHard(4))
+        assertEquals(10, EconomyFormulas.towerRewardHard(5))
+        assertEquals(20, EconomyFormulas.towerRewardHard(10))
+        assertEquals(30, EconomyFormulas.towerRewardHard(15))
+    }
+
+    @Test
+    fun towerRewardHard_clampsInvalidFloorToPositiveMilestoneCheck() {
+        // floor<1 被钳到 1：1 不是 5 的倍数 → 0（非法层不会凭空发钻）
+        assertEquals(0, EconomyFormulas.towerRewardHard(0))
+        assertEquals(0, EconomyFormulas.towerRewardHard(-5))
+    }
+
+    @Test
+    fun achievementRewardHard_tieredAndClamped() {
+        assertEquals(30, EconomyFormulas.achievementRewardHard(1))
+        assertEquals(60, EconomyFormulas.achievementRewardHard(2))
+        assertEquals(100, EconomyFormulas.achievementRewardHard(3))
+        // 越界档位钳到 [1,3]，绝不返回负数/零档外值
+        assertEquals(30, EconomyFormulas.achievementRewardHard(0))
+        assertEquals(100, EconomyFormulas.achievementRewardHard(9))
+    }
+
+    @Test
+    fun fragmentExchange_batchAndYield_lossyVsShopPrice() {
+        // 回收阀门定价契约（2026-08 三期）：批量 10 片回收 800 ✦；
+        // 单价 80 ✦/片 < 商店购入价 fragmentPackCost(1)/fragmentPackSize(1)=100 ✦/片，双向流通必有损耗防套利。
+        assertEquals(10, EconomyFormulas.fragmentExchangeBatch())
+        assertEquals(800, EconomyFormulas.fragmentExchangeYield())
+        val buyPerFragment = EconomyFormulas.fragmentPackCost(1) / EconomyFormulas.fragmentPackSize(1)
+        assertTrue(
+            "回收单价必须低于购入单价（否则碎片↔星尘无限循环刷钱）",
+            EconomyFormulas.fragmentExchangeYield() / EconomyFormulas.fragmentExchangeBatch() < buyPerFragment,
+        )
+    }
 }

@@ -49,4 +49,39 @@ class GachaEngine(private val rng: Random = Random.Default) {
         }
         return ids[n - 1]
     }
+
+    /**
+     * UP 池定轨掷选（2026-08 三期引入，对标原神系 50/50：歪一次后下次必中）。
+     *
+     * - [featuredId] 为空或不在候选中 → 返回 pickedId=null，调用方回退普通加权抽取，
+     *   定轨状态不变（常驻池零开销路径）；
+     * - [guaranteed]=true（上次歪了）→ 直接交付 UP 并清除标记；
+     * - 否则掷硬币：中 → 交付 UP；歪 → 从非 UP 候选均匀取一个并置 guaranteedNext=true。
+     *
+     * 确定性：只经注入的 [rng] 消费随机数（nextInt(2) 与 nextInt(others.size)），种子可复现。
+     */
+    fun pickFeatured(
+        candidateIds: List<String>,
+        featuredId: String?,
+        guaranteed: Boolean,
+    ): FeaturedPick {
+        if (featuredId.isNullOrEmpty() || candidateIds.isEmpty() || featuredId !in candidateIds) {
+            return FeaturedPick(pickedId = null, guaranteedNext = false)
+        }
+        if (guaranteed) return FeaturedPick(pickedId = featuredId, guaranteedNext = false)
+        return if (rng.nextInt(2) == 0) {
+            FeaturedPick(pickedId = featuredId, guaranteedNext = false)
+        } else {
+            val others = candidateIds.filter { it != featuredId }
+            if (others.isEmpty()) {
+                // 唯一候选即 UP：无从歪起，视作必中（不置标记，避免假「欠 UP」状态）
+                FeaturedPick(pickedId = featuredId, guaranteedNext = false)
+            } else {
+                FeaturedPick(pickedId = others[rng.nextInt(others.size)], guaranteedNext = true)
+            }
+        }
+    }
 }
+
+/** [GachaEngine.pickFeatured] 的结果。pickedId=null 表示池无有效 UP（调用方回退普通抽取、状态不变）。 */
+data class FeaturedPick(val pickedId: String?, val guaranteedNext: Boolean)

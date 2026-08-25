@@ -1176,6 +1176,32 @@
           "Weight": 100
         }
       ]
+    },
+    {
+      "PoolId": "pool_flame",
+      "DisplayName": "业火轮盘 · UP",
+      "RarityWeights": [ 400, 300, 200, 100 ],
+      "HardPity": 80,
+      "SingleCost": 160,
+      "TenCost": 1600,
+      "FeaturedCharacterId": "char_ur_zhulong",
+      "Entries": [
+        { "CharacterId": "char_ur_zhulong", "RarityIndex": 4, "Weight": 1 },
+        { "CharacterId": "char_ur_wuxu", "RarityIndex": 4, "Weight": 1 },
+        { "CharacterId": "char_ur_xingtian", "RarityIndex": 4, "Weight": 1 },
+        { "CharacterId": "char_ur_kikyo", "RarityIndex": 4, "Weight": 1 },
+        { "CharacterId": "char_ur_keqing", "RarityIndex": 4, "Weight": 1 },
+        { "CharacterId": "char_ur_jinwu", "RarityIndex": 4, "Weight": 1 },
+        { "CharacterId": "char_ur_nuwa", "RarityIndex": 4, "Weight": 1 },
+        { "CharacterId": "char_ssr_fenghuang", "RarityIndex": 3, "Weight": 8 },
+        { "CharacterId": "char_ssr_xiangliu", "RarityIndex": 3, "Weight": 8 },
+        { "CharacterId": "char_ssr_leishen", "RarityIndex": 3, "Weight": 8 },
+        { "CharacterId": "char_ssr_feilian", "RarityIndex": 3, "Weight": 8 },
+        { "CharacterId": "char_ssr_shangyang", "RarityIndex": 3, "Weight": 8 },
+        { "CharacterId": "char_ssr_chiyou", "RarityIndex": 3, "Weight": 8 },
+        { "CharacterId": "char_ssr_baihu", "RarityIndex": 3, "Weight": 8 },
+        { "CharacterId": "char_sr_taotie", "RarityIndex": 2, "Weight": 40 }
+      ]
     }
   ],
   "TalentTrees": [

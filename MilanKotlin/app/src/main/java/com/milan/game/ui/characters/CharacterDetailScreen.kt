@@ -25,6 +25,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
@@ -51,6 +52,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.milan.game.data.CharacterSaveState
 import com.milan.game.domain.battle.UnitStats
+import com.milan.game.infrastructure.SpeechPlayer
 import com.milan.game.services.CharacterDataEntry
 import com.milan.game.services.SkillData
 import com.milan.game.ui.GameState
@@ -97,6 +99,11 @@ fun CharacterDetailScreen(
         // C# ResolveCharacter 失败 → Finish()；单 Activity 下渲染空态并给返回入口
         MissingCharacter(onBack, modifier)
         return
+    }
+
+    // 离开详情页即停播：避免 TTS 跨页残留朗读（引擎本身常驻复用，仅停当前 utterance）
+    DisposableEffect(Unit) {
+        onDispose { SpeechPlayer.stop() }
     }
 
     // P2-13/P3-5：订阅快照 revision，任何成功写操作后重组重读最新存档——此前
@@ -789,6 +796,7 @@ private fun VoicePanel(
     voices: List<String>,
     worldColor: WorldPalette,
 ) {
+    val context = LocalContext.current
     GlassPanel(modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(horizontal = 16.dp, vertical = 14.dp)) {
             if (voices.isEmpty()) {
@@ -812,6 +820,18 @@ private fun VoicePanel(
                         fontSize = 14.sp,
                         color = worldColor.textSecondary,
                         lineHeight = 17.sp,
+                        modifier = Modifier.weight(1f),
+                    )
+                    // TTS 播报（2026-08：面板从纯文本升级为可播；引擎惰性初始化，失败静默）
+                    Text(
+                        "▶",
+                        fontSize = 13.sp,
+                        color = AppTheme.Gold,
+                        modifier = Modifier
+                            .padding(start = 10.dp)
+                            .clip(CircleShape)
+                            .clickable { SpeechPlayer.speak(context, v) }
+                            .padding(4.dp),
                     )
                 }
             }

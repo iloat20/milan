@@ -156,6 +156,32 @@ fun ShopScreen(
                     )
                 }
 
+                // 碎片兑换（2026-08 三期）：碎片过剩玩家的星尘回收阀门（Starglitter 式副产物闭环）
+                SectionTitle("碎 片 兑 换")
+                FragmentExchangeCard(
+                    batch = EconomyFormulas.fragmentExchangeBatch(),
+                    yield = EconomyFormulas.fragmentExchangeYield(),
+                    frags = frags,
+                    enabled = !busy,
+                    onExchange = {
+                        scope.launch {
+                            if (busy) return@launch
+                            busy = true
+                            try {
+                                val msg = when (service.exchangeFragmentsForSoft()) {
+                                    WriteOutcome.Success -> "已兑换 ${EconomyFormulas.fragmentExchangeYield()} 星尘"
+                                    WriteOutcome.Rejected ->
+                                        "碎片不足（需 ${EconomyFormulas.fragmentExchangeBatch()} 片）"
+                                    WriteOutcome.SaveFailed -> "保存失败，请重试"
+                                }
+                                feedback.show(msg)
+                            } finally {
+                                busy = false
+                            }
+                        }
+                    },
+                )
+
                 SectionTitle("钻 石 商 城")
                 DiamondCard(
                     cost = EconomyFormulas.diamondExchangeCost(),
@@ -322,6 +348,36 @@ private fun DiamondCard(
                 Text("钻石暂无获取途径", color = AppTheme.Text2.copy(alpha = 0.6f), fontSize = 11.sp)
             }
             GoldButton(text = "兑 换", onClick = onExchange, enabled = affordable && enabled)
+        }
+    }
+}
+
+/** 碎片兑换星尘卡片（2026-08 三期）：定价单一事实来源在 [EconomyFormulas]，UI 只展示。 */
+@Composable
+private fun FragmentExchangeCard(
+    batch: Int,
+    yield: Int,
+    frags: Int,
+    enabled: Boolean = true,
+    onExchange: () -> Unit,
+) {
+    GlassPanel {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(14.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(Modifier.weight(1f)) {
+                Text("星魂碎片兑换星尘", color = AppTheme.Text1, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+                Spacer(Modifier.height(4.dp))
+                Text("${formatCount(batch)} ❖ → ${formatCount(yield)} ✦", color = AppTheme.Text2, fontSize = 12.sp)
+                Text(
+                    "回收价低于购入价（80/片 < 100/片），持有 ${formatCount(frags)} ❖",
+                    color = AppTheme.Text2.copy(alpha = 0.6f),
+                    fontSize = 11.sp,
+                )
+            }
+            GoldButton(text = "兑 换", onClick = onExchange, enabled = frags >= batch && enabled)
         }
     }
 }

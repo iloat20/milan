@@ -30,6 +30,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -42,6 +43,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import com.milan.game.domain.progression.EconomyFormulas
 import com.milan.game.ai.FortuneAgentRegistry
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -91,13 +93,19 @@ import kotlinx.coroutines.launch
 fun GachaScreen(
     onNav: (NavItem) -> Unit,
     onOpenCharacter: (String) -> Unit,
+    onOpenHistory: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
     // R3/I4：反馈统一走 LocalFeedback（由 MainActivity 提供的 Snackbar 宿主）。
     val feedback = LocalFeedback.current
     val scope = rememberCoroutineScope()
-    val pool = remember { GameState.service.pools.firstOrNull() }
+    // 多卡池支持（2026-08）：服务层本就承载多池（pityByPool 按池独立计数），
+    // 此前 UI 写死 firstOrNull 只露一个池。选中态 rememberSaveable 持久化；
+    // 内容表改动导致旧 id 失配时回落首池（?: 链兜底，绝不因失配无池可用）。
+    val pools = remember { GameState.service.pools }
+    var selectedPoolId by rememberSaveable { mutableStateOf(pools.firstOrNull()?.poolId.orEmpty()) }
+    val pool = pools.firstOrNull { it.poolId == selectedPoolId } ?: pools.firstOrNull()
     // 路径 B：订阅状态快照——保底进度/余额/振动开关从快照派生（写操作后自动刷新），
     // 替代 saveData 直读 + 手动 pity 维护。
     val snap by GameState.snapshot.collectAsStateWithLifecycle()
@@ -273,6 +281,28 @@ fun GachaScreen(
             Spacer(Modifier.height(14.dp))
 
             if (pool != null) {
+                // ── 池选择 chips（多池时显示；单池隐藏避免噪音）──
+                if (pools.size > 1) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        pools.forEach { p ->
+                            val selected = p.poolId == pool.poolId
+                            Text(
+                                text = p.displayName.ifEmpty { "常驻卡池" },
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = if (selected) AppTheme.GoldTextOn else AppTheme.Text2,
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(16.dp))
+                                    .background(if (selected) AppTheme.Gold else AppTheme.Surface)
+                                    .border(1.dp, if (selected) AppTheme.Gold else AppTheme.Stroke, RoundedCornerShape(16.dp))
+                                    .clickable { selectedPoolId = p.poolId }
+                                    .padding(horizontal = 14.dp, vertical = 6.dp),
+                            )
+                        }
+                    }
+                    Spacer(Modifier.height(10.dp))
+                }
+
                 // ── 卡池信息面板（池名 / 概率 / 保底进度，保底行霜蓝）──
                 GlassPanel(modifier = Modifier.fillMaxWidth(), highlighted = true) {
                     Column(Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
@@ -285,12 +315,62 @@ fun GachaScreen(
                         Spacer(Modifier.height(4.dp))
                         Text(ratesLabel(pool), fontSize = 11.sp, color = AppTheme.Text2)
                         if (pool.hardPity > 0) {
-                            Spacer(Modifier.height(6.dp))
-                            Text(
-                                text = "保底进度  $pity / ${pool.hardPity}",
-                                fontSize = 11.sp,
-                                color = AppTheme.Frost,
+                            Spacer(Modifier.height(8.dp))
+                            // 软保底可视化（2026-08 三期）：进入爬坡区间进度条与文字转金，
+                            // 玩家能直观感到「概率在涨」——对标主流 gacha 的 pity 进度条体验。
+                            val softStart = EconomyFormulas.softPityStart(pool.hardPity)
+                            val inSoft = softStart > 0 && pity >= softStart
+                            val pityColor = if (inSoft) AppTheme.GoldHi else AppTheme.Frost
+                            LinearProgressIndicator(
+                                progress = { pity.toFloat() / pool.hardPity.coerceAtLeast(1) },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(4.dp)
+                                    .clip(RoundedCornerShape(2.dp)),
+                                color = pityColor,
+                                trackColor = AppTheme.Surface,
                             )
+                            Spacer(Modifier.height(4.dp))
+                            Text(
+                                text = "保底进度  $pity / ${pool.hardPity}" + if (inSoft) " · 软保底爬坡中" else "",
+                                fontSize = 11.sp,
+                                color = pityColor,
+                            )
+                        }
+                        // UP 定轨行（2026-08 三期）：展示 UP 角色与「下次必中」欠账状态
+                        val upDef = pool.featuredCharacterId
+                            .takeIf { it.isNotEmpty() }
+                            ?.let { GameState.service.character(it) }
+                        if (upDef != null) {
+                            Spacer(Modifier.height(6.dp))
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(
+                                    text = "UP",
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = AppTheme.GoldTextOn,
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(6.dp))
+                                        .background(AppTheme.Gold)
+                                        .padding(horizontal = 6.dp, vertical = 1.dp),
+                                )
+                                Spacer(Modifier.width(6.dp))
+                                Text(
+                                    text = upDef.displayName,
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = AppTheme.Gold,
+                                )
+                                if (snap.featuredLostByPool[pool.poolId] == true) {
+                                    Spacer(Modifier.width(8.dp))
+                                    Text(
+                                        text = "上次歪了 · 下次必中",
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = AppTheme.Frost,
+                                    )
+                                }
+                            }
                         }
                     }
                 }
@@ -349,13 +429,40 @@ fun GachaScreen(
             }
             Spacer(Modifier.height(10.dp))
 
-            // ── 摘要行（共 N 抽 · SSR+ N · 碎片 · 最新）──
-            Text(
-                text = summary,
-                fontSize = 11.sp,
-                color = AppTheme.Text2,
-                modifier = Modifier.padding(horizontal = 4.dp),
-            )
+            // ── 摘要行（共 N 抽 · SSR+ N · 碎片 · 最新）+ 历史/分享入口 ──
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = summary,
+                    fontSize = 11.sp,
+                    color = AppTheme.Text2,
+                    modifier = Modifier.weight(1f),
+                )
+                if (results.isNotEmpty()) {
+                    Text(
+                        text = "分享",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = AppTheme.Gold,
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(10.dp))
+                            .clickable { PullShareCard.shareResults(context, results) }
+                            .padding(horizontal = 8.dp, vertical = 4.dp),
+                    )
+                }
+                Text(
+                    text = "历 史 ›",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = AppTheme.Frost,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(10.dp))
+                        .clickable(onClick = onOpenHistory)
+                        .padding(horizontal = 8.dp, vertical = 4.dp),
+                )
+            }
             Spacer(Modifier.height(6.dp))
 
             // ── 结果网格：每行 5 个 chip，逐张缩放淡入（C# 5 列 LinearLayout + 依序动画）

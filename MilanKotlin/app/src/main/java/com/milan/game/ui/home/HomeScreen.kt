@@ -55,6 +55,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.milan.game.infrastructure.CrashReporter
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import com.milan.game.services.CharacterDataEntry
@@ -163,7 +164,10 @@ fun HomeScreen(
 
 @Composable
 private fun Hero(fixedH: androidx.compose.ui.unit.Dp) {
-    val def = remember { featuredCharacter() }
+    // 快照 revision 驱动：抽到更高稀有度角色后回主页，主视觉随之更新
+    // （此前 remember 无 key 缓存，组合不销毁就一直显示旧角色）
+    val snap by GameState.snapshot.collectAsStateWithLifecycle()
+    val def = remember(snap.revision) { featuredCharacter() }
     val rarityColor = AppTheme.rarityColor(def.baseRarity)
 
     Box(
@@ -348,42 +352,68 @@ private fun HeroButtons(
 
 // ── 诸神名录：统一头像横滑 ──
 
-/** 名录精选（C# HomeActivity 同款：id / 名称 / 出处）。 */
-private val Picks = listOf(
-    Triple("char_ur_zhulong", "烛龙", "山海经"),
-    Triple("char_ur_xingtian", "刑天", "中国神话"),
-    Triple("char_ssr_fenghuang", "凤凰", "山海经"),
-    Triple("char_sr_bifang", "毕方", "山海经"),
-    Triple("char_sr_jingwei", "精卫", "中国神话"),
-    Triple("char_ssr_leishen", "雷神", "山海经"),
+/** 名录优先精选（C# HomeActivity 同款语义）：运行时校验存在性——内容表 id 失配时
+ *  该项跳过并按稀有度降序补足，不再整排静默消失（坑因：旧版硬编码 Triple 列表，
+ *  data.json 改 id 后 `character(id)` 全 null，`?: return@items` 把横滑条清空）。 */
+private val PickIds = listOf(
+    "char_ur_zhulong", "char_ur_xingtian", "char_ssr_fenghuang",
+    "char_sr_bifang", "char_sr_jingwei", "char_ssr_leishen",
+)
+
+/** 名录条目：解析后的内容定义 + 展示文案（短名取 DisplayName 首个空格前段，
+ *  出处小字用稀有度名——原手写「山海经/中国神话」与数据字段无映射，改用可推导事实）。 */
+private data class AvatarEntry(
+    val def: CharacterDataEntry,
+    val name: String,
+    val source: String,
 )
 
 @Composable
+private fun rememberAvatarEntries(): List<AvatarEntry> {
+    // 快照 revision 触发重算：新抽到角色也能进入名录补足序列
+    val snap by GameState.snapshot.collectAsStateWithLifecycle()
+    return remember(snap.revision) {
+        val all = GameState.service.characters
+        val byId = all.associateBy { it.characterId }
+        val picked = PickIds.mapNotNull { byId[it] }
+        val fill = all.filter { it.characterId !in PickIds.toSet() }
+            .sortedByDescending { it.baseRarity }
+        (picked + fill).take(6).map { def ->
+            AvatarEntry(
+                def = def,
+                name = def.displayName.substringBefore(' '),
+                source = AppTheme.rarityName(def.baseRarity),
+            )
+        }
+    }
+}
+
+@Composable
 private fun AvatarStrip(onOpenCharacter: (String) -> Unit) {
+    val entries = rememberAvatarEntries()
+    if (entries.isEmpty()) return
     LazyRow(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 14.dp, vertical = 2.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        items(Picks) { (id, name, src) ->
-            val def = GameState.service.character(id)
-                ?: return@items
+        items(entries, key = { it.def.characterId }) { e ->
             Column(
                 modifier = Modifier
-                    .clickable { onOpenCharacter(id) }
+                    .clickable { onOpenCharacter(e.def.characterId) }
                     .padding(end = 12.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                AvatarCircle(def, Modifier.size(58.dp))
+                AvatarCircle(e.def, Modifier.size(58.dp))
                 Text(
-                    text = name,
+                    text = e.name,
                     fontSize = 10.sp,
                     fontWeight = FontWeight.Bold,
                     color = AppTheme.Text1,
                     modifier = Modifier.padding(top = 3.dp),
                 )
-                Text(text = src, fontSize = 8.sp, color = AppTheme.Text2)
+                Text(text = e.source, fontSize = 8.sp, color = AppTheme.Text2)
             }
         }
     }

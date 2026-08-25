@@ -1,6 +1,8 @@
 package com.milan.game.ui.collection
 
 import androidx.compose.animation.AnimatedVisibilityScope
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -34,6 +36,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.milan.game.services.CharacterDataEntry
 import com.milan.game.ui.GameState
 import com.milan.game.ui.OwnedCharacterView
@@ -60,9 +63,11 @@ fun CollectionScreen(
     animatedVisibilityScope: AnimatedVisibilityScope,
     modifier: Modifier = Modifier,
 ) {
-    // 数据快照（进程级单例）：全量内容 + 已拥有视图（C# OnCreate 取一次语义）
+    // 快照 revision 驱动拥有视图（范式对齐 Detail/Progression 页）：抽卡后图鉴进度随重组刷新。
+    // all 为内容定义（进程内不变），无需 revision key；owned 随快照刷新，ownedById 派生自 owned。
+    val snap by GameState.snapshot.collectAsStateWithLifecycle()
     val all = remember { GameState.service.characters }
-    val owned = remember { GameState.owned() }
+    val owned = remember(snap.revision) { GameState.owned() }
     val ownedById = remember(owned) { owned.associateBy { it.save.characterId } }
 
     var searchText by rememberSaveable { mutableStateOf("") }
@@ -163,7 +168,12 @@ private fun CollectionProgressHeader(
 ) {
     val got = owned.size
     val total = all.size
-    val fraction = if (total == 0) 0f else got.toFloat() / total
+    // 数值动画：进度条随收集推进平滑生长（对齐全站数值反馈语言，如 ResourceBar Chip 的 400ms 滚动）
+    val fraction by animateFloatAsState(
+        targetValue = if (total == 0) 0f else got.toFloat() / total,
+        animationSpec = tween(400),
+        label = "collectionProgress",
+    )
     // 稀有度统计动态分组（防写死数字被内容数据打脸）
     val totalByRarity = all.groupingBy { it.baseRarity }.eachCount()
     val gotByRarity = owned.groupingBy { it.rarity }.eachCount()

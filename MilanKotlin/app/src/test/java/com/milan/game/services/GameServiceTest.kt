@@ -887,4 +887,107 @@ class GameServiceTest {
         assertTrue(service.snapshot.value.ownedSaves.isEmpty())
         assertEquals(0, service.snapshot.value.pityByPool["pool_test"] ?: -1)
     }
+
+    // ── UP 定轨与抽卡历史（2026-08 三期）──
+
+    /** UP 池内容：双 UR 候选 + 定轨 f_up_a；权重全押 UR → 每抽必走定轨掷选路径。 */
+    private val upPoolContent = """
+        {
+          "Characters": [
+            { "CharacterId": "f_up_a", "DisplayName": "定轨甲", "BaseRarity": 4, "TalentTreeId": "tree_test" },
+            { "CharacterId": "f_up_b", "DisplayName": "陪跑乙", "BaseRarity": 4, "TalentTreeId": "tree_test" }
+          ],
+          "Pools": [
+            {
+              "PoolId": "pool_up",
+              "RarityWeights": [0, 0, 0, 1000],
+              "HardPity": 90,
+              "SingleCost": 160,
+              "TenCost": 1600,
+              "FeaturedCharacterId": "f_up_a",
+              "Entries": [
+                { "CharacterId": "f_up_a", "RarityIndex": 4, "Weight": 1000 },
+                { "CharacterId": "f_up_b", "RarityIndex": 4, "Weight": 1000 }
+              ]
+            }
+          ],
+          "TalentTrees": []
+        }
+    """.trimIndent()
+
+    @Test
+    fun pull_upGuaranteed_deliversFeaturedAndClearsFlag() = runTest {
+        val service = makeService(content = upPoolContent)
+        service.saveData.setFeaturedGuaranteed("pool_up", true) // 预置「上次歪了」
+
+        val outcome = service.pull("pool_up", tenPull = false)
+
+        assertTrue(outcome is PullOutcome.Success)
+        assertEquals("f_up_a", (outcome as PullOutcome.Success).results.single().characterId)
+        assertFalse("必中交付后欠账清除", service.saveData.isFeaturedGuaranteed("pool_up"))
+        assertEquals(false, service.snapshot.value.featuredLostByPool["pool_up"])
+        assertEquals(1, service.pullHistory().size) // 历史随成功落盘留痕
+    }
+
+    @Test
+    fun pull_upCoinLose_flagMatchesDeliveredCharacter() = runTest {
+        val service = makeService(content = upPoolContent)
+
+        val outcome = service.pull("pool_up", tenPull = false)
+
+        assertTrue(outcome is PullOutcome.Success)
+        val delivered = (outcome as PullOutcome.Success).results.single().characterId
+        assertEquals("歪出非 UP ⟺ 欠账标记为 true", delivered != "f_up_a", service.saveData.isFeaturedGuaranteed("pool_up"))
+        assertEquals(delivered != "f_up_a", service.snapshot.value.featuredLostByPool["pool_up"] == true)
+    }
+
+    @Test
+    fun pull_tenInUpBatch_guaranteeEvolvesWithinBatch() = runTest {
+        val service = makeService(content = upPoolContent)
+        service.saveData.setFeaturedGuaranteed("pool_up", true)
+
+        val outcome = service.pull("pool_up", tenPull = true)
+
+        assertTrue(outcome is PullOutcome.Success)
+        val results = (outcome as PullOutcome.Success).results
+        assertEquals(10, results.size)
+        // 首抽必中 UP 清账；其后每抽重新掷硬币——终态标记必须与「最后一抽是否歪」一致
+        val lastLost = results.last().characterId != "f_up_a"
+        assertEquals(lastLost, service.saveData.isFeaturedGuaranteed("pool_up"))
+        assertEquals(10, service.pullHistory().size)
+    }
+
+    @Test
+    fun pull_saveFailed_historyAndFlagRollback() = runTest {
+        val provider = FakeProvider(failSave = true)
+        val service = makeService(provider = provider, content = upPoolContent)
+
+        assertTrue(service.pull("pool_up", tenPull = false) is PullOutcome.SaveFailed)
+
+        assertTrue("历史必须随事务回滚", service.pullHistory().isEmpty())
+        assertFalse(service.saveData.isFeaturedGuaranteed("pool_up"))
+        assertEquals("扣款已回滚", 999999, service.saveData.softCurrency)
+        assertTrue(service.saveData.ownedCharacters.isEmpty())
+    }
+
+    @Test
+    fun exchangeFragments_convertsBatchToSoft() = runTest {
+        val service = makeService()
+        assertTrue(service.pull("pool_test", tenPull = true) is PullOutcome.Success)
+        assertTrue(service.pull("pool_test", tenPull = false) is PullOutcome.Success) // 重复 → 补偿碎片
+        val softBefore = service.saveData.softCurrency
+        val fragsBefore = service.getStarFragments()
+        assertTrue("预置碎片需够一批", fragsBefore >= EconomyFormulas.fragmentExchangeBatch())
+
+        assertEquals(WriteOutcome.Success, service.exchangeFragmentsForSoft())
+
+        assertEquals(fragsBefore - EconomyFormulas.fragmentExchangeBatch(), service.getStarFragments())
+        assertEquals(softBefore + EconomyFormulas.fragmentExchangeYield(), service.saveData.softCurrency)
+    }
+
+    @Test
+    fun exchangeFragments_insufficientFragments_rejected() = runTest {
+        val service = makeService()
+        assertEquals(WriteOutcome.Rejected, service.exchangeFragmentsForSoft())
+    }
 }

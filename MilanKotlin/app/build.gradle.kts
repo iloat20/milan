@@ -92,6 +92,8 @@ dependencies {
     implementation(libs.androidx.navigation.compose)
     // 桌面小组件（Glance）：GachaGlanceWidget 的今日运势入口（ui/glance/）
     implementation(libs.androidx.glance.appwidget)
+    // WorkManager（2026-08 每日补给本地提醒）：此前仅经 Glance 传递携带，无法直接引用 API
+    implementation(libs.androidx.work.runtime.ktx)
     // KMP 共享领域层：抽卡/养成/战斗引擎与跨平台模型（commonMain，见 :shared 模块）。
     // 领域逻辑自此与桌面/将来 iOS 共用同一份实现（2026-08 KMP 下沉）。
     implementation(project(":shared"))

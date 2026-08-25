@@ -41,6 +41,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.milan.game.data.SaveData
+import com.milan.game.services.WriteOutcome
 import com.milan.game.ui.GameState
 import com.milan.game.ui.OwnedCharacterView
 import com.milan.game.ui.components.CharacterCard
@@ -48,6 +49,7 @@ import com.milan.game.ui.components.FormationBar
 import com.milan.game.ui.components.NeonButton
 import com.milan.game.ui.components.PageBackground
 import com.milan.game.ui.components.PortraitImage
+import com.milan.game.ui.feedback.LocalFeedback
 import com.milan.game.ui.nav.AppTopBar
 import com.milan.game.ui.nav.GameNavBar
 import com.milan.game.ui.nav.NavItem
@@ -65,24 +67,39 @@ fun DeckScreen(
     modifier: Modifier = Modifier,
     animatedVisibilityScope: androidx.compose.animation.AnimatedVisibilityScope? = null,
 ) {
-    val owned = remember { GameState.owned() }
+    // 快照 revision 驱动拥有列表（范式对齐 Detail/Progression 页「勿裸 remember 缓存」教训）：
+    // 任何页面的抽卡/养成写操作推进 revision 后，本页随重组刷新最新角色集
+    val snapshot by GameState.service.snapshot.collectAsStateWithLifecycle()
+    val owned = remember(snapshot.revision) { GameState.owned() }
     var previewId by rememberSaveable { mutableStateOf<String?>(null) }
     val preview = owned.firstOrNull { it.save.characterId == previewId }
 
     // ── 编队状态（2026-08 编队系统）：快照驱动，setFormation 成功后经 refreshSnapshot 回流重组 ──
-    val snapshot by GameState.service.snapshot.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
+    // R3/I4：反馈统一走 LocalFeedback——编队满员 / 落盘失败不再静默
+    val feedback = LocalFeedback.current
     val members = remember(snapshot.revision) {
         val formed = snapshot.formation.toSet()
         owned.filter { it.save.characterId in formed }
     }
     val toggleFormation: (String) -> Unit = { id ->
         val current = GameState.service.getFormation()
-        val next = when (id) {
-            in current -> current - id
-            else -> if (current.size < SaveData.MAX_FORMATION_SIZE) current + id else current
+        if (id !in current && current.size >= SaveData.MAX_FORMATION_SIZE) {
+            // 满员：此前静默忽略，第 6 个角色点击毫无反馈；补明确提示
+            scope.launch { feedback.show("编队已满（${SaveData.MAX_FORMATION_SIZE} 人），请先移出一名角色") }
+        } else {
+            val next = when (id) {
+                in current -> current - id
+                else -> current + id
+            }
+            if (next != current) scope.launch {
+                when (GameState.service.setFormation(next)) {
+                    WriteOutcome.Success -> Unit // 快照已推进，「加入/移出」按钮态自动回流
+                    WriteOutcome.Rejected -> feedback.show("无法更新编队")
+                    WriteOutcome.SaveFailed -> feedback.show("保存失败，请重试")
+                }
+            }
         }
-        if (next != current) scope.launch { GameState.service.setFormation(next) }
     }
     val previewInFormation = preview != null && preview.save.characterId in snapshot.formation
     val previewToggle: (() -> Unit)? =

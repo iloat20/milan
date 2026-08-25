@@ -45,6 +45,7 @@ import com.milan.game.ui.characters.CharacterListScreen
 import com.milan.game.ui.collection.CollectionScreen
 import com.milan.game.ui.deck.DeckScreen
 import com.milan.game.ui.gacha.GachaScreen
+import com.milan.game.ui.gacha.PullHistoryScreen
 import com.milan.game.ui.home.HomeScreen
 import com.milan.game.ui.nav.AppTopBar
 import com.milan.game.ui.nav.CharacterDetailRoute
@@ -56,6 +57,7 @@ import com.milan.game.ui.nav.GachaRoute
 import com.milan.game.ui.nav.HomeRoute
 import com.milan.game.ui.nav.NavItem
 import com.milan.game.ui.nav.ProgressionRoute
+import com.milan.game.ui.nav.PullHistoryRoute
 import com.milan.game.ui.nav.SettingsRoute
 import com.milan.game.ui.nav.ShopRoute
 import com.milan.game.ui.nav.TowerRoute
@@ -202,6 +204,7 @@ private fun MilanNavHost(openGachaOnStart: Boolean = false) {
                     GachaScreen(
                         onNav = ::navigateToTab,
                         onOpenCharacter = ::openCharacter,
+                        onOpenHistory = { navController.navigate(PullHistoryRoute) },
                     )
                 }
                 composable<DeckRoute> {
@@ -266,6 +269,12 @@ private fun MilanNavHost(openGachaOnStart: Boolean = false) {
                 // 成就（2026-08 二期）：子页盖 tab，返回回主页
                 composable<AchievementRoute> {
                     AchievementScreen(
+                        onBack = { navController.popBackStack() },
+                    )
+                }
+                // 抽卡历史（2026-08 三期）：子页盖 tab，返回回抽卡页
+                composable<PullHistoryRoute> {
+                    PullHistoryScreen(
                         onBack = { navController.popBackStack() },
                     )
                 }

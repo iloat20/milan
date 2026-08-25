@@ -17,6 +17,20 @@ data class UnitStats(
     val element: String = "",
 )
 
+/** 单次攻击事件（2026-08 战报：纯展示数据，不落盘，仅随本次 [BattleResult] 返回）。 */
+data class StrikeEvent(
+    /** 回合序号（1 起）。 */
+    val turn: Int,
+    val attackerId: String,
+    val attackerElement: String,
+    val targetId: String,
+    val targetElement: String,
+    /** 实际结算伤害（已含克制乘算与保底）。 */
+    val damage: Int,
+    /** 本次攻击是否击杀目标。 */
+    val targetDefeated: Boolean,
+)
+
 /** 战斗结算结果（C# Milan.Domain.Battle.BattleResult 翻译）。 */
 data class BattleResult(
     val victory: Boolean,
@@ -25,4 +39,9 @@ data class BattleResult(
     val remainingHp: Int,
     /** 敌方（teamB）剩余总血量。调用方据此续接战斗状态，避免重置血条。 */
     val opponentRemainingHp: Int,
+    /**
+     * 逐回合攻击事件流（战报展示；默认空 = 无记录）。
+     * 默认值保证旧构造调用方（测试/桌面模拟器）零改动兼容。
+     */
+    val log: List<StrikeEvent> = emptyList(),
 )

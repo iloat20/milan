@@ -17,6 +17,7 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -32,8 +33,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.milan.game.services.CharacterDataEntry
 import com.milan.game.ui.GameState
 import com.milan.game.ui.components.CharacterCard
+import com.milan.game.ui.components.GlassPanel
 import com.milan.game.ui.components.ListFilter
 import com.milan.game.ui.components.ListFilterBar
 import com.milan.game.ui.components.ListSortMode
@@ -54,9 +58,15 @@ fun CharacterListScreen(
     animatedVisibilityScope: androidx.compose.animation.AnimatedVisibilityScope,
     modifier: Modifier = Modifier,
 ) {
-    // 数据快照：单例存档 + 内容定义合并（C# OnCreate 时取一次，重建后重算）。
-    val owned = remember { GameState.owned() }
-    val total = remember { GameState.ownedCount }
+    // 快照 revision 驱动（范式对齐 Detail/Progression 页）：写操作后随重组刷新最新角色集
+    val snap by GameState.snapshot.collectAsStateWithLifecycle()
+    val owned = remember(snap.revision) { GameState.owned() }
+    val total = remember(snap.revision) { GameState.ownedCount }
+    // 图鉴完成度（2026-08 三期）：全 roster × 拥有 id 集（revision 驱动，抽卡后即时更新）
+    val roster = remember(snap.revision) { GameState.service.characters }
+    val ownedIds = remember(snap.revision) {
+        GameState.service.saveData.ownedCharacters.filterNotNull().map { it.characterId }.toSet()
+    }
     // 筛选状态（C# 里挂在 ListFilterBar 实例上，旋转/重建时由 Compose 保留）。
     var searchText by rememberSaveable { mutableStateOf("") }
     var rarityFilter by rememberSaveable { mutableIntStateOf(-1) }
@@ -87,6 +97,10 @@ fun CharacterListScreen(
                 color = AppTheme.Text2,
                 modifier = Modifier.padding(horizontal = 18.dp),
             )
+            Spacer(Modifier.height(8.dp))
+
+            // 图鉴完成度头（2026-08 三期）：对标主流 gacha 的 collection completion
+            CompletionPanel(roster = roster, ownedIds = ownedIds, modifier = Modifier.padding(horizontal = 18.dp))
             Spacer(Modifier.height(12.dp))
 
             ListFilterBar(
@@ -137,6 +151,61 @@ fun CharacterListScreen(
                                     modifier = Modifier.padding(top = 3.dp),
                                 )
                             },
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+/**
+ * 图鉴完成度头（2026-08 三期）：总收集进度条 + 分稀有度 owned/total 徽标
+ * （对标主流 gacha 的 codex completion；数据随 snapshot.revision 抽卡后即时刷新）。
+ */
+@Composable
+private fun CompletionPanel(
+    roster: List<CharacterDataEntry>,
+    ownedIds: Set<String>,
+    modifier: Modifier = Modifier,
+) {
+    val totalRoster = roster.size
+    val ownedCount = roster.count { it.characterId in ownedIds }
+    val pct = if (totalRoster == 0) 0 else ownedCount * 100 / totalRoster
+    GlassPanel(modifier = modifier) {
+        Column(
+            Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text("图鉴收集", color = AppTheme.Text2, fontSize = 13.sp)
+                Text(
+                    "$ownedCount / $totalRoster · $pct%",
+                    color = AppTheme.Gold,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                )
+            }
+            LinearProgressIndicator(
+                progress = { if (totalRoster == 0) 0f else ownedCount / totalRoster.toFloat() },
+                modifier = Modifier.fillMaxWidth().height(4.dp).clip(RoundedCornerShape(2.dp)),
+                color = AppTheme.Gold,
+                trackColor = AppTheme.BgMid,
+            )
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                for (r in 4 downTo 1) {
+                    val rarityTotal = roster.count { it.baseRarity == r }
+                    if (rarityTotal > 0) {
+                        val rarityOwned = roster.count { it.baseRarity == r && it.characterId in ownedIds }
+                        Text(
+                            "${AppTheme.rarityName(r)} $rarityOwned/$rarityTotal",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = AppTheme.rarityColor(r),
                         )
                     }
                 }

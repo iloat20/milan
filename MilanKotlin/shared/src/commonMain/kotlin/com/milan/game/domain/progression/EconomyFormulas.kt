@@ -90,6 +90,14 @@ object EconomyFormulas {
     /** 钻石兑换星尘：单次兑换获得的星尘数。 */
     fun diamondExchangeYield(): Int = 20000
 
+    // ── 碎片兑换（2026-08 三期：星魂碎片→星尘回收阀门；回收单价低于商店购入价，双向流通必有损耗防套利）──
+
+    /** 单次兑换消耗的星魂碎片批量。非法（≤0）由调用方视为无效档位拒绝。 */
+    fun fragmentExchangeBatch(): Int = 10
+
+    /** 单次兑换获得的星尘（10 片 → 800 ✦，即 80/片；商店购入价 100/片）。 */
+    fun fragmentExchangeYield(): Int = 800
+
     // ── 软保底爬坡（2026-08 优化引入：接近硬保底时概率逐抽上升，对标原神系口径）──
 
     /** 软保底起始抽数占硬保底的千分比：90 抽 → 73 抽起爬坡（≈74，与行业惯例一致）。 */
@@ -124,6 +132,23 @@ object EconomyFormulas {
 
     /** 通关第 [floor] 层的星尘奖励：500×floor+500（首层 1000，线性增长）。 */
     fun towerRewardSoft(floor: Int): Int = 500 * floor.coerceAtLeast(1) + 500
+
+    /**
+     * 爬塔里程碑钻石奖励（2026-08 引入，钻石唯一稳定产出口径）：
+     * 仅「首次攻克」5 的倍数层发放 floor×2 颗（第5层10、第10层20…），非里程碑层返回 0。
+     * 调用方必须以 newBest 推进为前提（复刷已通层不发）——本函数只算数值不管语义。
+     */
+    fun towerRewardHard(floor: Int): Int {
+        val f = floor.coerceAtLeast(1)
+        return if (f % 5 == 0) f * 2 else 0
+    }
+
+    /** 成就奖励的钻石档位参考：普通成就 30 / 进阶 60 / 里程碑 100（与 [towerRewardHard] 同一量级）。 */
+    fun achievementRewardHard(tier: Int): Int = when (tier.coerceIn(1, 3)) {
+        3 -> 100
+        2 -> 60
+        else -> 30
+    }
 
     /** 通关任意层的战票（BATTLE_TICKET 道具）奖励数量。胜利返 1 张（净消耗 0），亏损局才是真消耗。 */
     fun towerRewardTickets(): Int = 1

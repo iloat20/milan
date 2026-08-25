@@ -337,8 +337,10 @@ private fun n0(v: Int): String = String.format(Locale.US, "%,d", v)
 
 @Composable
 private fun ResourceBar() {
-    val soft = GameState.service.snapshot.value.softCurrency
-    val frags = GameState.service.getStarFragments()
+    // 快照订阅（范式对齐 AppChrome.ResourceBar）：不再依赖外层 revision「碰巧」触发本组件重组
+    val snap by GameState.snapshot.collectAsStateWithLifecycle()
+    val soft = snap.softCurrency
+    val frags = snap.starFragments
 
     Row(
         verticalAlignment = Alignment.CenterVertically,
