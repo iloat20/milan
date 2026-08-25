@@ -1,6 +1,7 @@
 package com.milan.game.domain.gacha
 
 import com.milan.game.data.Rarity
+import com.milan.game.domain.progression.EconomyFormulas
 import kotlin.random.Random
 import org.junit.Assert.assertEquals
 import org.junit.Test
@@ -36,13 +37,17 @@ class PityCounterTest {
 
     @Test
     fun pity_firesExactlyAtThreshold() {
-        val pity = PityCounter(threshold = 5)
-        // 前 4 抽都是自然 R（低于保底档），counter 递增 1..4
-        repeat(4) { i ->
+        // 2026-08 软保底引入后的新契约：
+        // - 硬保底 90 的软保底起点为 softPityStart(90)=73——起点【之前】权重不被调整，
+        //   固定种子下每抽必为自然 R，计数器照常递增；
+        // - 推进到第 threshold 抽时无条件交付保底档并归零（软保底只影响概率，不改硬保底语义）。
+        val pity = PityCounter(threshold = 90)
+        val start = EconomyFormulas.softPityStart(90)
+        repeat(start - 1) { i ->
             assertEquals(Rarity.R, pity.rollWithPity(Random(2), alwaysR, minRarityForPity = Rarity.SSR))
             assertEquals(i + 1, pity.counter)
         }
-        // 第 5 抽触发保底 → SSR 且 counter 归零
+        pity.counter = 89
         assertEquals(Rarity.SSR, pity.rollWithPity(Random(2), alwaysR, minRarityForPity = Rarity.SSR))
         assertEquals(0, pity.counter)
     }

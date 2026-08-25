@@ -89,6 +89,73 @@ object EconomyFormulas {
 
     /** 钻石兑换星尘：单次兑换获得的星尘数。 */
     fun diamondExchangeYield(): Int = 20000
+
+    // ── 软保底爬坡（2026-08 优化引入：接近硬保底时概率逐抽上升，对标原神系口径）──
+
+    /** 软保底起始抽数占硬保底的千分比：90 抽 → 73 抽起爬坡（≈74，与行业惯例一致）。 */
+    private const val SOFT_PITY_START_PERMILLE = 820
+
+    /**
+     * 软保底起始抽数：计数达到该值起逐抽上调保底档权重。
+     * hardPity≤0（未启用保底）返回 0 = 无软保底。
+     */
+    fun softPityStart(hardPity: Int): Int =
+        if (hardPity <= 0) 0 else hardPity * SOFT_PITY_START_PERMILLE / 1000
+
+    /** 软保底每抽给保底档权重叠加的增量（线性爬坡：第 start 抽 +60，第 start+1 抽 +120…）。 */
+    fun softPityRampStep(): Int = 60
+
+    // ── 无尽之塔（2026-08 优化引入）──
+
+    /**
+     * 第 [floor] 层敌人的属性缩放倍率：1 + (floor−1)×15%。
+     * 每层 +15% 全属性——保证「练度提升可多推几层」的正反馈曲线。
+     */
+    fun towerEnemyStatScale(floor: Int): Double = 1.0 + (floor.coerceAtLeast(1) - 1) * 0.15
+
+    /** 第 [floor] 层敌人数：1 + floor/10，封顶 5（与编队槽位同宽）。 */
+    fun towerEnemyCount(floor: Int): Int = (1 + floor.coerceAtLeast(1) / 10).coerceAtMost(5)
+
+    /**
+     * 爬塔敌人基础属性模板 [atk, def, hp, spd]（未经层数缩放；缩放走 [towerEnemyStatScale]）。
+     * 基准对齐 StatsCalculator 的角色兜底值量级（100/80/1000/12），略压攻防让首层可平推。
+     */
+    fun towerEnemyBaseStats(): List<Int> = listOf(100, 60, 1200, 12)
+
+    /** 通关第 [floor] 层的星尘奖励：500×floor+500（首层 1000，线性增长）。 */
+    fun towerRewardSoft(floor: Int): Int = 500 * floor.coerceAtLeast(1) + 500
+
+    /** 通关任意层的战票（BATTLE_TICKET 道具）奖励数量。胜利返 1 张（净消耗 0），亏损局才是真消耗。 */
+    fun towerRewardTickets(): Int = 1
+
+    /** 挑战任意层的战票门槛：入场扣 [towerTicketCost] 张，票不足拒绝进入。 */
+    fun towerTicketCost(): Int = 1
+
+    // ── 每日商店（2026-08 优化引入：日期种子确定性轮换，跨端同日同价）──
+
+    /** 每日特惠槽位数（免费补给 / 折扣碎片包 / 战票礼包）。 */
+    fun dailyOfferSlots(): Int = 3
+
+    /** 每日折扣包的折扣千分比（80‰ = 8 折）。 */
+    fun dailyDiscountPermille(): Int = 800
+
+    /**
+     * 每日折扣碎片包售价：原价 × [dailyDiscountPermille] / 1000。
+     * pack 非法时返回 0（调用方视为无效档位）。
+     */
+    fun dailyDiscountPackCost(pack: Int): Int = fragmentPackCost(pack) * dailyDiscountPermille() / 1000
+
+    /** 每日免费补给发放的星尘。 */
+    fun dailyFreeSupplySoft(): Int = 2000
+
+    /** 每日免费补给发放的战票数（零票玩家的启动来源，避免「没票永远打不了塔」死局）。 */
+    fun dailyTicketGrant(): Int = 3
+
+    /** 每日战票礼包张数。 */
+    fun dailyTicketBundleSize(): Int = 5
+
+    /** 每日战票礼包售价（星尘）。 */
+    fun dailyTicketBundleCost(): Int = 2500
 }
 
 /** [EconomyFormulas.planLevelUp] 的结果。 */

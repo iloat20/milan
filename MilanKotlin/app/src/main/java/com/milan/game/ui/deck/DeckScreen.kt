@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.itemsIndexed
@@ -25,8 +26,11 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -36,9 +40,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.milan.game.data.SaveData
 import com.milan.game.ui.GameState
 import com.milan.game.ui.OwnedCharacterView
 import com.milan.game.ui.components.CharacterCard
+import com.milan.game.ui.components.FormationBar
 import com.milan.game.ui.components.NeonButton
 import com.milan.game.ui.components.PageBackground
 import com.milan.game.ui.components.PortraitImage
@@ -63,6 +69,25 @@ fun DeckScreen(
     var previewId by rememberSaveable { mutableStateOf<String?>(null) }
     val preview = owned.firstOrNull { it.save.characterId == previewId }
 
+    // ── 编队状态（2026-08 编队系统）：快照驱动，setFormation 成功后经 refreshSnapshot 回流重组 ──
+    val snapshot by GameState.service.snapshot.collectAsStateWithLifecycle()
+    val scope = rememberCoroutineScope()
+    val members = remember(snapshot.revision) {
+        val formed = snapshot.formation.toSet()
+        owned.filter { it.save.characterId in formed }
+    }
+    val toggleFormation: (String) -> Unit = { id ->
+        val current = GameState.service.getFormation()
+        val next = when (id) {
+            in current -> current - id
+            else -> if (current.size < SaveData.MAX_FORMATION_SIZE) current + id else current
+        }
+        if (next != current) scope.launch { GameState.service.setFormation(next) }
+    }
+    val previewInFormation = preview != null && preview.save.characterId in snapshot.formation
+    val previewToggle: (() -> Unit)? =
+        preview?.save?.characterId?.let { id -> ({ toggleFormation(id) }) }
+
     PageBackground(modifier = modifier) {
         Column(Modifier.fillMaxSize()) {
             AppTopBar(title = "卡 组", onBack = { onNav(NavItem.Home) })
@@ -74,6 +99,20 @@ fun DeckScreen(
                 modifier = Modifier.padding(horizontal = 18.dp),
             )
             Spacer(Modifier.height(12.dp))
+
+            // 出战编队（2026-08 编队系统）：点预览层「加入/移出编队」维护；槽位条只读展示
+            if (owned.isNotEmpty()) {
+                FormationBar(
+                    members = members,
+                    maxSlots = SaveData.MAX_FORMATION_SIZE,
+                    onSlotClick = { onOpenDeckSlot ->
+                        // 空槽点击不动作；有角色槽点击进预览（与网格卡片同语义）
+                        if (onOpenDeckSlot != null) previewId = onOpenDeckSlot
+                    },
+                    modifier = Modifier.padding(horizontal = 18.dp),
+                )
+                Spacer(Modifier.height(12.dp))
+            }
 
             if (owned.isEmpty()) {
                 // 空态：无角色时引导前往寻访（对标 CharacterListScreen 空态语义）
@@ -143,10 +182,13 @@ fun DeckScreen(
         }
 
         // 立绘大图预览层（I12：抽出为 DeckPreviewOverlay，收窄主函数职责）
+        // P-编队：预览层提供「加入/移出编队」快捷入口（2026-08 编队系统）
         DeckPreviewOverlay(
             preview = preview,
             onClose = { previewId = null },
             onOpenCharacter = onOpenCharacter,
+            inFormation = previewInFormation,
+            onToggleFormation = previewToggle,
         )
     }
 }
@@ -161,6 +203,8 @@ private fun DeckPreviewOverlay(
     preview: OwnedCharacterView?,
     onClose: () -> Unit,
     onOpenCharacter: (String) -> Unit,
+    inFormation: Boolean = false,
+    onToggleFormation: (() -> Unit)? = null,
 ) {
     BackHandler(enabled = preview != null) { onClose() }
     if (preview != null) {
@@ -219,12 +263,38 @@ private fun DeckPreviewOverlay(
                             color = AppTheme.Text1,
                         )
                     }
-                    Text(
-                        text = AppTheme.rarityName(preview.rarity),
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = rc,
-                        modifier = Modifier.padding(vertical = 8.dp),
+                    // 稀有度 + 元素徽章行（与大卡卡面同语言）
+                    Row(
+                        modifier = Modifier.padding(top = 8.dp),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            text = AppTheme.rarityName(preview.rarity),
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = rc,
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        val ei = com.milan.game.ui.theme.ElementTheme.forElement(preview.element)
+                        Text(
+                            text = "${ei.glyph} ${preview.element}",
+                            fontSize = 10.sp,
+                            color = ei.glow,
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(6.dp))
+                                .background(Color.Black.copy(alpha = 0.35f))
+                                .border(1.dp, ei.glow.copy(alpha = 0.9f), RoundedCornerShape(6.dp))
+                                .padding(horizontal = 7.dp, vertical = 2.dp),
+                        )
+                    }
+                }
+                // 编队快捷入口（2026-08）：加入/移出编队；成功后经快照回流刷新按钮态
+                if (onToggleFormation != null) {
+                    NeonButton(
+                        text = if (inFormation) "移出编队" else "加入编队",
+                        onClick = onToggleFormation,
+                        modifier = Modifier.padding(top = 20.dp),
                     )
                 }
                 // 查看详情：先关预览层再进详情页（预览层与详情页不同屏，无 sharedBounds 配对）

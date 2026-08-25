@@ -113,4 +113,35 @@ class BattleSimulatorTest {
         val r2 = BattleSimulator(Random(1)).simulate(a, b, -5)
         assertEquals(1, r2.turns)
     }
+
+    // ── 元素克制（2026-08 优化）──
+
+    /** 高速攻方先手一击：base=100-0/2=100；守方 atk=0 只反打 1 点。 */
+    private fun oneTurnRun(defenderElement: String): BattleResult {
+        val attacker = UnitStats(atk = 100, def = 0, hp = 1000, spd = 100, characterId = "a", element = "Metal")
+        val defender = UnitStats(atk = 0, def = 0, hp = 300, spd = 1, characterId = "b", element = defenderElement)
+        return BattleSimulator(Random(7)).simulate(arrayOf(attacker), arrayOf(defender), 1)
+    }
+
+    @Test
+    fun elementCounter_dealsBonusDamage() {
+        // Metal 克 Wood：100×1.25=125 → 残血 175；我方被反打 1 点 → 999。
+        val r = oneTurnRun("Wood")
+        assertEquals(999, r.remainingHp)
+        assertEquals(175, r.opponentRemainingHp)
+    }
+
+    @Test
+    fun elementNeutral_noMultiplier() {
+        // 同元素无克制：100×1.0=100 → 残血 200（与克制分支差值恰为 25）。
+        val r = oneTurnRun("Metal")
+        assertEquals(999, r.remainingHp)
+        assertEquals(200, r.opponentRemainingHp)
+    }
+
+    @Test
+    fun elementEmpty_treatedAsNeutral() {
+        val r = oneTurnRun("")
+        assertEquals(200, r.opponentRemainingHp)
+    }
 }

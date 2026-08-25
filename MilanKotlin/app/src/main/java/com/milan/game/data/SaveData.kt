@@ -31,6 +31,17 @@ class SaveData(
     @SerialName("SoundEnabled") var soundEnabled: Boolean = true,
     @SerialName("VibrationEnabled") var vibrationEnabled: Boolean = true,
     @SerialName("PushEnabled") var pushEnabled: Boolean = true,
+    // ── 2026-08 优化新增（带默认值：旧档缺字段自动落默认，向后兼容）──
+    /** 出战编队（characterId 有序槽位，空槽为 null；上限 [Companion.MAX_FORMATION_SIZE]）。 */
+    @SerialName("Formation") var formation: List<String?> = emptyList(),
+    /** 无尽之塔历史最高层（0 = 尚未挑战）。 */
+    @SerialName("TowerBestFloor") var towerBestFloor: Int = 0,
+    /** 每日商店归属的 UTC 日序号字符串（与当日不一致 = 跨日，已购列表作废重置）。 */
+    @SerialName("DailyShopDate") var dailyShopDate: String = "",
+    /** 今日已购的每日特惠槽位下标（跨日后由购买流程整体重置）。 */
+    @SerialName("DailyShopBought") var dailyShopBought: List<Int?> = emptyList(),
+    /** 已领取奖励的成就 id（重复领取在服务层拒绝）。 */
+    @SerialName("ClaimedAchievements") var claimedAchievements: List<String?> = emptyList(),
 ) {
     /** 序列化为 JSON（prettyPrint 对齐 C# WriteIndented）。 */
     fun toJson(): String = json.encodeToString(serializer(), this)
@@ -96,11 +107,43 @@ class SaveData(
         if (softCurrency < 0) softCurrency = 0
         if (hardCurrency < 0) hardCurrency = 0
         if (userId.isEmpty()) userId = ""
+
+        // 编队（2026-08）：过滤空槽/空 id、去重保首条、钳制上限——脏档不得让战斗构建越界。
+        val seenFormation = HashSet<String>()
+        formation = formation.filterNotNull()
+            .filter { it.isNotEmpty() }
+            .filter { seenFormation.add(it) }
+            .take(MAX_FORMATION_SIZE)
+            .toList()
+
+        if (towerBestFloor < 0) towerBestFloor = 0
+
+        // 每日商店（2026-08）：槽位下标去重、钳非负；日期串原样保留（空 = 从未购过）。
+        dailyShopBought = dailyShopBought.filterNotNull()
+            .filter { it >= 0 }
+            .distinct()
+            .toList()
+
+        // 成就（2026-08）：id 去重保首条、滤空。
+        val seenAchievements = HashSet<String>()
+        claimedAchievements = claimedAchievements.filterNotNull()
+            .filter { it.isNotEmpty() }
+            .filter { seenAchievements.add(it) }
+            .toList()
     }
+
+    /** 编队 characterId 列表（已滤空槽；顺序即槽位顺序）。 */
+    fun getFormationIds(): List<String> = formation.filterNotNull()
+
+    /** 已领取的成就 id 列表（已滤空；命名避开 claimedAchievements 属性的 JVM getter 签名）。 */
+    fun claimedAchievementIds(): List<String> = claimedAchievements.filterNotNull()
 
     companion object {
         /** 战绩列表上限（recordBattle 与 sanitize 共用同一契约，禁止就地写 50）。 */
         const val MAX_BATTLE_RECORDS = 50
+
+        /** 出战编队槽位上限（setFormation 与 sanitize 共用同一契约，禁止就地写 5）。 */
+        const val MAX_FORMATION_SIZE = 5
         /**
          * ignoreUnknownKeys：旧版/未来字段不致命（System.Text.Json 默认忽略未知属性，对齐）。
          * coerceInputValues：JSON 显式 null 落到非空字段时用默认值而非抛异常（C# null 覆盖 + Sanitize 兜底）。

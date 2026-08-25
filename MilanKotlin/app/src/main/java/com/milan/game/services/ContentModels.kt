@@ -135,6 +135,12 @@ data class GameSnapshot(
     // ownedSaves：characterId → 角色存档拷贝（CharacterSaveState 为可变字段，拷贝防快照持有陈旧引用）。
     val pityByPool: Map<String, Int> = emptyMap(),
     val ownedSaves: Map<String, CharacterSaveState> = emptyMap(),
+    // 2026-08 编队系统：出战编队 id 列表随每次写操作刷新（DeckScreen/TowerScreen 共用）。
+    val formation: List<String> = emptyList(),
+    // 2026-08 无尽之塔：历史最高层（TowerScreen 直接从快照读）。
+    val towerBestFloor: Int = 0,
+    // 2026-08 二期：战票余额（道具系统聚合值；商店礼包/爬塔门槛展示用）。
+    val battleTickets: Int = 0,
 )
 
 /**

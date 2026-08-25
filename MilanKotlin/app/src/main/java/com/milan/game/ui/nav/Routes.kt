@@ -46,6 +46,14 @@ data class CharacterDetailRoute(val characterId: String)
 @Serializable
 data class ProgressionRoute(val characterId: String)
 
+/** 无尽之塔（2026-08 终局内容）：子页，盖住底部 tab，返回逐层退出。 */
+@Serializable
+data object TowerRoute
+
+/** 成就（2026-08 二期）：子页，盖住底部 tab，返回回主页。 */
+@Serializable
+data object AchievementRoute
+
 /** [NavItem] → 对应 tab 路由（底部导航统一映射入口；命名 toNavRoute 避免与 androidx.navigation.toRoute 扩展同名）。 */
 fun NavItem.toNavRoute(): TabRoute = when (this) {
     NavItem.Home -> HomeRoute

@@ -10,6 +10,11 @@ data class UnitStats(
     val hp: Int,
     val spd: Int,
     val characterId: String = "",
+    /**
+     * 元素键名（Metal/Wood/Water/Flame/Earth/Light/Shadow/Thunder，沿用旧数据标识）。
+     * 默认空串 = 无元素（旧调用方/桌面模拟器不传也不受影响）；空串不参与克制与共鸣。
+     */
+    val element: String = "",
 )
 
 /** 战斗结算结果（C# Milan.Domain.Battle.BattleResult 翻译）。 */

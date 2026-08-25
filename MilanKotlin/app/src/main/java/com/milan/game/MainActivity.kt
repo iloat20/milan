@@ -39,6 +39,7 @@ import androidx.navigation.toRoute
 import com.milan.game.infrastructure.CrashReporter
 import com.milan.game.infrastructure.MilanAudio
 import com.milan.game.ui.LocalSharedTransitionScope
+import com.milan.game.ui.achievement.AchievementScreen
 import com.milan.game.ui.characters.CharacterDetailScreen
 import com.milan.game.ui.characters.CharacterListScreen
 import com.milan.game.ui.collection.CollectionScreen
@@ -49,6 +50,7 @@ import com.milan.game.ui.nav.AppTopBar
 import com.milan.game.ui.nav.CharacterDetailRoute
 import com.milan.game.ui.nav.CharacterListRoute
 import com.milan.game.ui.nav.CollectionRoute
+import com.milan.game.ui.nav.AchievementRoute
 import com.milan.game.ui.nav.DeckRoute
 import com.milan.game.ui.nav.GachaRoute
 import com.milan.game.ui.nav.HomeRoute
@@ -56,10 +58,12 @@ import com.milan.game.ui.nav.NavItem
 import com.milan.game.ui.nav.ProgressionRoute
 import com.milan.game.ui.nav.SettingsRoute
 import com.milan.game.ui.nav.ShopRoute
+import com.milan.game.ui.nav.TowerRoute
 import com.milan.game.ui.nav.toNavRoute
 import com.milan.game.ui.progression.ProgressionScreen
 import com.milan.game.ui.shop.ShopScreen
 import com.milan.game.ui.settings.SettingsScreen
+import com.milan.game.ui.tower.TowerScreen
 import com.milan.game.ui.feedback.Feedback
 import com.milan.game.ui.feedback.LocalFeedback
 import com.milan.game.ui.theme.AppTheme
@@ -190,6 +194,8 @@ private fun MilanNavHost(openGachaOnStart: Boolean = false) {
                         onOpenGacha = { navigateToTab(NavItem.Gacha) },
                         onOpenCollection = { navController.navigate(CollectionRoute) },
                         onOpenCharacter = ::openCharacter,
+                        onOpenTower = { navController.navigate(TowerRoute) },
+                        onOpenAchievements = { navController.navigate(AchievementRoute) },
                     )
                 }
                 composable<GachaRoute> {
@@ -248,6 +254,19 @@ private fun MilanNavHost(openGachaOnStart: Boolean = false) {
                         characterId = route.characterId,
                         onBack = { navController.popBackStack() },
                         onSwitchCharacter = ::switchCharacter,
+                    )
+                }
+                // 无尽之塔（2026-08 终局内容）：子页盖 tab，返回回主页
+                composable<TowerRoute> {
+                    TowerScreen(
+                        onBack = { navController.popBackStack() },
+                        onOpenDeck = { navigateToTab(NavItem.Deck) },
+                    )
+                }
+                // 成就（2026-08 二期）：子页盖 tab，返回回主页
+                composable<AchievementRoute> {
+                    AchievementScreen(
+                        onBack = { navController.popBackStack() },
                     )
                 }
             }

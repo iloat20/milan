@@ -1,6 +1,7 @@
 package com.milan.game.domain.gacha
 
 import com.milan.game.data.Rarity
+import com.milan.game.domain.progression.EconomyFormulas
 import kotlin.random.Random
 
 /**
@@ -37,8 +38,27 @@ class PityCounter(val threshold: Int) {
             counter = 0
             return minRarityForPity
         }
-        // 自然出货不在此处判定重置：交付档位可能被降档，见类 KDoc（P1-3）。
-        return GachaEngine(rng).rollRarity(rarityWeights)
+        // 软保底（2026-08 优化）：进入软保底区间后逐抽上调保底档权重，概率平滑爬坡
+        // （对标原神系 soft pity 的行业标准体验）。只调整本抽使用的权重副本、不改池配置，
+        // 且不额外消耗随机数——种子确定性保持不变。
+        val weights = softAdjustedWeights(rarityWeights, minRarityForPity)
+        return GachaEngine(rng).rollRarity(weights)
+    }
+
+    /**
+     * 按当前计数生成软保底调整后的权重副本（纯函数、不改入参；便于单测锁定边界）：
+     * counter ≥ [EconomyFormulas.softPityStart] 时，保底档下标权重 +=
+     * (counter − start + 1) × [EconomyFormulas.softPityRampStep]；
+     * 未达起点 / 未启用保底 / 权重数组越界时返回原数组引用（只读安全，不拷贝）。
+     */
+    fun softAdjustedWeights(rarityWeights: IntArray, minRarityForPity: Rarity): IntArray {
+        val start = EconomyFormulas.softPityStart(threshold)
+        if (start <= 0 || counter < start) return rarityWeights
+        val idx = minRarityForPity.value - 1
+        if (idx < 0 || idx >= rarityWeights.size) return rarityWeights
+        return rarityWeights.copyOf().also {
+            it[idx] += (counter - start + 1) * EconomyFormulas.softPityRampStep()
+        }
     }
 
     /**

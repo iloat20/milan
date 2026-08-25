@@ -81,6 +81,8 @@ fun HomeScreen(
     onOpenGacha: () -> Unit,
     onOpenCollection: () -> Unit,
     onOpenCharacter: (String) -> Unit,
+    onOpenTower: () -> Unit = {},
+    onOpenAchievements: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     Box(
@@ -128,7 +130,7 @@ fun HomeScreen(
                 ) {
                     item { Hero(heroHeight) }
                     item { Spacer(Modifier.height(10.dp)) }
-                    item { HeroButtons(onOpenGacha, onOpenCollection) }
+                    item { HeroButtons(onOpenGacha, onOpenCollection, onOpenTower, onOpenAchievements) }
                     item { Spacer(Modifier.height(14.dp)) }
                     item { SectionTitle("诸神名录", "UNIFIED AVATARS") }
                     item { Spacer(Modifier.height(8.dp)) }
@@ -315,16 +317,32 @@ private fun HeroPortrait(def: CharacterDataEntry, rarityColor: Color, modifier: 
     }
 }
 
-/** 主视觉下方动作钮：金色召唤 + 霓虹图鉴。 */
+/** 主视觉下方动作钮：金色召唤 + 霓虹图鉴；次行无尽之塔 / 成就双入口（2026-08 二期）。 */
 @Composable
-private fun HeroButtons(onOpenGacha: () -> Unit, onOpenCollection: () -> Unit) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        GoldButton("✦ 前往召唤", Modifier.weight(1f), onOpenGacha)
-        Spacer(Modifier.width(12.dp))
-        NeonButton("神谱图鉴", Modifier.weight(1f), onOpenCollection)
+private fun HeroButtons(
+    onOpenGacha: () -> Unit,
+    onOpenCollection: () -> Unit,
+    onOpenTower: () -> Unit,
+    onOpenAchievements: () -> Unit,
+) {
+    Column {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            GoldButton("✦ 前往召唤", Modifier.weight(1f), onOpenGacha)
+            Spacer(Modifier.width(12.dp))
+            NeonButton("神谱图鉴", Modifier.weight(1f), onOpenCollection)
+        }
+        Spacer(Modifier.height(10.dp))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            NeonButton("♾ 无尽之塔", Modifier.weight(1f), onOpenTower)
+            Spacer(Modifier.width(12.dp))
+            NeonButton("✦ 成 就", Modifier.weight(1f), onOpenAchievements)
+        }
     }
 }
 

@@ -38,8 +38,11 @@ class BattleSimulator(private val rng: Random) {
                 val enemies = if (actor.a) b else a
                 val target = enemies.filter { it.hp > 0 }.minByOrNull { it.hp }
                 if (target == null || target.hp <= 0) continue
-                // 伤害公式唯一事实来源：与手动出牌走同一入口。
-                target.hp -= strikeDamage(actor.stats, target.stats)
+                // 伤害公式唯一事实来源：与手动出牌走同一入口；
+                // 元素克制在结算点乘算（ElementChart 单一事实来源），保底 1 点防 0 伤。
+                val base = strikeDamage(actor.stats, target.stats)
+                val mul = ElementChart.damageMultiplier(actor.stats.element, target.stats.element)
+                target.hp -= (base * mul).toInt().coerceAtLeast(1)
             }
 
             // 空队伍无法"全部死亡"，必须要求队伍非空，否则空 teamB 会被误判为胜利。
@@ -58,8 +61,9 @@ class BattleSimulator(private val rng: Random) {
     )
 
     companion object {
-        /** 单体攻击结算伤害（simulate 与手动出牌共用，单一事实来源）。
-         * 攻方属性由 GameState.ComputeStats 生成，已含等级/突破/天赋/升星的加成。 */
+        /** 单体攻击结算的基础伤害（simulate 与手动出牌共用，单一事实来源）。
+         * 攻方属性由 StatsCalculator 生成，已含等级/突破/天赋/升星的加成；
+         * 元素克制倍率不在本函数内——由 [simulate] 结算点查 [ElementChart] 乘算。 */
         fun strikeDamage(attacker: UnitStats, defender: UnitStats): Int =
             (attacker.atk - defender.def / 2).coerceAtLeast(1)
     }

@@ -1,5 +1,6 @@
 package com.milan.game.ui.shop
 
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -8,7 +9,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -25,6 +28,8 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.milan.game.domain.progression.EconomyFormulas
+import com.milan.game.services.DailyOffer
+import com.milan.game.services.DailyOfferKind
 import com.milan.game.services.WriteOutcome
 import com.milan.game.ui.GameState
 import com.milan.game.ui.components.GlassPanel
@@ -61,9 +66,32 @@ fun ShopScreen(
     val soft = snap.softCurrency
     val hard = snap.hardCurrency
     val frags = snap.starFragments
+    val tickets = snap.battleTickets
+
+    // 每日特惠（2026-08 二期）：offers 由日期种子确定性生成；bought 随快照 revision 刷新
+    val dailyOffers = remember(snap.revision) { service.dailyOffers() }
+    val dailyBought = remember(snap.revision) { service.dailyBoughtToday() }
 
     // 2026-08 主线程 IO 异步化：购买为 suspend（落盘在 IO 线程），用页面协程调用
     val scope = rememberCoroutineScope()
+
+    /** 每日特惠购买通用流程（busy 防重入 + Snackbar 反馈）。 */
+    fun buyDaily(index: Int, successMsg: String) {
+        scope.launch {
+            if (busy) return@launch
+            busy = true
+            try {
+                val msg = when (service.buyDailyOffer(index)) {
+                    WriteOutcome.Success -> successMsg
+                    WriteOutcome.Rejected -> "星尘不足或今日已购"
+                    WriteOutcome.SaveFailed -> "保存失败，请重试"
+                }
+                feedback.show(msg)
+            } finally {
+                busy = false
+            }
+        }
+    }
 
     PageBackground {
         Column(Modifier.fillMaxSize()) {
@@ -75,7 +103,30 @@ fun ShopScreen(
                     .padding(horizontal = 18.dp, vertical = 12.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                ResourcePanel(soft = soft, hard = hard, frags = frags)
+                ResourcePanel(soft = soft, hard = hard, frags = frags, tickets = tickets)
+
+                SectionTitle("每 日 特 惠")
+                for (offer in dailyOffers) {
+                    val bought = offer.index in dailyBought
+                    DailyOfferCard(
+                        offer = offer,
+                        bought = bought,
+                        affordable = offer.costSoft == 0 || soft >= offer.costSoft,
+                        enabled = !busy,
+                        onBuy = {
+                            buyDaily(
+                                index = offer.index,
+                                successMsg = when (offer.kind) {
+                                    DailyOfferKind.FREE_SUPPLY -> "每日补给已领取"
+                                    DailyOfferKind.DISCOUNT_PACK ->
+                                        "已获得 ${EconomyFormulas.fragmentPackSize(offer.pack)} 片星魂碎片"
+                                    DailyOfferKind.TICKET_BUNDLE ->
+                                        "已获得 ${EconomyFormulas.dailyTicketBundleSize()} 张战票"
+                                },
+                            )
+                        },
+                    )
+                }
 
                 SectionTitle("碎 片 补 给")
                 for (pack in 1..2) {
@@ -138,14 +189,15 @@ fun ShopScreen(
     }
 }
 
-/** 资源一览：星尘 / 钻石 / 星魂碎片三行（符号约定与养成页一致：✦ 星尘、❖ 碎片、◆ 钻石）。 */
+/** 资源一览：星尘 / 钻石 / 星魂碎片 / 战票四行（符号约定：✦ 星尘、❖ 碎片、◆ 钻石、⚔ 战票）。 */
 @Composable
-private fun ResourcePanel(soft: Int, hard: Int, frags: Int) {
+private fun ResourcePanel(soft: Int, hard: Int, frags: Int, tickets: Int) {
     GlassPanel {
         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             ResourceRow("星尘", "✦", formatCount(soft), AppTheme.Gold)
             ResourceRow("钻石", "◆", formatCount(hard), AppTheme.GoldHi)
             ResourceRow("星魂碎片", "❖", formatCount(frags), AppTheme.Frost)
+            ResourceRow("战票", "⚔", formatCount(tickets), AppTheme.Text1)
         }
     }
 }
@@ -159,6 +211,61 @@ private fun ResourceRow(label: String, symbol: String, value: String, color: Col
     ) {
         Text(label, color = AppTheme.Text2, fontSize = 13.sp)
         Text("$symbol $value", color = color, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+    }
+}
+
+/** 每日特惠卡片（2026-08 二期）：免费补给金边高亮；已购态禁用按钮并打标。 */
+@Composable
+private fun DailyOfferCard(
+    offer: DailyOffer,
+    bought: Boolean,
+    affordable: Boolean,
+    enabled: Boolean = true,
+    onBuy: () -> Unit,
+) {
+    GlassPanel(highlighted = offer.kind == DailyOfferKind.FREE_SUPPLY) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(14.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(Modifier.weight(1f)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(offer.title, color = AppTheme.Text1, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+                    Spacer(Modifier.width(8.dp))
+                    if (bought) {
+                        Text(
+                            text = if (offer.kind == DailyOfferKind.FREE_SUPPLY) "已领取" else "已购",
+                            color = AppTheme.Text3,
+                            fontSize = 10.sp,
+                            modifier = Modifier
+                                .border(1.dp, AppTheme.Stroke, RoundedCornerShape(6.dp))
+                                .padding(horizontal = 6.dp, vertical = 2.dp),
+                        )
+                    }
+                }
+                Spacer(Modifier.height(4.dp))
+                Text(offer.detail, color = AppTheme.Text2, fontSize = 12.sp)
+            }
+            Column(horizontalAlignment = Alignment.End) {
+                Text(
+                    text = if (offer.costSoft == 0) "免费" else "${formatCount(offer.costSoft)} ✦",
+                    color = AppTheme.Gold,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                )
+                Spacer(Modifier.height(6.dp))
+                GoldButton(
+                    text = when {
+                        bought -> if (offer.kind == DailyOfferKind.FREE_SUPPLY) "已 领" else "已 购"
+                        offer.kind == DailyOfferKind.FREE_SUPPLY -> "领 取"
+                        else -> "购 买"
+                    },
+                    onClick = onBuy,
+                    enabled = !bought && affordable && enabled,
+                )
+            }
+        }
     }
 }
 

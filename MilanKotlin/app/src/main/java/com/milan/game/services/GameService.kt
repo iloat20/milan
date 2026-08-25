@@ -7,10 +7,14 @@ import com.milan.game.data.Rarity
 import com.milan.game.data.SaveData
 import com.milan.game.data.SaveManager
 import com.milan.game.data.SaveProvider
+import com.milan.game.domain.battle.BattleSimulator
+import com.milan.game.domain.battle.TeamResonance
+import com.milan.game.domain.battle.UnitStats
 import com.milan.game.domain.gacha.GachaEngine
 import com.milan.game.domain.gacha.PityCounter
 import com.milan.game.domain.progression.EconomyFormulas
 import com.milan.game.domain.progression.ProgressionEngine
+import com.milan.game.domain.progression.StatsCalculator
 import com.milan.game.domain.progression.TalentEngine
 import com.milan.game.infrastructure.eventbus.CurrencyChanged
 import com.milan.game.infrastructure.eventbus.EventBus
@@ -24,6 +28,54 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.decodeFromString
+
+/**
+ * 爬塔挑战结果（2026-08 无尽之塔；顶层类型，对齐 [WriteOutcome] / [PullOutcome] 风格）。
+ */
+sealed interface TowerOutcome {
+    /**
+     * 战斗已完成。[victory] 时 [rewardSoft] 为本次发放的星尘奖励；
+     * [bestFloorAfter] 为结算后的历史最高层（刷新纪录或保持不变）。
+     */
+    data class Completed(
+        val victory: Boolean,
+        val turns: Int,
+        val rewardSoft: Int,
+        val bestFloorAfter: Int,
+    ) : TowerOutcome
+
+    /** 拒绝：floor 非法 / 编队为空 / 队伍构建失败。 */
+    data object Rejected : TowerOutcome
+
+    /** 落盘失败（奖励与纪录已整体回滚）。 */
+    data object SaveFailed : TowerOutcome
+}
+
+/** 每日特惠类型（2026-08 每日商店）。 */
+enum class DailyOfferKind { FREE_SUPPLY, DISCOUNT_PACK, TICKET_BUNDLE }
+
+/**
+ * 单个每日特惠槽位（展示数据；购买效果由 [DailyOffer.kind] 决定，价格已含折扣计算，
+ * 数值全部出自 EconomyFormulas——同一天跨端/重开结果一致）。
+ */
+data class DailyOffer(
+    /** 槽位下标（每槽每日限购一次）。 */
+    val index: Int,
+    val kind: DailyOfferKind,
+    /** 折扣包档位（仅 DISCOUNT_PACK 有意义，其余为 0）。 */
+    val pack: Int,
+    val title: String,
+    val detail: String,
+    /** 星尘售价（免费补给为 0）。 */
+    val costSoft: Int,
+)
+
+/** 成就条目的状态包（定义 + 实时解锁态 + 存档领取态）。 */
+data class AchievementStatus(
+    val def: com.milan.game.services.AchievementDef,
+    val unlocked: Boolean,
+    val claimed: Boolean,
+)
 
 /**
  * 游戏服务编排层（C# GameService.cs 翻译）：抽卡事务、货币/养成写操作、战绩、内容加载。
@@ -46,6 +98,8 @@ class GameService(
     contentJson: String? = null,
     private val onTrace: (String) -> Unit = {},
     private val rng: Random = Random.Default,
+    /** UTC 日序号提供器（每日商店按天重置；注入便于测试固定「今天」，默认系统时钟）。 */
+    private val today: () -> Long = { System.currentTimeMillis() / 86_400_000L },
 ) {
     private val saveManager = SaveManager(saveProvider, onTrace)
     private val gacha = GachaEngine(rng)
@@ -83,6 +137,9 @@ class GameService(
             //  共享可变引用，避免 resetSave 后快照持有陈旧对象）。
             pityByPool = pools.associate { it.poolId to saveData.getGachaCounter(it.poolId) },
             ownedSaves = saveData.ownedCharacters.filterNotNull().associate { it.characterId to it.toSnapshotCopy() },
+            formation = saveData.getFormationIds(),
+            towerBestFloor = saveData.towerBestFloor,
+            battleTickets = itemCount(BattleTicketItemId),
         )
     }
 
@@ -500,14 +557,349 @@ class GameService(
         val original = saveData.battleRecords
         transaction(
             tag = "battle",
-            mutate = {
-                saveData.battleRecords = saveData.battleRecords + rec
-                if (saveData.battleRecords.size > SaveData.MAX_BATTLE_RECORDS)
-                    saveData.battleRecords =
-                        saveData.battleRecords.drop(saveData.battleRecords.size - SaveData.MAX_BATTLE_RECORDS)
-            },
+            mutate = { appendBattleRecordCapped(rec) },
             rollback = { saveData.battleRecords = original }, // 整体回滚，避免内存与存档不一致
             onCommit = { /* 战绩非经济，无事件广播 */ },
+        )
+    }
+
+    /** 战绩追加（须已在 [writeMutex] 临界区内调用；上限契约同上，禁止就地写 50）。 */
+    private fun appendBattleRecordCapped(rec: BattleRecord) {
+        saveData.battleRecords = saveData.battleRecords + rec
+        if (saveData.battleRecords.size > SaveData.MAX_BATTLE_RECORDS)
+            saveData.battleRecords =
+                saveData.battleRecords.drop(saveData.battleRecords.size - SaveData.MAX_BATTLE_RECORDS)
+    }
+
+    // ─────────────────────────────────────────────────────────── 出战编队（2026-08 编队系统）
+
+    /** 当前编队 characterId 列表（空槽已过滤；顺序即槽位顺序）。 */
+    fun getFormation(): List<String> = saveData.getFormationIds()
+
+    /**
+     * 设置出战编队（2026-08 编队系统）。
+     * 校验（任一不过返回 [WriteOutcome.Rejected]，不做任何变更）：去重后数量 ≤
+     * [SaveData.MAX_FORMATION_SIZE]、全部角色已拥有；允许空列表 = 清空编队。
+     * 事务范式：落盘失败回滚本次改动、不广播事件。
+     */
+    suspend fun setFormation(characterIds: List<String>): WriteOutcome = writeMutex.withLock {
+        val ids = characterIds.distinct()
+        if (ids.size > SaveData.MAX_FORMATION_SIZE) return@withLock WriteOutcome.Rejected
+        val ownedIds = saveData.ownedCharacters.filterNotNull().mapTo(HashSet()) { it.characterId }
+        if (ids.any { it !in ownedIds }) return@withLock WriteOutcome.Rejected
+
+        val original = saveData.formation
+        transactionLocked(
+            tag = "formation",
+            mutate = { saveData.formation = ids },
+            rollback = { saveData.formation = original },
+            onCommit = { refreshSnapshot() },
+        )
+    }
+
+    // ─────────────────────────────────────────────────────────── 无尽之塔（2026-08 终局内容）
+
+    /**
+     * 挑战无尽之塔第 [floor] 层：
+     * - 我方 = 当前编队（属性经 [StatsCalculator] 推导 + [TeamResonance] 共鸣加成）；
+     * - 敌方 = 程序化生成（基础模板 × 层数缩放，seed 由 floor 派生 → 同层可复现、跨端一致）；
+     * - 战斗为纯内存模拟（不触存档），胜利后的星尘奖励 / 最高层推进 / 战绩追加在同一事务内落盘，
+     *   失败整体回滚且不广播。
+     *
+     * 门票门槛（2026-08 二期）：入场扣 [EconomyFormulas.towerTicketCost] 张战票，
+     * 胜利返 [EconomyFormulas.towerRewardTickets] 张（净消耗 0，亏损局才是真消耗）——
+     * 票源由每日商店免费补给兜底（[EconomyFormulas.dailyTicketGrant]），零票玩家不会死局。
+     * 战票不足时在模拟前直接拒绝（对齐 pull 的「扣款前拦截」范式）。
+     */
+    suspend fun runTowerFloor(floor: Int): TowerOutcome = writeMutex.withLock {
+        if (floor < 1) return@withLock TowerOutcome.Rejected
+        val ticketCost = EconomyFormulas.towerTicketCost()
+        val ticketsExisted = saveData.items.any { it?.itemId == BattleTicketItemId }
+        val origTickets = itemCount(BattleTicketItemId)
+        if (origTickets < ticketCost) return@withLock TowerOutcome.Rejected
+        val teamIds = saveData.getFormationIds()
+        if (teamIds.isEmpty()) return@withLock TowerOutcome.Rejected
+        val myUnits = teamIds.mapNotNull { unitStatsFor(it) }
+        if (myUnits.isEmpty()) return@withLock TowerOutcome.Rejected
+        val team = TeamResonance.apply(myUnits).toTypedArray()
+        val enemyTeam = buildTowerEnemies(floor)
+
+        // 战斗 rng 从主 rng 派生：同 seed 注入下整个流程仍确定可复现。
+        val result = BattleSimulator(Random(rng.nextLong())).simulate(team, enemyTeam, 50)
+
+        val reward = if (result.victory) EconomyFormulas.towerRewardSoft(floor) else 0
+        val newBest = if (result.victory && floor > saveData.towerBestFloor) floor else null
+        // 战票净变动：入场 -cost；胜利 +rewardTickets（通常恰好抵消，净 0）
+        val ticketDelta = -ticketCost +
+            (if (result.victory) EconomyFormulas.towerRewardTickets() else 0)
+
+        val originalSoft = saveData.softCurrency
+        val originalBest = saveData.towerBestFloor
+        val originalRecords = saveData.battleRecords
+
+        val outcome = transactionLocked(
+            tag = "tower",
+            mutate = {
+                if (newBest != null) saveData.towerBestFloor = newBest
+                if (reward > 0) saveData.softCurrency += reward
+                addItemDelta(BattleTicketItemId, ticketDelta)
+                appendBattleRecordCapped(
+                    BattleRecord(
+                        enemyName = "无尽之塔·第${floor}层",
+                        enemyElement = "",
+                        victory = result.victory,
+                        turns = result.turns,
+                        remainingHp = result.remainingHp,
+                        teamPower = team.sumOf { it.atk },
+                    ),
+                )
+            },
+            rollback = {
+                saveData.softCurrency = originalSoft
+                saveData.towerBestFloor = originalBest
+                saveData.battleRecords = originalRecords
+                restoreItemCount(BattleTicketItemId, ticketsExisted, origTickets)
+            },
+            onCommit = {
+                if (reward > 0 || ticketDelta != 0) publishCurrencyChanged()
+            },
+        )
+
+        when (outcome) {
+            WriteOutcome.Success -> TowerOutcome.Completed(
+                victory = result.victory,
+                turns = result.turns,
+                rewardSoft = reward,
+                bestFloorAfter = newBest ?: saveData.towerBestFloor,
+            )
+            WriteOutcome.Rejected -> TowerOutcome.Rejected // 防御：前置校验已全部拦截
+            WriteOutcome.SaveFailed -> TowerOutcome.SaveFailed
+        }
+    }
+
+    /**
+     * 由存档 + 内容定义构建战斗单位属性（[StatsCalculator] 单一事实来源；
+     * 与 UI 侧 GameState.computeStats 同口径——App/爬塔/桌面模拟器共用一份公式）。
+     * 角色未拥有或内容定义缺失返回 null（调用方跳过该角色，绝不让脏档炸战斗路径）。
+     */
+    private fun unitStatsFor(characterId: String): UnitStats? {
+        val save = saveData.ownedCharacters.firstOrNull { it?.characterId == characterId } ?: return null
+        val def = charactersById[characterId] ?: return null
+        val branchIds = def.talentTreeId.let { talentTreesById[it] }
+            ?.nodes?.filter { node -> save.talentPoints.contains(node.nodeId) }
+            ?.map { it.branchId }.orEmpty()
+        return StatsCalculator.compute(
+            baseStats = def.baseStats,
+            level = save.level,
+            stage = save.stage,
+            stars = save.stars,
+            branchIds = branchIds,
+            characterId = characterId,
+            progression = progression,
+            talent = talent,
+        ).copy(element = def.element)
+    }
+
+    /**
+     * 程序化生成第 [floor] 层敌队：数量/缩放/基础模板全部走 EconomyFormulas（单一事实来源），
+     * 元素按 floor 派生的 seed 随机分布——同层完全可复现，克制关系成为爬塔的策略维度。
+     */
+    private fun buildTowerEnemies(floor: Int): Array<UnitStats> {
+        val towerRng = Random(floor * 1_000_003L + 7L)
+        val scale = EconomyFormulas.towerEnemyStatScale(floor)
+        val base = EconomyFormulas.towerEnemyBaseStats()
+        val elements = listOf("Metal", "Wood", "Water", "Flame", "Earth", "Light", "Shadow", "Thunder")
+        return Array(EconomyFormulas.towerEnemyCount(floor)) { i ->
+            UnitStats(
+                atk = (base[0] * scale).toInt(),
+                def = (base[1] * scale).toInt(),
+                hp = (base[2] * scale).toInt(),
+                spd = base[3],
+                characterId = "tower_f${floor}_e$i",
+                element = elements[towerRng.nextInt(elements.size)],
+            )
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────── 道具辅助（写锁临界区内使用）
+
+    /** 道具数量（不存在视为 0）。须在 [writeMutex] 临界区内调用。 */
+    private fun itemCount(itemId: String): Int =
+        saveData.items.firstOrNull { it?.itemId == itemId }?.count ?: 0
+
+    /** 道具数量增减（delta=0 无操作；条目缺失时以 delta 直接建档）。须在临界区内调用。 */
+    private fun addItemDelta(itemId: String, delta: Int) {
+        if (delta == 0) return
+        val item = saveData.items.firstOrNull { it?.itemId == itemId }
+        if (item != null) item.count += delta
+        else saveData.items = saveData.items + ItemSaveState(itemId = itemId, count = delta)
+    }
+
+    /**
+     * 回滚道具到事务前快照：此前不存在 → 整条移除（防幽灵零数量条目，对齐 pull 的
+     * fragItemExisted 语义）；此前已存在 → 恢复原数量。须在临界区内调用。
+     */
+    private fun restoreItemCount(itemId: String, existedBefore: Boolean, originalCount: Int) {
+        if (existedBefore) {
+            saveData.items.firstOrNull { it?.itemId == itemId }?.count = originalCount
+        } else {
+            saveData.items = saveData.items.filterNot { it?.itemId == itemId }
+        }
+    }
+
+    /** 当前战票数（UI 展示/门槛预判；权威判定在 runTowerFloor 临界区内复核）。 */
+    fun battleTickets(): Int = itemCount(BattleTicketItemId)
+
+    // ─────────────────────────────────────────────────────────── 每日商店（2026-08 二期）
+
+    /** 当日 UTC 日序号字符串（存档内跨日比对键）。 */
+    private fun dayKey(): String = today().toString()
+
+    /**
+     * 今日特惠槽位（确定性轮换：日期种子决定折扣包档位——同一天重开/跨端结果一致）。
+     * 价格一律出自 [EconomyFormulas]（单一事实来源），禁止就地写数字。
+     */
+    fun dailyOffers(): List<DailyOffer> {
+        val discountPack = if (today() % 2 == 0L) 2 else 1
+        return listOf(
+            DailyOffer(
+                index = 0,
+                kind = DailyOfferKind.FREE_SUPPLY,
+                pack = 0,
+                title = "每日补给",
+                detail = "星尘 ${EconomyFormulas.dailyFreeSupplySoft()} ＋ 战票 ×${EconomyFormulas.dailyTicketGrant()}",
+                costSoft = 0,
+            ),
+            DailyOffer(
+                index = 1,
+                kind = DailyOfferKind.DISCOUNT_PACK,
+                pack = discountPack,
+                title = "折扣碎片包 · ${if (discountPack == 2) "大" else "小"}",
+                detail = "${EconomyFormulas.fragmentPackSize(discountPack)} 片星魂碎片 · 8 折",
+                costSoft = EconomyFormulas.dailyDiscountPackCost(discountPack),
+            ),
+            DailyOffer(
+                index = 2,
+                kind = DailyOfferKind.TICKET_BUNDLE,
+                pack = 0,
+                title = "战票礼包",
+                detail = "战票 ×${EconomyFormulas.dailyTicketBundleSize()}",
+                costSoft = EconomyFormulas.dailyTicketBundleCost(),
+            ),
+        )
+    }
+
+    /** 今日已购槽位下标（存档日期与今天不一致 = 跨日未消费，返回空表）。 */
+    fun dailyBoughtToday(): List<Int> =
+        if (saveData.dailyShopDate == dayKey()) saveData.dailyShopBought.filterNotNull() else emptyList()
+
+    /**
+     * 购买每日特惠槽位 [index]：每槽每日限一次（跨日整体重置）；星尘不足 / 槽位非法 /
+     * 已购过 → [WriteOutcome.Rejected]。效果与限购记录同一事务，落盘失败整体回滚。
+     */
+    suspend fun buyDailyOffer(index: Int): WriteOutcome = writeMutex.withLock {
+        val offer = dailyOffers().firstOrNull { it.index == index }
+            ?: return@withLock WriteOutcome.Rejected
+        val key = dayKey()
+        val rolledOver = saveData.dailyShopDate != key
+        val bought = if (rolledOver) emptyList() else saveData.dailyShopBought.filterNotNull()
+        if (index in bought) return@withLock WriteOutcome.Rejected
+
+        // 效果参数（免费补给为正收入；付费档先扣星尘）
+        var softDelta = -offer.costSoft
+        var fragDelta = 0
+        var ticketDelta = 0
+        when (offer.kind) {
+            DailyOfferKind.FREE_SUPPLY -> {
+                softDelta = EconomyFormulas.dailyFreeSupplySoft()
+                ticketDelta = EconomyFormulas.dailyTicketGrant()
+            }
+
+            DailyOfferKind.DISCOUNT_PACK -> fragDelta = EconomyFormulas.fragmentPackSize(offer.pack)
+
+            DailyOfferKind.TICKET_BUNDLE -> ticketDelta = EconomyFormulas.dailyTicketBundleSize()
+        }
+        if (offer.costSoft > 0 && saveData.softCurrency < offer.costSoft) {
+            return@withLock WriteOutcome.Rejected
+        }
+
+        val origSoft = saveData.softCurrency
+        val ticketsExisted = saveData.items.any { it?.itemId == BattleTicketItemId }
+        val origTickets = itemCount(BattleTicketItemId)
+        val fragsExisted = saveData.items.any { it?.itemId == StarFragmentItemId }
+        val origFrags = itemCount(StarFragmentItemId)
+        val origDate = saveData.dailyShopDate
+        val origBought = saveData.dailyShopBought
+
+        transactionLocked(
+            tag = "daily",
+            mutate = {
+                saveData.softCurrency += softDelta
+                addItemDelta(StarFragmentItemId, fragDelta)
+                addItemDelta(BattleTicketItemId, ticketDelta)
+                saveData.dailyShopDate = key
+                saveData.dailyShopBought = bought + index
+            },
+            rollback = {
+                saveData.softCurrency = origSoft
+                restoreItemCount(StarFragmentItemId, fragsExisted, origFrags)
+                restoreItemCount(BattleTicketItemId, ticketsExisted, origTickets)
+                saveData.dailyShopDate = origDate
+                saveData.dailyShopBought = origBought
+            },
+            onCommit = { publishCurrencyChanged() },
+        )
+    }
+
+    // ─────────────────────────────────────────────────────────── 成就（2026-08 二期）
+
+    /** 全部成就的当前状态（解锁与否实时计算不落盘；claimed 以存档为准）。 */
+    fun achievementStatuses(): List<AchievementStatus> {
+        val claimed = saveData.claimedAchievementIds().toSet()
+        val progress = achievementProgressSnapshot()
+        return Achievements.ALL.map { def ->
+            AchievementStatus(def, def.unlocked(progress), def.id in claimed)
+        }
+    }
+
+    /** 成就进度快照（从存档推导，供定义侧纯函数判定；口径与 UI 展示一致）。 */
+    private fun achievementProgressSnapshot(): Achievements.Progress = Achievements.Progress(
+        ownedCount = saveData.ownedCharacters.count { it != null },
+        totalPulls = saveData.gachaCounters.filterNotNull().sumOf { it.count },
+        towerBestFloor = saveData.towerBestFloor,
+        formationSize = saveData.getFormationIds().size,
+        softCurrency = saveData.softCurrency,
+        fullLeveledChars = saveData.ownedCharacters.filterNotNull()
+            .count { it.level >= maxLevelForStage(it.stage) },
+    )
+
+    /**
+     * 领取成就奖励：未知 id / 已领取 / 未解锁 → Rejected；
+     * 奖励发放与领取标记同一事务（失败整体回滚、成功经 publishCurrencyChanged 刷快照）。
+     */
+    suspend fun claimAchievement(id: String): WriteOutcome = writeMutex.withLock {
+        val def = Achievements.byId[id] ?: return@withLock WriteOutcome.Rejected
+        if (id in saveData.claimedAchievementIds()) return@withLock WriteOutcome.Rejected
+        if (!def.unlocked(achievementProgressSnapshot())) return@withLock WriteOutcome.Rejected
+
+        val origSoft = saveData.softCurrency
+        val ticketsExisted = saveData.items.any { it?.itemId == BattleTicketItemId }
+        val origTickets = itemCount(BattleTicketItemId)
+        val origClaimed = saveData.claimedAchievements
+
+        transactionLocked(
+            tag = "achievement",
+            mutate = {
+                if (def.rewardSoft > 0) saveData.softCurrency += def.rewardSoft
+                if (def.rewardTickets > 0) addItemDelta(BattleTicketItemId, def.rewardTickets)
+                saveData.claimedAchievements = saveData.claimedAchievements + id
+            },
+            rollback = {
+                saveData.softCurrency = origSoft
+                restoreItemCount(BattleTicketItemId, ticketsExisted, origTickets)
+                saveData.claimedAchievements = origClaimed
+            },
+            onCommit = { publishCurrencyChanged() },
         )
     }
 
@@ -836,6 +1228,9 @@ class GameService(
 
     companion object {
         const val StarFragmentItemId = "item_star_fragment"
+
+        /** 战票道具 id（无尽之塔门票；对齐星魂碎片的 item_ 前缀惯例，走通用道具系统）。 */
+        const val BattleTicketItemId = "item_battle_ticket"
     }
 
     /** Pull 内部计划条目（对齐 C# 的 plan 元组）。 */
