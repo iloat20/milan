@@ -8,6 +8,10 @@ v2.2（2026-08-23）：叙事优先——解禁完整脚部入镜；注入角色
 作为最高优先级段，立绘与头像的一切视觉要素须可溯源到背景故事
 （详见 06-card-art-composition.md；原角色稿内容不动）。
 
+v2.3（2026-08-26）：全局写实化——注入 REALISM_DIRECTIVE（灵感：Marvel Snap 卡面工艺：
+高饱和撞色、破格构图、物理材质渲染、小尺寸可读性），并清洗原稿赛璐璐措辞；
+负面表追加 cel shading / flat anime coloring 等。
+
 输出: portraits-v2/prompts-export.json
        portraits-v2/prompts-export.csv  (便于在表格/生图平台里批量粘贴)
 
@@ -67,6 +71,24 @@ CARD_LIGHTING = (
     "natural light falloff toward frame edges so the figure reads inside a card frame. "
 )
 
+# ── v2.3 全局写实化（单一事实来源：06-card-art-composition.md §写实化）──
+# 灵感溯源（2026-08 互联网调研，Marvel Snap 卡面工艺）：
+#   ① 高饱和撞色 + 小屏强对比可读（插画师 Alberto Dal Lago 访谈：卡面极小，
+#      场景必须清晰、忌灰暗，强对比与鲜艳配色是硬要求）；
+#   ② framebreak 破格 + 分层思维便于卡面 3D 动效（Trent Kaniuga 出图流程拆解）；
+#   ③ 物理材质区分渲染：金属镜面反射环境 / 皮肤次表面散射 / 织物纹理；
+#   ④ 色彩情绪学：背景主色呼应角色元素色（Cosmic Ghost Rider 案例的星云绿呼应金属反光）。
+# 写实 ≠ 灰暗：饱和度是卡面生命线。
+REALISM_STYLE = (
+    "REALISM DIRECTIVE (v2.3, highest style priority, overrides any anime/stylization wording below): "
+    "photorealistic-painterly card illustration, true human anatomy and proportions, "
+    "realistic skin texture with pores and subsurface scattering, physically-based material rendering "
+    "(brushed metal reflects environment, leather scuffs, fabric weave visible, hair strands catch rim light), "
+    "cinematic movie-poster depth of field, faces stay expressive and recognizable at thumbnail size. "
+    "Keep saturated high-contrast palette — realism never means washed-out gray; "
+    "silhouette must read clearly at 96px avatar size. "
+)
+
 # 稀有度光效档（追加在指令块尾部，对齐 00-master-spec §4.2）
 RARITY_LIGHT_TIER = {
     "UR": "UR tier: epic molten-gold god-ray accents, ultra-fine detail density, subtle holographic sheen on armor.",
@@ -76,16 +98,23 @@ RARITY_LIGHT_TIER = {
 }
 
 # 负面表（v2.2）：脚部已解禁；新增「脸被画框裁切」禁令保障安全区铁律
+# v2.3 追加写实化禁令：禁赛璐璐/平涂动漫/粗描边/塑料皮肤
 CARD_NEGATIVE = (
     "tiny distant figure, wide establishing shot, head cropped by frame, "
     "flat even lighting, washed-out low contrast, static symmetrical pose, "
+    "cel shading, flat anime coloring, thick black outlines, plastic doll skin, "
 )
 _CONFLICTING_NEG_TOKENS = re.compile(r"(half-body|bust|cropped)\s*,?\s*", re.I)
 
 # 原稿正文清洗：仅替换开头句为卡面插画口径（feet/8-head 清洗已随 v2.2 解禁移除）
+# v2.3 追加：原稿赛璐璐/半写实措辞让位于写实指令层（残留的动漫字样由
+# REALISM_STYLE 的 overrides 声明兜底，不做全文激进替换以免误伤锚点描述）
 _BODY_SCRUB = [
     (re.compile(r"Full-body character portrait of"), "Card-game illustration of"),
     (re.compile(r"full-body character portrait of"), "card-game illustration of"),
+    (re.compile(r"cel-shaded anime with Chinese ink-wash outlines", re.I),
+     "photorealistic-painterly rendering with subtle Chinese ink-wash accents"),
+    (re.compile(r"Semi-realistic facial detail", re.I), "fully realistic facial detail"),
 ]
 
 # 背景故事符合性段（v2.2 最高优先级：置于 full_prompt 最前）
@@ -100,13 +129,16 @@ _LORE_TEMPLATE = (
 
 
 def apply_card_art_directive(prompt: dict, rarity: str, lore: str | None = None) -> dict:
-    """把 v2.2 指令层套到单个角色的 prompt 结构上：
-    [LORE 保真段（若有）] → [卡牌构图+光影+稀有度档] → [清洗后的原稿正文]；
+    """把 v2.3 指令层套到单个角色的 prompt 结构上：
+    [LORE 保真段（若有）] → [写实化+卡牌构图+光影+稀有度档] → [清洗后的原稿正文]；
     负面表统一重写。原角色稿 md 文件不改动。"""
     parts: list[str] = []
     if lore:
         parts.append(_LORE_TEMPLATE.format(lore=" ".join(lore.split())))
-    parts.append(CARD_DIRECTIVE + CARD_LIGHTING + RARITY_LIGHT_TIER.get(rarity.upper(), ""))
+    parts.append(
+        REALISM_STYLE + CARD_DIRECTIVE + CARD_LIGHTING
+        + RARITY_LIGHT_TIER.get(rarity.upper(), "")
+    )
     body = prompt["full_prompt"]
     for pat, repl in _BODY_SCRUB:
         body = pat.sub(repl, body)

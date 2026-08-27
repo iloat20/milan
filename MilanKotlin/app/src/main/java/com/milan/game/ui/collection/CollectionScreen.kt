@@ -20,6 +20,7 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -119,7 +120,7 @@ fun CollectionScreen(
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
                     Text(
                         text = "没有符合条件的角色",
-                        fontSize = 14.sp,
+                        style = MaterialTheme.typography.bodyLarge,
                         color = AppTheme.Text3,
                         modifier = Modifier.padding(top = 80.dp),
                     )
@@ -145,7 +146,7 @@ fun CollectionScreen(
                             footer = {
                                 Text(
                                     text = if (ownedView != null) "★".repeat(ownedView.save.stars.coerceAtLeast(1)) else "未获得",
-                                    fontSize = 11.sp,
+                                    style = MaterialTheme.typography.labelMedium,
                                     color = if (ownedView != null) AppTheme.Gold else AppTheme.Text3,
                                     modifier = Modifier.padding(top = 3.dp),
                                 )
@@ -191,14 +192,12 @@ private fun CollectionProgressHeader(
             Column(Modifier.weight(1f)) {
                 Text(
                     text = "神谱收集",
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.titleSmall,
                     color = AppTheme.Text1,
                 )
                 Text(
                     text = "$got  /  $total",
-                    fontSize = 22.sp,
-                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.headlineSmall.copy(letterSpacing = 0.sp),
                     color = AppTheme.Gold,
                     modifier = Modifier.padding(top = 2.dp),
                 )
@@ -206,7 +205,7 @@ private fun CollectionProgressHeader(
             // 我的角色入口（承接原占位页 actionLabel 按钮，链路不中断）
             Text(
                 text = "我的角色  ›",
-                fontSize = 13.sp,
+                style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.Bold,
                 color = AppTheme.Gold,
                 modifier = Modifier
@@ -245,13 +244,13 @@ private fun CollectionProgressHeader(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
                         text = AppTheme.rarityName(r),
-                        fontSize = 11.sp,
+                        style = MaterialTheme.typography.labelMedium,
                         fontWeight = FontWeight.Bold,
                         color = AppTheme.rarityColor(r),
                     )
                     Text(
                         text = "  ${gotByRarity[r] ?: 0} / ${totalByRarity[r] ?: 0}",
-                        fontSize = 11.sp,
+                        style = MaterialTheme.typography.labelMedium,
                         color = AppTheme.Text2,
                     )
                 }

@@ -1,5 +1,6 @@
 package com.milan.game.ui.theme
 
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialExpressiveTheme
 import androidx.compose.material3.Shapes
 import androidx.compose.material3.Typography
@@ -8,13 +9,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 // twilight 暗夜主题 · Material 3 Expressive 刷新（Task 9 + M3 升级）
 //
 // 保留「暗夜神性·诸神黄昏」调性，套用 M3 Expressive 的形状/动效体系：
 //  - MaterialExpressiveTheme 取代 MaterialTheme，自带 expressive motion scheme（更弹、更有情绪）。
-//  - shapes 用标准 M3 Shapes（alpha22 无 ExpressiveShapes；表达性由 MotionScheme/形状默认值承担）。
+//  - shapes 用 GameShapes 五档圆角 token（2026-08 UI 现代化；alpha22 无 ExpressiveShapes）。
 //  - 配色方案补全 tertiary / container / outline 等 expressive 组件会用到的槽位，颜色仍来自 AppTheme 同套暮紫夜+熔金调性。
 //
 // 依赖：material3 已显式覆盖为 1.5.0-alpha22（libs.versions.toml）。该版本中 MaterialExpressiveTheme 已在
@@ -62,13 +64,24 @@ private val TwilightColors = darkColorScheme(
 fun MilanTheme(content: @Composable () -> Unit) {
     MaterialExpressiveTheme(
         colorScheme = TwilightColors,
-        shapes = Shapes(),
+        shapes = GameShapes,
         // P3-2：游戏排版体系（增量落地）——此前 MaterialExpressiveTheme 未传 typography，
         // 全部文本硬编码 fontSize/letterSpacing；先定义标题/正文/标签三档供新代码与逐步替换使用。
         typography = GameTypography,
         content = content,
     )
 }
+
+/** 游戏形状体系（2026-08 UI 现代化）：收敛全站十余种圆角为五档 token。
+ *  档位取自存量使用频率最高的半径（6/10/14/16/20），屏幕侧用 MaterialTheme.shapes.xxx 消费，
+ *  存量 RoundedCornerShape 按 14→medium、10→small、6→extraSmall 批次替换，禁止新增散装半径。 */
+val GameShapes = Shapes(
+    extraSmall = RoundedCornerShape(6.dp),
+    small = RoundedCornerShape(10.dp),
+    medium = RoundedCornerShape(14.dp),
+    large = RoundedCornerShape(16.dp),
+    extraLarge = RoundedCornerShape(20.dp),
+)
 
 /** 游戏排版体系（P3-2）：暮紫夜主题的标题/正文/标签档位，替代散落的硬编码字号。
  *  增量使用：新代码优先取这里；存量硬编码字号按页面批次替换（避免一次性视觉回归）。 */
@@ -79,6 +92,7 @@ val GameTypography = Typography(
     titleSmall = TextStyle(fontSize = 15.sp, fontWeight = FontWeight.Bold),
     bodyLarge = TextStyle(fontSize = 14.sp),
     bodyMedium = TextStyle(fontSize = 13.sp),
+    bodySmall = TextStyle(fontSize = 12.sp),
     labelLarge = TextStyle(fontSize = 12.sp, fontWeight = FontWeight.Bold),
     labelMedium = TextStyle(fontSize = 11.sp),
     labelSmall = TextStyle(fontSize = 10.sp),

@@ -35,7 +35,7 @@ internal object GameContent {
     private fun sk(id: String, name: String, desc: String, element: String, type: String, power: Int): SkillData =
         SkillData(skillId = id, displayName = name, description = desc, element = element, type = type, power = power)
 
-    /** 构建兜底角色表（28 名，含技能；不含派生字段，派生字段由 [enrich] 补齐）。 */
+    /** 构建兜底角色表（31 名，含技能；不含派生字段，派生字段由 [enrich] 补齐）。 */
     fun buildCharacters(): List<CharacterDataEntry> {
         val chars = mutableListOf<CharacterDataEntry>()
         // ========== UR 4★ ==========
@@ -296,6 +296,34 @@ internal object GameContent {
                 sk("yecha_2", "恐惧低语", "降低单个敌人攻击并使其有概率混乱", "Shadow", "Active", 36),
                 sk("yecha_3", "群影战术", "场上每存在一个夜叉，自身伤害提升", "Shadow", "Passive", 26),
             ))
+        // ========== 漫威联动 UR（2026-08-26 新增） ==========
+        // 钢铁侠 Iron Man —— 漫威托尼·斯塔克，裂隙坠入铁帷纪元，方舟反应堆×铁帷锻造共鸣
+        add(chars, "char_ur_ironman", "钢铁侠 Iron Man", "钢铁意志", "Ironveil", "Metal", 4,
+            listOf(160, 135, 1300, 16), 7, true,
+            "「凡人之躯，比肩神明。」漫威天才发明家托尼·斯塔克在一场跨维度实验中被裂隙吞噬，坠入铁帷纪元。方舟反应堆的脉冲与铁帷锻造核心同源共鸣，他以废墟残骸重铸战甲——马克系列的每一道合金纹路，都是他拒绝认输的宣言。",
+            "tree_ironman", listOf(
+                sk("ironman_1", "掌心雷暴", "双掌聚能轰出方舟聚变光束，对直线上敌人造成巨额金属伤害并击退", "Metal", "Ultimate", 93),
+                sk("ironman_2", "纳米重构", "纳米蜂群瞬间重构装甲，回复生命并展开可吸收伤害的护盾", "Metal", "Active", 70),
+                sk("ironman_3", "方舟过载", "每次释放技能叠加过载层数，满层后下一次攻击必定暴击", "Metal", "Passive", 66),
+            ))
+        // 托尔 Thor —— 漫威雷神，追猎裂隙恶魔时被放逐至神話天空，妙尔尼尔×山海雷兽共鸣
+        add(chars, "char_ur_thor", "托尔 Thor", "九界雷霆", "Shinwa", "Thunder", 4,
+            listOf(168, 120, 1400, 15), 7, true,
+            "阿斯加德的雷霆之子托尔，追猎撕裂诸界的裂隙恶魔时被放逐至神話天空。妙尔尼尔的雷霆与山海雷兽的腹鸣在此共鸣——此界雷法只认其心，不认其血。他举起锤的那一刻便懂了：真正的王冠不是奥丁赐下的，而是配得上雷霆的那颗头颅。",
+            "tree_thor", listOf(
+                sk("thor_1", "诸界黄昏", "召唤九界雷霆灌入妙尔尼尔，对全体敌人造成巨额雷伤并麻痹", "Thunder", "Ultimate", 94),
+                sk("thor_2", "雷锤回旋", "掷出雷锤弹射至多4个敌人，回旋时将目标拉拽聚拢", "Thunder", "Active", 71),
+                sk("thor_3", "风暴加身", "受击积攒静电，满层召唤环绕风暴，反弹部分伤害", "Thunder", "Passive", 67),
+            ))
+        // 奇异博士 Doctor Strange —— 漫威至尊法师，看穿米兰裂隙与多元宇宙裂缝同源
+        add(chars, "char_ur_strange", "奇异博士 Doctor Strange", "至尊法师", "Shinwa", "Light", 4,
+            listOf(150, 110, 1150, 18), 7, true,
+            "曾经的外科圣手史蒂芬·斯特兰奇因车祸毁去双手，远赴卡玛泰姬习法，终成漫威宇宙的至尊法师。他看穿米兰裂隙与多元宇宙裂缝同源——阿戈摩托之眼中，亿万种结局里只有一线生机。他以曼陀罗结界守护此界，以绯红枷锁缚住终焉。",
+            "tree_strange", listOf(
+                sk("strange_1", "绯红枷锁", "召唤绯红魔力锁链缚住全体敌人，造成光耀伤害并封印其技能", "Light", "Ultimate", 90),
+                sk("strange_2", "曼陀罗圣盾", "展开多层符文结界，为全队抵挡伤害并驱散负面效果", "Light", "Active", 69),
+                sk("strange_3", "时序回溯", "队友首次阵亡时回溯时间线将其复活（每场一次），自身回复能量", "Light", "Passive", 72),
+            ))
         return chars
     }
 
@@ -403,6 +431,9 @@ internal object GameContent {
             "char_sr_taotie" to "它与相柳并称两害：相柳以毒泽腐蚀大地，饕餮以贪焰吞噬一切。贪婪而直率，只要喂饱它，它会意外地忠诚。",
             "char_r_shanxiao" to "山魈喜欢用废旧零件布置陷阱，对体型巨大的敌人尤其兴奋。调皮、话痨、记仇，但关键时刻会为了保护同伴拼命。",
             "char_r_yecha" to "它们数量庞大、单体不强，但成群出现时能让整支军队陷入恐惧。阴郁、顺从、群体意识强，单独时怯懦，成群时残忍。",
+            "char_ur_ironman" to "裂隙纪元中，钢铁侠的战甲成了铁帷平民头顶的保护伞。他与刑天理念相近而路线不同：刑天在战场上守护民众，托尼则重建工坊，让每个普通人都有机会穿上自己的铠甲。夜晚，胸口的方舟反应堆映亮整片工坊区，孩子们叫它「不灭的小太阳」。",
+            "char_ur_thor" to "托尔与烛龙、金乌并立为神話三柱：一位司昼夜、一位司光明、而他司震怒。当裂隙再度撕开天幕，他第一个跃入云海，以雷霆立誓——阿斯加德或许已逝，但守护的誓言与锤同在。",
+            "char_ur_strange" to "奇异博士在以太议会的档案库里找到了关于裂隙的第一份记录，比虚无现世还早千年。他与女娲有过一次沉默的对谈——关于修补与代价：她炼石补天，他窥时换命。「我们都是拿自己的一部分去填裂缝的人。」这是他对补天者唯一的评价。",
         )
 
         val voices: Map<String, List<String>> = mapOf(
@@ -434,6 +465,9 @@ internal object GameContent {
             "char_sr_taotie" to listOf("饿了。你们都别跑。", "这个，我吃了。", "还没饱……但你们先凑合。"),
             "char_r_shanxiao" to listOf("嘿，大个子，脚下有东西哦。", "送你个小礼物——boom！", "捡破烂也能赢，气不气？"),
             "char_r_yecha" to listOf("……影子来了。", "嘘，别回头。", "黑暗记得你。"),
+            "char_ur_ironman" to listOf("机甲会坠落，但造机甲的人会再站起来。", "没有天赐的神力？那就自己动手造一个。", "我不是英雄，我只是先想到了办法。"),
+            "char_ur_thor" to listOf("妙尔尼尔认可的不是血统，是握锤的手为何而握。", "雷霆落下之前我有时间后悔——可惜我从不后悔。", "另一个宇宙的我怎么选的？我只走眼前这条路。"),
+            "char_ur_strange" to listOf("我看过一千四百万种结局，我们把赢的那一种走完。", "这双手治不好了，但世界还缝得上。", "结界之内，终焉也要排队。"),
         )
 
         val weaponVfx: Map<String, String> = mapOf(
@@ -447,6 +481,8 @@ internal object GameContent {
             "char_ur_nuwa" to "five_color_stone_staff", "char_ssr_chiyou" to "tiger_soul_cleaver", "char_ssr_baihu" to "vibranium_tiger_claw",
             "char_sr_huayao" to "petal_ribbon_blade", "char_sr_taotie" to "bronze_greed_flame", "char_r_shanxiao" to "scrap_claw_mine",
             "char_r_yecha" to "shadow_dagger_whisper",
+            "char_ur_ironman" to "arc_reactor_repulsor", "char_ur_thor" to "mjolnir_stormcall",
+            "char_ur_strange" to "agamotto_eye_gaze",
         )
 
         val ambientVfx: Map<String, String> = mapOf(
@@ -460,6 +496,8 @@ internal object GameContent {
             "char_ur_nuwa" to "floating_island_aurora", "char_ssr_chiyou" to "ruin_battlefield_banners", "char_ssr_baihu" to "metal_storm_wasteland",
             "char_sr_huayao" to "floating_garden_petals", "char_sr_taotie" to "broken_bronze_ash", "char_r_shanxiao" to "ruin_jungle_parts",
             "char_r_yecha" to "rift_shadow_motes",
+            "char_ur_ironman" to "nanite_assembly_glint", "char_ur_thor" to "storm_crown_arcs",
+            "char_ur_strange" to "mandala_glyph_orbit",
         )
 
         // UR 专属特色武器（依据各角色背景故事设计）
@@ -495,6 +533,10 @@ internal object GameContent {
             "char_r_dangang" to "獠突·冲岳牙",
             "char_r_shanxiao" to "拾荒·碎铁爪",
             "char_r_yecha" to "喑杀·影刃",
+            // 漫威联动 UR 专属武器（与 data.json 同步）
+            "char_ur_ironman" to "方舟核心·聚变掌炮",
+            "char_ur_thor" to "妙尔尼尔·九界雷锤",
+            "char_ur_strange" to "阿戈摩托之眼·时序轮",
         )
 
         val weaponDesc: Map<String, String> = mapOf(
@@ -529,6 +571,10 @@ internal object GameContent {
             "char_r_dangang" to "当康瑞兽野猪，以獠牙为冲撞兵装，突进如山岳之倾。",
             "char_r_shanxiao" to "山魈山鬼，拾荒废铁拼成利爪，杂乱中藏凶性。",
             "char_r_yecha" to "夜叉捷鬼，无声影刃出鞘无音，一闪取命。",
+            // 漫威联动 UR 专属武器描述（与 data.json 同步）
+            "char_ur_ironman" to "以方舟反应堆为心的掌心聚变装置。反应堆每一次搏动都为战甲注入恒星级的能量；双掌张开时，高热粒子束足以熔穿合金帷幕——那是凡人向神明递出的名片。",
+            "char_ur_thor" to "由垂死之星锻造的短柄战锤，镌刻着「配得上者方可执之」的古神文。掷出时牵引九界风云，回旋必中；落点处雷霆如瀑，诸界为之侧耳。",
+            "char_ur_strange" to "至尊法师的圣物，瞳状宝石内封存时间的支流。开启时绿焰环绕，可回溯伤势、窥视分支结局；凝视之处，因果暂时让路——代价由持有者的岁月支付。",
         )
 
         for (c in characters) {

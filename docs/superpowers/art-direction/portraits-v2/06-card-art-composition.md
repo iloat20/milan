@@ -1,4 +1,4 @@
-# 06 · 卡牌立绘构图与光影规范（v2.2，2026-08-23 叙事优先修订）
+# 06 · 卡牌立绘构图与光影规范（v2.3，2026-08-26 全局写实化）
 
 > 定位：对 [00-master-spec.md](00-master-spec.md) 的**增量改版**——把「全身站桩透明立绘」升级为
 > 「卡牌游戏卡面插画」范式。铁律锚点、配色系统、透明背景、画布阶梯全部沿用 00 号规范不变。
@@ -6,6 +6,10 @@
 >
 > **v2.2 修订**：① 解禁完整脚部入镜；② 确立「背景故事符合性」为最高优先级——
 > 立绘与头像的一切视觉要素必须可溯源到角色背景故事。
+>
+> **v2.3 修订（2026-08-26）**：全局写实化——导出时注入 REALISM_DIRECTIVE，
+> 灵感源自 Marvel Snap 卡面工艺互联网调研（详见 §7）；原稿赛璐璐措辞仅在被导出时清洗，
+> 01~04 号设计稿正文不动。
 
 ## 0. 优先级总纲
 
@@ -74,3 +78,31 @@ flat even lighting, washed-out low contrast, static symmetrical pose
 2. 头像尺寸（≤96px）下脸部表情是否传达人设情绪；
 3. 无「脸被画框裁切」；主体占幅达标；
 4. 边缘有元素色 rim light；透明通道完好（bg_remove.py 流程不受影响）。
+
+## 7. 全局写实化（v2.3，2026-08-26）
+
+### 7.1 灵感溯源（互联网调研，2026-08）
+
+| 来源 | 提炼要点 |
+|---|---|
+| Marvel Snap 官方美术访谈（Second Dinner：Jonny Erner / Jomaro Kindred） | 卡面=收藏品：破格构图 + 分层 + 强识别度是核心体验；多元画师风格靠统一收束保持系列感 |
+| 插画师 Alberto Dal Lago 访谈（Marvel Snap / Lone Wolf） | 卡面最终展示尺寸极小 → 场景必须清晰、强对比、鲜艳配色，忌灰暗浑浊 |
+| Trent Kaniuga 出图流程拆解（Cosmic Ghost Rider 卡） | 色彩情绪学（背景主色呼应角色元素色，如星云绿呼应金属反光）；金属等材质需融入环境反弹光；分层交付便于卡面 3D 动效 |
+| 半写实角色插画参考（PixAI 高赞稿式 / semi-realism 教程） | 「写实骨架 + 绘画质感」混合范式：真实解剖与材质之上保留笔触渲染与锐利细节 |
+
+### 7.2 写实化铁律
+
+1. **写实 ≠ 灰暗**：饱和高对比是卡面生命线；禁止用降饱和营造「真实感」。
+2. **物理材质**：金属镜面反射环境色（优先呼应元素色）、皮革磨损、织物纹理可见、发丝接住轮廓光。
+3. **解剖真实**：真人比例与肌肉结构；脸部在 ≤96px 头像下仍须表情可读。
+4. **锚点不妥协**：识别锚点 A/B/C 与 Lore 可溯源性在写实画风下依旧成立（§1 铁律优先级不变）。
+5. **原稿不动**：写实化通过导出时注入实现（§7.3），01~04 号设计稿正文保持 v2.2 原状。
+
+### 7.3 导出实现（extract_prompts.py）
+
+- `REALISM_STYLE` 段：置于 LORE 之后、原稿正文之前，声明 overrides 一切动漫/风格化措辞；
+- `_BODY_SCRUB` 追加两条措辞清洗：`cel-shaded anime with Chinese ink-wash outlines`
+  → `photorealistic-painterly rendering with subtle Chinese ink-wash accents`；
+  `Semi-realistic facial detail` → `fully realistic facial detail`；
+  （残留的零散动漫字样由 REALISM_STYLE 的 overrides 声明兜底，不做全文激进替换以免误伤锚点描述）
+- `CARD_NEGATIVE` 追加：`cel shading, flat anime coloring, thick black outlines, plastic doll skin`。

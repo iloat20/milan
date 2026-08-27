@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -78,9 +79,9 @@ fun CharacterCard(
     Column(
         modifier = modifier
             .padding(5.dp) // C# margin 5dp
-            .clip(RoundedCornerShape(16.dp))
-            .background(AppTheme.Surface, RoundedCornerShape(16.dp))
-            .border(2.dp, rarityCol, RoundedCornerShape(16.dp))
+            .clip(MaterialTheme.shapes.large)
+            .background(AppTheme.Surface, MaterialTheme.shapes.large)
+            .border(2.dp, rarityCol, MaterialTheme.shapes.large)
             .clickable(onClick = onClick),
     ) {
         // ── 卡面主视觉：立绘占主导（C# 卡牌语义：art 即 card face）──
@@ -119,13 +120,13 @@ fun CharacterCard(
             // 稀有度角标（左上胶囊）
             Text(
                 text = AppTheme.rarityName(rarity),
-                fontSize = 10.sp,
+                style = MaterialTheme.typography.labelSmall,
                 fontWeight = FontWeight.Bold,
                 color = AppTheme.BgDeepest,
                 modifier = Modifier
                     .align(Alignment.TopStart)
                     .padding(6.dp)
-                    .clip(RoundedCornerShape(6.dp))
+                    .clip(MaterialTheme.shapes.extraSmall)
                     .background(rarityCol.copy(alpha = 0.88f))
                     .padding(horizontal = 7.dp, vertical = 2.dp),
             )
@@ -141,7 +142,7 @@ fun CharacterCard(
                     .border(1.dp, elem.glow.copy(alpha = 0.9f), CircleShape),
                 contentAlignment = Alignment.Center,
             ) {
-                Text(text = elem.glyph, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = elem.glow)
+                Text(text = elem.glyph, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold, color = elem.glow)
             }
 
             // 底部暗化渐变（承托铭牌视觉重心）
@@ -174,15 +175,14 @@ fun CharacterCard(
         Column(Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 8.dp)) {
             Text(
                 text = name,
-                fontSize = 15.sp,
-                fontWeight = FontWeight.Bold,
+                style = MaterialTheme.typography.titleSmall,
                 color = AppTheme.Text1,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
             Text(
                 text = title,
-                fontSize = 11.sp,
+                style = MaterialTheme.typography.labelMedium,
                 color = AppTheme.Text2,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,

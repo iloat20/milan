@@ -2,8 +2,9 @@ package com.milan.game.ui.components
 
 // 从 CharacterDetailScreen.kt / ProgressionScreen.kt 提取的角色页共享组件。
 // 提取条件：两页定义逐字节相同（diff 判定，见 2026-08-07-refactor-elegance 提交② PR 对比表）。
-// 判定为「不同」而保留私有的：HeroRegion（detail 版多 owned/onOpenProgression/未拥有遮罩/养成入口，
-// 渐隐 150 vs 140dp）；switch（两页均为页面主函数内部局部函数，不可提取）。
+// 2026-08-27 前端统一（docs/plans/2026-08-27-frontend-unification-design.md）：
+// HeroRegion 已参数化合并为 SubPageHero（fadeHeight/owned/onOpenProgression/portraitModifier 可配），
+// 「‹ 返 回」胶囊统一为 BackCapsule；仅 switch 仍保留页面私有（主函数内部局部函数，不可提取）。
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -33,6 +34,8 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
@@ -45,23 +48,122 @@ fun MissingCharacter(onBack: () -> Unit, modifier: Modifier = Modifier) {
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(Brush.verticalGradient(listOf(AppTheme.BgMid, AppTheme.BgDeepest))),
+            .background(Brush.verticalGradient(listOf(AppTheme.BgDeepest, AppTheme.BgMid, AppTheme.BgDeepest))),
         contentAlignment = Alignment.Center,
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text("未找到该角色", fontSize = 16.sp, color = AppTheme.Text2)
+            BackCapsule(onClick = onBack, modifier = Modifier.padding(top = 16.dp))
+        }
+    }
+}
+
+/** 「‹ 返 回」金色胶囊按钮（详情/养成/空态三处原逐字复制，2026-08-27 统一）。 */
+@Composable
+fun BackCapsule(onClick: () -> Unit, modifier: Modifier = Modifier, text: String = "‹ 返 回") {
+    Text(
+        text,
+        fontSize = 16.sp,
+        fontWeight = FontWeight.Bold,
+        color = AppTheme.Gold,
+        modifier = modifier
+            .clip(RoundedCornerShape(20.dp))
+            .background(AppTheme.Surface)
+            .border(1.dp, AppTheme.Gold.copy(alpha = 0.65f), RoundedCornerShape(20.dp))
+            .padding(horizontal = 12.dp, vertical = 8.dp)
+            .clickable(onClick = onClick),
+    )
+}
+
+/**
+ * 角色子页 Hero 区：立绘铺满 + 底部渐隐融入 + 浮层铭牌 + 悬浮操作（返回 / 左右切换 / 养成入口）。
+ * 由 CharacterDetailScreen 与 ProgressionScreen 的两份近重复 HeroRegion 合并而来
+ * （差异全部参数化：[fadeHeight] 渐隐高度 150/140dp、[owned] 未拥有遮罩、
+ * [onOpenProgression] 养成入口、[portraitModifier] 共享元素过渡 sharedBounds，缺省安全降级）。
+ */
+@Composable
+fun SubPageHero(
+    view: OwnedCharacterView,
+    rarityCol: Color,
+    eFrom: Color,
+    eGlyph: String,
+    heroHeight: Dp,
+    onBack: () -> Unit,
+    onPrev: () -> Unit,
+    onNext: () -> Unit,
+    modifier: Modifier = Modifier,
+    fadeHeight: Dp = 140.dp,
+    owned: Boolean = true,
+    onOpenProgression: ((String) -> Unit)? = null,
+    portraitModifier: Modifier = Modifier,
+) {
+    Box(modifier.fillMaxWidth().height(heroHeight)) {
+        // 立绘（C# Parallax3DPortraitView；P2 视差，先用静态铺满）
+        PortraitImage(
+            characterId = view.save.characterId,
+            rarity = view.rarity,
+            name = view.name,
+            modifier = Modifier.fillMaxSize().then(portraitModifier),
+            contentScale = ContentScale.Crop,
+            aura = true, // v2：稀有度脚下光环（详情页主立绘）
+        )
+
+        // 底部渐隐遮罩：立绘下缘柔和融入背景
+        Box(
+            Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .height(fadeHeight)
+                .background(Brush.verticalGradient(listOf(Color.Transparent, AppTheme.BgDeepest))),
+        )
+
+        // 未拥有遮罩（详情页图鉴剪影浏览场景）
+        if (!owned) {
+            Box(
+                Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 150f / 255f)),
+            )
             Text(
-                "‹ 返 回",
+                "🔒 未获得",
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+                color = AppTheme.Text2,
+                modifier = Modifier.align(Alignment.Center),
+            )
+        }
+
+        HeroNameplate(
+            view = view,
+            rarityCol = rarityCol,
+            eFrom = eFrom,
+            eGlyph = eGlyph,
+            modifier = Modifier.align(Alignment.BottomCenter),
+        )
+
+        // 悬浮操作：返回（左上）+ 左右切换（两侧）+ 养成入口（右上，仅已拥有且提供回调）
+        BackCapsule(
+            onClick = onBack,
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .padding(start = 14.dp, top = 40.dp),
+        )
+        GlassArrow("‹", Modifier.align(Alignment.CenterStart), onPrev, contentDescription = "上一个")
+        GlassArrow("›", Modifier.align(Alignment.CenterEnd), onNext, contentDescription = "下一个")
+        if (owned && onOpenProgression != null) {
+            Text(
+                "养 成 ▲",
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Bold,
                 color = AppTheme.Gold,
                 modifier = Modifier
-                    .padding(top = 16.dp)
+                    .align(Alignment.TopEnd)
+                    .padding(top = 40.dp, end = 14.dp)
                     .clip(RoundedCornerShape(20.dp))
                     .background(AppTheme.Surface)
                     .border(1.dp, AppTheme.Gold.copy(alpha = 0.65f), RoundedCornerShape(20.dp))
                     .padding(horizontal = 16.dp, vertical = 9.dp)
-                    .clickable(onClick = onBack),
+                    .clickable(onClick = { onOpenProgression(view.save.characterId) }),
             )
         }
     }

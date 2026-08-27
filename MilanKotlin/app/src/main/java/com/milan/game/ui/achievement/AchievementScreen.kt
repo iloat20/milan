@@ -13,7 +13,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -24,7 +24,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -32,6 +31,8 @@ import com.milan.game.services.AchievementDef
 import com.milan.game.services.AchievementStatus
 import com.milan.game.services.WriteOutcome
 import com.milan.game.ui.GameState
+import com.milan.game.ui.components.EntranceItem
+import com.milan.game.ui.components.GlyphBadge
 import com.milan.game.ui.components.GoldButton
 import com.milan.game.ui.components.PageBackground
 import com.milan.game.ui.feedback.LocalFeedback
@@ -67,7 +68,7 @@ fun AchievementScreen(
                 Spacer(Modifier.height(8.dp))
                 Text(
                     text = "已解锁 $unlockedCount / ${statuses.size} · 已领取 $claimedCount",
-                    fontSize = 13.sp,
+                    style = MaterialTheme.typography.bodyMedium,
                     color = AppTheme.Text2,
                 )
             }
@@ -81,7 +82,8 @@ fun AchievementScreen(
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 items(statuses.size, key = { statuses[it].def.id }) { i ->
-                    AchievementCard(
+                    EntranceItem(index = i) {
+                        AchievementCard(
                         status = statuses[i],
                         enabled = !busy,
                         onClaim = {
@@ -101,14 +103,15 @@ fun AchievementScreen(
                                 }
                             }
                         },
-                    )
+                        )
+                    }
                 }
             }
         }
     }
 }
 
-/** 单条成就卡：已领取金边、可领金按钮高亮、未解锁灰态。 */
+/** 单条成就卡：已领取金边、可领金按钮高亮 + ★ 金色徽章呼吸强调、未解锁灰态。 */
 @Composable
 private fun AchievementCard(
     status: AchievementStatus,
@@ -116,11 +119,11 @@ private fun AchievementCard(
     onClaim: () -> Unit,
 ) {
     val def = status.def
-    val highlight = status.claimed || (status.unlocked && !status.claimed)
+    val claimable = status.unlocked && !status.claimed
     Box(
         Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(14.dp))
+            .clip(MaterialTheme.shapes.medium)
             .background(AppTheme.Surface.copy(alpha = if (status.unlocked) 0.75f else 0.45f))
             .border(
                 1.dp,
@@ -129,14 +132,25 @@ private fun AchievementCard(
                     status.unlocked -> AppTheme.Gold.copy(alpha = 0.85f)
                     else -> AppTheme.Stroke
                 },
-                RoundedCornerShape(14.dp),
+                MaterialTheme.shapes.medium,
             )
             .padding(14.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
+            GlyphBadge(
+                glyph = when {
+                    status.claimed -> "✓"
+                    status.unlocked -> "★"
+                    else -> "·"
+                },
+                from = if (status.unlocked) AppTheme.Gold else AppTheme.Text3,
+                to = if (status.unlocked) AppTheme.GoldDeep else AppTheme.Stroke,
+                glyphColor = if (status.unlocked) AppTheme.GoldHi else AppTheme.Text3,
+            )
+            Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(def.title, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = AppTheme.Text1)
+                    Text(def.title, style = MaterialTheme.typography.titleSmall, color = AppTheme.Text1)
                     Spacer(Modifier.width(8.dp))
                     Text(
                         text = when {
@@ -144,19 +158,20 @@ private fun AchievementCard(
                             status.unlocked -> "可领取"
                             else -> "未解锁"
                         },
-                        fontSize = 10.sp,
-                        color = if (status.unlocked && !status.claimed) AppTheme.Gold else AppTheme.Text3,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = if (claimable) AppTheme.Gold else AppTheme.Text3,
                         modifier = Modifier
-                            .border(1.dp, AppTheme.Stroke, RoundedCornerShape(6.dp))
+                            .border(1.dp, AppTheme.Stroke, MaterialTheme.shapes.extraSmall)
                             .padding(horizontal = 6.dp, vertical = 2.dp),
                     )
                 }
                 Spacer(Modifier.height(4.dp))
-                Text(def.desc, fontSize = 12.sp, color = AppTheme.Text2, maxLines = 2)
+                Text(def.desc, style = MaterialTheme.typography.bodySmall, color = AppTheme.Text2, maxLines = 2)
                 Spacer(Modifier.height(4.dp))
-                Text(rewardText(def), fontSize = 11.sp, color = AppTheme.GoldHi)
+                Text(rewardText(def), style = MaterialTheme.typography.labelMedium, color = AppTheme.GoldHi)
             }
-            if (status.unlocked && !status.claimed) {
+            if (claimable) {
+                Spacer(Modifier.width(8.dp))
                 GoldButton(text = "领 取", onClick = onClaim, enabled = enabled, textSize = 13.sp)
             }
         }

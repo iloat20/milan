@@ -18,6 +18,7 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -93,7 +94,7 @@ fun CharacterListScreen(
             Text(
                 text = if (visible.size == total) "已拥有  $total  位角色"
                 else "已显示  ${visible.size} / 已拥有 $total  位角色",
-                fontSize = 14.sp,
+                style = MaterialTheme.typography.bodyLarge,
                 color = AppTheme.Text2,
                 modifier = Modifier.padding(horizontal = 18.dp),
             )
@@ -122,7 +123,7 @@ fun CharacterListScreen(
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
                     Text(
                         text = "没有符合条件的角色",
-                        fontSize = 14.sp,
+                        style = MaterialTheme.typography.bodyLarge,
                         color = AppTheme.Text3,
                         modifier = Modifier.padding(top = 80.dp),
                     )
@@ -146,7 +147,7 @@ fun CharacterListScreen(
                             footer = {
                                 Text(
                                     text = "★".repeat(ch.save.stars.coerceAtLeast(1)),
-                                    fontSize = 11.sp,
+                                    style = MaterialTheme.typography.labelMedium,
                                     color = AppTheme.Gold,
                                     modifier = Modifier.padding(top = 3.dp),
                                 )
@@ -182,11 +183,11 @@ private fun CompletionPanel(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text("图鉴收集", color = AppTheme.Text2, fontSize = 13.sp)
+                Text("图鉴收集", color = AppTheme.Text2, style = MaterialTheme.typography.bodyMedium)
                 Text(
                     "$ownedCount / $totalRoster · $pct%",
                     color = AppTheme.Gold,
-                    fontSize = 14.sp,
+                    style = MaterialTheme.typography.bodyLarge,
                     fontWeight = FontWeight.Bold,
                 )
             }
@@ -203,7 +204,7 @@ private fun CompletionPanel(
                         val rarityOwned = roster.count { it.baseRarity == r && it.characterId in ownedIds }
                         Text(
                             "${AppTheme.rarityName(r)} $rarityOwned/$rarityTotal",
-                            fontSize = 11.sp,
+                            style = MaterialTheme.typography.labelMedium,
                             fontWeight = FontWeight.Bold,
                             color = AppTheme.rarityColor(r),
                         )

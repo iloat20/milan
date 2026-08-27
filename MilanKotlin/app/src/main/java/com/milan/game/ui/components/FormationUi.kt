@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -65,14 +66,14 @@ fun FormationBar(
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
                 text = "出战编队",
-                fontSize = 13.sp,
+                style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.Bold,
                 color = AppTheme.Text1,
             )
             Spacer(Modifier.weight(1f))
             Text(
                 text = "${members.size}/$maxSlots",
-                fontSize = 12.sp,
+                style = MaterialTheme.typography.bodySmall,
                 color = AppTheme.Text2,
             )
         }
@@ -143,7 +144,7 @@ fun FormationBar(
         formationResonanceLabel(members.map { it.element })?.let { label ->
             Text(
                 text = "✦ $label",
-                fontSize = 11.sp,
+                style = MaterialTheme.typography.labelMedium,
                 color = AppTheme.Gold,
                 modifier = Modifier.padding(top = 6.dp),
             )

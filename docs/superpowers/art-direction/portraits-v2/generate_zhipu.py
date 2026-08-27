@@ -5,6 +5,7 @@ generate_zhipu.py — 智谱 CogView-3-Flash 生成角色立绘（国内直连�
 
 背景：Pollinations 免费档到顶（源图 627x940 + 半写实厚涂 + 锚点服从度差），
 用户定调「只要 2D、卡牌人物感、精致」→ 切智谱 CogView-3-Flash（完全免费、国内直连）。
+2026-08-26 v2.3：全局写实化——STYLE_PREFIX/ZH_STYLE 改写实口径（对齐 06 号规范 §7）。
 
 与 generate_free.py 的差异：
 - prompt 复用 build_free_prompt()（STYLE_PREFIX 前置 + 主体/姿态段），
@@ -39,9 +40,10 @@ ENDPOINT = "https://open.bigmodel.cn/api/paas/v4/images/generations"
 SIZE = "864x1152"
 RETRIES = 3
 
-# 中文风格尾注：CogView 中文语料充分，二次元风格词用中文钉更死；白底利于 rembg
+# 中文风格尾注：CogView 中文语料充分，风格词用中文钉更死；白底利于 rembg。
+# 2026-08-26 v2.3 写实化定调：尾注已由「二次元赛璐璐」改为「写实」（对齐 06 号规范 §7）。
 ZH_STYLE = (
-    "，精致二次元动漫风格卡牌游戏角色立绘，赛璐璐上色，干净勾线，"
+    "，精致写实风格卡牌游戏角色立绘，真实人体比例与材质质感，电影级光影，"
     "高细节完成度，纯白色纯色背景，无文字无边框"
 )
 

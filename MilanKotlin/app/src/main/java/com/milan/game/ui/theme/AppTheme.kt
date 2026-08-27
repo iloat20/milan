@@ -71,6 +71,18 @@ object AppTheme {
     /** 嵌套玻璃面板底色（#251242 @ α≈0.59，GlassPanel nested 态；M15 收口硬编码色）。 */
     val SurfaceNested = Color(0x96251242)
 
+    /** 魔兽风格加成绿（C# WoWGreen = Rgb(70,255,130)；原 CharacterDetailScreen 私藏，2026-08-27 收口）。 */
+    val WoWGreen = Color(0xFF46FF82)
+
+    /** 武器舞台圆角暗底（原 CharacterDetailScreen 私藏，2026-08-27 收口）。 */
+    val WeaponStageBg = Color(0xFF101018)
+
+    /** 魔兽属性面板渐变起笔（原 CharacterDetailScreen 私藏，2026-08-27 收口）。 */
+    val WoWPanelTop = Color(0xFF16101C)
+
+    /** 魔兽属性面板渐变收尾。 */
+    val WoWPanelBottom = Color(0xFF0B0712)
+
     /** 稀有度色板 — 诸神黄昏·东方 调性（UR 熔金 / SSR 暮紫 / SR 霜蓝 / R 苍白）。 */
     fun rarityColor(rarity: Int): Color = when (rarity) {
         1 -> Color(0xFFE8E2F2)   // R  - 苍白

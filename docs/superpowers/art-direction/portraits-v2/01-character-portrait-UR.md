@@ -1,4 +1,4 @@
-# UR 角色立绘设计稿（7 位）— 最高规格
+# UR 角色立绘设计稿（10 位）— 最高规格
 
 > 适用总规范：`00-master-spec.md` v2.0
 > 画布：**1536×2304 px**，PNG-24 + Alpha，2:3 竖版
@@ -522,6 +522,209 @@ negative_prompt:
 
 ---
 
+## 8. 钢铁侠 Ironman · 钢铁意志 · Ironveil · Metal
+
+### 角色卡片
+- **ID**: `char_ur_ironman`
+- **联动**: 漫威钢铁侠本尊联动（方舟反应堆 × 铁帷锻造核心同源共鸣）
+- **武器**: 方舟核心·聚变掌炮（胸反应堆 + 掌心环形喷口）
+- **氛围特效**: `nanite_assembly_glint`（纳米蜂群重组微光）
+- **背景叙事**: 跨维度实验中被裂隙吞噬坠入铁帷纪元，以废墟残骸重铸战甲守护工坊区平民；夜晚胸口的方舟反应堆映亮工坊区，孩子们叫它「不灭的小太阳」。
+- **关键改进点**: 新角色无旧稿。按 v2.3 写实化规范直接出稿：金属物理质感 + 面甲收拢露脸双态（露脸为主，保证头像表情可读）。
+
+### 识别锚点 ×3（必含项）
+- **A 原型指纹**: 方舟反应堆胸灯（**胸口圆形冷白蓝发光核心，全图最亮点**）
+- **B 道具指纹**: 掌心聚变炮（**右手掌心环形喷口，蓝白等离子环高速旋转充能**）
+- **C 解剖签名**: 战甲下的凡人面孔（**托尼式山羊胡 + 傲然浅笑，面甲收拢于颈后**）
+
+### 全身构图
+- **主姿态**: P2 战阵冲锋悬停变体——单膝微曲悬浮离地，右掌前指观众方向
+- **动态参数**: 掌心炮「将出未出」的蓄能瞬间；肩部纳米装甲呈展开中的未完成态露出内衬机械肌理；双脚推进尾焰向左下切出对角线
+- **三段式**:
+  - 上段：头部微仰，面甲收拢于颈后成领圈；HUD 光带在眼后隐现不遮脸；红金甲片反射环境
+  - 中段：胸口方舟核心为三角构图顶点；胸腹甲片层叠可见液压管路细节
+  - 下段：双腿推进器尾焰对角切割画面；脚下熔金光圈（UR 稀有度色）
+
+### 视觉描述
+- **人脸**: 四十岁上下男性，深棕短发微乱、鬓角带灰，山羊胡修剪整齐；棕色眼瞳笑意与疲惫并存——天才的自负与凡人的真实
+- **战甲**: 经典红 `#B7352C` 金 `#D4AF37`；拉丝金属质感，环境反射中隐见铁帷齿轮城市剪影；关节外露黑色液压细节
+- **手部**: 右掌环形喷口全开、等离子环旋转；左拳半握垂于体侧、指节甲片分明
+
+### 配色系统
+| 层 | 颜色 | 应用 |
+|----|------|------|
+| 底层氛围 | `#2C3E50` 暗钢蓝 → `#B7352C` 甲红过渡 | 甲片阴影与底色 |
+| 阵营色 | `#7A8A9A` 钢灰 + `#4A90D9` 电蓝 | 推进尾焰、HUD 光带 |
+| 元素色 | `#4A90D9` 反应堆蓝白 + `#00D4FF` 等离子青 | 胸灯、掌心炮、能量纹 |
+| 稀有度色 | `#FFC857` 熔金 | 脚下光环、金甲部件高光 |
+| 情绪色 | `#FFFFFF` 冷白 | 核心过曝高光、眼神光 |
+
+### 生图 Prompt（5 段式）
+```
+[1. 主体] Card-game illustration of Iron Man, Tony Stark inside red-gold powered armor with faceplate retracted behind the neck revealing his human face — a man around forty with tousled dark hair streaked gray at the temples, neat goatee, brown eyes carrying wit and fatigue at once. Circular arc reactor glowing cold blue-white at his chest as the brightest point of the image. Brushed-metal armor plates with environment reflections hinting an iron-gear cityscape, black hydraulic lines exposed at joints.
+
+[2. 姿态] Hovering combat pose: one knee slightly bent mid-air, right palm thrust toward viewer charging a rotating blue-white plasma ring in the circular repulsor; nano-armor panels mid-deployment on shoulders exposing under-suit mechanics; twin boot thrusters firing diagonal exhaust trails cutting the frame.
+
+[3. 氛围] Atmosphere: defiant human genius among gods. Background: TRANSPARENT (PNG alpha). Below feet: molten gold radial glow circle (UR rarity color). Floating micro sparks of nanite assembly around shoulders. Mood: confident, industrial, heroic.
+
+[4. 风格] Ironveil world style: photorealistic-painterly rendering, physically-based metal shading (specular environment reflections, micro scratches), cinematic movie-poster contrast with saturated palette. Key light upper-left; fill from upper right using Ironveil steel-blue #7A8A9A; rim light from back-left in element electric blue #4A90D9; UR molten gold #FFC857 accents. Face expressive and readable at thumbnail size. Gacha card art, 2:3 vertical aspect ratio, transparent background.
+
+[5. 关键元素] key_elements:
+  - arc_reactor_chest_light_cold_blue_white (mandatory, A-archetype)
+  - palm_repulsor_plasma_ring_charging (mandatory, B-prop)
+  - human_face_with_goatee_faceplate_retracted (mandatory, C-anatomy)
+
+negative_prompt:
+  "fully closed helmet hiding face, cartoon flat coloring,
+   half-body, bust, cropped, head cropped by frame,
+   text, watermark, multiple characters,
+   bad anatomy, extra fingers, deformed hands, blurry, low quality"
+```
+
+### 透明背景处理要点
+- 尾焰边缘保留 ≤2px 羽化并单独分层（便于卡面动效替换）
+- 胸灯与等离子环硬切边缘 + 外发光层独立
+- 头发与胡须细碎边缘重度羽化（3-5px）防黑边
+- 脚下熔金光圈单独抠出为可选叠加层
+
+---
+
+## 9. 托尔 Thor · 九界雷霆 · Shinwa · Thunder
+
+### 角色卡片
+- **ID**: `char_ur_thor`
+- **联动**: 漫威雷神本尊联动（妙尔尼尔 × 山海雷兽腹鸣共鸣；与 SSR 雷神互文而非重复）
+- **武器**: 妙尔尼尔·九界雷锤（垂死之星锻造短柄战锤）
+- **氛围特效**: `storm_crown_arcs`（头顶风暴冠弧电蛇）
+- **背景叙事**: 追猎裂隙恶魔被放逐至神話天空；此界雷法只认其心不认其血。与烛龙、金乌并立神話三柱，司震怒。
+- **关键改进点**: 新角色。写实体积雷暴光 + 「落锤瞬间」静与动的力量对比；避免与 SSR 雷神的机械锤造型混淆。
+
+### 识别锚点 ×3（必含项）
+- **A 原型指纹**: 风暴冠弧（**头顶盘旋的乌云冠，发丝间跳银紫电弧**）
+- **B 道具指纹**: 妙尔尼尔（**方头短柄战锤，锤面古神文亮起，皮革缠柄连护腕链环**）
+- **C 解剖签名**: 斗士体格的红络腮胡与**右眼尾闪电状旧疤**
+
+### 全身构图
+- **主姿态**: P1 神祇凌空落地变体——单膝砸地的落雷姿态，锤头拄地，另一手拽住锤柄皮绳
+- **动态参数**: 以锤头为中心炸开环形冲击波与放射状地面裂纹；斗篷向上翻卷成风暴形状；电弧沿锁子甲纹理爬行
+- **三段式**:
+  - 上段：银发后掠，风暴冠弧盘旋头顶，眼瞳反射紫白雷光
+  - 中段：胸甲阿斯加德纹章，锁子甲缝隙透出雷光；锤面铭文亮起
+  - 下段：地面冲击波环与放射裂纹，脚下熔金光圈叠于其上（UR 稀有度色）
+
+### 视觉描述
+- **人脸**: 三十岁上下的北欧战士面孔，银灰长发后掠微湿；红络腮胡编有细辫；蓝色眼瞳沉静如暴雨前夜
+- **体格**: 斗士级肩宽腰窄，锁子甲+皮甲混编；臂环与腰带为做旧黄金
+- **手部**: 右手拄锤指节泛白发力；左手两指勾住护腕皮索——举重若轻的王者的松弛感
+
+### 配色系统
+| 层 | 颜色 | 应用 |
+|----|------|------|
+| 底层氛围 | `#1B2838` 风暴墨蓝 | 冲击波暗部、云冠 |
+| 阵营色 | `#9A6BFF` 紫金 + `#E34234` 朱砂 | 斗篷内衬、纹章 |
+| 元素色 | `#B388FF` 雷紫 + `#7DF9FF` 电青 | 电弧、锤面铭文、瞳孔反光 |
+| 稀有度色 | `#FFC857` 熔金 | 脚下光环、臂环金饰 |
+| 情绪色 | `#F5F5FF` 银白 | 银发高光、冲击波内核 |
+
+### 生图 Prompt（5 段式）
+```
+[1. 主体] Card-game illustration of Thor, Norse god of thunder exiled into a mythic sky realm. Silver-gray swept-back hair threaded with arcs of violet-white lightning, a storm-cloud crown circling his head, full red beard braided finely, boxer's build, an old lightning-shaped scar by the right eye. Mjolnir: square-headed short-handled war hammer with glowing runic engravings, leather-wrapped grip linked by chain to his bracer.
+
+[2. 姿态] Thunder-strike landing pose: one knee slammed to the ground, hammer head planted down, other hand casually hooking the wrist strap — heavy power held with kingly ease. Ring shockwave and radial ground cracks exploding outward from the hammer; cape billowing upward shaped like a storm; lightning crawling along chainmail seams.
+
+[3. 氛围] Atmosphere: righteous wrath of a guardian king. Background: TRANSPARENT (PNG alpha). Below feet: molten gold radial glow circle (UR rarity color) layered over the shockwave ring. Floating particles: ionized mist wisps, tiny glass-like rain beads. Mood: thunderous, noble, immovable.
+
+[4. 风格] Shinwa world style: photorealistic-painterly rendering, volumetric storm lighting, saturated high-contrast palette (never gray). Key light from the hammer's impact point lower-center bouncing up; fill from upper right using Shinwa purple #9A6BFF; rim light from back-left in element violet-cyan #7DF9FF; UR molten gold #FFC857 accents on gold arm-rings. Face expressive at thumbnail size. Gacha card art, 2:3 vertical aspect ratio, transparent background.
+
+[5. 关键元素] key_elements:
+  - storm_cloud_crown_with_lightning_arcs (mandatory, A-archetype)
+  - mjolnir_runic_short_hammer_leather_grip (mandatory, B-prop)
+  - red_braided_beard_lightning_scar_right_eye (mandatory, C-anatomy)
+
+negative_prompt:
+  "winged helmet fully covering hair, movie costume replica,
+   half-body, bust, cropped, head cropped by frame,
+   text, watermark, multiple characters, cute chibi,
+   bad anatomy, extra fingers, deformed hands, blurry, low quality,
+   washed-out gray lighting"
+```
+
+### 透明背景处理要点
+- 电弧用「加法混合」思路输出：主体透明通道内电弧半透明，禁止实心白块
+- 冲击波环与地面裂纹属于可选地效层，与主体分离抠出
+- 风暴云冠边缘重度羽化（4-6px），电弧丝保留 ≤1px 锐线
+- 脚下熔金光圈单独分层
+
+---
+
+## 10. 奇异博士 Strange · 至尊法师 · Shinwa · Light
+
+### 角色卡片
+- **ID**: `char_ur_strange`
+- **联动**: 漫威奇异博士本尊联动（看穿米兰裂隙与多元宇宙裂缝同源）
+- **武器**: 阿戈摩托之眼·时序轮（胸前瞳状绿宝石圣物）
+- **氛围特效**: `mandala_glyph_orbit`（曼陀罗符文三层环轨）
+- **背景叙事**: 在以太议会档案库找到早于虚无千年的裂隙记录；与女娲论「修补与代价」——她炼石补天，他窥时换命。
+- **关键改进点**: 新角色。双色光源体系（时间绿 × 法印金）+ 自主悬浮斗篷的「活物感」。
+
+### 识别锚点 ×3（必含项）
+- **A 原型指纹**: 悬浮红斗篷（**猩红斗篷自主扬起如活物，金色立领高耸**）
+- **B 道具指纹**: 阿戈摩托之眼（**胸前绿焰瞳状宝石，开启时瞳内时间支流流转**）
+- **C 解剖签名**: 双手恒定结印的施法手势（**指缝迸出金色火花曼陀罗**）
+
+### 全身构图
+- **主姿态**: P1 神祇凌空变体——双手于胸前结复杂法印，身后悬浮三层曼陀罗符环
+- **动态参数**: 金色火花自指尖向两侧延展成盾形符阵；红斗篷向后张开如翼；灰鬓短发被气浪掀起
+- **三段式**:
+  - 上段：眉宇沉静锐利，眼底映宝石绿光；立领框住面部保证头像裁切完整
+  - 中段：阿戈摩托之眼悬于胸口上方，绿色时间流光与金色法印构成双色光源
+  - 下段：长袍下摆散作星点飘至脚踝，脚下熔金光圈（UR 稀有度色）
+
+### 视觉描述
+- **人脸**: 四十岁上下清瘦男性，深棕短发掺灰白鬓角；颧骨利落，眼下淡青——以岁月换视者的代价写在脸上
+- **服饰**: 藏蓝法师长袍绣暗金符文，袖口宽大便于结印；猩红斗篷金扣
+- **手部**: 双手各结不同印（左拇指扣中指、右手五指张成弧），火花沿指骨精确分布
+
+### 配色系统
+| 层 | 颜色 | 应用 |
+|----|------|------|
+| 底层氛围 | `#0D1B2A` 深渊藏蓝 | 斗篷阴影、背景深度 |
+| 阵营色 | `#9A6BFF` 暗紫金 | 斗篷内衬、袍面符文暗纹 |
+| 元素色 | `#FFD700` 法印金 + `#3EE68B` 时间绿 | 曼陀罗、火花、胸宝石 |
+| 稀有度色 | `#FFC857` 熔金 | 脚下光环、领口金边 |
+| 情绪色 | `#E8F6EF` 月白 | 眼底反光、袍摆星点 |
+
+### 生图 Prompt（5 段式）
+```
+[1. 主体] Card-game illustration of Doctor Strange, sorcerer supreme guarding a rift-torn mythic realm. A lean man around forty with dark brown hair streaked gray at temples, sharp cheekbones, faint shadows under sharp calm eyes — the price of trading years for foresight. Crimson cloak of levitation alive and billowing behind him with tall gold-edged collar; navy robe embroidered with subtle golden runes, wide sleeves for spell-weaving.
+
+[2. 姿态] Deity-hovering pose: both hands weaving different sigils before his chest, golden spark mandalas blooming between precise fingers and extending sideways into a shield-shaped rune array; three translucent rune rings orbiting behind him at different depths; robe hem dissolving into star motes above the ankles.
+
+[3. 氛围] Atmosphere: serene omniscience, the weight of fourteen million endings carried quietly. Background: TRANSPARENT (PNG alpha). Below feet: molten gold radial glow circle (UR rarity color). Dual light sources: green time-stream glow from the Eye of Agamotto amulet open at his chest (iris-shaped gem with flowing streams inside) against warm gold sigil sparks. Mood: mystical, composed, protective.
+
+[4. 风格] Shinwa world style: photorealistic-painterly rendering, fabric weave visible on robes, subsurface scattering on hands lit by spark glow, cinematic depth with saturated palette. Key light from the green amulet below-center; secondary warm gold from sigils; rim light from back-left in element light-gold #FFD700 mixed with time-green #3EE68B; UR molten gold #FFC857 accents on collar. Face expressive at thumbnail size. Gacha card art, 2:3 vertical aspect ratio, transparent background.
+
+[5. 关键元素] key_elements:
+  - crimson_cloak_of_levitation_alive_billowing (mandatory, A-archetype)
+  - eye_of_agamotto_green_flame_iris_gem_open (mandatory, B-prop)
+  - dual_hands_sigil_golden_spark_mandalas (mandatory, C-anatomy)
+
+negative_prompt:
+  "closed or missing cloak, amulet hidden under robe,
+   half-body, bust, cropped, head cropped by frame,
+   text, watermark, multiple characters, cute chibi,
+   bad anatomy, extra fingers, deformed hands, blurry, low quality,
+   single-color flat lighting"
+```
+
+### 透明背景处理要点
+- 金色火花为加法混合半透明层，与主体分离抠出（便于动效闪烁）
+- 曼陀罗符环三层各自独立分层（景深视差用）
+- 斗篷边缘羽化 ≤2px；袍摆星点渐隐至完全 alpha=0
+- 脚下熔金光圈单独抠出为可选叠加层
+
+---
+
 ## UR 总览对照表
 
 | 角色 | 世界 | 元素 | 主姿态 | 识别锚点（3 项） | 关键改进 |
@@ -533,11 +736,14 @@ negative_prompt:
 | 刻晴 | Aether | Thunder | P2 战阵冲锋 | 双马尾 / 雷楔双剑 / 紫眼 | 双剑交叉 V 字 |
 | 金乌 | Shinwa | Flame | P1 神祇凌空 | 三足 / 太阳耀斑弓 / 凤凰火焰羽翼 | 新角色，悲悯骄傲双重情绪 |
 | 女娲 | Aether | Earth | P1 神祇凌空 | 蛇尾五色鳞 / 五色石 / 山河纹长袍 | 新角色，母神创世气质 |
+| 钢铁侠 | Ironveil | Metal | P2 战阵冲锋（悬停） | 方舟胸灯 / 掌心聚变炮 / 露脸山羊胡 | 漫威联动，写实金属质感 |
+| 托尔 | Shinwa | Thunder | P1 神祇凌空（落地变体） | 风暴冠弧 / 妙尔尼尔 / 络腮胡闪电疤 | 漫威联动，落锤冲击波构图 |
+| 奇异博士 | Shinwa | Light | P1 神祇凌空 | 悬浮红斗篷 / 阿戈摩托之眼 / 双手结印 | 漫威联动，绿金双色光源 |
 
 ## UR 通用 QC 备注
-- 7 张立绘必须统一"主光来自左上方 7 点钟 + 阵营色补光"——交付前比对
+- 10 张立绘必须统一"主光来自左上方 7 点钟 + 阵营色补光"——交付前比对
 - 蛇尾（烛龙/女娲）必须 S 形盘旋 ≥3 圈，禁止直线下垂
-- 武器（昼夜轮/无相刃/干戚/灵弓/双剑/曜日弓/补天杖）必须完整可见，禁止截断
+- 武器（昼夜轮/无相刃/干戚/灵弓/双剑/曜日弓/补天杖/聚变掌炮/妙尔尼尔/时序轮）必须完整可见，禁止截断
 - 透明背景最终验证：每张图在黑色 + 白色 + 阵营色三种底色上各看一次，确认无硬黑切边
 
 ---
@@ -550,5 +756,9 @@ negative_prompt:
 4. **做刻晴**（原神联动，对照官方立绘风格避免侵权式"过像"）
 5. **做刑天**（Ironveil 复杂机甲，需先打小稿测试"无头战士"的可读性）
 6. **最后做虚无**（Aether 最复杂，需多打几个 seed 选最佳"暗物质溶解"质感）
+7. **做钢铁侠**（漫威联动 + Ironveil 机甲写实试金石，先打金属材质与露脸小稿）
+8. **做托尔与奇异博士**（Shinwa 双联动，共用紫金阵营补光基准；奇异博士的绿金双色光源需单独校色）
+
+> v2.3 起全部 UR 按 06 号规范 §7 写实化口径出图（extract_prompts.py 导出的 prompt 已自动注入写实指令层）。
 
 每张生图前先以**512×768 低分辨率 + 简单姿态**测试三段式构图与识别锚点，达标后再 hires fix 到 1536×2304。

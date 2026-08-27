@@ -30,9 +30,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -60,6 +58,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import com.milan.game.services.CharacterDataEntry
 import com.milan.game.ui.GameState
+import com.milan.game.ui.components.GlassDialog
 import com.milan.game.ui.components.GoldButton
 import com.milan.game.ui.components.NeonButton
 import com.milan.game.ui.components.PortraitImage
@@ -133,7 +132,7 @@ fun HomeScreen(
                     item { Spacer(Modifier.height(10.dp)) }
                     item { HeroButtons(onOpenGacha, onOpenCollection, onOpenTower, onOpenAchievements) }
                     item { Spacer(Modifier.height(14.dp)) }
-                    item { SectionTitle("诸神名录", "UNIFIED AVATARS") }
+                    item { HomeSectionTitle("诸神名录", "UNIFIED AVATARS") }
                     item { Spacer(Modifier.height(8.dp)) }
                     item { AvatarStrip(onOpenCharacter) }
                     item {
@@ -444,7 +443,7 @@ private fun AvatarCircle(def: CharacterDataEntry, modifier: Modifier = Modifier)
 // ── 小标题：左金线 + 标题 + 英文副标 ──
 
 @Composable
-private fun SectionTitle(title: String, en: String) {
+private fun HomeSectionTitle(title: String, en: String) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -528,13 +527,20 @@ private fun CrashDialogIfAny() {
         CrashReporter.boot("home.oncreate.done")
     }
 
-    if (show) {
-        AlertDialog(
-            onDismissRequest = { show = false },
-            title = { Text("上次异常退出的现场") },
-            text = { Text(report.take(3000)) },
-            confirmButton = {
-                TextButton(onClick = {
+    // 2026-08 UI 现代化：Material AlertDialog/TextButton → GlassDialog/NeonButton（全站统一视觉语言）
+    GlassDialog(
+        show = show,
+        onDismiss = { show = false },
+        title = "上次异常退出的现场",
+        body = report.take(3000),
+    ) {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
+        ) {
+            NeonButton(
+                text = "复制",
+                color = AppTheme.Frost,
+                onClick = {
                     try {
                         val cm = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                         cm.setPrimaryClip(ClipData.newPlainText("milan-crash", report))
@@ -542,11 +548,9 @@ private fun CrashDialogIfAny() {
                     } catch (_: Exception) {
                     }
                     show = false
-                }) { Text("复制") }
-            },
-            dismissButton = {
-                TextButton(onClick = { show = false }) { Text("关闭") }
-            },
-        )
+                },
+            )
+            NeonButton(text = "关闭", color = AppTheme.Text2, onClick = { show = false })
+        }
     }
 }

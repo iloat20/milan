@@ -84,6 +84,10 @@ object GameState {
     val currencyLabel: String
         get() = "星尘: $currency"
 
+    /** 出战编队槽位上限（单一事实来源：SaveData.Companion.MAX_FORMATION_SIZE）。 */
+    val maxFormationSize: Int
+        get() = com.milan.game.data.SaveData.MAX_FORMATION_SIZE
+
     val ownedCount: Int
         get() = service.saveData.ownedCharacters.size
 

@@ -119,17 +119,9 @@ fun GachaScreen(
     }
     var summary by rememberSaveable { mutableStateOf("") }
     var batch by remember { mutableIntStateOf(0) }
-    var revealToken by remember { mutableIntStateOf(0) }
-    var staged by remember { mutableStateOf<List<PullResult>?>(null) }
-    var revealDef by remember { mutableStateOf<CharacterDataEntry?>(null) }
-    var revealRarity by remember { mutableIntStateOf(1) }
-    var showReveal by remember { mutableStateOf(false) }
-    // 2026-08-20 赛博霓虹演出：阶段机（Charge 蓄能 → Beam 光柱 → Single/Ten 揭晓 → Done）
-    var revealStage by remember { mutableStateOf(RevealStage.Done) }
-    var fortune by remember { mutableStateOf("") }
-    var cardIn by remember { mutableStateOf(false) }
-    var flashVisible by remember { mutableStateOf(false) }
-    var flashColor by remember { mutableStateOf(Color.White) }
+    // P3-2：演出状态聚合为单一 holder（原子 copy 更新），替代此前 10 个平铺 remember——
+    // 阶段机（Charge 蓄能 → Beam 光柱 → Single/Ten 揭晓 → Done）的各字段同生共死。
+    var reveal by remember { mutableStateOf(RevealUiState()) }
     var entered by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) { entered = true }
@@ -143,32 +135,28 @@ fun GachaScreen(
         } catch (_: Exception) { }
     }
 
-    /** 演出结束 / 跳过：展示结果、复位状态（C# FinishReveal）。 */
+    /** 演出结束 / 跳过：展示结果、复位状态（C# FinishReveal；token 保留以维持作废语义）。 */
     fun finishReveal() {
-        val list = staged
+        val list = reveal.staged
         if (list != null) {
             results = list
             summary = buildSummary(list)
             batch++
         }
-        showReveal = false
-        revealStage = RevealStage.Done
-        flashVisible = false
-        staged = null
-        revealDef = null
+        reveal = RevealUiState(token = reveal.token)
         busy = false
     }
 
     /** 跳过演出：递增 token 作废挂起编排，立即出结果（C# SkipReveal）。 */
     fun skipReveal() {
-        if (!busy || !showReveal) return
-        revealToken++
+        if (!busy || !reveal.visible) return
+        reveal = reveal.copy(token = reveal.token + 1)
         finishReveal()
     }
 
     // P1-3 修复：演出中系统返回（手势/Predictive Back）不得直接销毁组合——抽卡已扣款发货，
     // 直接返回会让玩家看不到结果；拦截并转跳过演出（等价点按跳过），随后再返回才退出页面。
-    BackHandler(enabled = showReveal) { skipReveal() }
+    BackHandler(enabled = reveal.visible) { skipReveal() }
 
     /** 抽卡入口（C# DoPull）：余额检查 → pull → 兜底 → 演出编排。
      *  2026-08 主线程 IO 异步化：pull 为 suspend，落盘在 IO 线程执行，主线程不阻塞；
@@ -210,40 +198,43 @@ fun GachaScreen(
                 try { CrashReporter.boot("gacha.pull.empty poolId=${p.poolId}") } catch (_: Exception) { }
                 return@launch
             }
-            staged = pulled
+            val bestDef = best.characterId.let { GameState.service.character(it) }
+            // 端侧 AI 签文（默认 Stub：离线、确定性；seed 含 token 保证每抽不同但可复现）
+            val token = reveal.token + 1
             buzz(HapticFeedbackConstants.KEYBOARD_TAP)
             MilanAudio.playSfx("gacha_pull")
-            revealDef = best.characterId.let { GameState.service.character(it) }
-            revealRarity = best.rarity
-            flashColor = AppTheme.rarityColor(best.rarity)
-            // 端侧 AI 签文（默认 Stub：离线、确定性；seed 含 token 保证每抽不同但可复现）
-            val token = revealToken + 1
-            fortune = revealDef?.let { FortuneAgentRegistry.activeAgent.fortune(it, it.characterId.hashCode().toLong() + token) } ?: ""
-            cardIn = false
-            revealToken = token
             // 阶段一：蓄能（粒子汇聚 + 弧线环绕，CyberStage.ChargeCore）
-            revealStage = RevealStage.Charge
-            delay(420); if (token != revealToken) return@launch
+            reveal = RevealUiState(
+                token = token,
+                staged = pulled,
+                def = bestDef,
+                rarity = best.rarity,
+                flashColor = AppTheme.rarityColor(best.rarity),
+                fortune = bestDef?.let { FortuneAgentRegistry.activeAgent.fortune(it, it.characterId.hashCode().toLong() + token) } ?: "",
+                stage = RevealStage.Charge,
+            )
+            delay(420); if (token != reveal.token) return@launch
             // 阶段二：次元光柱爆发（RiftBeam + 稀有度白闪叠放增强）
-            revealStage = RevealStage.Beam
-            flashVisible = true
-            delay(480); if (token != revealToken) return@launch
-            flashVisible = false
-            delay(120); if (token != revealToken) return@launch
+            reveal = reveal.copy(stage = RevealStage.Beam, flashVisible = true)
+            delay(480); if (token != reveal.token) return@launch
+            reveal = reveal.copy(flashVisible = false)
+            delay(120); if (token != reveal.token) return@launch
             // 阶段三：揭晓（单抽大立绘卡 / 十连 2×5 牌桌逐张翻开，onFlip 逐张反馈）
-            cardIn = true
-            showReveal = true
-            revealStage = if (tenPull) RevealStage.Ten else RevealStage.Single
+            reveal = reveal.copy(
+                cardIn = true,
+                visible = true,
+                stage = if (tenPull) RevealStage.Ten else RevealStage.Single,
+            )
             MilanAudio.playSfx("gacha_reveal")
             // CONFIRM 需 API 30（minSdk 29）：低版本回退 LONG_PRESS，其余路径不变
-            if (revealRarity >= 3) {
+            if (best.rarity >= 3) {
                 val confirm = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R)
                     HapticFeedbackConstants.CONFIRM else HapticFeedbackConstants.LONG_PRESS
                 buzz(confirm)
             } else {
                 buzz(HapticFeedbackConstants.VIRTUAL_KEY)
             }
-            delay(if (tenPull) 3600L else 1500L); if (token != revealToken) return@launch
+            delay(if (tenPull) 3600L else 1500L); if (token != reveal.token) return@launch
             // 阶段四：结果
             finishReveal()
         }
@@ -255,7 +246,7 @@ fun GachaScreen(
         label = "entrance",
     )
     val flashAlpha by animateFloatAsState(
-        targetValue = if (flashVisible) 1f else 0f,
+        targetValue = if (reveal.flashVisible) 1f else 0f,
         animationSpec = tween(420),
         label = "flash",
     )
@@ -499,20 +490,20 @@ fun GachaScreen(
             Box(
                 Modifier
                     .fillMaxSize()
-                    .background(flashColor)
+                    .background(reveal.flashColor)
                     .graphicsLayer { alpha = flashAlpha },
             )
         }
 
         // ── 翻牌演出层（2026-08-20 赛博霓虹：蓄能 → 光柱 → 揭晓逐张，整屏点击可跳过）──
-        if (showReveal) {
+        if (reveal.visible) {
             CyberRevealLayer(
-                stage = revealStage,
-                singleDef = revealDef,
-                singleRarity = revealRarity,
-                fortune = fortune,
-                batch = staged ?: emptyList(),
-                cardIn = cardIn,
+                stage = reveal.stage,
+                singleDef = reveal.def,
+                singleRarity = reveal.rarity,
+                fortune = reveal.fortune,
+                batch = reveal.staged ?: emptyList(),
+                cardIn = reveal.cardIn,
                 onSkip = ::skipReveal,
                 onFlip = { r ->
                     // 逐张翻开反馈：SSR/UR 才振 + 音效，R/SR 静默避免十连全程震动
@@ -528,6 +519,24 @@ fun GachaScreen(
         }
     }
 }
+
+/**
+ * 抽卡演出状态机（P3-2：聚合 GachaScreen 此前 10 个平铺 remember）。
+ * [token] 编排作废序号（新抽 / 跳过递增，挂起编排比对后自毙）；其余字段随每次抽卡整体重建，
+ * finishReveal 仅保留 token 全量复位。
+ */
+private data class RevealUiState(
+    val token: Int = 0,
+    val staged: List<PullResult>? = null,
+    val def: CharacterDataEntry? = null,
+    val rarity: Int = 1,
+    val visible: Boolean = false,
+    val stage: RevealStage = RevealStage.Done,
+    val fortune: String = "",
+    val cardIn: Boolean = false,
+    val flashVisible: Boolean = false,
+    val flashColor: Color = Color.White,
+)
 
 /**
  * PullResult 结果列表的 rememberSaveable Saver（P3-8：旋转后恢复抽卡结果展示）。

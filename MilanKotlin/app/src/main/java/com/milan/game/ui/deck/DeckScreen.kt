@@ -20,6 +20,7 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.activity.compose.BackHandler
@@ -84,9 +85,9 @@ fun DeckScreen(
     }
     val toggleFormation: (String) -> Unit = { id ->
         val current = GameState.service.getFormation()
-        if (id !in current && current.size >= SaveData.MAX_FORMATION_SIZE) {
+        if (id !in current && current.size >= GameState.maxFormationSize) {
             // 满员：此前静默忽略，第 6 个角色点击毫无反馈；补明确提示
-            scope.launch { feedback.show("编队已满（${SaveData.MAX_FORMATION_SIZE} 人），请先移出一名角色") }
+            scope.launch { feedback.show("编队已满（${GameState.maxFormationSize} 人），请先移出一名角色") }
         } else {
             val next = when (id) {
                 in current -> current - id
@@ -111,7 +112,7 @@ fun DeckScreen(
             Spacer(Modifier.height(14.dp))
             Text(
                 text = "已拥有  ${owned.size}  位角色",
-                fontSize = 14.sp,
+                style = MaterialTheme.typography.bodyLarge,
                 color = AppTheme.Text2,
                 modifier = Modifier.padding(horizontal = 18.dp),
             )
@@ -121,7 +122,7 @@ fun DeckScreen(
             if (owned.isNotEmpty()) {
                 FormationBar(
                     members = members,
-                    maxSlots = SaveData.MAX_FORMATION_SIZE,
+                    maxSlots = GameState.maxFormationSize,
                     onSlotClick = { onOpenDeckSlot ->
                         // 空槽点击不动作；有角色槽点击进预览（与网格卡片同语义）
                         if (onOpenDeckSlot != null) previewId = onOpenDeckSlot
@@ -148,7 +149,7 @@ fun DeckScreen(
                         )
                         Text(
                             text = "还没有角色，去寻访吧",
-                            fontSize = 14.sp,
+                            style = MaterialTheme.typography.bodyLarge,
                             color = AppTheme.Text3,
                             modifier = Modifier.padding(top = 8.dp),
                         )
@@ -181,7 +182,7 @@ fun DeckScreen(
                             footer = {
                                 Text(
                                     text = "★".repeat(ch.save.stars.coerceAtLeast(1)),
-                                    fontSize = 11.sp,
+                                    style = MaterialTheme.typography.labelMedium,
                                     color = AppTheme.Gold,
                                     modifier = Modifier.padding(top = 3.dp),
                                 )
@@ -275,8 +276,7 @@ private fun DeckPreviewOverlay(
                     ) {
                         Text(
                             text = preview.name,
-                            fontSize = 17.sp,
-                            fontWeight = FontWeight.Bold,
+                            style = MaterialTheme.typography.titleMedium,
                             color = AppTheme.Text1,
                         )
                     }
@@ -288,20 +288,19 @@ private fun DeckPreviewOverlay(
                     ) {
                         Text(
                             text = AppTheme.rarityName(preview.rarity),
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Bold,
+                            style = MaterialTheme.typography.labelLarge,
                             color = rc,
                         )
                         Spacer(Modifier.width(8.dp))
                         val ei = com.milan.game.ui.theme.ElementTheme.forElement(preview.element)
                         Text(
                             text = "${ei.glyph} ${preview.element}",
-                            fontSize = 10.sp,
+                            style = MaterialTheme.typography.labelSmall,
                             color = ei.glow,
                             modifier = Modifier
-                                .clip(RoundedCornerShape(6.dp))
+                                .clip(MaterialTheme.shapes.extraSmall)
                                 .background(Color.Black.copy(alpha = 0.35f))
-                                .border(1.dp, ei.glow.copy(alpha = 0.9f), RoundedCornerShape(6.dp))
+                                .border(1.dp, ei.glow.copy(alpha = 0.9f), MaterialTheme.shapes.extraSmall)
                                 .padding(horizontal = 7.dp, vertical = 2.dp),
                         )
                     }
@@ -326,7 +325,7 @@ private fun DeckPreviewOverlay(
                 )
                 Text(
                     text = "点击空白处关闭",
-                    fontSize = 12.sp,
+                    style = MaterialTheme.typography.bodySmall,
                     color = AppTheme.Text3,
                     modifier = Modifier.padding(top = 10.dp),
                 )

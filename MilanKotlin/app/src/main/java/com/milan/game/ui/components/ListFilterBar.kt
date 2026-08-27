@@ -15,6 +15,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -93,15 +94,15 @@ fun ListFilterBar(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(14.dp))
-                .background(AppTheme.Surface, RoundedCornerShape(14.dp))
-                .border(1.dp, AppTheme.Stroke, RoundedCornerShape(14.dp)),
+                .clip(MaterialTheme.shapes.medium)
+                .background(AppTheme.Surface, MaterialTheme.shapes.medium)
+                .border(1.dp, AppTheme.Stroke, MaterialTheme.shapes.medium),
         ) {
             BasicTextField(
                 value = searchText,
                 onValueChange = onSearchTextChange,
                 singleLine = true,
-                textStyle = TextStyle(fontSize = 14.sp, color = AppTheme.Text1),
+                textStyle = MaterialTheme.typography.bodyLarge.copy(color = AppTheme.Text1),
                 cursorBrush = SolidColor(AppTheme.Gold),
                 keyboardOptions = KeyboardOptions(imeAction = androidx.compose.ui.text.input.ImeAction.Search),
                 decorationBox = { inner ->
@@ -110,7 +111,7 @@ fun ListFilterBar(
                         contentAlignment = Alignment.CenterStart,
                     ) {
                         if (searchText.isEmpty()) {
-                            Text("搜索角色名称…", fontSize = 14.sp, color = AppTheme.Text3)
+                            Text("搜索角色名称…", style = MaterialTheme.typography.bodyLarge, color = AppTheme.Text3)
                         }
                         inner()
                     }
@@ -157,11 +158,10 @@ fun ListFilterBar(
 /** 单个筛选 chip（C# ListFilterBar.AddChip：选中金底 / 未选玻璃底，12sp 加粗）。 */
 @Composable
 private fun FilterChip(label: String, active: Boolean, onClick: () -> Unit) {
-    val shape = RoundedCornerShape(14.dp)
+    val shape = MaterialTheme.shapes.medium
     Text(
         text = label,
-        fontSize = 12.sp,
-        fontWeight = FontWeight.Bold,
+        style = MaterialTheme.typography.labelLarge,
         color = if (active) AppTheme.Gold else AppTheme.Text2,
         modifier = Modifier
             .clip(shape)

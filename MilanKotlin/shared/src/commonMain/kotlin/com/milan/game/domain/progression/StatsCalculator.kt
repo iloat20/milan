@@ -12,6 +12,12 @@ import kotlin.math.max
  * 纯函数、无状态、无 Android 依赖；依赖引擎实例经参数注入（实例复用由调用方负责，
  * 避免热路径每次重组重复分配）。
  */
+/**
+ * 次级属性（暴击/急速/护甲/格挡），由主属性透明推导，仅面板展示（C# DeriveSecondary）。
+ * 下沉至 shared domain：桌面模拟器与 App 同口径。
+ */
+data class SecondaryStats(val crit: Int, val haste: Int, val armor: Int, val block: Int)
+
 object StatsCalculator {
 
     /**
@@ -54,4 +60,12 @@ object StatsCalculator {
             characterId = characterId,
         )
     }
+
+    /** 次级属性推导：从主属性透明映射（C# DeriveSecondary；纯函数，无 Android 依赖）。 */
+    fun deriveSecondary(s: UnitStats): SecondaryStats = SecondaryStats(
+        crit = (8 + s.atk / 120).coerceIn(8, 60),
+        haste = (5 + s.spd * 2).coerceIn(5, 50),
+        armor = (s.def * 1.6 + s.hp * 0.05).toInt(),
+        block = (3 + s.def / 200).coerceIn(3, 30),
+    )
 }

@@ -1019,6 +1019,171 @@
       ],
       "Weapon": "喑杀·影刃",
       "WeaponDesc": "夜叉捷鬼，无声影刃出鞘无音，一闪取命。"
+    },
+    {
+      "CharacterId": "char_ur_ironman",
+      "DisplayName": "钢铁侠 Iron Man",
+      "Title": "钢铁意志",
+      "World": "Ironveil",
+      "Faction": "Ironveil",
+      "Element": "Metal",
+      "BaseRarity": 4,
+      "BaseStats": [
+        160,
+        135,
+        1300,
+        16
+      ],
+      "MaxStars": 7,
+      "CanBreakthrough": true,
+      "Lore": "「凡人之躯，比肩神明。」漫威天才发明家托尼·斯塔克在一场跨维度实验中被裂隙吞噬，坠入铁帷纪元。方舟反应堆的脉冲与铁帷锻造核心同源共鸣，他以废墟残骸重铸战甲——马克系列的每一道合金纹路，都是他拒绝认输的宣言。",
+      "TalentTreeId": "tree_ironman",
+      "Story": "裂隙纪元中，钢铁侠的战甲成了铁帷平民头顶的保护伞。他与刑天理念相近而路线不同：刑天在战场上守护民众，托尼则重建工坊，让每个普通人都有机会穿上自己的铠甲。夜晚，胸口的方舟反应堆映亮整片工坊区，孩子们叫它「不灭的小太阳」。",
+      "Voices": [
+        "机甲会坠落，但造机甲的人会再站起来。",
+        "没有天赐的神力？那就自己动手造一个。",
+        "我不是英雄，我只是先想到了办法。"
+      ],
+      "WeaponVfx": "arc_reactor_repulsor",
+      "AmbientVfx": "nanite_assembly_glint",
+      "Skills": [
+        {
+          "SkillId": "ironman_1",
+          "DisplayName": "掌心雷暴",
+          "Description": "双掌聚能轰出方舟聚变光束，对直线上敌人造成巨额金属伤害并击退",
+          "Element": "Metal",
+          "Type": "Ultimate",
+          "Power": 93
+        },
+        {
+          "SkillId": "ironman_2",
+          "DisplayName": "纳米重构",
+          "Description": "纳米蜂群瞬间重构装甲，回复生命并展开可吸收伤害的护盾",
+          "Element": "Metal",
+          "Type": "Active",
+          "Power": 70
+        },
+        {
+          "SkillId": "ironman_3",
+          "DisplayName": "方舟过载",
+          "Description": "每次释放技能叠加过载层数，满层后下一次攻击必定暴击",
+          "Element": "Metal",
+          "Type": "Passive",
+          "Power": 66
+        }
+      ],
+      "Weapon": "方舟核心·聚变掌炮",
+      "WeaponDesc": "以方舟反应堆为心的掌心聚变装置。反应堆每一次搏动都为战甲注入恒星级的能量；双掌张开时，高热粒子束足以熔穿合金帷幕——那是凡人向神明递出的名片。"
+    },
+    {
+      "CharacterId": "char_ur_thor",
+      "DisplayName": "托尔 Thor",
+      "Title": "九界雷霆",
+      "World": "Shinwa",
+      "Faction": "Shinwa",
+      "Element": "Thunder",
+      "BaseRarity": 4,
+      "BaseStats": [
+        168,
+        120,
+        1400,
+        15
+      ],
+      "MaxStars": 7,
+      "CanBreakthrough": true,
+      "Lore": "阿斯加德的雷霆之子托尔，追猎撕裂诸界的裂隙恶魔时被放逐至神話天空。妙尔尼尔的雷霆与山海雷兽的腹鸣在此共鸣——此界雷法只认其心，不认其血。他举起锤的那一刻便懂了：真正的王冠不是奥丁赐下的，而是配得上雷霆的那颗头颅。",
+      "TalentTreeId": "tree_thor",
+      "Story": "托尔与烛龙、金乌并立为神話三柱：一位司昼夜、一位司光明、而他司震怒。当裂隙再度撕开天幕，他第一个跃入云海，以雷霆立誓——阿斯加德或许已逝，但守护的誓言与锤同在。",
+      "Voices": [
+        "妙尔尼尔认可的不是血统，是握锤的手为何而握。",
+        "雷霆落下之前我有时间后悔——可惜我从不后悔。",
+        "另一个宇宙的我怎么选的？我只走眼前这条路。"
+      ],
+      "WeaponVfx": "mjolnir_stormcall",
+      "AmbientVfx": "storm_crown_arcs",
+      "Skills": [
+        {
+          "SkillId": "thor_1",
+          "DisplayName": "诸界黄昏",
+          "Description": "召唤九界雷霆灌入妙尔尼尔，对全体敌人造成巨额雷伤并麻痹",
+          "Element": "Thunder",
+          "Type": "Ultimate",
+          "Power": 94
+        },
+        {
+          "SkillId": "thor_2",
+          "DisplayName": "雷锤回旋",
+          "Description": "掷出雷锤弹射至多4个敌人，回旋时将目标拉拽聚拢",
+          "Element": "Thunder",
+          "Type": "Active",
+          "Power": 71
+        },
+        {
+          "SkillId": "thor_3",
+          "DisplayName": "风暴加身",
+          "Description": "受击积攒静电，满层召唤环绕风暴，反弹部分伤害",
+          "Element": "Thunder",
+          "Type": "Passive",
+          "Power": 67
+        }
+      ],
+      "Weapon": "妙尔尼尔·九界雷锤",
+      "WeaponDesc": "由垂死之星锻造的短柄战锤，镌刻着「配得上者方可执之」的古神文。掷出时牵引九界风云，回旋必中；落点处雷霆如瀑，诸界为之侧耳。"
+    },
+    {
+      "CharacterId": "char_ur_strange",
+      "DisplayName": "奇异博士 Doctor Strange",
+      "Title": "至尊法师",
+      "World": "Shinwa",
+      "Faction": "Shinwa",
+      "Element": "Light",
+      "BaseRarity": 4,
+      "BaseStats": [
+        150,
+        110,
+        1150,
+        18
+      ],
+      "MaxStars": 7,
+      "CanBreakthrough": true,
+      "Lore": "曾经的外科圣手史蒂芬·斯特兰奇因车祸毁去双手，远赴卡玛泰姬习法，终成漫威宇宙的至尊法师。他看穿米兰裂隙与多元宇宙裂缝同源——阿戈摩托之眼中，亿万种结局里只有一线生机。他以曼陀罗结界守护此界，以绯红枷锁缚住终焉。",
+      "TalentTreeId": "tree_strange",
+      "Story": "奇异博士在以太议会的档案库里找到了关于裂隙的第一份记录，比虚无现世还早千年。他与女娲有过一次沉默的对谈——关于修补与代价：她炼石补天，他窥时换命。「我们都是拿自己的一部分去填裂缝的人。」这是他对补天者唯一的评价。",
+      "Voices": [
+        "我看过一千四百万种结局，我们把赢的那一种走完。",
+        "这双手治不好了，但世界还缝得上。",
+        "结界之内，终焉也要排队。"
+      ],
+      "WeaponVfx": "agamotto_eye_gaze",
+      "AmbientVfx": "mandala_glyph_orbit",
+      "Skills": [
+        {
+          "SkillId": "strange_1",
+          "DisplayName": "绯红枷锁",
+          "Description": "召唤绯红魔力锁链缚住全体敌人，造成光耀伤害并封印其技能",
+          "Element": "Light",
+          "Type": "Ultimate",
+          "Power": 90
+        },
+        {
+          "SkillId": "strange_2",
+          "DisplayName": "曼陀罗圣盾",
+          "Description": "展开多层符文结界，为全队抵挡伤害并驱散负面效果",
+          "Element": "Light",
+          "Type": "Active",
+          "Power": 69
+        },
+        {
+          "SkillId": "strange_3",
+          "DisplayName": "时序回溯",
+          "Description": "队友首次阵亡时回溯时间线将其复活（每场一次），自身回复能量",
+          "Element": "Light",
+          "Type": "Passive",
+          "Power": 72
+        }
+      ],
+      "Weapon": "阿戈摩托之眼·时序轮",
+      "WeaponDesc": "至尊法师的圣物，瞳状宝石内封存时间的支流。开启时绿焰环绕，可回溯伤势、窥视分支结局；凝视之处，因果暂时让路——代价由持有者的岁月支付。"
     }
   ],
   "Pools": [
@@ -1174,6 +1339,21 @@
           "CharacterId": "char_r_yecha",
           "RarityIndex": 1,
           "Weight": 100
+        },
+        {
+          "CharacterId": "char_ur_ironman",
+          "RarityIndex": 4,
+          "Weight": 1
+        },
+        {
+          "CharacterId": "char_ur_thor",
+          "RarityIndex": 4,
+          "Weight": 1
+        },
+        {
+          "CharacterId": "char_ur_strange",
+          "RarityIndex": 4,
+          "Weight": 1
         }
       ]
     },
@@ -1200,7 +1380,10 @@
         { "CharacterId": "char_ssr_shangyang", "RarityIndex": 3, "Weight": 8 },
         { "CharacterId": "char_ssr_chiyou", "RarityIndex": 3, "Weight": 8 },
         { "CharacterId": "char_ssr_baihu", "RarityIndex": 3, "Weight": 8 },
-        { "CharacterId": "char_sr_taotie", "RarityIndex": 2, "Weight": 40 }
+        { "CharacterId": "char_sr_taotie", "RarityIndex": 2, "Weight": 40 },
+        { "CharacterId": "char_ur_ironman", "RarityIndex": 4, "Weight": 1 },
+        { "CharacterId": "char_ur_thor", "RarityIndex": 4, "Weight": 1 },
+        { "CharacterId": "char_ur_strange", "RarityIndex": 4, "Weight": 1 }
       ]
     }
   ],
@@ -1450,6 +1633,33 @@
     },
     {
       "TreeId": "tree_yecha",
+      "BranchIds": [
+        "branch_power",
+        "branch_defense",
+        "branch_utility"
+      ],
+      "Nodes": []
+    },
+    {
+      "TreeId": "tree_ironman",
+      "BranchIds": [
+        "branch_power",
+        "branch_defense",
+        "branch_utility"
+      ],
+      "Nodes": []
+    },
+    {
+      "TreeId": "tree_thor",
+      "BranchIds": [
+        "branch_power",
+        "branch_defense",
+        "branch_utility"
+      ],
+      "Nodes": []
+    },
+    {
+      "TreeId": "tree_strange",
       "BranchIds": [
         "branch_power",
         "branch_defense",

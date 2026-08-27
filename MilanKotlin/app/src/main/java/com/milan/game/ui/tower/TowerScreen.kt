@@ -15,8 +15,8 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -27,6 +27,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -37,7 +38,9 @@ import com.milan.game.domain.battle.StrikeEvent
 import com.milan.game.domain.progression.EconomyFormulas
 import com.milan.game.services.TowerOutcome
 import com.milan.game.ui.GameState
+import com.milan.game.ui.components.EntranceItem
 import com.milan.game.ui.components.FormationBar
+import com.milan.game.ui.components.GlyphBadge
 import com.milan.game.ui.components.GoldButton
 import com.milan.game.ui.components.NeonButton
 import com.milan.game.ui.components.PageBackground
@@ -89,36 +92,52 @@ fun TowerScreen(
             ) {
                 Spacer(Modifier.height(10.dp))
 
-                // ── 纪录卡：当前最高层 + 编队战力 ──
+                // ── 纪录卡：当前最高层 + 编队战力（渐变金字 + 战票徽章）──
+                EntranceItem(index = 0) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clip(RoundedCornerShape(16.dp))
-                        .background(AppTheme.Surface.copy(alpha = 0.7f))
-                        .border(1.dp, AppTheme.Stroke, RoundedCornerShape(16.dp))
+                        .clip(MaterialTheme.shapes.large)
+                        .background(
+                            Brush.verticalGradient(
+                                listOf(AppTheme.Surface.copy(alpha = 0.85f), AppTheme.BgMid.copy(alpha = 0.6f)),
+                            )
+                        )
+                        .border(1.dp, AppTheme.Gold.copy(alpha = 0.35f), MaterialTheme.shapes.large)
                         .padding(16.dp),
                 ) {
-                    Text(text = "历史最高", fontSize = 12.sp, color = AppTheme.Text2)
+                    Text(text = "历史最高", style = MaterialTheme.typography.bodySmall, color = AppTheme.Text2)
                     Row(verticalAlignment = Alignment.Bottom) {
                         Text(
                             text = if (best == 0) "未挑战" else "第 $best 层",
                             fontSize = 24.sp,
                             fontWeight = FontWeight.Bold,
-                            color = AppTheme.Text1,
+                            style = androidx.compose.ui.text.TextStyle(
+                                brush = if (best > 0) {
+                                    Brush.verticalGradient(listOf(AppTheme.GoldHi, AppTheme.GoldDeep))
+                                } else {
+                                    Brush.verticalGradient(listOf(AppTheme.Text1, AppTheme.Text1))
+                                },
+                            ),
                         )
                         Spacer(Modifier.weight(1f))
-                        Text(
-                            text = "编队战力 $teamPower · ⚔ $tickets",
-                            fontSize = 12.sp,
-                            color = AppTheme.Text2,
-                        )
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            GlyphBadge(glyph = "⚔", from = AppTheme.Text1, to = AppTheme.Text3, glyphColor = AppTheme.Text2)
+                            Spacer(Modifier.width(6.dp))
+                            Text(
+                                text = "$tickets · 战力 $teamPower",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = AppTheme.Text2,
+                            )
+                        }
                     }
+                }
                 }
 
                 Spacer(Modifier.height(14.dp))
                 FormationBar(
                     members = members,
-                    maxSlots = com.milan.game.data.SaveData.MAX_FORMATION_SIZE,
+                    maxSlots = GameState.maxFormationSize,
                     onSlotClick = { onOpenDeck() },
                 )
 
@@ -127,7 +146,7 @@ fun TowerScreen(
                 if (snapshot.formation.isEmpty()) {
                     Text(
                         text = "还没有出战编队，先去卡组页点选角色入队。",
-                        fontSize = 13.sp,
+                        style = MaterialTheme.typography.bodyMedium,
                         color = AppTheme.Text3,
                     )
                     Spacer(Modifier.height(10.dp))
@@ -136,14 +155,14 @@ fun TowerScreen(
                     // 下一层挑战：奖励预览按 EconomyFormulas 计算，禁止就地写数字。
                     Text(
                         text = "第 $nextFloor 层 · 入场 ⚔$ticketCost · 预计通关星尘 ${EconomyFormulas.towerRewardSoft(nextFloor)}",
-                        fontSize = 12.sp,
+                        style = MaterialTheme.typography.bodySmall,
                         color = AppTheme.Text2,
                     )
                     if (!canChallenge) {
                         Spacer(Modifier.height(6.dp))
                         Text(
                             text = "战票不足（需 $ticketCost 张）——去商店「每日补给」免费领取",
-                            fontSize = 12.sp,
+                            style = MaterialTheme.typography.bodySmall,
                             color = AppTheme.Gold,
                         )
                     }
@@ -184,45 +203,62 @@ fun TowerScreen(
                     }
                 }
 
-                // ── 结算卡 ──
-                (result as? TowerOutcome.Completed)?.let { done ->
-                    Spacer(Modifier.height(16.dp))
+                // ── 结算卡（AnimatedVisibility 弹出演出；胜利金渐变底）──
+                androidx.compose.animation.AnimatedVisibility(
+                    visible = result is TowerOutcome.Completed,
+                    enter = androidx.compose.animation.fadeIn(
+                        androidx.compose.animation.core.tween(240)
+                    ) + androidx.compose.animation.scaleIn(
+                        initialScale = 0.94f,
+                        animationSpec = androidx.compose.animation.core.tween(240),
+                    ),
+                ) {
+                    val done = result as TowerOutcome.Completed
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clip(RoundedCornerShape(14.dp))
-                            .background(if (done.victory) AppTheme.Gold.copy(alpha = 0.12f) else AppTheme.Surface)
+                            .clip(MaterialTheme.shapes.medium)
+                            .background(
+                                if (done.victory) {
+                                    Brush.verticalGradient(
+                                        listOf(AppTheme.Gold.copy(alpha = 0.16f), AppTheme.Surface.copy(alpha = 0.7f)),
+                                    )
+                                } else {
+                                    Brush.verticalGradient(
+                                        listOf(AppTheme.Surface.copy(alpha = 0.7f), AppTheme.BgMid.copy(alpha = 0.6f)),
+                                    )
+                                }
+                            )
                             .border(
                                 1.dp,
                                 if (done.victory) AppTheme.Gold.copy(alpha = 0.6f) else AppTheme.Stroke,
-                                RoundedCornerShape(14.dp),
+                                MaterialTheme.shapes.medium,
                             )
                             .padding(14.dp),
                         verticalArrangement = Arrangement.spacedBy(4.dp),
                     ) {
                         Text(
                             text = if (done.victory) "✦ 攻克！用时 ${done.turns} 回合" else "✖ 止步于此（${done.turns} 回合）",
-                            fontSize = 15.sp,
-                            fontWeight = FontWeight.Bold,
+                            style = MaterialTheme.typography.titleSmall,
                             color = if (done.victory) AppTheme.Gold else AppTheme.Text2,
                         )
                         if (done.victory) {
-                            Text(text = "星尘 +${done.rewardSoft}", fontSize = 13.sp, color = AppTheme.Text1)
+                            Text(text = "星尘 +${done.rewardSoft}", style = MaterialTheme.typography.bodyMedium, color = AppTheme.Text1)
                             if (done.rewardHard > 0) {
                                 Text(
                                     text = "◆ 钻石 +${done.rewardHard}（首次攻克里程碑）",
-                                    fontSize = 13.sp,
+                                    style = MaterialTheme.typography.bodyMedium,
                                     color = AppTheme.Frost,
                                 )
                             }
                             if (done.bestFloorAfter >= nextFloor) {
-                                Text(text = "纪录推进至第 ${done.bestFloorAfter} 层", fontSize = 12.sp, color = AppTheme.Text2)
+                                Text(text = "纪录推进至第 ${done.bestFloorAfter} 层", style = MaterialTheme.typography.bodySmall, color = AppTheme.Text2)
                             }
                         }
                         BattleReportSection(done.log)
                         Text(
                             text = "提示：敌方元素随层数轮转，用克制元素编队能显著降低损血。",
-                            fontSize = 11.sp,
+                            style = MaterialTheme.typography.labelMedium,
                             color = AppTheme.Text3,
                         )
                     }
@@ -230,13 +266,13 @@ fun TowerScreen(
                 when (result) {
                     TowerOutcome.Rejected -> Text(
                         text = "挑战被拒绝：请检查编队配置。",
-                        fontSize = 12.sp,
+                        style = MaterialTheme.typography.bodySmall,
                         color = AppTheme.Text3,
                         modifier = Modifier.padding(top = 8.dp),
                     )
                     TowerOutcome.SaveFailed -> Text(
                         text = "存档失败，本次结果已回滚，请重试。",
-                        fontSize = 12.sp,
+                        style = MaterialTheme.typography.bodySmall,
                         color = AppTheme.Text3,
                         modifier = Modifier.padding(top = 8.dp),
                     )
@@ -259,7 +295,7 @@ private fun BattleReportSection(log: List<StrikeEvent>) {
     var expanded by remember(log) { mutableStateOf(false) }
     Text(
         text = if (expanded) "▾ 收起战报" else "▸ 查看战报（${log.size} 次攻击）",
-        fontSize = 11.sp,
+        style = MaterialTheme.typography.labelMedium,
         fontWeight = FontWeight.Bold,
         color = AppTheme.Frost,
         modifier = Modifier
@@ -271,7 +307,7 @@ private fun BattleReportSection(log: List<StrikeEvent>) {
             modifier = Modifier
                 .fillMaxWidth()
                 .heightIn(max = 220.dp)
-                .clip(RoundedCornerShape(10.dp))
+                .clip(MaterialTheme.shapes.small)
                 .background(AppTheme.BgDeepest.copy(alpha = 0.55f))
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 10.dp, vertical = 6.dp),
@@ -292,13 +328,13 @@ private fun StrikeRow(e: StrikeEvent) {
     ) {
         Text(
             text = "R${e.turn}",
-            fontSize = 10.sp,
+            style = MaterialTheme.typography.labelSmall,
             color = AppTheme.Text3,
             modifier = Modifier.width(30.dp),
         )
         Text(
             text = "${unitLabel(e.attackerId, e.attackerElement)} → ${unitLabel(e.targetId, e.targetElement)}",
-            fontSize = 11.sp,
+            style = MaterialTheme.typography.labelMedium,
             color = AppTheme.Text2,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
@@ -310,13 +346,15 @@ private fun StrikeRow(e: StrikeEvent) {
                 if (counter) append(" 克制")
                 if (e.targetDefeated) append(" †")
             },
-            fontSize = 11.sp,
+            // tnum 等宽数字：伤害列对齐（保持 token 排版 + 字形特性覆盖）
+            style = MaterialTheme.typography.labelMedium.copy(
+                fontFeatureSettings = "tnum",
+            ),
             fontWeight = FontWeight.Bold,
             color = when {
                 counter -> AppTheme.Gold
                 else -> AppTheme.Text1
             },
-            style = androidx.compose.ui.text.TextStyle(fontFeatureSettings = "tnum"),
         )
     }
 }

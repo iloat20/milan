@@ -69,11 +69,13 @@ def load_chars(export_path, only_ids=None):
     return chars
 
 
-# 2D 卡牌风格前缀（2026-08-25 用户定调：只要 2D、卡牌人物感、精致）。
+# 风格前缀（2026-08-26 v2.3 写实化定调：写实卡牌人物感、精致；
+# 替代 08-25 的「2D 赛璐璐」口径，对齐 06 号规范 §7 与 prompts-export 注入层）。
 # 放在 prompt 最前——早期 token 权重最高，先把画风钉死再进主体。
 STYLE_PREFIX = (
-    "2D anime trading-card character illustration, crisp lineart, cel shading, "
-    "vivid colors, polished gacha splash-art finish. "
+    "Realistic trading-card character illustration, photorealistic-painterly rendering, "
+    "true human anatomy and physical materials, cinematic lighting, "
+    "vivid saturated colors, polished gacha splash-art finish. "
 )
 
 
@@ -106,7 +108,7 @@ def build_free_prompt(char: dict, include_tags: bool = True, include_pose: bool 
         pose_txt = "; ".join(c.lstrip("| ").strip() for c in clauses)
         parts.append(pose_txt)
 
-    # 3) 卡牌构图+光影精简指令（2026-08-25 用户定调：只要 2D、卡牌人物感、精致）
+    # 3) 卡牌构图+光影精简指令（2026-08-26 v2.3 写实化定调，替换赛璐璐口径）
     r = char["rarity"]
     tier = {
         "UR": "molten-gold god-ray accents",
@@ -115,13 +117,15 @@ def build_free_prompt(char: dict, include_tags: bool = True, include_pose: bool 
         "R": "soft bright lighting",
     }.get(r, "")
     parts.append(
-        f"Exquisite 2D anime trading-card character art ({r}), crisp clean lineart, cel shading, "
+        f"Exquisite realistic trading-card character art ({r}), "
+        f"photorealistic-painterly rendering, true human anatomy, physically-based materials "
+        f"(brushed metal reflects environment, fabric weave visible, realistic skin texture), "
         f"vibrant saturated colors, polished gacha-game splash-art finish, three-quarter view, "
         f"low-angle hero shot, full-body or waist-up as fits the design, subject fills 75-85% of frame, "
         f"face never cropped; key light upper-left, rim light in element color from back-left, {tier}; "
         f"transparent background, no scenery, no card frame, no border, no text, no letters, "
         f"no watermark, no logo. Character palette strictly follows the description above. "
-        f"Flat 2D illustration only: no 3D render, not photorealistic."
+        f"Illustration only: no photo collage, no plastic 3D render, no cel-shaded anime."
     )
 
     # 4) 中文 LORE 尾注（氛围参考；超限最先牺牲）

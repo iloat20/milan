@@ -53,15 +53,15 @@ class DataJsonContentTest {
             "应走 json 路径，实际 trace：${traces.joinToString(" | ")}",
             traces.any { it.startsWith("content.loaded.from.json") },
         )
-        assertEquals(28, service.characters.size)
+        assertEquals(31, service.characters.size)
         // 2026-08 三期：UP 定轨进主来源，data.json 与兜底同为「常驻 + UP」双池
         assertEquals(2, service.pools.size)
         val mainPool = service.pools.first { it.poolId == "pool_main" }
         val upPool = service.pools.first { it.poolId == "pool_flame" }
-        assertEquals(28, mainPool.entries.size)
+        assertEquals(31, mainPool.entries.size)
         assertEquals("char_ur_zhulong", upPool.featuredCharacterId)
-        // data.json 的 28 棵天赋树 Nodes 全空 → loadContent 丢弃后由 buildTalentTrees 兜底补全
-        assertEquals(28, service.talentTrees.size)
+        // data.json 的 31 棵天赋树 Nodes 全空 → loadContent 丢弃后由 buildTalentTrees 兜底补全
+        assertEquals(31, service.talentTrees.size)
 
         // 所有角色的核心派生字段最终非空（data.json 已有或 enrich 补齐）
         service.characters.forEach { c ->
@@ -86,7 +86,7 @@ class DataJsonContentTest {
         val fallbackService = GameService(MemoryProvider(), null, onTrace = { traces.add(it) })
 
         assertTrue("应走兜底路径：${traces.joinToString(" | ")}", traces.any { it == "content.load.fallback" })
-        assertEquals(28, fallbackService.characters.size)
+        assertEquals(31, fallbackService.characters.size)
         assertEquals(jsonService.characters.size, fallbackService.characters.size)
         // 2026-08 三期收敛：UP 定轨进主来源，两路径同为「常驻 + UP」双池（消除兜底独有差异）；
         // 仍仅对 pool_main 做逐字段口径断言（UP 池条目集允许内容方演进，只固化定轨角色一致）

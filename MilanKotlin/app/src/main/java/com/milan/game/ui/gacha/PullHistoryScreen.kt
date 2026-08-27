@@ -1,5 +1,6 @@
 package com.milan.game.ui.gacha
 
+import androidx.compose.foundation.border
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -14,6 +15,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -27,7 +29,9 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.milan.game.data.PullLogEntry
 import com.milan.game.ui.GameState
+import com.milan.game.ui.components.EntranceItem
 import com.milan.game.ui.components.GlassPanel
+import com.milan.game.ui.components.GlyphBadge
 import com.milan.game.ui.components.PageBackground
 import com.milan.game.ui.nav.AppTopBar
 import com.milan.game.ui.theme.AppTheme
@@ -61,7 +65,7 @@ fun PullHistoryScreen(
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
                     Text(
                         text = "还没有召唤记录\n去「次元裂缝」试试手气吧",
-                        fontSize = 14.sp,
+                        style = MaterialTheme.typography.bodyLarge,
                         color = AppTheme.Text3,
                         lineHeight = 24.sp,
                         modifier = Modifier.padding(top = 100.dp),
@@ -92,8 +96,10 @@ fun PullHistoryScreen(
                 ),
                 verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
-                itemsIndexed(history.asReversed()) { _, entry ->
-                    HistoryRow(entry = entry, timeText = timeFormat.format(Date(entry.timestamp)))
+                itemsIndexed(history.asReversed()) { i, entry ->
+                    EntranceItem(index = i) {
+                        HistoryRow(entry = entry, timeText = timeFormat.format(Date(entry.timestamp)))
+                    }
                 }
             }
         }
@@ -103,35 +109,46 @@ fun PullHistoryScreen(
 @Composable
 private fun StatCell(label: String, value: String) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(value, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = AppTheme.Gold)
+        Text(value, style = MaterialTheme.typography.titleSmall, color = AppTheme.Gold)
         Spacer(Modifier.height(2.dp))
-        Text(label, fontSize = 11.sp, color = AppTheme.Text2)
+        Text(label, style = MaterialTheme.typography.labelMedium, color = AppTheme.Text2)
     }
 }
 
-/** 单条记录：左侧稀有度色条 + 角色名/NEW 徽标 + 右侧碎片与时间。 */
+/** 单条记录：稀有度渐变徽章（SSR+ 加同色发光边框）+ 角色名/NEW 徽标 + 右侧碎片与时间。 */
 @Composable
 private fun HistoryRow(entry: PullLogEntry, timeText: String) {
     val rc = AppTheme.rarityColor(entry.rarity)
+    val premium = entry.rarity >= 3
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(10.dp))
+            .clip(MaterialTheme.shapes.small)
             .background(AppTheme.Surface)
+            .border(
+                width = if (premium) 1.dp else 0.dp,
+                color = if (premium) rc.copy(alpha = 0.55f) else AppTheme.Surface,
+                shape = MaterialTheme.shapes.small,
+            )
             .padding(horizontal = 12.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(
-            Modifier
-                .width(4.dp)
-                .height(34.dp)
-                .clip(RoundedCornerShape(2.dp))
-                .background(rc),
+        GlyphBadge(
+            // 单字徽记（金/紫/蓝/白）对应稀有度主色，与全站稀有度视觉同语言
+            glyph = when (entry.rarity) {
+                4 -> "金"
+                3 -> "紫"
+                2 -> "蓝"
+                else -> "白"
+            },
+            from = rc,
+            to = rc.copy(alpha = 0.6f),
+            glyphColor = rc,
         )
         Spacer(Modifier.width(10.dp))
         Text(
             text = entry.characterName.ifEmpty { "未知角色" },
-            fontSize = 13.sp,
+            style = MaterialTheme.typography.bodyMedium,
             fontWeight = FontWeight.Bold,
             color = AppTheme.Text1,
             maxLines = 1,
@@ -153,11 +170,11 @@ private fun HistoryRow(entry: PullLogEntry, timeText: String) {
         if (entry.fragmentsAwarded > 0) {
             Text(
                 text = "碎片 +${entry.fragmentsAwarded}",
-                fontSize = 11.sp,
+                style = MaterialTheme.typography.labelMedium,
                 color = AppTheme.Frost,
             )
             Spacer(Modifier.width(10.dp))
         }
-        Text(text = timeText, fontSize = 11.sp, color = AppTheme.Text3)
+        Text(text = timeText, style = MaterialTheme.typography.labelMedium, color = AppTheme.Text3)
     }
 }
