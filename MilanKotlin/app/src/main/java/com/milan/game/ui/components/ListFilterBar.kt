@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
+import com.milan.game.ui.effects.inkSplash
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -172,6 +173,7 @@ private fun FilterChip(label: String, active: Boolean, onClick: () -> Unit) {
                 shape = shape,
             )
             .clickable(onClick = onClick)
+            .inkSplash()
             .padding(horizontal = 12.dp, vertical = 6.dp),
     )
 }
