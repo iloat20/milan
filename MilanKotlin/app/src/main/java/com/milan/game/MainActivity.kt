@@ -5,11 +5,23 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.SharedTransitionLayout
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -130,7 +142,7 @@ private fun MilanNavHost(openGachaOnStart: Boolean = false) {
     val ready by GameState.ready.collectAsStateWithLifecycle()
     if (!ready) {
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text(text = "加载中…", fontSize = 14.sp, color = AppTheme.Text2)
+            InkLoadingIndicator()
         }
         return
     }
@@ -188,7 +200,10 @@ private fun MilanNavHost(openGachaOnStart: Boolean = false) {
                 popEnterTransition = { InkTransitions.slideInFromLeft },
                 popExitTransition = { InkTransitions.slideOutToRight },
             ) {
-                composable<HomeRoute> {
+                composable<HomeRoute>(
+                    enterTransition = { InkTransitions.tabEnter },
+                    exitTransition = { InkTransitions.tabExit },
+                ) {
                     HomeScreen(
                         onNav = ::navigateToTab,
                         onOpenGacha = { navigateToTab(NavItem.Gacha) },
@@ -198,26 +213,38 @@ private fun MilanNavHost(openGachaOnStart: Boolean = false) {
                         onOpenAchievements = { navController.navigate(AchievementRoute) },
                     )
                 }
-                composable<GachaRoute> {
+                composable<GachaRoute>(
+                    enterTransition = { InkTransitions.tabEnter },
+                    exitTransition = { InkTransitions.tabExit },
+                ) {
                     GachaScreen(
                         onNav = ::navigateToTab,
                         onOpenCharacter = ::openCharacter,
                         onOpenHistory = { navController.navigate(PullHistoryRoute) },
                     )
                 }
-                composable<DeckRoute> {
+                composable<DeckRoute>(
+                    enterTransition = { InkTransitions.tabEnter },
+                    exitTransition = { InkTransitions.tabExit },
+                ) {
                     DeckScreen(
                         onNav = ::navigateToTab,
                         onOpenCharacter = ::openCharacter,
                         animatedVisibilityScope = this,
                     )
                 }
-                composable<ShopRoute> {
+                composable<ShopRoute>(
+                    enterTransition = { InkTransitions.tabEnter },
+                    exitTransition = { InkTransitions.tabExit },
+                ) {
                     ShopScreen(
                         onNav = ::navigateToTab,
                     )
                 }
-                composable<SettingsRoute> {
+                composable<SettingsRoute>(
+                    enterTransition = { InkTransitions.tabEnter },
+                    exitTransition = { InkTransitions.tabExit },
+                ) {
                     SettingsScreen(
                         onNav = ::navigateToTab,
                     )
@@ -293,4 +320,39 @@ private fun MilanNavHost(openGachaOnStart: Boolean = false) {
     )
 }
 }
+}
+
+/** 水墨加载指示器：三枚墨点依次脉动 + "加载中" 文字。 */
+@Composable
+private fun InkLoadingIndicator() {
+    val infiniteTransition = rememberInfiniteTransition(label = "inkLoad")
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            repeat(3) { index ->
+                val alpha by infiniteTransition.animateFloat(
+                    initialValue = 0.15f,
+                    targetValue = 0.85f,
+                    animationSpec = infiniteRepeatable(
+                        animation = tween(600, delayMillis = index * 200, easing = LinearEasing),
+                        repeatMode = RepeatMode.Reverse,
+                    ),
+                    label = "dot$index",
+                )
+                Box(
+                    modifier = Modifier
+                        .size(8.dp)
+                        .background(
+                            color = AppTheme.Gold.copy(alpha = alpha),
+                            shape = CircleShape,
+                        ),
+                )
+            }
+        }
+        Spacer(Modifier.height(16.dp))
+        Text(
+            text = "加载中",
+            fontSize = 13.sp,
+            color = AppTheme.Text2,
+        )
+    }
 }
