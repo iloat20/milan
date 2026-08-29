@@ -73,6 +73,7 @@ fun GoldButton(
             )
             .border(1.dp, Color.White.copy(alpha = 0.47f), CutShape)
             .clickable(enabled = enabled, onClick = onClick)
+            .inkSplash()
             .padding(horizontal = 32.dp, vertical = 13.dp),
         contentAlignment = Alignment.Center,
     ) {

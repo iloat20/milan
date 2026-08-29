@@ -374,7 +374,7 @@ fun GachaScreen(
 
                 // ── 池角色预览：横排圆形头像 ──
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    items(pool.entries) { entry ->
+                    items(pool.entries, key = { it.characterId }) { entry ->
                         val def = GameState.service.character(entry.characterId)
                         Column(
                             modifier = Modifier
