@@ -376,7 +376,7 @@ fun GachaScreen(
 
                 // ── 池角色预览：横排圆形头像 ──
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    items(pool.entries, key = { it.characterId }) { entry ->
+                    items(pool.entries, key = { it.characterId }, contentType = { "poolEntry" }) { entry ->
                         val def = GameState.service.character(entry.characterId)
                         Column(
                             modifier = Modifier
@@ -478,7 +478,7 @@ fun GachaScreen(
 
             // ── 结果网格 ──
             LazyColumn(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                itemsIndexed(results.chunked(5)) { rowIdx, row ->
+                itemsIndexed(results.chunked(5), key = { idx, _ -> idx }) { rowIdx, row ->
                     Row(Modifier.fillMaxWidth()) {
                         row.forEachIndexed { i, r ->
                             key(i, r) {

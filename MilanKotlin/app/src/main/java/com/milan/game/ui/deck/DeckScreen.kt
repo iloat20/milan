@@ -161,7 +161,7 @@ fun DeckScreen(
                     contentPadding = PaddingValues(start = 13.dp, end = 13.dp, bottom = 16.dp),
                     horizontalArrangement = Arrangement.spacedBy(0.dp),
                 ) {
-                    itemsIndexed(owned, key = { _, ch -> ch.save.characterId }) { index, ch ->
+                    itemsIndexed(owned, key = { _, ch -> ch.save.characterId }, contentType = { _, _ -> "characterCard" }) { index, ch ->
                         val parallax by remember {
                             derivedStateOf {
                                 val first = deckGridState.layoutInfo.visibleItemsInfo.firstOrNull()

@@ -96,7 +96,7 @@ fun PullHistoryScreen(
                 ),
                 verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
-                itemsIndexed(history.asReversed()) { i, entry ->
+                itemsIndexed(history.asReversed(), key = { _, e -> e.timestamp }) { i, entry ->
                     EntranceItem(index = i) {
                         HistoryRow(entry = entry, timeText = timeFormat.format(Date(entry.timestamp)))
                     }

@@ -132,7 +132,7 @@ fun CollectionScreen(
                     contentPadding = PaddingValues(start = 13.dp, end = 13.dp, bottom = 16.dp),
                     horizontalArrangement = Arrangement.spacedBy(0.dp),
                 ) {
-                    itemsIndexed(visible, key = { _, def -> def.characterId }) { _, def ->
+                    itemsIndexed(visible, key = { _, def -> def.characterId }, contentType = { _, _ -> "characterCard" }) { _, def ->
                         val ownedView = ownedById[def.characterId]
                         CharacterCard(
                             characterId = def.characterId,

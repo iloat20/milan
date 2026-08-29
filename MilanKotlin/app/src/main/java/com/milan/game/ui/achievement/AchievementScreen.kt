@@ -81,7 +81,7 @@ fun AchievementScreen(
                 ),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
-                items(statuses.size, key = { statuses[it].def.id }) { i ->
+                items(statuses.size, key = { statuses[it].def.id }, contentType = { "achievement" }) { i ->
                     EntranceItem(index = i) {
                         AchievementCard(
                         status = statuses[i],

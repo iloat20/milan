@@ -138,7 +138,7 @@ fun CharacterListScreen(
                     contentPadding = PaddingValues(start = 13.dp, end = 13.dp, bottom = 16.dp),
                     horizontalArrangement = Arrangement.spacedBy(0.dp),
                 ) {
-                    itemsIndexed(visible, key = { _, ch -> ch.save.characterId }) { index, ch ->
+                    itemsIndexed(visible, key = { _, ch -> ch.save.characterId }, contentType = { _, _ -> "characterCard" }) { index, ch ->
                         val parallax by remember {
                             derivedStateOf {
                                 val first = gridState.layoutInfo.visibleItemsInfo.firstOrNull()

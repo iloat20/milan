@@ -443,7 +443,7 @@ private fun AvatarStrip(onOpenCharacter: (String) -> Unit) {
             .padding(horizontal = 14.dp, vertical = 2.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        items(entries, key = { it.def.characterId }) { e ->
+        items(entries, key = { it.def.characterId }, contentType = { "avatarEntry" }) { e ->
             val idx = entries.indexOf(e)
             var itemReady by remember { mutableStateOf(false) }
             LaunchedEffect(Unit) {
