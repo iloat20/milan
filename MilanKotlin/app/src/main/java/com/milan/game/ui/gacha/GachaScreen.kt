@@ -581,11 +581,16 @@ private fun GachaChip(
 ) {
     val rc = AppTheme.rarityColor(r.rarity)
     val isEpic = r.rarity >= 3
+    val isUr = r.rarity >= 4
+    // UR 脉动更快更亮（600ms），SSR 标准（900ms），其他静态
     val glowA by if (isEpic) {
         rememberInfiniteTransition(label = "chipGlow").animateFloat(
-            initialValue = 0.35f,
+            initialValue = if (isUr) 0.45f else 0.35f,
             targetValue = 1f,
-            animationSpec = infiniteRepeatable(tween(900), RepeatMode.Reverse),
+            animationSpec = infiniteRepeatable(
+                tween(if (isUr) 600 else 900),
+                RepeatMode.Reverse,
+            ),
             label = "chipGlowA",
         )
     } else {
@@ -612,13 +617,26 @@ private fun GachaChip(
             .graphicsLayer { scaleX = chipScale; scaleY = chipScale; alpha = chipAlpha }
             .clip(RoundedCornerShape(12.dp))
             .background(
-                if (isEpic) {
-                    Brush.verticalGradient(listOf(rc.copy(alpha = 0.30f + 0.35f * glowA), AppTheme.Surface))
-                } else {
-                    Brush.verticalGradient(listOf(AppTheme.Surface, AppTheme.Surface.copy(alpha = 0.55f)))
+                when {
+                    isUr -> Brush.verticalGradient(
+                        listOf(
+                            rc.copy(alpha = 0.45f + 0.35f * glowA),
+                            AppTheme.Surface.copy(alpha = 0.85f),
+                        ),
+                    )
+                    isEpic -> Brush.verticalGradient(
+                        listOf(rc.copy(alpha = 0.30f + 0.35f * glowA), AppTheme.Surface),
+                    )
+                    else -> Brush.verticalGradient(
+                        listOf(AppTheme.Surface, AppTheme.Surface.copy(alpha = 0.55f)),
+                    )
                 },
             )
-            .border(1.dp, rc.copy(alpha = if (isEpic) glowA else 0.55f), RoundedCornerShape(12.dp))
+            .border(
+                width = if (isUr) 2.dp else 1.dp,
+                color = rc.copy(alpha = if (isEpic) glowA else 0.55f),
+                shape = RoundedCornerShape(12.dp),
+            )
             .clickable(onClick = onOpen)
             .padding(vertical = 10.dp, horizontal = 4.dp),
         horizontalAlignment = Alignment.CenterHorizontally,

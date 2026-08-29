@@ -177,7 +177,14 @@ internal fun TenTable(
             // 第 i 张实际在 Σ300k 毫秒时刻翻开（第 6 张起 >3600ms），而 GachaScreen 在 Ten 阶段
             // 固定 3600ms 后收场卸载演出层，导致第 6~10 张永远不翻、其 SSR/UR 音效/震动/震屏丢失。
             // 固定 delay(300L) 后末张恰为 2700ms < 3600ms 收场线，全部翻牌可见且反馈完整。
-            delay(300L)
+            // P4-3：按稀有度分级翻牌节奏——UR 更慢（更多期待感），R 快速闪过。
+            val delayMs = if (i == 0) 200L else when {
+                batch[i - 1].rarity >= 4 -> 500L  // UR 后：慢翻（期待感）
+                batch[i - 1].rarity == 3 -> 400L  // SSR 后：稍慢
+                batch[i - 1].rarity == 2 -> 300L  // SR 后：标准
+                else -> 250L                        // R 后：快速闪过
+            }
+            delay(delayMs)
             if (i < flipped.size) {
                 flipped[i] = true
                 onFlip(batch[i].rarity)
