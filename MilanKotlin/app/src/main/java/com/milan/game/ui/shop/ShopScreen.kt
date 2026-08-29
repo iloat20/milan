@@ -46,38 +46,31 @@ import com.milan.game.ui.theme.AppTheme
 import kotlinx.coroutines.launch
 
 /**
- * 商店页（C# ShopPage 翻译）。
+ * 商店页（水墨国风版）。
  *
- * 结构：资源一览（星尘/钻石/星魂碎片）→ 碎片补给（星尘兑换碎片，小包/大包）→ 钻石商城（钻石兑换星尘）。
- * 定价一律走 [EconomyFormulas]（单一事实来源）；购买走 GameService 事务方法（预算校验 → 落盘 → 失败回滚）。
- * 资源数字订阅 [GameState.snapshot]（StateFlow，2026-08 现代化）自动刷新，
- * 替代此前「EventBus 订阅 + 手动重读」的轻标记模式。
- * 2026-08 UI 现代化：全卡片交错入场动效 + GlyphBadge 渐变徽章替换 emoji 字形。
+ * 结构：资源一览（星尘/钻石/星魂碎片）→ 每日特惠 → 碎片补给 → 碎片兑换 → 钻石商城。
+ * 定价一律走 [EconomyFormulas]（单一事实来源）；购买走 GameService 事务方法。
+ * 资源数字订阅 [GameState.snapshot] 自动刷新。
  */
 @Composable
 fun ShopScreen(
     onNav: (NavItem) -> Unit,
 ) {
     val service = GameState.service
-    // R3/I4：反馈统一走 LocalFeedback（由 MainActivity 提供的 Snackbar 宿主）。
     val feedback = LocalFeedback.current
-    // I13：in-flight 防重入——购买/兑换落盘期间禁用按钮，避免快速双击重复扣费。
     var busy by remember { mutableStateOf(false) }
-    // 资源快照：任何成功写操作后自动刷新（含本页购买及其它页面的经济变动）
     val snap by service.snapshot.collectAsStateWithLifecycle()
     val soft = snap.softCurrency
     val hard = snap.hardCurrency
     val frags = snap.starFragments
     val tickets = snap.battleTickets
 
-    // 每日特惠（2026-08 二期）：offers 由日期种子确定性生成；bought 随快照 revision 刷新
     val dailyOffers = remember(snap.revision) { service.dailyOffers() }
     val dailyBought = remember(snap.revision) { service.dailyBoughtToday() }
 
-    // 2026-08 主线程 IO 异步化：购买为 suspend（落盘在 IO 线程），用页面协程调用
     val scope = rememberCoroutineScope()
 
-    /** 每日特惠购买通用流程（busy 防重入 + Snackbar 反馈）。 */
+    /** 每日特惠购买通用流程 */
     fun buyDaily(index: Int, successMsg: String) {
         scope.launch {
             if (busy) return@launch
@@ -164,7 +157,6 @@ fun ShopScreen(
                     }
                 }
 
-                // 碎片兑换（2026-08 三期）：碎片过剩玩家的星尘回收阀门（Starglitter 式副产物闭环）
                 SectionTitle("碎 片 兑 换")
                 EntranceItem(index = 5) {
                     FragmentExchangeCard(
@@ -227,7 +219,7 @@ fun ShopScreen(
     }
 }
 
-/** 资源一览：星尘 / 钻石 / 星魂碎片 / 战票四行，2026-08 起配 GlyphBadge 渐变徽章。 */
+/** 资源一览：星尘 / 钻石 / 星魂碎片 / 战票四行，水墨国风渐变徽章。 */
 @Composable
 private fun ResourcePanel(soft: Int, hard: Int, frags: Int, tickets: Int) {
     GlassPanel {
@@ -256,7 +248,7 @@ private fun ResourceRow(label: String, symbol: String, value: String, from: Colo
     }
 }
 
-/** 每日特惠卡片（2026-08 二期）：免费补给金边高亮；已购态禁用按钮并打标。 */
+/** 每日特惠卡片（水墨国风版）：免费补给金边高亮；已购态禁用按钮并打标。 */
 @Composable
 private fun DailyOfferCard(
     offer: DailyOffer,
@@ -311,7 +303,7 @@ private fun DailyOfferCard(
     }
 }
 
-/** 碎片包卡片：小包普通玻璃底，大包金边（批量优惠由 [EconomyFormulas] 定价保证）。 */
+/** 碎片包卡片：水墨国风玻璃底，大包金边高亮。 */
 @Composable
 private fun FragmentPackCard(
     pack: Int,
@@ -342,7 +334,7 @@ private fun FragmentPackCard(
     }
 }
 
-/** 钻石兑换星尘卡片：钻石暂无获取途径，余额不足时按钮禁用并提示。 */
+/** 钻石兑换星尘卡片。 */
 @Composable
 private fun DiamondCard(
     cost: Int,
@@ -368,7 +360,7 @@ private fun DiamondCard(
     }
 }
 
-/** 碎片兑换星尘卡片（2026-08 三期）：定价单一事实来源在 [EconomyFormulas]，UI 只展示。 */
+/** 碎片兑换星尘卡片（水墨国风版）。 */
 @Composable
 private fun FragmentExchangeCard(
     batch: Int,

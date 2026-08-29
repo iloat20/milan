@@ -12,69 +12,62 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-// twilight 暗夜主题 · Material 3 Expressive 刷新（Task 9 + M3 升级）
+// 水墨国风 · Material 3 Expressive 配色
 //
-// 保留「暗夜神性·诸神黄昏」调性，套用 M3 Expressive 的形状/动效体系：
-//  - MaterialExpressiveTheme 取代 MaterialTheme，自带 expressive motion scheme（更弹、更有情绪）。
-//  - shapes 用 GameShapes 五档圆角 token（2026-08 UI 现代化；alpha22 无 ExpressiveShapes）。
-//  - 配色方案补全 tertiary / container / outline 等 expressive 组件会用到的槽位，颜色仍来自 AppTheme 同套暮紫夜+熔金调性。
-//
-// 依赖：material3 已显式覆盖为 1.5.0-alpha22（libs.versions.toml）。该版本中 MaterialExpressiveTheme 已在
-// 1.5.0-alpha18 毕业为非实验 API，故此处不再需要 @OptIn(ExperimentalMaterial3ExpressiveApi)。
-// 注：ExpressiveShapes 是 alpha23+ 才引入（且会把 Compose 抬到 1.12.0-beta01），alpha22 用标准 Shapes() 即可。
-// 注：1.5.0 仍为 alpha（截至 2026-08 无稳定版），属技术试验田取舍；待 1.5.0 稳定后可移除版本覆盖让 BOM 接管。
-private val TwilightColors = darkColorScheme(
-    primary = Color(0xFF8B7BD8),          // 暮紫主色
-    onPrimary = Color(0xFF1A1530),
-    primaryContainer = Color(0xFF3A2F66),
-    onPrimaryContainer = Color(0xFFE8E4F2),
-    inversePrimary = Color(0xFFC9B8FF),
+// 保留 MaterialExpressiveTheme + GameShapes 体系，色调从暗紫+熔金切换到墨色+金箔+朱砂：
+//  - primary = 石青（淡蓝绿，水墨山水中常见的矿物色）
+//  - secondary = 金箔（温暖的古金色，延续强调功能）
+//  - tertiary = 朱砂（印章红，点缀）
+//  - background / surface = 墨色层次
 
-    secondary = AppTheme.Gold,             // 熔金（单一事实来源见 AppTheme.Gold；I3 去除双源）
+private val InkColors = darkColorScheme(
+    primary = Color(0xFF5A9A90),              // 石青
+    onPrimary = Color(0xFF0A1A18),
+    primaryContainer = Color(0xFF2A4A44),
+    onPrimaryContainer = Color(0xFFD0EDE8),
+    inversePrimary = Color(0xFF8AD0C8),
+
+    secondary = AppTheme.Gold,                // 金箔（单一事实来源）
     onSecondary = Color(0xFF3A2800),
     secondaryContainer = Color(0xFF4A3A1E),
     onSecondaryContainer = Color(0xFFF3E8CF),
 
-    tertiary = Color(0xFF9A6BFF),         // 暮紫点缀
-    onTertiary = Color(0xFF1A0E33),
-    tertiaryContainer = Color(0xFF2E1A52),
-    onTertiaryContainer = Color(0xFFE9DEFF),
+    tertiary = Color(0xFFC85050),            // 朱砂
+    onTertiary = Color(0xFF2A0A0A),
+    tertiaryContainer = Color(0xFF4A1A1A),
+    onTertiaryContainer = Color(0xFFFFD9D9),
 
-    background = Color(0xFF0F0D1A),
-    onBackground = Color(0xFFE8E4F2),
+    background = Color(0xFF0A0A0F),
+    onBackground = Color(0xFFF0E8D8),
 
-    surface = Color(0xFF1A1730),
-    onSurface = Color(0xFFE8E4F2),
-    surfaceVariant = Color(0xFF2A2440),
-    onSurfaceVariant = Color(0xFFB7A6CF),
-    surfaceTint = Color(0xFF8B7BD8),
+    surface = Color(0xFF141620),
+    onSurface = Color(0xFFF0E8D8),
+    surfaceVariant = Color(0xFF1E1C28),
+    onSurfaceVariant = Color(0xFFB0A898),
+    surfaceTint = Color(0xFF5A9A90),
 
-    outline = Color(0xFF4A3F66),
-    outlineVariant = Color(0xFF2A2440),
+    outline = Color(0xFF3A3840),
+    outlineVariant = Color(0xFF1E1C28),
 
     scrim = Color(0xFF000000),
 
-    error = Color(0xFFFF4D5E),
-    onError = Color(0xFF3A0008),
-    errorContainer = Color(0xFF4A1018),
-    onErrorContainer = Color(0xFFFFD9DC),
+    error = Color(0xFFC84040),
+    onError = Color(0xFF3A0808),
+    errorContainer = Color(0xFF4A1414),
+    onErrorContainer = Color(0xFFFFD9D9),
 )
 
 @Composable
 fun MilanTheme(content: @Composable () -> Unit) {
     MaterialExpressiveTheme(
-        colorScheme = TwilightColors,
+        colorScheme = InkColors,
         shapes = GameShapes,
-        // P3-2：游戏排版体系（增量落地）——此前 MaterialExpressiveTheme 未传 typography，
-        // 全部文本硬编码 fontSize/letterSpacing；先定义标题/正文/标签三档供新代码与逐步替换使用。
         typography = GameTypography,
         content = content,
     )
 }
 
-/** 游戏形状体系（2026-08 UI 现代化）：收敛全站十余种圆角为五档 token。
- *  档位取自存量使用频率最高的半径（6/10/14/16/20），屏幕侧用 MaterialTheme.shapes.xxx 消费，
- *  存量 RoundedCornerShape 按 14→medium、10→small、6→extraSmall 批次替换，禁止新增散装半径。 */
+/** 游戏形状体系：收敛全站圆角为五档 token。 */
 val GameShapes = Shapes(
     extraSmall = RoundedCornerShape(6.dp),
     small = RoundedCornerShape(10.dp),
@@ -83,8 +76,7 @@ val GameShapes = Shapes(
     extraLarge = RoundedCornerShape(20.dp),
 )
 
-/** 游戏排版体系（P3-2）：暮紫夜主题的标题/正文/标签档位，替代散落的硬编码字号。
- *  增量使用：新代码优先取这里；存量硬编码字号按页面批次替换（避免一次性视觉回归）。 */
+/** 游戏排版体系：水墨国风的标题/正文/标签档位。 */
 val GameTypography = Typography(
     headlineSmall = TextStyle(fontSize = 22.sp, fontWeight = FontWeight.Bold, letterSpacing = 3.sp),
     titleLarge = TextStyle(fontSize = 20.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.5.sp),

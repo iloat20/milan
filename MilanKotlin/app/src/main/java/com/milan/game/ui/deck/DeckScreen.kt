@@ -19,11 +19,13 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.itemsIndexed
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.activity.compose.BackHandler
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -37,6 +39,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -57,9 +60,9 @@ import com.milan.game.ui.nav.NavItem
 import com.milan.game.ui.theme.AppTheme
 
 /**
- * 卡组屏（P1-3 新建，替换原「建设中」占位页）：
- * 已拥有角色 2 列网格，点卡片弹出立绘大图预览（对标 Forge 悬浮大卡预览），
- * 预览层提供「查看详情」入口；空态引导前往寻访。底部导航常驻（主 tab 页）。
+ * 卡组屏（水墨国风版）：
+ * 已拥有角色 2 列网格，点卡片弹出立绘大图预览，
+ * 预览层提供「查看详情」入口；空态引导前往寻访。底部导航常驻。
  */
 @Composable
 fun DeckScreen(
@@ -68,37 +71,27 @@ fun DeckScreen(
     modifier: Modifier = Modifier,
     animatedVisibilityScope: androidx.compose.animation.AnimatedVisibilityScope? = null,
 ) {
-    // 快照 revision 驱动拥有列表（范式对齐 Detail/Progression 页「勿裸 remember 缓存」教训）：
-    // 任何页面的抽卡/养成写操作推进 revision 后，本页随重组刷新最新角色集
     val snapshot by GameState.service.snapshot.collectAsStateWithLifecycle()
     val owned = remember(snapshot.revision) { GameState.owned() }
     var previewId by rememberSaveable { mutableStateOf<String?>(null) }
     val preview = owned.firstOrNull { it.save.characterId == previewId }
 
-    // ── 编队状态（2026-08 编队系统）：快照驱动，setFormation 成功后经 refreshSnapshot 回流重组 ──
     val scope = rememberCoroutineScope()
-    // R3/I4：反馈统一走 LocalFeedback——编队满员 / 落盘失败不再静默
     val feedback = LocalFeedback.current
     val members = remember(snapshot.revision) {
         val formed = snapshot.formation.toSet()
         owned.filter { it.save.characterId in formed }
     }
+    // U2（2026-08-28 审查修复）：读-改-写整体下沉到服务层（在 writeMutex 临界区内串行）。
+    // 原实现在 UI 侧读 formation → 计算 next → 调 setFormation，跨锁执行存在竞态：
+    // 快速连点时两次都基于同一份过期快照计算，后提交者覆盖前者，前一次点击被静默丢弃。
     val toggleFormation: (String) -> Unit = { id ->
-        val current = GameState.service.getFormation()
-        if (id !in current && current.size >= GameState.maxFormationSize) {
-            // 满员：此前静默忽略，第 6 个角色点击毫无反馈；补明确提示
-            scope.launch { feedback.show("编队已满（${GameState.maxFormationSize} 人），请先移出一名角色") }
-        } else {
-            val next = when (id) {
-                in current -> current - id
-                else -> current + id
-            }
-            if (next != current) scope.launch {
-                when (GameState.service.setFormation(next)) {
-                    WriteOutcome.Success -> Unit // 快照已推进，「加入/移出」按钮态自动回流
-                    WriteOutcome.Rejected -> feedback.show("无法更新编队")
-                    WriteOutcome.SaveFailed -> feedback.show("保存失败，请重试")
-                }
+        scope.launch {
+            when (GameState.service.toggleFormation(id)) {
+                WriteOutcome.Success -> Unit
+                // 列表内的角色必定已拥有，Rejected 只剩「编队已满」一种语义
+                WriteOutcome.Rejected -> feedback.show("编队已满（${GameState.maxFormationSize} 人），请先移出一名角色")
+                WriteOutcome.SaveFailed -> feedback.show("保存失败，请重试")
             }
         }
     }
@@ -118,13 +111,11 @@ fun DeckScreen(
             )
             Spacer(Modifier.height(12.dp))
 
-            // 出战编队（2026-08 编队系统）：点预览层「加入/移出编队」维护；槽位条只读展示
             if (owned.isNotEmpty()) {
                 FormationBar(
                     members = members,
                     maxSlots = GameState.maxFormationSize,
                     onSlotClick = { onOpenDeckSlot ->
-                        // 空槽点击不动作；有角色槽点击进预览（与网格卡片同语义）
                         if (onOpenDeckSlot != null) previewId = onOpenDeckSlot
                     },
                     modifier = Modifier.padding(horizontal = 18.dp),
@@ -133,7 +124,6 @@ fun DeckScreen(
             }
 
             if (owned.isEmpty()) {
-                // 空态：无角色时引导前往寻访（对标 CharacterListScreen 空态语义）
                 Box(
                     modifier = Modifier
                         .weight(1f)
@@ -161,16 +151,28 @@ fun DeckScreen(
                     }
                 }
             } else {
+                val deckGridState = rememberLazyGridState()
                 LazyVerticalGrid(
                     columns = GridCells.Fixed(2),
+                    state = deckGridState,
                     modifier = Modifier
                         .weight(1f)
                         .fillMaxWidth(),
                     contentPadding = PaddingValues(start = 13.dp, end = 13.dp, bottom = 16.dp),
                     horizontalArrangement = Arrangement.spacedBy(0.dp),
                 ) {
-                    // P3-3：Lazy 容器补稳定 key（角色 Id），避免槽位复用导致筛选/状态错乱
-                    itemsIndexed(owned, key = { _, ch -> ch.save.characterId }) { _, ch ->
+                    itemsIndexed(owned, key = { _, ch -> ch.save.characterId }) { index, ch ->
+                        val parallax by remember {
+                            derivedStateOf {
+                                val first = deckGridState.layoutInfo.visibleItemsInfo.firstOrNull()
+                                    ?: return@derivedStateOf 0f
+                                val last = deckGridState.layoutInfo.visibleItemsInfo.lastOrNull()
+                                    ?: return@derivedStateOf 0f
+                                val total = last.index - first.index + 1
+                                val pos = (index - first.index).toFloat() / total.coerceAtLeast(1)
+                                pos.coerceIn(-0.5f, 0.5f) * 2f
+                            }
+                        }
                         CharacterCard(
                             characterId = ch.save.characterId,
                             name = ch.name,
@@ -187,6 +189,9 @@ fun DeckScreen(
                                     modifier = Modifier.padding(top = 3.dp),
                                 )
                             },
+                            modifier = Modifier
+                                .animateItem()
+                                .graphicsLayer { translationY = parallax * 8f },
                         )
                     }
                 }
@@ -199,8 +204,6 @@ fun DeckScreen(
             )
         }
 
-        // 立绘大图预览层（I12：抽出为 DeckPreviewOverlay，收窄主函数职责）
-        // P-编队：预览层提供「加入/移出编队」快捷入口（2026-08 编队系统）
         DeckPreviewOverlay(
             preview = preview,
             onClose = { previewId = null },
@@ -212,9 +215,8 @@ fun DeckScreen(
 }
 
 /**
- * 立绘大图预览层（I12：从 DeckScreen 主函数抽出）：
+ * 立绘大图预览层（水墨国风版）：
  * 全屏遮罩 + 稀有度光晕，点空白关闭；「查看详情」进详情页。
- * P0-C6：预览态拦截系统返回（物理/手势），与「点空白关闭」同源退出，避免返回键穿透到列表。
  */
 @Composable
 private fun DeckPreviewOverlay(
@@ -237,14 +239,13 @@ private fun DeckPreviewOverlay(
                 ) { onClose() },
             contentAlignment = Alignment.Center,
         ) {
-            // 稀有度光晕（径向渐变全屏，与 Gacha reveal 同语言）
+            // 稀有度光晕
             Box(
                 Modifier
                     .fillMaxSize()
                     .background(Brush.radialGradient(listOf(rc.copy(alpha = 0.45f), Color.Transparent))),
             )
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                // 大立绘卡 220x312（与 Gacha reveal 卡片同尺寸语言）
                 Column(
                     modifier = Modifier
                         .size(width = 220.dp, height = 312.dp)
@@ -280,7 +281,6 @@ private fun DeckPreviewOverlay(
                             color = AppTheme.Text1,
                         )
                     }
-                    // 稀有度 + 元素徽章行（与大卡卡面同语言）
                     Row(
                         modifier = Modifier.padding(top = 8.dp),
                         horizontalArrangement = Arrangement.Center,
@@ -305,7 +305,6 @@ private fun DeckPreviewOverlay(
                         )
                     }
                 }
-                // 编队快捷入口（2026-08）：加入/移出编队；成功后经快照回流刷新按钮态
                 if (onToggleFormation != null) {
                     NeonButton(
                         text = if (inFormation) "移出编队" else "加入编队",
@@ -313,7 +312,6 @@ private fun DeckPreviewOverlay(
                         modifier = Modifier.padding(top = 20.dp),
                     )
                 }
-                // 查看详情：先关预览层再进详情页（预览层与详情页不同屏，无 sharedBounds 配对）
                 NeonButton(
                     text = "查看详情",
                     onClick = {
@@ -333,8 +331,3 @@ private fun DeckPreviewOverlay(
         }
     }
 }
-
-/**
- * 卡组卡片（已收敛至共享组件 CharacterCard，R1/I1）：星级 footer 走参数插槽；
- * 共享元素过渡（animatedVisibilityScope 由 MainActivity 传入）随统一实现一并补回。
- */

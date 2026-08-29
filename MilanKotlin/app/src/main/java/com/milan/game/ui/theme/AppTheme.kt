@@ -3,92 +3,107 @@ package com.milan.game.ui.theme
 import androidx.compose.ui.graphics.Color
 
 /**
- * 暗夜神性·诸神黄昏 (Twilight of Gods) — 唯一主调色板（C# AppTheme 翻译，颜色单一事实来源）。
- * cosmic dark / 中西融合 / Obsidian&Gold / Cosmic Nebula 四套重叠，定义已收口到此。
+ * 水墨国风·丹青录 (Ink Chronicle) — 唯一主调色板。
+ * 素雅宣纸底 / 朱砂点缀 / 金箔高光 / 翠玉次级 / 墨色层次。
+ * 替代旧「暗夜神性·诸神黄昏」暗紫+熔金调性。
  */
 object AppTheme {
 
-    /** 全局最底背景（暗紫夜·最深）。 */
-    val BgDeepest = Color(0xFF0B0612)
+    // ── 墨色层次（背景 / 面板 / 分区）──
 
-    /** 次级背景 / 分区（暗紫夜·中）。 */
-    val BgMid = Color(0xFF160A26)
+    /** 全局最底背景（浓墨·最深）。 */
+    val BgDeepest = Color(0xFF0A0A0F)
 
-    /** 玻璃面底色（#1E0E33 @ α≈0.55，140/255）。 */
-    val Surface = Color(0x8C1E0E33)
+    /** 次级背景 / 分区（淡墨·灰蓝）。 */
+    val BgMid = Color(0xFF141620)
 
-    /** 熔金主色（线 / 点 / 字 / 当期强调）。 */
-    val Gold = Color(0xFFE8B84B)
+    /** 玻璃面底色（宣纸半透明）。 */
+    val Surface = Color(0x8C1A1828)
 
-    /** 熔金高光（渐变起笔 / 高光点）。 */
-    val GoldHi = Color(0xFFFFC857)
+    // ── 金箔系（主色 / 高光 / 收尾）──
 
-    /** 熔金收尾 / 按钮底边。 */
-    val GoldDeep = Color(0xFFC9962E)
+    /** 金箔主色（线 / 点 / 字 / 当期强调）。 */
+    val Gold = Color(0xFFD4A853)
 
-    /** 霜蓝（次级操作 / 信息 / 导航图标）。 */
-    val Frost = Color(0xFF7FC4FF)
+    /** 金箔高光（渐变起笔 / 高光点）。 */
+    val GoldHi = Color(0xFFF0C864)
 
-    /** 霜蓝深。 */
-    val FrostDeep = Color(0xFF4A90D9)
+    /** 金箔收尾 / 按钮底边。 */
+    val GoldDeep = Color(0xFFB08930)
 
-    /** 暮紫（点缀 / 分隔 / 天赋节点 / 裂隙）。 */
-    val Violet = Color(0xFF9A6BFF)
+    // ── 石青系（次级操作 / 信息 / 导航图标）──
 
-    /** 主文字。 */
-    val Text1 = Color(0xFFF3ECFF)
+    /** 石青（淡蓝绿）。 */
+    val Frost = Color(0xFF7EBAB1)
 
-    /** 次文字。 */
-    val Text2 = Color(0xFFB7A6CF)
+    /** 石青深。 */
+    val FrostDeep = Color(0xFF5A9A90)
 
-    /** 弱化 / 占位（P2-7 无障碍：#6E5C8A→#8070AA，BgDeepest 上对比度 3.39→4.59:1，达 WCAG AA）。 */
-    val Text3 = Color(0xFF8070AA)
+    // ── 紫砚系（点缀 / 分隔 / 天赋节点）──
 
-    /** 语义色：成功。 */
-    val Success = Color(0xFF35D07F)
+    /** 紫砚（深紫点缀）。 */
+    val Violet = Color(0xFF8A6BBD)
 
-    /** 语义色：警告。 */
-    val Warning = Color(0xFFFFB020)
+    // ── 文字层次 ──
 
-    /** 语义色：危险 / 强调红。 */
-    val Danger = Color(0xFFFF4D5E)
+    /** 主文字（宣纸白）。 */
+    val Text1 = Color(0xFFF0E8D8)
 
-    /** 发丝描边（白 α08，20/255）：替代旧金线作为默认面板边。 */
+    /** 次文字（淡墨灰）。 */
+    val Text2 = Color(0xFFB0A898)
+
+    /** 弱化 / 占位（WCAG AA 达标）。 */
+    val Text3 = Color(0xFF787068)
+
+    // ── 语义色 ──
+
+    /** 语义色：成功（翠玉绿）。 */
+    val Success = Color(0xFF5CB87A)
+
+    /** 语义色：警告（琥珀）。 */
+    val Warning = Color(0xFFD4A020)
+
+    /** 语义色：危险 / 朱砂红。 */
+    val Danger = Color(0xFFC84040)
+
+    // ── 装饰线 / 填充 ──
+
+    /** 发丝描边（白 α08）。 */
     val Stroke = Color(0x14FFFFFF)
 
     /** 金底上的深色文字。 */
     val GoldTextOn = Color(0xFF3A2800)
 
-    /** 印章点缀红（中西融合母题保留项）。 */
-    val SealRed = Color(0xFFC8252A)
+    /** 印章点缀红（国风母题）。 */
+    val SealRed = Color(0xFFBF3A3A)
 
-    /** 浮层底部铭牌渐变起笔（透明 → 深紫黑，HeroNameplate 等底部渐隐；M15 收口硬编码色）。 */
-    val ScrimTop = Color(0x000B0612)
+    /** 浮层底部铭牌渐变起笔（透明 → 墨色）。 */
+    val ScrimTop = Color(0x000A0A0F)
 
-    /** 浮层底部铭牌渐变收尾（深紫黑 α≈0.75，与 BgDeepest 同调）。 */
-    val ScrimBottom = Color(0xBE07040F)
+    /** 浮层底部铭牌渐变收尾（墨色 α≈0.75）。 */
+    val ScrimBottom = Color(0xBE080810)
 
-    /** 嵌套玻璃面板底色（#251242 @ α≈0.59，GlassPanel nested 态；M15 收口硬编码色）。 */
-    val SurfaceNested = Color(0x96251242)
+    /** 嵌套玻璃面板底色（更深墨色 α≈0.59）。 */
+    val SurfaceNested = Color(0x96161220)
 
-    /** 魔兽风格加成绿（C# WoWGreen = Rgb(70,255,130)；原 CharacterDetailScreen 私藏，2026-08-27 收口）。 */
-    val WoWGreen = Color(0xFF46FF82)
+    /** 武器加成绿。 */
+    val WoWGreen = Color(0xFF5CBE80)
 
-    /** 武器舞台圆角暗底（原 CharacterDetailScreen 私藏，2026-08-27 收口）。 */
-    val WeaponStageBg = Color(0xFF101018)
+    /** 武器舞台圆角暗底。 */
+    val WeaponStageBg = Color(0xFF0C0C14)
 
-    /** 魔兽属性面板渐变起笔（原 CharacterDetailScreen 私藏，2026-08-27 收口）。 */
-    val WoWPanelTop = Color(0xFF16101C)
+    /** 魔兽属性面板渐变起笔。 */
+    val WoWPanelTop = Color(0xFF12101A)
 
     /** 魔兽属性面板渐变收尾。 */
-    val WoWPanelBottom = Color(0xFF0B0712)
+    val WoWPanelBottom = Color(0xFF0A0810)
 
-    /** 稀有度色板 — 诸神黄昏·东方 调性（UR 熔金 / SSR 暮紫 / SR 霜蓝 / R 苍白）。 */
+    /** 稀有度色板 — 丹青录调性（UR 金箔 / SSR 朱砂 / SR 石青 / R 素白）。 */
     fun rarityColor(rarity: Int): Color = when (rarity) {
-        1 -> Color(0xFFE8E2F2)   // R  - 苍白
-        2 -> Color(0xFF7FC4FF)   // SR - 霜蓝
-        3 -> Color(0xFFC79BFF)   // SSR - 暮紫
-        4 -> Color(0xFFFFC857)   // UR - 熔金
+        1 -> Color(0xFFD8D0C0)   // R  - 素白
+        2 -> Color(0xFF7EBAB1)   // SR - 石青
+        3 -> Color(0xFFC85050)   // SSR - 朱砂
+        4 -> Color(0xFFF0C864)   // UR - 金箔
         else -> Text3
     }
 
@@ -125,7 +140,7 @@ enum class WorldBackground { Mythical, Cosmic, Industrial }
 /**
  * 三世界视觉语言（C# WorldTheme 翻译）。
  * 每个世界有自己的调色板与氛围，实现「混合渲染」承诺：
- * Shinwa = 赛璐璐水墨，Aether = 半写实暗黑星空，Ironveil = 硬表面机械。
+ * Shinwa = 水墨丹青，Aether = 星辰虚空，Ironveil = 钢铁机关。
  */
 object WorldTheme {
 
@@ -136,39 +151,39 @@ object WorldTheme {
         else -> Shinwa
     }
 
-    /** 神话界：赛璐璐水墨。 */
+    /** 神话界：水墨丹青。 */
     val Shinwa = WorldPalette(
-        primary = Color(0xFFC41E3A),      // 朱砂红
-        secondary = Color(0xFFD4AF37),    // 金箔
-        accent = Color(0xFF1E90FF),       // 石青
-        background = Color(0xFF0D0D1A),
-        surface = Color(0xFF1A1520),
-        textPrimary = Color(0xFFF5F0E8),  // 玉白
-        textSecondary = Color(0xFFB8A080),
-        glow = Color(0xFFFFD700),
-        particleColor = Color(0xFFFFD700),
+        primary = Color(0xFFBF3A3A),      // 朱砂红
+        secondary = Color(0xFFD4A853),    // 金箔
+        accent = Color(0xFF5A9A90),       // 石青
+        background = Color(0xFF0D0D14),
+        surface = Color(0xFF1A1820),
+        textPrimary = Color(0xFFF0E8D8),  // 宣纸白
+        textSecondary = Color(0xFFB0A080),
+        glow = Color(0xFFD4A853),
+        particleColor = Color(0xFFD4A853),
         stroke = Color(0xFF3A2A1A),
     )
 
-    /** 虚空界：半写实暗黑宇宙。 */
+    /** 虚空界：星辰虚空。 */
     val Aether = WorldPalette(
-        primary = Color(0xFF2D1B69),      // 虚空紫
-        secondary = Color(0xFF4A90D9),    // 星云蓝
-        accent = Color(0xFF8B0000),       // 暗红
-        background = Color(0xFF0A0A14),
-        surface = Color(0xFF12122A),
+        primary = Color(0xFF2D1B50),      // 虚空紫
+        secondary = Color(0xFF5A9A90),    // 星云青
+        accent = Color(0xFF8A3030),       // 暗红
+        background = Color(0xFF0A0A12),
+        surface = Color(0xFF121228),
         textPrimary = Color(0xFFE8E0F0),  // 幽灵白
         textSecondary = Color(0xFF9090C0),
-        glow = Color(0xFF6A0DAD),
-        particleColor = Color(0xFF4A90D9),
-        stroke = Color(0xFF2D1B69),
+        glow = Color(0xFF6A3DAD),
+        particleColor = Color(0xFF5A9A90),
+        stroke = Color(0xFF2D1B50),
     )
 
-    /** 铁幕界：硬表面机械。 */
+    /** 铁幕界：钢铁机关。 */
     val Ironveil = WorldPalette(
-        primary = Color(0xFF4A4A5A),      // 钢铁灰
+        primary = Color(0xFF4A4A58),      // 钢铁灰
         secondary = Color(0xFFB87333),    // 铜
-        accent = Color(0xFF00BFFF),       // 电光蓝
+        accent = Color(0xFF7EBAB1),       // 电光青
         background = Color(0xFF1A1A20),
         surface = Color(0xFF252530),
         textPrimary = Color(0xFFE0E0E0),

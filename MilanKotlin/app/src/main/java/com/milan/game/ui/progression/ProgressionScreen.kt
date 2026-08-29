@@ -8,12 +8,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.unit.dp
@@ -154,11 +156,18 @@ fun ProgressionScreen(
         LocalWindowInfo.current.containerSize.height.toDp() * 0.46f
     }
 
+    val scrollState = rememberScrollState()
+    val scrollProgress by remember {
+        derivedStateOf {
+            if (scrollState.maxValue > 0) scrollState.value.toFloat() / scrollState.maxValue else 0f
+        }
+    }
+
     PageBackground(modifier = modifier) {
         Column(
             Modifier
                 .fillMaxSize()
-                .verticalScroll(rememberScrollState()),
+                .verticalScroll(scrollState),
         ) {
             SubPageHero(
                 view = view,
@@ -169,6 +178,10 @@ fun ProgressionScreen(
                 onBack = onBack,
                 onPrev = { switch(-1) },
                 onNext = { switch(1) },
+                portraitModifier = Modifier.graphicsLayer {
+                    translationY = scrollProgress * 120f
+                    alpha = 1f - scrollProgress * 0.15f
+                },
             )
             Spacer(Modifier.height(12.dp))
 

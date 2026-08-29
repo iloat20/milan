@@ -14,6 +14,8 @@ import java.io.File
 import java.io.FileOutputStream
 import kotlin.math.ceil
 import kotlin.math.min
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 /**
  * 抽卡结果分享图（2026-08 三期新增；对标 wish-simulator 类项目的「结果导出图片」功能）。
@@ -29,25 +31,36 @@ object PullShareCard {
     private const val PAD = 48
     private const val CELL_GAP = 16
 
-    /** 绘制并拉起分享。results 为空时直接忽略（调用方已在 UI 层保证非空，双保险）。 */
-    fun shareResults(context: Context, results: List<PullResult>) {
+    /**
+     * 绘制并拉起分享。results 为空时直接忽略（调用方已在 UI 层保证非空，双保险）。
+     *
+     * U1（2026-08-28 审查修复）：**suspend**，绘制 / PNG 压缩 / 写盘全部移出主线程。
+     * 1080×~670 位图的 Canvas 绘制 + `compress(PNG,100)` 在低端机上可达数百毫秒，
+     * 原实现在 `.clickable {}` 里同步执行，存在明确 ANR 风险。
+     * `startActivity` 留在调用方线程（UI 线程）执行，避免跨线程启动 Activity。
+     */
+    suspend fun shareResults(context: Context, results: List<PullResult>) {
         if (results.isEmpty()) return
-        val bitmap = drawCard(results) ?: return
-        try {
-            val dir = File(context.cacheDir, "share").apply { mkdirs() }
-            val file = File(dir, "pull_result.png")
-            FileOutputStream(file).use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
-            bitmap.recycle()
-            val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+        val uri = withContext(Dispatchers.IO) {
+            val bitmap = drawCard(results) ?: return@withContext null
+            try {
+                val dir = File(context.cacheDir, "share").apply { mkdirs() }
+                val file = File(dir, "pull_result.png")
+                FileOutputStream(file).use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
+                FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+            } finally {
+                bitmap.recycle()
+            }
+        } ?: return
+        runCatching {
             val send = Intent(Intent.ACTION_SEND).apply {
                 type = "image/png"
                 putExtra(Intent.EXTRA_STREAM, uri)
                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             }
             context.startActivity(Intent.createChooser(send, "分享抽卡结果"))
-        } catch (_: Exception) {
-            // 分享路径失败静默：目标应用缺失 / IO 异常都不应打断玩家（与 buzz() 同等容错口径）
         }
+        // 分享路径失败静默：目标应用缺失 / IO 异常都不应打断玩家（与 buzz() 同等容错口径）
     }
 
     /** 程序化绘制结果卡片；任何绘制异常返回 null 由调用方静默跳过。 */
@@ -61,17 +74,17 @@ object PullShareCard {
         val bmp = Bitmap.createBitmap(WIDTH, height, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bmp)
 
-        // 背景：深空底色 + 顶部金色饰线（与 App 暗色金主题同调）
-        canvas.drawColor(0xFF10141F.toInt())
-        val accent = Paint().apply { color = 0xFFE0B45C.toInt() }
+        // 背景：浓墨底色 + 顶部金色饰线（水墨国风调性）
+        canvas.drawColor(0xFF0A0A0F.toInt())
+        val accent = Paint().apply { color = 0xFFD4A853.toInt() }
         canvas.drawRect(0f, 0f, WIDTH.toFloat(), 6f, accent)
 
         val titlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = 0xFFE0B45C.toInt(); textSize = 52f; isFakeBoldText = true
+            color = 0xFFD4A853.toInt(); textSize = 52f; isFakeBoldText = true
         }
-        canvas.drawText("次元裂缝 · 抽卡结果", PAD.toFloat(), (PAD + 44).toFloat(), titlePaint)
+        canvas.drawText("丹青寻访 · 抽卡结果", PAD.toFloat(), (PAD + 44).toFloat(), titlePaint)
 
-        val cellFill = Paint().apply { color = 0xFF1A2136.toInt() }
+        val cellFill = Paint().apply { color = 0xFF141620.toInt() }
         val namePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = 0xFFF2F2F2.toInt(); textSize = 26f; textAlign = Paint.Align.CENTER
         }

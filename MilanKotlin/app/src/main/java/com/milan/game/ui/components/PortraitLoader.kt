@@ -126,6 +126,7 @@ object PortraitLoader {
      * 低端机在大量立绘缓存后易触发更激进的系统回收。
      */
     val memoryCallbacks: android.content.ComponentCallbacks2 = object : android.content.ComponentCallbacks2 {
+        @Suppress("DEPRECATION")
         override fun onTrimMemory(level: Int) {
             when {
                 level >= android.content.ComponentCallbacks2.TRIM_MEMORY_RUNNING_CRITICAL -> cache.clear()
@@ -133,6 +134,7 @@ object PortraitLoader {
             }
         }
 
+        @Deprecated("Deprecated in Java", ReplaceWith("onTrimMemory(android.content.ComponentCallbacks2.TRIM_MEMORY_COMPLETE)"))
         override fun onLowMemory() {
             cache.clear()
         }

@@ -73,10 +73,12 @@ fun TowerScreen(
     var running by remember { mutableStateOf(false) }
     var result by remember { mutableStateOf<TowerOutcome?>(null) }
 
-    // 编队成员视图（快照 revision 触发重算；战力/元素预览同口径 StatsCalculator）
+    // 编队成员视图（快照 revision 触发重算；战力/元素预览同口径 StatsCalculator）。
+    // M5（2026-08-28 审查修复）：按**编队槽位顺序**映射，而非按 owned() 的拥有顺序——
+    // 否则玩家在卡组页调整的出战顺序到爬塔页被还原成拥有顺序，槽位语义丢失。
     val members = remember(snapshot.revision) {
-        val formed = snapshot.formation.toSet()
-        GameState.owned().filter { it.save.characterId in formed }
+        val byId = GameState.owned().associateBy { it.save.characterId }
+        snapshot.formation.mapNotNull { byId[it] }
     }
     val teamPower = members.sumOf { GameState.computeStats(it).atk }
 
@@ -213,57 +215,14 @@ fun TowerScreen(
                         animationSpec = androidx.compose.animation.core.tween(240),
                     ),
                 ) {
-                    val done = result as TowerOutcome.Completed
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(MaterialTheme.shapes.medium)
-                            .background(
-                                if (done.victory) {
-                                    Brush.verticalGradient(
-                                        listOf(AppTheme.Gold.copy(alpha = 0.16f), AppTheme.Surface.copy(alpha = 0.7f)),
-                                    )
-                                } else {
-                                    Brush.verticalGradient(
-                                        listOf(AppTheme.Surface.copy(alpha = 0.7f), AppTheme.BgMid.copy(alpha = 0.6f)),
-                                    )
-                                }
-                            )
-                            .border(
-                                1.dp,
-                                if (done.victory) AppTheme.Gold.copy(alpha = 0.6f) else AppTheme.Stroke,
-                                MaterialTheme.shapes.medium,
-                            )
-                            .padding(14.dp),
-                        verticalArrangement = Arrangement.spacedBy(4.dp),
-                    ) {
-                        Text(
-                            text = if (done.victory) "✦ 攻克！用时 ${done.turns} 回合" else "✖ 止步于此（${done.turns} 回合）",
-                            style = MaterialTheme.typography.titleSmall,
-                            color = if (done.victory) AppTheme.Gold else AppTheme.Text2,
-                        )
-                        if (done.victory) {
-                            Text(text = "星尘 +${done.rewardSoft}", style = MaterialTheme.typography.bodyMedium, color = AppTheme.Text1)
-                            if (done.rewardHard > 0) {
-                                Text(
-                                    text = "◆ 钻石 +${done.rewardHard}（首次攻克里程碑）",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = AppTheme.Frost,
-                                )
-                            }
-                            if (done.bestFloorAfter >= nextFloor) {
-                                Text(text = "纪录推进至第 ${done.bestFloorAfter} 层", style = MaterialTheme.typography.bodySmall, color = AppTheme.Text2)
-                            }
-                        }
-                        BattleReportSection(done.log)
-                        Text(
-                            text = "提示：敌方元素随层数轮转，用克制元素编队能显著降低损血。",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = AppTheme.Text3,
-                        )
-                    }
+                    // F2（2026-08-28 审查修复）：退出动画期间 content 仍会重组，而 result 可能已被
+                    // 下一次挑战改写为 Draw / SaveFailed —— 不安全强转会抛 ClassCastException 闪退。
+                    // 用 as? + 提前返回，与文件下方「本地快照」范式（:266）保持一致。
+                    val done = result as? TowerOutcome.Completed ?: return@AnimatedVisibility
+                    TowerResultCard(done = done)
                 }
-                when (result) {
+                val outcome = result  // 本地快照，解决委托属性无法 smart-cast
+                when (outcome) {
                     TowerOutcome.Rejected -> Text(
                         text = "挑战被拒绝：请检查编队配置。",
                         style = MaterialTheme.typography.bodySmall,
@@ -276,6 +235,15 @@ fun TowerScreen(
                         color = AppTheme.Text3,
                         modifier = Modifier.padding(top = 8.dp),
                     )
+                    is TowerOutcome.Draw -> {
+                        BattleReportSection(outcome.log)
+                        Text(
+                            text = "僵局（${outcome.turns} 回合）——双方仍存活，门票已退还。",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = AppTheme.Text2,
+                            modifier = Modifier.padding(top = 8.dp),
+                        )
+                    }
                     else -> Unit
                 }
 
@@ -355,6 +323,69 @@ private fun StrikeRow(e: StrikeEvent) {
                 counter -> AppTheme.Gold
                 else -> AppTheme.Text1
             },
+        )
+    }
+}
+
+/**
+ * 爬塔结算卡（2026-08-28 P0 重构：自 TowerScreen 的 AnimatedVisibility 内联块抽出）。
+ *
+ * 抽出的两个目的：
+ * 1. **可测试**：F2 的闪退就发生在结算卡渲染路径上（result 被下一次挑战改写后
+ *    退出动画仍重组 → 不安全强转抛 ClassCastException）。内联块无法单独构造，
+ *    抽成 composable 后可直接用 Compose UI Test 覆盖。
+ * 2. **可读性**：原内联 50 行让 TowerScreen 主体更难读。
+ */
+@Composable
+internal fun TowerResultCard(done: TowerOutcome.Completed, modifier: Modifier = Modifier) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(MaterialTheme.shapes.medium)
+            .background(
+                if (done.victory) {
+                    Brush.verticalGradient(
+                        listOf(AppTheme.Gold.copy(alpha = 0.16f), AppTheme.Surface.copy(alpha = 0.7f)),
+                    )
+                } else {
+                    Brush.verticalGradient(
+                        listOf(AppTheme.Surface.copy(alpha = 0.7f), AppTheme.BgMid.copy(alpha = 0.6f)),
+                    )
+                }
+            )
+            .border(
+                1.dp,
+                if (done.victory) AppTheme.Gold.copy(alpha = 0.6f) else AppTheme.Stroke,
+                MaterialTheme.shapes.medium,
+            )
+            .padding(14.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        Text(
+            text = if (done.victory) "✦ 攻克！用时 ${done.turns} 回合" else "✖ 止步于此（${done.turns} 回合）",
+            style = MaterialTheme.typography.titleSmall,
+            color = if (done.victory) AppTheme.Gold else AppTheme.Text2,
+        )
+        if (done.victory) {
+            Text(text = "星尘 +${done.rewardSoft}", style = MaterialTheme.typography.bodyMedium, color = AppTheme.Text1)
+            if (done.rewardHard > 0) {
+                Text(
+                    text = "◆ 钻石 +${done.rewardHard}（首次攻克里程碑）",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = AppTheme.Frost,
+                )
+            }
+            // M1：改用服务层显式判定。原条件 bestFloorAfter >= nextFloor 恒为 false
+            //（nextFloor 在结算返回前已被快照刷新为 best+1），导致该文案永不显示。
+            if (done.recordAdvanced) {
+                Text(text = "纪录推进至第 ${done.bestFloorAfter} 层", style = MaterialTheme.typography.bodySmall, color = AppTheme.Text2)
+            }
+        }
+        BattleReportSection(done.log)
+        Text(
+            text = "提示：敌方元素随层数轮转，用克制元素编队能显著降低损血。",
+            style = MaterialTheme.typography.labelMedium,
+            color = AppTheme.Text3,
         )
     }
 }

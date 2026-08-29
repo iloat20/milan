@@ -46,7 +46,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.milan.game.ui.theme.AppTheme
 
-/** 全局底部导航项（C# GameNavBar.NavItem 翻译，5 项，Material 标准图标（P2-6 统一图标语言））。 */
+/** 全局底部导航项（水墨国风版：墨色玻璃底座 + 金箔选中态）。 */
 enum class NavItem(val icon: ImageVector, val label: String) {
     Home(Icons.Filled.Home, "主页"),
     Gacha(Icons.Filled.Star, "抽卡"),
@@ -56,8 +56,8 @@ enum class NavItem(val icon: ImageVector, val label: String) {
 }
 
 /**
- * Obsidian & Gold 全局底部导航栏（5 项）。玻璃底座 + 选中项金色高亮面板 +
- * 顶部金色指示线 + 按压缩放反馈。导航目标由宿主决定，组件自身不依赖任何具体页面。
+ * 水墨国风底部导航栏（5 项）。墨色玻璃底座 + 金箔选中高亮面板 +
+ * 顶部金箔指示线 + 按压缩放反馈。
  */
 @Composable
 fun GameNavBar(
@@ -65,7 +65,6 @@ fun GameNavBar(
     onSelect: (NavItem) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    // 玻璃底座：暗紫玻璃 + 发丝描边（C# GlassPanel(0, gold:false)）
     Row(
         modifier = modifier
             .navigationBarsPadding()
@@ -94,7 +93,7 @@ fun GameNavBar(
     }
 }
 
-/** 单个导航格：等宽长方形，图标 + 文字整体居中，选中态金面板 + 顶部金线。 */
+/** 单个导航格：等宽长方形，图标 + 文字整体居中，选中态金箔面板 + 顶部金线。 */
 @Composable
 private fun NavCell(
     item: NavItem,
@@ -105,7 +104,6 @@ private fun NavCell(
     val interaction = remember { MutableInteractionSource() }
     val pressed by interaction.collectIsPressedAsState()
     val scale by animateFloatAsState(if (pressed) 0.94f else 1f, label = "navScale")
-    // 捕获参数副本：semantics 块内 receiver 也有 selected 属性，直接 `selected = selected` 会自赋值
     val isSelected = selected
 
     val glyphColor = if (selected) AppTheme.Gold else AppTheme.Frost.copy(alpha = 0.7f)
@@ -126,8 +124,6 @@ private fun NavCell(
                     .border(1.dp, AppTheme.Gold.copy(alpha = 0.35f), RoundedCornerShape(14.dp))
                 else Modifier
             )
-            // P2-6 无障碍：把选中态与 Tab 角色暴露给 TalkBack（此前选中只靠视觉高亮）。
-            // 用显式属性键（SemanticsProperties.Selected/Role），避免版本间扩展属性签名差异。
             .semantics {
                 this[SemanticsProperties.Selected] = isSelected
                 this[SemanticsProperties.Role] = Role.Tab
@@ -139,7 +135,7 @@ private fun NavCell(
             ),
         contentAlignment = Alignment.Center,
     ) {
-        // 顶部金色指示线：绝对定位到顶边，不参与内容流（两端渐隐）。
+        // 顶部金箔指示线
         if (selected) {
             Box(
                 modifier = Modifier
@@ -159,7 +155,6 @@ private fun NavCell(
             )
         }
 
-        // 图标 + 文字纵向堆叠居中
         Column(
             modifier = Modifier.fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally,

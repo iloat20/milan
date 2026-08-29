@@ -34,11 +34,8 @@ import androidx.compose.ui.window.DialogProperties
 import com.milan.game.ui.theme.AppTheme
 
 /**
- * 玻璃拟态对话框（2026-08 UI 现代化）：替换设置页残留的原生 Material AlertDialog/TextButton。
- *
- * 视觉与全站同语言：暮紫夜渐变面板 + 缩放淡入弹出（240ms，与塔结算卡同节奏）；
- * 按钮区由调用方传 composable（全站统一 GoldButton/NeonButton，无 TextButton 残留）。
- * 关闭走系统 Back（dismissOnBackPress）与点击遮罩（tap 手势，无涟漪）。
+ * 水墨国风对话框：墨色渐变面板 + 缩放淡入弹出（240ms）。
+ * 按钮区由调用方传 composable（全站统一 GoldButton/NeonButton）。
  */
 @Composable
 fun GlassDialog(
@@ -54,7 +51,7 @@ fun GlassDialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(
             dismissOnBackPress = true,
-            dismissOnClickOutside = false, // 遮罩 tap 由手势层处理（默认 true 时点击面板也会关闭）
+            dismissOnClickOutside = false,
             usePlatformDefaultWidth = false,
         ),
     ) {
@@ -65,7 +62,6 @@ fun GlassDialog(
                 .pointerInput(Unit) { detectTapGestures { onDismiss() } },
             contentAlignment = Alignment.Center,
         ) {
-            // 面板自吞 tap 手势：命中面板时事件到此为止，不落穿遮罩误关
             Box(Modifier.pointerInput(Unit) { detectTapGestures { } }) {
                 AnimatedVisibility(
                     visible = true,
@@ -84,7 +80,7 @@ fun GlassDialog(
                                     ),
                                 ),
                             )
-                            .border(1.dp, AppTheme.Stroke, RoundedCornerShape(18.dp))
+                            .border(1.dp, AppTheme.Gold.copy(alpha = 0.2f), RoundedCornerShape(18.dp))
                             .padding(20.dp),
                         horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
@@ -95,7 +91,6 @@ fun GlassDialog(
                             color = AppTheme.Text1,
                         )
                         Spacer(Modifier.height(10.dp))
-                        // 长文本（如崩溃报告回显）限高内部滚动，不撑破屏
                         Box(
                             Modifier
                                 .heightIn(max = 360.dp)
