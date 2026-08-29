@@ -80,14 +80,12 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 /**
- * 寻访（抽卡）屏（C# GachaActivity.cs 翻译）。
+ * 寻访（抽卡）屏（水墨国风版）。
  *
  * 结构：标题 + 资源胶囊 → 卡池信息（概率 / 保底进度）→ 池角色横排预览 →
- * 召唤法阵（静态渐变圆 + 抽卡脉冲）→ 单抽 / 十连 → 摘要行 → 5 列结果网格（逐张缩放淡入）→ 底部导航。
+ * 召唤法阵（水墨丹青）→ 单抽 / 十连 → 摘要行 → 5 列结果网格（逐张缩放淡入）→ 底部导航。
  *
- * 演出简化（C# RiftPortal / FlipCardView / WeaponFxView 动画视图 → Compose 编排）：
- * 法阵脉冲 → 稀有度白闪 → 大立绘卡弹出（可整屏点击跳过）→ 展示结果。
- * 编排用协程 + revealToken 作废（等价 C# Handler.PostSafe + _revealToken 语义）。
+ * 演出：法阵脉冲 → 稀有度白闪 → 大立绘卡弹出（可整屏点击跳过）→ 展示结果。
  */
 @Composable
 fun GachaScreen(
@@ -97,36 +95,30 @@ fun GachaScreen(
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
-    // R3/I4：反馈统一走 LocalFeedback（由 MainActivity 提供的 Snackbar 宿主）。
     val feedback = LocalFeedback.current
     val scope = rememberCoroutineScope()
-    // 多卡池支持（2026-08）：服务层本就承载多池（pityByPool 按池独立计数），
-    // 此前 UI 写死 firstOrNull 只露一个池。选中态 rememberSaveable 持久化；
-    // 内容表改动导致旧 id 失配时回落首池（?: 链兜底，绝不因失配无池可用）。
+    // 多卡池支持：选中态 rememberSaveable 持久化；内容表改动导致旧 id 失配时回落首池
     val pools = remember { GameState.service.pools }
     var selectedPoolId by rememberSaveable { mutableStateOf(pools.firstOrNull()?.poolId.orEmpty()) }
     val pool = pools.firstOrNull { it.poolId == selectedPoolId } ?: pools.firstOrNull()
-    // 路径 B：订阅状态快照——保底进度/余额/振动开关从快照派生（写操作后自动刷新），
-    // 替代 saveData 直读 + 手动 pity 维护。
+    // 订阅状态快照——保底进度/余额/振动开关从快照派生
     val snap by GameState.snapshot.collectAsStateWithLifecycle()
 
     val pity = pool?.let { snap.pityByPool[it.poolId] } ?: 0
     var busy by remember { mutableStateOf(false) }
-    // P3-8：结果列表与摘要用 rememberSaveable——旋转（配置变更）后恢复，
-    // 玩家不会丢掉已付费抽卡的结果展示（PullResult 经 PullResultsSaver 编码为字符串列表）。
+    // 结果列表与摘要用 rememberSaveable——旋转后恢复
     var results by rememberSaveable(stateSaver = PullResultsSaver) {
         mutableStateOf<List<PullResult>>(emptyList())
     }
     var summary by rememberSaveable { mutableStateOf("") }
     var batch by remember { mutableIntStateOf(0) }
-    // P3-2：演出状态聚合为单一 holder（原子 copy 更新），替代此前 10 个平铺 remember——
-    // 阶段机（Charge 蓄能 → Beam 光柱 → Single/Ten 揭晓 → Done）的各字段同生共死。
+    // 演出状态聚合
     var reveal by remember { mutableStateOf(RevealUiState()) }
     var entered by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) { entered = true }
 
-    /** 触觉反馈（View 级，兼容非 Composable 路径；设备不支持或设置关闭振动时静默）。 */
+    /** 触觉反馈（View 级，兼容非 Composable 路径）。 */
     fun buzz(effect: Int) {
         if (!snap.vibrationEnabled) return
         try {
@@ -135,7 +127,7 @@ fun GachaScreen(
         } catch (_: Exception) { }
     }
 
-    /** 演出结束 / 跳过：展示结果、复位状态（C# FinishReveal；token 保留以维持作废语义）。 */
+    /** 演出结束 / 跳过：展示结果、复位状态。 */
     fun finishReveal() {
         val list = reveal.staged
         if (list != null) {
@@ -147,20 +139,17 @@ fun GachaScreen(
         busy = false
     }
 
-    /** 跳过演出：递增 token 作废挂起编排，立即出结果（C# SkipReveal）。 */
+    /** 跳过演出：递增 token 作废挂起编排，立即出结果。 */
     fun skipReveal() {
         if (!busy || !reveal.visible) return
         reveal = reveal.copy(token = reveal.token + 1)
         finishReveal()
     }
 
-    // P1-3 修复：演出中系统返回（手势/Predictive Back）不得直接销毁组合——抽卡已扣款发货，
-    // 直接返回会让玩家看不到结果；拦截并转跳过演出（等价点按跳过），随后再返回才退出页面。
+    // 演出中系统返回拦截——转跳过演出
     BackHandler(enabled = reveal.visible) { skipReveal() }
 
-    /** 抽卡入口（C# DoPull）：余额检查 → pull → 兜底 → 演出编排。
-     *  2026-08 主线程 IO 异步化：pull 为 suspend，落盘在 IO 线程执行，主线程不阻塞；
-     *  演出编排与抽卡在同一协程内衔接（busy 在协程期间保持，防连点）。 */
+    /** 抽卡入口：余额检查 → pull → 兜底 → 演出编排。 */
     fun doPull(tenPull: Boolean) {
         if (busy) return
         val p = pool ?: return
@@ -171,19 +160,15 @@ fun GachaScreen(
         }
         busy = true
         scope.launch {
-            // 类型化结果：Success 携带产出；Rejected / SaveFailed 分别提示，
-            // 替代「空列表 = 卡池数据异常」的误导性笼统文案（余额不足与落盘失败原因可区分）。
             val pulled = when (val outcome = GameState.service.pull(p.poolId, tenPull)) {
                 is PullOutcome.Success -> outcome.results
                 is PullOutcome.Rejected -> {
-                    // 被拒绝：余额不足（前面已拦截）或卡池无候选产出；留痕 + 复位，绝不闪退
                     busy = false
                     feedback.show("抽卡失败，请重试")
                     try { CrashReporter.boot("gacha.pull.rejected poolId=${p.poolId}") } catch (_: Exception) { }
                     return@launch
                 }
                 is PullOutcome.SaveFailed -> {
-                    // 落盘失败：扣款与发货已回滚，可安全重试（原因由 CrashReporter 留痕区分）
                     busy = false
                     feedback.show("保存失败，请重试")
                     try { CrashReporter.boot("gacha.pull.saveFailed poolId=${p.poolId}") } catch (_: Exception) { }
@@ -192,18 +177,41 @@ fun GachaScreen(
             }
             val best = pulled.maxByOrNull { it.rarity }
             if (best == null || best.characterId == null) {
-                // Success 契约下理论不可达（plan 空会走 Rejected），防御性保留兜底
                 busy = false
                 feedback.show("抽卡失败，请重试")
                 try { CrashReporter.boot("gacha.pull.empty poolId=${p.poolId}") } catch (_: Exception) { }
                 return@launch
             }
             val bestDef = best.characterId.let { GameState.service.character(it) }
-            // 端侧 AI 签文（默认 Stub：离线、确定性；seed 含 token 保证每抽不同但可复现）
             val token = reveal.token + 1
             buzz(HapticFeedbackConstants.KEYBOARD_TAP)
             MilanAudio.playSfx("gacha_pull")
-            // 阶段一：蓄能（粒子汇聚 + 弧线环绕，CyberStage.ChargeCore）
+            // 稀有度分级演出时长：UR 拉满仪式感，R 快速过场
+            val chargeMs = when (best.rarity) {
+                4 -> 900L   // UR：浓墨蓄力
+                3 -> 600L   // SSR：金箔凝聚
+                2 -> 420L   // SR：默认水墨
+                else -> 300L // R：快速闪烁
+            }
+            val beamMs = when (best.rarity) {
+                4 -> 640L   // UR：光柱扩展
+                3 -> 520L   // SSR：金箔光柱
+                else -> 480L // R/SR：标准
+            }
+            val revealMs = when {
+                tenPull -> when (best.rarity) {
+                    4 -> 4800L  // UR 十连：加长展示
+                    3 -> 4000L  // SSR 十连
+                    else -> 3600L
+                }
+                else -> when (best.rarity) {
+                    4 -> 3000L  // UR 单抽：仪式感
+                    3 -> 2400L  // SSR 单抽
+                    2 -> 1500L  // SR 单抽
+                    else -> 1000L // R 单抽：一闪而过
+                }
+            }
+            // 阶段一：蓄能
             reveal = RevealUiState(
                 token = token,
                 staged = pulled,
@@ -213,20 +221,19 @@ fun GachaScreen(
                 fortune = bestDef?.let { FortuneAgentRegistry.activeAgent.fortune(it, it.characterId.hashCode().toLong() + token) } ?: "",
                 stage = RevealStage.Charge,
             )
-            delay(420); if (token != reveal.token) return@launch
-            // 阶段二：次元光柱爆发（RiftBeam + 稀有度白闪叠放增强）
+            delay(chargeMs); if (token != reveal.token) return@launch
+            // 阶段二：光柱爆发
             reveal = reveal.copy(stage = RevealStage.Beam, flashVisible = true)
-            delay(480); if (token != reveal.token) return@launch
+            delay(beamMs); if (token != reveal.token) return@launch
             reveal = reveal.copy(flashVisible = false)
             delay(120); if (token != reveal.token) return@launch
-            // 阶段三：揭晓（单抽大立绘卡 / 十连 2×5 牌桌逐张翻开，onFlip 逐张反馈）
+            // 阶段三：揭晓
             reveal = reveal.copy(
                 cardIn = true,
                 visible = true,
                 stage = if (tenPull) RevealStage.Ten else RevealStage.Single,
             )
             MilanAudio.playSfx("gacha_reveal")
-            // CONFIRM 需 API 30（minSdk 29）：低版本回退 LONG_PRESS，其余路径不变
             if (best.rarity >= 3) {
                 val confirm = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R)
                     HapticFeedbackConstants.CONFIRM else HapticFeedbackConstants.LONG_PRESS
@@ -234,7 +241,7 @@ fun GachaScreen(
             } else {
                 buzz(HapticFeedbackConstants.VIRTUAL_KEY)
             }
-            delay(if (tenPull) 3600L else 1500L); if (token != reveal.token) return@launch
+            delay(revealMs); if (token != reveal.token) return@launch
             // 阶段四：结果
             finishReveal()
         }
@@ -257,10 +264,10 @@ fun GachaScreen(
                 .padding(start = 20.dp, end = 20.dp, top = 14.dp)
                 .graphicsLayer { alpha = entranceAlpha },
         ) {
-            // ── 标题 + 资源胶囊（C# 顶部 header，无返回键，靠底部导航切换）──
+            // ── 标题 + 资源胶囊 ──
             Row(Modifier.statusBarsPadding().fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    text = "次元裂缝",
+                    text = "丹青寻访",
                     fontSize = 22.sp,
                     fontWeight = FontWeight.Bold,
                     color = AppTheme.Gold,
@@ -272,7 +279,7 @@ fun GachaScreen(
             Spacer(Modifier.height(14.dp))
 
             if (pool != null) {
-                // ── 池选择 chips（多池时显示；单池隐藏避免噪音）──
+                // ── 池选择 chips ──
                 if (pools.size > 1) {
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         pools.forEach { p ->
@@ -294,7 +301,7 @@ fun GachaScreen(
                     Spacer(Modifier.height(10.dp))
                 }
 
-                // ── 卡池信息面板（池名 / 概率 / 保底进度，保底行霜蓝）──
+                // ── 卡池信息面板 ──
                 GlassPanel(modifier = Modifier.fillMaxWidth(), highlighted = true) {
                     Column(Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
                         Text(
@@ -307,8 +314,6 @@ fun GachaScreen(
                         Text(ratesLabel(pool), fontSize = 11.sp, color = AppTheme.Text2)
                         if (pool.hardPity > 0) {
                             Spacer(Modifier.height(8.dp))
-                            // 软保底可视化（2026-08 三期）：进入爬坡区间进度条与文字转金，
-                            // 玩家能直观感到「概率在涨」——对标主流 gacha 的 pity 进度条体验。
                             val softStart = EconomyFormulas.softPityStart(pool.hardPity)
                             val inSoft = softStart > 0 && pity >= softStart
                             val pityColor = if (inSoft) AppTheme.GoldHi else AppTheme.Frost
@@ -328,7 +333,7 @@ fun GachaScreen(
                                 color = pityColor,
                             )
                         }
-                        // UP 定轨行（2026-08 三期）：展示 UP 角色与「下次必中」欠账状态
+                        // UP 定轨行
                         val upDef = pool.featuredCharacterId
                             .takeIf { it.isNotEmpty() }
                             ?.let { GameState.service.character(it) }
@@ -367,7 +372,7 @@ fun GachaScreen(
                 }
                 Spacer(Modifier.height(12.dp))
 
-                // ── 池角色预览：横排圆形头像（点击进角色详情）──
+                // ── 池角色预览：横排圆形头像 ──
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     items(pool.entries) { entry ->
                         val def = GameState.service.character(entry.characterId)
@@ -399,7 +404,7 @@ fun GachaScreen(
             }
             Spacer(Modifier.height(14.dp))
 
-            // ── 待机能量枢纽（2026-08-20 赛博霓虹演出：替换旧八卦法阵）──
+            // ── 待机能量枢纽（水墨丹青法阵）──
             CyberHerald(modifier = Modifier.align(Alignment.CenterHorizontally))
             Spacer(Modifier.height(16.dp))
 
@@ -412,7 +417,7 @@ fun GachaScreen(
             )
             Spacer(Modifier.height(6.dp))
 
-            // ── 单抽 / 十连（C# Neon + Gold 双按钮）──
+            // ── 单抽 / 十连 ──
             Row(Modifier.fillMaxWidth().padding(horizontal = 30.dp)) {
                 NeonButton("单 抽", Modifier.weight(1f), onClick = { doPull(false) })
                 Spacer(Modifier.width(14.dp))
@@ -420,7 +425,7 @@ fun GachaScreen(
             }
             Spacer(Modifier.height(10.dp))
 
-            // ── 摘要行（共 N 抽 · SSR+ N · 碎片 · 最新）+ 历史/分享入口 ──
+            // ── 摘要行 ──
             Row(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
                 verticalAlignment = Alignment.CenterVertically,
@@ -439,7 +444,8 @@ fun GachaScreen(
                         color = AppTheme.Gold,
                         modifier = Modifier
                             .clip(RoundedCornerShape(10.dp))
-                            .clickable { PullShareCard.shareResults(context, results) }
+                            // U1：绘制 + 压缩 + 写盘已 suspend 化（移出主线程），此处在协程中调用
+                            .clickable { scope.launch { PullShareCard.shareResults(context, results) } }
                             .padding(horizontal = 8.dp, vertical = 4.dp),
                     )
                 }
@@ -456,8 +462,16 @@ fun GachaScreen(
             }
             Spacer(Modifier.height(6.dp))
 
-            // ── 结果网格：每行 5 个 chip，逐张缩放淡入（C# 5 列 LinearLayout + 依序动画）
-            // P3-3：chip 加稳定 key（位置 + 结果实例），避免 LazyColumn 槽位复用串态
+            // ── 本次统计卡片 ──
+            PullStatsPanel(
+                results = results,
+                pity = pity,
+                hardPity = pool?.hardPity ?: 0,
+                modifier = Modifier.fillMaxWidth(),
+            )
+            Spacer(Modifier.height(4.dp))
+
+            // ── 结果网格 ──
             LazyColumn(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 itemsIndexed(results.chunked(5)) { rowIdx, row ->
                     Row(Modifier.fillMaxWidth()) {
@@ -485,7 +499,7 @@ fun GachaScreen(
             )
         }
 
-        // ── 稀有度白闪层（C# FlashView，抽到高稀有度全屏闪光）──
+        // ── 稀有度白闪层 ──
         if (flashAlpha > 0.01f) {
             Box(
                 Modifier
@@ -495,7 +509,7 @@ fun GachaScreen(
             )
         }
 
-        // ── 翻牌演出层（2026-08-20 赛博霓虹：蓄能 → 光柱 → 揭晓逐张，整屏点击可跳过）──
+        // ── 翻牌演出层 ──
         if (reveal.visible) {
             CyberRevealLayer(
                 stage = reveal.stage,
@@ -506,7 +520,6 @@ fun GachaScreen(
                 cardIn = reveal.cardIn,
                 onSkip = ::skipReveal,
                 onFlip = { r ->
-                    // 逐张翻开反馈：SSR/UR 才振 + 音效，R/SR 静默避免十连全程震动
                     if (r >= 3) {
                         buzz(if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R)
                             HapticFeedbackConstants.CONFIRM else HapticFeedbackConstants.LONG_PRESS)
@@ -521,9 +534,7 @@ fun GachaScreen(
 }
 
 /**
- * 抽卡演出状态机（P3-2：聚合 GachaScreen 此前 10 个平铺 remember）。
- * [token] 编排作废序号（新抽 / 跳过递增，挂起编排比对后自毙）；其余字段随每次抽卡整体重建，
- * finishReveal 仅保留 token 全量复位。
+ * 抽卡演出状态机。
  */
 private data class RevealUiState(
     val token: Int = 0,
@@ -539,9 +550,7 @@ private data class RevealUiState(
 )
 
 /**
- * PullResult 结果列表的 rememberSaveable Saver（P3-8：旋转后恢复抽卡结果展示）。
- * PullResult 字段全为基本类型/字符串，以管道分隔编码为 String 列表存入 Bundle；
- * 角色显示名/ID 不含 '|'（编码契约，见 GachaChip 渲染处）。
+ * PullResult 结果列表的 rememberSaveable Saver。
  */
 private val PullResultsSaver = listSaver<List<PullResult>, String>(
     save = { list -> list.map { r ->
@@ -561,7 +570,7 @@ private val PullResultsSaver = listSaver<List<PullResult>, String>(
     } },
 )
 
-/** 单张抽卡结果 chip（C# CharacterCard.GachaChip 翻译）：立绘 + 稀有度名 + 角色名，高稀有度渐变发光底。 */
+/** 单张抽卡结果 chip（水墨国风版）：立绘 + 稀有度名 + 角色名，高稀有度渐变发光底。 */
 @Composable
 private fun GachaChip(
     r: PullResult,
@@ -571,7 +580,6 @@ private fun GachaChip(
     modifier: Modifier = Modifier,
 ) {
     val rc = AppTheme.rarityColor(r.rarity)
-    // 2026-08-20 霓虹化：SSR+ chip 呼吸发光（isEpic 在 chip 生命周期内不变，条件 remember 分支稳定安全）
     val isEpic = r.rarity >= 3
     val glowA by if (isEpic) {
         rememberInfiniteTransition(label = "chipGlow").animateFloat(
@@ -583,7 +591,6 @@ private fun GachaChip(
     } else {
         remember { mutableStateOf(0.7f) }
     }
-    // 每批次演出后重放入场动画（batch 变化重置 shown）
     var shown by remember(batch) { mutableStateOf(false) }
     LaunchedEffect(batch) {
         delay(delayMs.toLong())
@@ -635,7 +642,7 @@ private fun GachaChip(
     }
 }
 
-/** 概率标签（C# ratesLabel）："UR 1% · SSR 2% · SR 5% · R 92%"，百分比按权重占比算，整数去小数点。 */
+/** 概率标签 */
 private fun ratesLabel(pool: GachaPoolDataEntry): String {
     val total = pool.rarityWeights.sum()
     if (total <= 0) return ""
@@ -646,7 +653,7 @@ private fun ratesLabel(pool: GachaPoolDataEntry): String {
     }.joinToString(" · ")
 }
 
-/** 摘要行（C# DoPull 结尾）：共 N 抽 · SSR+ N · 星魂碎片 +N ✦ 最新: 名（碎片为 0 不显示）。 */
+/** 摘要行 */
 private fun buildSummary(list: List<PullResult>): String {
     if (list.isEmpty()) return ""
     val ssr = list.count { it.rarity >= 3 }
@@ -654,4 +661,63 @@ private fun buildSummary(list: List<PullResult>): String {
     val latest = list.maxByOrNull { it.rarity }?.characterName ?: ""
     val fragPart = if (frags > 0) " · 星魂碎片 +$frags" else ""
     return "共 ${list.size} 抽 · SSR+ $ssr$fragPart ✦ 最新: $latest"
+}
+
+/** 抽卡结果统计卡片：数量/稀有度分布/保底进度 */
+@Composable
+private fun PullStatsPanel(
+    results: List<PullResult>,
+    pity: Int,
+    hardPity: Int,
+    modifier: Modifier = Modifier,
+) {
+    if (results.isEmpty()) return
+    val counts = remember(results) { results.groupBy { it.rarity }.mapValues { it.value.size } }
+    val best = remember(results) { results.maxOfOrNull { it.rarity } ?: 1 }
+    val softStart = remember(hardPity) { EconomyFormulas.softPityStart(hardPity) }
+    val softRemaining = if (softStart > 0) (softStart - pity).coerceAtLeast(0) else 0
+
+    GlassPanel(modifier = modifier) {
+        Column(Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
+            Text("本次统计", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = AppTheme.Gold)
+            Spacer(Modifier.height(6.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text("总计 ${results.size} 抽", fontSize = 11.sp, color = AppTheme.Text2)
+                Text(
+                    "最高 ${AppTheme.rarityName(best)}",
+                    fontSize = 11.sp,
+                    color = AppTheme.rarityColor(best),
+                )
+            }
+            Spacer(Modifier.height(4.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                for (r in 1..4) {
+                    val c = counts[r] ?: 0
+                    if (c > 0) {
+                        Text(
+                            "${"★".repeat(r)}×$c",
+                            fontSize = 11.sp,
+                            color = AppTheme.rarityColor(r),
+                        )
+                    }
+                }
+            }
+            if (hardPity > 0) {
+                Spacer(Modifier.height(6.dp))
+                LinearProgressIndicator(
+                    progress = { pity.toFloat() / hardPity.coerceAtLeast(1) },
+                    modifier = Modifier.fillMaxWidth().height(3.dp).clip(RoundedCornerShape(2.dp)),
+                    color = AppTheme.Gold,
+                    trackColor = AppTheme.Surface,
+                )
+                Spacer(Modifier.height(2.dp))
+                Text(
+                    "保底进度  $pity / $hardPity" +
+                        if (softRemaining > 0) "  · 软保底还差 $softRemaining 抽" else "",
+                    fontSize = 10.sp,
+                    color = AppTheme.Text3,
+                )
+            }
+        }
+    }
 }
