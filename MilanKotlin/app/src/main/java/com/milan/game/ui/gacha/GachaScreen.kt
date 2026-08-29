@@ -254,7 +254,7 @@ fun GachaScreen(
     )
     val flashAlpha by animateFloatAsState(
         targetValue = if (reveal.flashVisible) 1f else 0f,
-        animationSpec = tween(420),
+        animationSpec = tween(if (reveal.rarity >= 4) 560 else 420),
         label = "flash",
     )
     PageBackground(modifier = modifier) {

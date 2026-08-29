@@ -402,7 +402,12 @@ fun CyberRevealLayer(
                 RevealStage.Charge -> {
                     ChargeCore(Modifier.fillMaxSize())
                     GlitchText(
-                        text = "次元裂缝 · 充能中",
+                        text = when {
+                            singleRarity >= 4 -> "古卷展开 · 浓墨蓄力"
+                            singleRarity == 3 -> "金箔凝聚 · 丹青觉醒"
+                            singleRarity == 2 -> "墨迹汇聚 · 灵力涌动"
+                            else -> "次元裂缝 · 充能中"
+                        },
                         color = CyberPalette.Cyan,
                         fontSize = 15.sp,
                         modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 30.dp),
@@ -411,8 +416,15 @@ fun CyberRevealLayer(
                 RevealStage.Beam -> {
                     RiftBeam(Modifier.fillMaxSize())
                     GlitchText(
-                        text = "裂缝开启",
-                        color = CyberPalette.BeamCore,
+                        text = when {
+                            singleRarity >= 4 -> "裂缝开启 · 万古回响"
+                            singleRarity == 3 -> "裂缝开启 · 金光乍现"
+                            else -> "裂缝开启"
+                        },
+                        color = when {
+                            singleRarity >= 4 -> CyberPalette.Magenta
+                            else -> CyberPalette.BeamCore
+                        },
                         fontSize = 22.sp,
                         modifier = Modifier.align(Alignment.TopCenter).padding(top = 150.dp),
                     )
