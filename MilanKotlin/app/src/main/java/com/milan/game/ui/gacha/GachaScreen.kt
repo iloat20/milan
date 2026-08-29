@@ -75,6 +75,7 @@ import com.milan.game.ui.nav.GameNavBar
 import com.milan.game.ui.nav.ResourceBar
 import com.milan.game.ui.nav.NavItem
 import com.milan.game.ui.theme.AppTheme
+import com.milan.game.ui.effects.inkSplash
 import java.util.Locale
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -294,6 +295,7 @@ fun GachaScreen(
                                     .background(if (selected) AppTheme.Gold else AppTheme.Surface)
                                     .border(1.dp, if (selected) AppTheme.Gold else AppTheme.Stroke, RoundedCornerShape(16.dp))
                                     .clickable { selectedPoolId = p.poolId }
+                                    .inkSplash()
                                     .padding(horizontal = 14.dp, vertical = 6.dp),
                             )
                         }
@@ -380,6 +382,7 @@ fun GachaScreen(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(10.dp))
                                 .clickable { def?.let { onOpenCharacter(it.characterId) } }
+                                .inkSplash()
                                 .padding(4.dp),
                             horizontalAlignment = Alignment.CenterHorizontally,
                         ) {
@@ -446,6 +449,7 @@ fun GachaScreen(
                             .clip(RoundedCornerShape(10.dp))
                             // U1：绘制 + 压缩 + 写盘已 suspend 化（移出主线程），此处在协程中调用
                             .clickable { scope.launch { PullShareCard.shareResults(context, results) } }
+                            .inkSplash()
                             .padding(horizontal = 8.dp, vertical = 4.dp),
                     )
                 }
@@ -457,6 +461,7 @@ fun GachaScreen(
                     modifier = Modifier
                         .clip(RoundedCornerShape(10.dp))
                         .clickable(onClick = onOpenHistory)
+                        .inkSplash()
                         .padding(horizontal = 8.dp, vertical = 4.dp),
                 )
             }

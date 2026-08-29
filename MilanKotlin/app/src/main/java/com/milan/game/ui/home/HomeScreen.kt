@@ -76,6 +76,7 @@ import com.milan.game.ui.nav.GameNavBar
 import com.milan.game.ui.nav.NavItem
 import com.milan.game.ui.nav.ResourceBar
 import com.milan.game.ui.effects.FluidBackground
+import com.milan.game.ui.effects.inkSplash
 import com.milan.game.ui.theme.AppTheme
 
 /**
@@ -462,6 +463,7 @@ private fun AvatarStrip(onOpenCharacter: (String) -> Unit) {
             Column(
                 modifier = Modifier
                     .clickable { onOpenCharacter(e.def.characterId) }
+                    .inkSplash()
                     .padding(end = 12.dp)
                     .graphicsLayer {
                         alpha = itemAlpha
