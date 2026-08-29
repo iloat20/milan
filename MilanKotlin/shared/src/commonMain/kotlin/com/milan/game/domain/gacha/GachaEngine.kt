@@ -24,6 +24,11 @@ class GachaEngine(private val rng: Random = Random.Default) {
         val roll = rng.nextInt(total)
         var cumulative = 0
         val maxIdx = Rarity.entries.lastIndex
+        // P2-7：权重档数与稀有度枚举不一致时留痕——data.json 漏校验 / 程序化建池误传，
+        // loadContent 已在内容层拦截 size!=4 的池，此处为防御性兜底（不抛异常中断抽卡事务）。
+        if (rarityWeights.size > Rarity.entries.size) {
+            println("[Milan] GachaEngine.rollRarity: rarityWeights.size(${rarityWeights.size}) > Rarity.entries.size(${Rarity.entries.size}), excess clamped to UR")
+        }
         for (i in rarityWeights.indices) {
             cumulative += rarityWeights[i]
             if (roll < cumulative) {

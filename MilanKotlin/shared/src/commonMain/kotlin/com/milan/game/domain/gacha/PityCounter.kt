@@ -19,7 +19,7 @@ import kotlin.random.Random
  *
  * 2026-08 KMP 下沉：自 app 迁入 shared commonMain，随机源统一为 kotlin.random.Random。
  */
-class PityCounter(val threshold: Int) {
+class PityCounter(val threshold: Int, private val gacha: GachaEngine? = null) {
     var counter: Int = 0
 
     /**
@@ -30,8 +30,11 @@ class PityCounter(val threshold: Int) {
      *   的 entries 下标语义不同——两者在值 0..3 内恰好重合，类型化后调用方不会再误传下标。
      */
     fun rollWithPity(rng: Random, rarityWeights: IntArray, minRarityForPity: Rarity): Rarity {
+        // 优先使用注入的 gacha 实例（GameService 持有单一实例，共享 rng 状态）；
+        // 未注入时退回按需创建（兼容旧调用路径与测试）。
+        val engine = gacha ?: GachaEngine(rng)
         if (threshold <= 0) {
-            return GachaEngine(rng).rollRarity(rarityWeights)
+            return engine.rollRarity(rarityWeights)
         }
         counter++
         if (counter >= threshold) {
@@ -42,7 +45,7 @@ class PityCounter(val threshold: Int) {
         // （对标原神系 soft pity 的行业标准体验）。只调整本抽使用的权重副本、不改池配置，
         // 且不额外消耗随机数——种子确定性保持不变。
         val weights = softAdjustedWeights(rarityWeights, minRarityForPity)
-        return GachaEngine(rng).rollRarity(weights)
+        return engine.rollRarity(weights)
     }
 
     /**

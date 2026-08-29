@@ -44,4 +44,9 @@ data class BattleResult(
      * 默认值保证旧构造调用方（测试/桌面模拟器）零改动兼容。
      */
     val log: List<StrikeEvent> = emptyList(),
+    /**
+     * 平局标记：回合耗尽双方仍有存活单位时为 true。
+     * 调用方据此决定不消耗门票/不发奖励（与胜负区分）。
+     */
+    val draw: Boolean = false,
 )

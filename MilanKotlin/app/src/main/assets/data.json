@@ -27,7 +27,33 @@
       "WeaponVfx": "sun_orb_flame",
       "AmbientVfx": "day_night_cycle_glow",
       "Weapon": "阖辟神瞳·昼夜轮",
-      "WeaponDesc": "由烛龙本瞳炼化的神环，半面熔金烈焰为昼、半面吞噬星辰的幽暗为夜。阖则白昼降临，睁则天火倾泻；环心藏有一只永不闭合的竖瞳，凝视之处，昼夜颠倒。"
+      "WeaponDesc": "由烛龙本瞳炼化的神环，半面熔金烈焰为昼、半面吞噬星辰的幽暗为夜。阖则白昼降临，睁则天火倾泻；环心藏有一只永不闭合的竖瞳，凝视之处，昼夜颠倒。",
+      "Skills": [
+        {
+          "SkillId": "zhulong_1",
+          "DisplayName": "烛照八荒",
+          "Description": "以烛龙真火焚烧全体敌人，造成巨额火焰伤害",
+          "Element": "Flame",
+          "Type": "Ultimate",
+          "Power": 95
+        },
+        {
+          "SkillId": "zhulong_2",
+          "DisplayName": "昼夜轮转",
+          "Description": "切换昼夜：昼间攻速+30%，夜间暴击+25%",
+          "Element": "Flame",
+          "Type": "Active",
+          "Power": 70
+        },
+        {
+          "SkillId": "zhulong_3",
+          "DisplayName": "不灭之焰",
+          "Description": "受到致命伤害时保留1点生命并回复30%血量（每场一次）",
+          "Element": "Flame",
+          "Type": "Passive",
+          "Power": 60
+        }
+      ]
     },
     {
       "CharacterId": "char_ur_wuxu",
@@ -56,7 +82,33 @@
       "WeaponVfx": "void_rift_blade",
       "AmbientVfx": "void_devour_particles",
       "Weapon": "归墟之噬·无相刃",
-      "WeaponDesc": "以维度裂隙坍缩而成的无相之刃，无柄无锷，刃身即是被吞噬的星空。所触之物先从概念上归于「无」，再于现实里湮灭；连光也在刃前折返，寻不到落点。"
+      "WeaponDesc": "以维度裂隙坍缩而成的无相之刃，无柄无锷，刃身即是被吞噬的星空。所触之物先从概念上归于「无」，再于现实里湮灭；连光也在刃前折返，寻不到落点。",
+      "Skills": [
+        {
+          "SkillId": "wuxu_1",
+          "DisplayName": "湮灭奇点",
+          "Description": "在敌阵制造黑洞，持续吸引并撕裂范围内所有目标",
+          "Element": "Shadow",
+          "Type": "Ultimate",
+          "Power": 92
+        },
+        {
+          "SkillId": "wuxu_2",
+          "DisplayName": "虚化",
+          "Description": "进入虚无形态，闪避下一次攻击并回复能量",
+          "Element": "Shadow",
+          "Type": "Active",
+          "Power": 68
+        },
+        {
+          "SkillId": "wuxu_3",
+          "DisplayName": "存在抹消",
+          "Description": "普攻有15%概率直接削减目标15%当前生命",
+          "Element": "Shadow",
+          "Type": "Passive",
+          "Power": 65
+        }
+      ]
     },
     {
       "CharacterId": "char_ur_xingtian",
@@ -85,7 +137,33 @@
       "WeaponVfx": "gear_axe_storm",
       "AmbientVfx": "scrap_storm_ironveil",
       "Weapon": "干戚·不灭齿轮",
-      "WeaponDesc": "干为盾、戚为斧，铁帷齿轮驱动的复合兵装。虽无首，胸口的能量之眼代行目视，巨斧横扫如折麦秆；齿轮咬合间，每一次挥落都更接近「不死」的极致。"
+      "WeaponDesc": "干为盾、戚为斧，铁帷齿轮驱动的复合兵装。虽无首，胸口的能量之眼代行目视，巨斧横扫如折麦秆；齿轮咬合间，每一次挥落都更接近「不死」的极致。",
+      "Skills": [
+        {
+          "SkillId": "xingtian_1",
+          "DisplayName": "干戚狂舞",
+          "Description": "挥舞巨斧横扫前方，造成范围伤害并击退",
+          "Element": "Metal",
+          "Type": "Ultimate",
+          "Power": 90
+        },
+        {
+          "SkillId": "xingtian_2",
+          "DisplayName": "不死之躯",
+          "Description": "受到伤害时叠加狂暴层数，每层+8%攻击",
+          "Element": "Metal",
+          "Type": "Passive",
+          "Power": 72
+        },
+        {
+          "SkillId": "xingtian_3",
+          "DisplayName": "断首重生",
+          "Description": "阵亡后复活一次，回复50%生命并获得霸体",
+          "Element": "Metal",
+          "Type": "Passive",
+          "Power": 75
+        }
+      ]
     },
     {
       "CharacterId": "char_ur_kikyo",
@@ -114,7 +192,33 @@
       "WeaponVfx": "shadow_bow_arrow",
       "AmbientVfx": "soul_petal_drift",
       "Weapon": "破魔灵弓·封魂",
-      "WeaponDesc": "守玉巫女的灵力凝成的破魔之弓，箭无虚发，穿邪祟、封怨念。每支箭都是一段未竟的祈祷，离弦时带着幽冥回响；弓身缠着四魂之玉的碎片，净化之同时封印着她的执念。"
+      "WeaponDesc": "守玉巫女的灵力凝成的破魔之弓，箭无虚发，穿邪祟、封怨念。每支箭都是一段未竟的祈祷，离弦时带着幽冥回响；弓身缠着四魂之玉的碎片，净化之同时封印着她的执念。",
+      "Skills": [
+        {
+          "SkillId": "kikyo_1",
+          "DisplayName": "破魂之箭",
+          "Description": "射出贯穿一切的破魔箭，对单体造成巨额真实伤害并封印其技能3秒",
+          "Element": "Shadow",
+          "Type": "Ultimate",
+          "Power": 90
+        },
+        {
+          "SkillId": "kikyo_2",
+          "DisplayName": "净化之阵",
+          "Description": "展开净化结界，持续驱散队友负面状态并回复生命",
+          "Element": "Shadow",
+          "Type": "Active",
+          "Power": 68
+        },
+        {
+          "SkillId": "kikyo3",
+          "DisplayName": "孤独之念",
+          "Description": "场上每有一名队友阵亡，自身攻击与暴击大幅提升",
+          "Element": "Shadow",
+          "Type": "Passive",
+          "Power": 72
+        }
+      ]
     },
     {
       "CharacterId": "char_ur_keqing",
@@ -143,7 +247,33 @@
       "WeaponVfx": "lightning_dual_swords",
       "AmbientVfx": "thundercloud_city",
       "Weapon": "雷楔双剑·云来",
-      "WeaponDesc": "一对以雷楔为锷的双剑，剑身流转璃月雷纹。她掷出雷楔标记敌身，便化雷瞬至，于目标身后落下必中雷击——这套脱胎于「云来剑法」的打法，是她以凡人之躯比肩神明的证明。"
+      "WeaponDesc": "一对以雷楔为锷的双剑，剑身流转璃月雷纹。她掷出雷楔标记敌身，便化雷瞬至，于目标身后落下必中雷击——这套脱胎于「云来剑法」的打法，是她以凡人之躯比肩神明的证明。",
+      "Skills": [
+        {
+          "SkillId": "keqing_1",
+          "DisplayName": "天街游移",
+          "Description": "化身雷霆穿梭敌阵，对路径上所有敌人造成多段雷伤并瞬移至终点",
+          "Element": "Thunder",
+          "Type": "Ultimate",
+          "Power": 91
+        },
+        {
+          "SkillId": "keqing_2",
+          "DisplayName": "雷楔瞬斩",
+          "Description": "投掷雷楔标记敌人，瞬移至目标身后发动必定暴击的斩击",
+          "Element": "Thunder",
+          "Type": "Active",
+          "Power": 72
+        },
+        {
+          "SkillId": "keqing_3",
+          "DisplayName": "玉衡之誓",
+          "Description": "普攻积攒「玉衡」层数，满层后下次技能伤害翻倍",
+          "Element": "Thunder",
+          "Type": "Passive",
+          "Power": 70
+        }
+      ]
     },
     {
       "CharacterId": "char_ssr_fenghuang",
@@ -172,7 +302,33 @@
       "WeaponVfx": "phoenix_wing_flame",
       "AmbientVfx": "ember_rebirth_field",
       "Weapon": "焚羽·涅槃翼",
-      "WeaponDesc": "由凤凰尾羽燃尽前凝成的双翼兵装，每一片翎羽都是一段未冷的火。持之可驭焚风、唤来灰烬中的重生；翼展千度，所过之处，焦土亦生新芽。"
+      "WeaponDesc": "由凤凰尾羽燃尽前凝成的双翼兵装，每一片翎羽都是一段未冷的火。持之可驭焚风、唤来灰烬中的重生；翼展千度，所过之处，焦土亦生新芽。",
+      "Skills": [
+        {
+          "SkillId": "fenghuang_1",
+          "DisplayName": "涅槃之火",
+          "Description": "以凤凰真火焚烧全体，命中目标灼烧5秒",
+          "Element": "Flame",
+          "Type": "Ultimate",
+          "Power": 82
+        },
+        {
+          "SkillId": "fenghuang_2",
+          "DisplayName": "浴火重生",
+          "Description": "阵亡时化为火卵，3秒后复活并回复40%生命",
+          "Element": "Flame",
+          "Type": "Passive",
+          "Power": 70
+        },
+        {
+          "SkillId": "fenghuang_3",
+          "DisplayName": "凤鸣朝阳",
+          "Description": "鸣叫提升全队20%攻击力，持续8秒",
+          "Element": "Flame",
+          "Type": "Active",
+          "Power": 60
+        }
+      ]
     },
     {
       "CharacterId": "char_ssr_xiangliu",
@@ -201,7 +357,33 @@
       "WeaponVfx": "venom_fang_whip",
       "AmbientVfx": "poison_marsh_fog",
       "Weapon": "九首·毒牙鞭",
-      "WeaponDesc": "相柳九首所化的一柄九节毒鞭，鞭身蠕动如活物，节节皆是一张饕餮之口。挥之则毒雾漫野、腐水成渊；被其缠住者，连神魂都被缓缓嚼碎。"
+      "WeaponDesc": "相柳九首所化的一柄九节毒鞭，鞭身蠕动如活物，节节皆是一张饕餮之口。挥之则毒雾漫野、腐水成渊；被其缠住者，连神魂都被缓缓嚼碎。",
+      "Skills": [
+        {
+          "SkillId": "xiangliu_1",
+          "DisplayName": "九首噬天",
+          "Description": "九首齐出撕咬前方，造成多段伤害并叠加中毒",
+          "Element": "Shadow",
+          "Type": "Ultimate",
+          "Power": 80
+        },
+        {
+          "SkillId": "xiangliu_2",
+          "DisplayName": "毒泽万里",
+          "Description": "在地面制造毒沼，踏入的敌人持续掉血减速",
+          "Element": "Shadow",
+          "Type": "Active",
+          "Power": 65
+        },
+        {
+          "SkillId": "xiangliu_3",
+          "DisplayName": "腐蚀之血",
+          "Description": "攻击附带中毒，中毒目标受到治疗量降低50%",
+          "Element": "Shadow",
+          "Type": "Passive",
+          "Power": 58
+        }
+      ]
     },
     {
       "CharacterId": "char_ssr_leishen",
@@ -230,7 +412,33 @@
       "WeaponVfx": "mjolnir_hammer_arc",
       "AmbientVfx": "electric_coil_core",
       "Weapon": "轰霆·楔石锤",
-      "WeaponDesc": "雷神以天楔为柄、以雷云为锤头的巨锤，落点之处风云倒卷、雷音贯耳。一击可令山川震颤、万雷归宗；锤风所至，邪祟无所遁形。"
+      "WeaponDesc": "雷神以天楔为柄、以雷云为锤头的巨锤，落点之处风云倒卷、雷音贯耳。一击可令山川震颤、万雷归宗；锤风所至，邪祟无所遁形。",
+      "Skills": [
+        {
+          "SkillId": "leishen_1",
+          "DisplayName": "雷霆万钧",
+          "Description": "召唤巨型闪电劈向敌阵，主目标伤害翻倍",
+          "Element": "Thunder",
+          "Type": "Ultimate",
+          "Power": 84
+        },
+        {
+          "SkillId": "leishen2",
+          "DisplayName": "雷神之锤",
+          "Description": "投掷雷霆之锤，命中后弹射至多3个敌人",
+          "Element": "Thunder",
+          "Type": "Active",
+          "Power": 66
+        },
+        {
+          "SkillId": "leishen_3",
+          "DisplayName": "静电充能",
+          "Description": "每次受到攻击积累静电，下次技能伤害+25%",
+          "Element": "Thunder",
+          "Type": "Passive",
+          "Power": 56
+        }
+      ]
     },
     {
       "CharacterId": "char_ssr_feilian",
@@ -259,7 +467,33 @@
       "WeaponVfx": "wind_blade_dash",
       "AmbientVfx": "wind_tunnel_speedlines",
       "Weapon": "裂空·疾风刃",
-      "WeaponDesc": "飞廉驭风之术凝成的双刃，刃过无声，唯余一道被割裂的气流。疾如奔雷、轻若鸿毛；挥斩之间，风墙成壁、裂空成路。"
+      "WeaponDesc": "飞廉驭风之术凝成的双刃，刃过无声，唯余一道被割裂的气流。疾如奔雷、轻若鸿毛；挥斩之间，风墙成壁、裂空成路。",
+      "Skills": [
+        {
+          "SkillId": "feilian_1",
+          "DisplayName": "神速连斩",
+          "Description": "以超越视觉的速度连续斩击单体12次",
+          "Element": "Wood",
+          "Type": "Ultimate",
+          "Power": 78
+        },
+        {
+          "SkillId": "feilian_2",
+          "DisplayName": "疾风步",
+          "Description": "瞬移至敌人身后发动背刺，必定暴击",
+          "Element": "Wood",
+          "Type": "Active",
+          "Power": 62
+        },
+        {
+          "SkillId": "feilian_3",
+          "DisplayName": "风之残影",
+          "Description": "闪避后留下残影，残影爆炸对周围造成伤害",
+          "Element": "Wood",
+          "Type": "Passive",
+          "Power": 55
+        }
+      ]
     },
     {
       "CharacterId": "char_ssr_shangyang",
@@ -288,7 +522,33 @@
       "WeaponVfx": "star_oracle_sigil",
       "AmbientVfx": "constellation_guidance",
       "Weapon": "卜天·星谶盘",
-      "WeaponDesc": "商羊以星轨为纹、以卜辞为灵的占盘，盘面流转着未卜先知的微光。转动之间，可窥天命一角、引星辉为刃；所照之处，未来如掌中纹路般清晰。"
+      "WeaponDesc": "商羊以星轨为纹、以卜辞为灵的占盘，盘面流转着未卜先知的微光。转动之间，可窥天命一角、引星辉为刃；所照之处，未来如掌中纹路般清晰。",
+      "Skills": [
+        {
+          "SkillId": "shangyang_1",
+          "DisplayName": "星轨预言",
+          "Description": "揭示敌方弱点，全队暴击率+30%持续6秒",
+          "Element": "Light",
+          "Type": "Ultimate",
+          "Power": 76
+        },
+        {
+          "SkillId": "shangyang_2",
+          "DisplayName": "预知闪避",
+          "Description": "预判下一次攻击，必定闪避并反击",
+          "Element": "Light",
+          "Type": "Active",
+          "Power": 60
+        },
+        {
+          "SkillId": "shangyang3",
+          "DisplayName": "命运织网",
+          "Description": "战斗开始时随机标记一名敌人，其受到伤害+20%",
+          "Element": "Light",
+          "Type": "Passive",
+          "Power": 54
+        }
+      ]
     },
     {
       "CharacterId": "char_sr_suanni",
@@ -317,7 +577,33 @@
       "WeaponVfx": "roar_shock_claw",
       "AmbientVfx": "pride_aura_flame",
       "Weapon": "炎吼·焚音爪",
-      "WeaponDesc": "龙子狻猊好烟好坐，以火焰狮爪为兵，挥击迸发音波烈焰环，吼声所及烟焰俱燃。"
+      "WeaponDesc": "龙子狻猊好烟好坐，以火焰狮爪为兵，挥击迸发音波烈焰环，吼声所及烟焰俱燃。",
+      "Skills": [
+        {
+          "SkillId": "suanni_1",
+          "DisplayName": "狮王怒吼",
+          "Description": "狮吼震慑前方敌人，造成伤害并降低其攻击",
+          "Element": "Flame",
+          "Type": "Active",
+          "Power": 55
+        },
+        {
+          "SkillId": "suanni_2",
+          "DisplayName": "烈焰扑击",
+          "Description": "扑向目标撕咬，造成单体高额伤害",
+          "Element": "Flame",
+          "Type": "Active",
+          "Power": 50
+        },
+        {
+          "SkillId": "suanni_3",
+          "DisplayName": "兽王威严",
+          "Description": "生命低于40%时攻击+25%",
+          "Element": "Flame",
+          "Type": "Passive",
+          "Power": 40
+        }
+      ]
     },
     {
       "CharacterId": "char_sr_jingwei",
@@ -346,7 +632,33 @@
       "WeaponVfx": "wind_stone_projectile",
       "AmbientVfx": "sea_stone_mist",
       "Weapon": "衔石·逐浪弹",
-      "WeaponDesc": "精卫衔石填海之志凝为兵，风缕编成投石索，抛出晶石如浪，矢志不停。"
+      "WeaponDesc": "精卫衔石填海之志凝为兵，风缕编成投石索，抛出晶石如浪，矢志不停。",
+      "Skills": [
+        {
+          "SkillId": "jingwei_1",
+          "DisplayName": "衔石连射",
+          "Description": "连续发射碎石攻击单体，每次伤害递增",
+          "Element": "Wood",
+          "Type": "Active",
+          "Power": 52
+        },
+        {
+          "SkillId": "jingwei_2",
+          "DisplayName": "填海之志",
+          "Description": "每回合结束时未死亡则回复5%最大生命",
+          "Element": "Wood",
+          "Type": "Passive",
+          "Power": 42
+        },
+        {
+          "SkillId": "jingwei_3",
+          "DisplayName": "风翼庇护",
+          "Description": "闪避后制造风盾，吸收下一次伤害",
+          "Element": "Wood",
+          "Type": "Passive",
+          "Power": 38
+        }
+      ]
     },
     {
       "CharacterId": "char_sr_qiongqi",
@@ -375,7 +687,33 @@
       "WeaponVfx": "regen_blast_cannon",
       "AmbientVfx": "blood_metal_smoke",
       "Weapon": "啮钢·噬魂炮",
-      "WeaponDesc": "穷奇食人之翼虎，以吞噬之钢锻造兽口炮，喷吐金属碎片，所噬之魂无所归。"
+      "WeaponDesc": "穷奇食人之翼虎，以吞噬之钢锻造兽口炮，喷吐金属碎片，所噬之魂无所归。",
+      "Skills": [
+        {
+          "SkillId": "qiongqi_1",
+          "DisplayName": "噬罪撕咬",
+          "Description": "撕咬单体造成真实伤害，无视防御",
+          "Element": "Metal",
+          "Type": "Active",
+          "Power": 56
+        },
+        {
+          "SkillId": "qiongqi_2",
+          "DisplayName": "凶兽再生",
+          "Description": "每次击杀回复20%最大生命",
+          "Element": "Metal",
+          "Type": "Passive",
+          "Power": 44
+        },
+        {
+          "SkillId": "qiongqi_3",
+          "DisplayName": "蝟毛反击",
+          "Description": "受到普攻时反弹30%伤害",
+          "Element": "Metal",
+          "Type": "Passive",
+          "Power": 40
+        }
+      ]
     },
     {
       "CharacterId": "char_sr_xuanwu",
@@ -404,7 +742,33 @@
       "WeaponVfx": "shell_barrier_earth",
       "AmbientVfx": "jade_shield_earth",
       "Weapon": "负岳·玄甲盾",
-      "WeaponDesc": "旋龟负岳而行，甲壳化为活体玄铁盾，山脊纹路流转，御敌如山镇。"
+      "WeaponDesc": "旋龟负岳而行，甲壳化为活体玄铁盾，山脊纹路流转，御敌如山镇。",
+      "Skills": [
+        {
+          "SkillId": "xuanwu_1",
+          "DisplayName": "玄甲护体",
+          "Description": "为全队施加护盾，吸收伤害持续6秒",
+          "Element": "Earth",
+          "Type": "Active",
+          "Power": 54
+        },
+        {
+          "SkillId": "xuanwu_2",
+          "DisplayName": "龟缩防御",
+          "Description": "进入龟壳形态，减伤60%但无法攻击",
+          "Element": "Earth",
+          "Type": "Active",
+          "Power": 46
+        },
+        {
+          "SkillId": "xuanwu3",
+          "DisplayName": "大地之根",
+          "Description": "站立不动3秒后每秒回复4%生命",
+          "Element": "Earth",
+          "Type": "Passive",
+          "Power": 38
+        }
+      ]
     },
     {
       "CharacterId": "char_sr_bifang",
@@ -433,7 +797,33 @@
       "WeaponVfx": "thunder_feather_dive",
       "AmbientVfx": "storm_feather_spark",
       "Weapon": "焚羽·惊雷翎",
-      "WeaponDesc": "毕方一足火鸟，取燃烧雷羽为镖，蓄雷而投，落处火起雷鸣。"
+      "WeaponDesc": "毕方一足火鸟，取燃烧雷羽为镖，蓄雷而投，落处火起雷鸣。",
+      "Skills": [
+        {
+          "SkillId": "bifang_1",
+          "DisplayName": "焚羽俯冲",
+          "Description": "自高空俯冲，对路径上敌人造成雷电伤害",
+          "Element": "Thunder",
+          "Type": "Active",
+          "Power": 53
+        },
+        {
+          "SkillId": "bifang_2",
+          "DisplayName": "雷羽散射",
+          "Description": "散射雷电羽毛攻击随机3个敌人",
+          "Element": "Thunder",
+          "Type": "Active",
+          "Power": 48
+        },
+        {
+          "SkillId": "bifang3",
+          "DisplayName": "闪电之翼",
+          "Description": "每次闪避后下次攻击附加雷电伤害",
+          "Element": "Thunder",
+          "Type": "Passive",
+          "Power": 36
+        }
+      ]
     },
     {
       "CharacterId": "char_r_lili",
@@ -462,7 +852,33 @@
       "WeaponVfx": "earth_burrow_strike",
       "AmbientVfx": "dust_earth_burst",
       "Weapon": "掘地·裂壤爪",
-      "WeaponDesc": "狸力掌掘如犁，土系掘地爪锄破壤而行，藏于地脉。"
+      "WeaponDesc": "狸力掌掘如犁，土系掘地爪锄破壤而行，藏于地脉。",
+      "Skills": [
+        {
+          "SkillId": "lili_1",
+          "DisplayName": "遁地突袭",
+          "Description": "潜入地下后从敌人脚下突袭，必定暴击",
+          "Element": "Earth",
+          "Type": "Active",
+          "Power": 40
+        },
+        {
+          "SkillId": "lili_2",
+          "DisplayName": "土遁闪避",
+          "Description": "受到攻击时有25%概率遁地闪避",
+          "Element": "Earth",
+          "Type": "Passive",
+          "Power": 30
+        },
+        {
+          "SkillId": "lili_3",
+          "DisplayName": "掘地之爪",
+          "Description": "普攻附带破甲，降低目标10%防御",
+          "Element": "Earth",
+          "Type": "Passive",
+          "Power": 25
+        }
+      ]
     },
     {
       "CharacterId": "char_r_qinyuan",
@@ -491,7 +907,33 @@
       "WeaponVfx": "poison_stinger_swarm",
       "AmbientVfx": "mechanical_bee_cloud",
       "Weapon": "毒螫·群蜂针",
-      "WeaponDesc": "钦原毒蜂之躯，一簇剧毒蜂针离手则追魂，螫处溃烂。"
+      "WeaponDesc": "钦原毒蜂之躯，一簇剧毒蜂针离手则追魂，螫处溃烂。",
+      "Skills": [
+        {
+          "SkillId": "qinyuan_1",
+          "DisplayName": "毒蜂连射",
+          "Description": "连续发射毒针攻击单体3次",
+          "Element": "Metal",
+          "Type": "Active",
+          "Power": 42
+        },
+        {
+          "SkillId": "qinyuan_2",
+          "DisplayName": "蜂毒侵蚀",
+          "Description": "毒针附带中毒，每秒掉血持续4秒",
+          "Element": "Metal",
+          "Type": "Passive",
+          "Power": 32
+        },
+        {
+          "SkillId": "qinyuan_3",
+          "DisplayName": "蜂翼振翅",
+          "Description": "攻击有20%概率额外攻击一次",
+          "Element": "Metal",
+          "Type": "Passive",
+          "Power": 28
+        }
+      ]
     },
     {
       "CharacterId": "char_r_sishu",
@@ -520,7 +962,33 @@
       "WeaponVfx": "shadow_wire_tangle",
       "AmbientVfx": "night_city_shadows",
       "Weapon": "缚影·缠魂丝",
-      "WeaponDesc": "跂踵招死之鸟，吐影丝缠缚魂魄，中招者如陷永夜。"
+      "WeaponDesc": "跂踵招死之鸟，吐影丝缠缚魂魄，中招者如陷永夜。",
+      "Skills": [
+        {
+          "SkillId": "sishu_1",
+          "DisplayName": "蛛丝束缚",
+          "Description": "发射蛛丝缠绕单体，使其无法行动2秒",
+          "Element": "Shadow",
+          "Type": "Active",
+          "Power": 41
+        },
+        {
+          "SkillId": "sishu_2",
+          "DisplayName": "蜘蛛感应",
+          "Description": "受到攻击前摇时自动闪避",
+          "Element": "Shadow",
+          "Type": "Passive",
+          "Power": 30
+        },
+        {
+          "SkillId": "sishu_3",
+          "DisplayName": "暗影打击",
+          "Description": "从暗处攻击额外造成50%伤害",
+          "Element": "Shadow",
+          "Type": "Passive",
+          "Power": 26
+        }
+      ]
     },
     {
       "CharacterId": "char_r_luoyu",
@@ -549,7 +1017,33 @@
       "WeaponVfx": "water_trident_surge",
       "AmbientVfx": "underwater_bubble_light",
       "Weapon": "涌潮·三叉戟",
-      "WeaponDesc": "蠃鱼鱼鸟之形，水波三叉戟涌潮而出，戟身鱼纹流转。"
+      "WeaponDesc": "蠃鱼鱼鸟之形，水波三叉戟涌潮而出，戟身鱼纹流转。",
+      "Skills": [
+        {
+          "SkillId": "luoyu_1",
+          "DisplayName": "寒流冲击",
+          "Description": "喷射寒流造成伤害并减速目标30%",
+          "Element": "Water",
+          "Type": "Active",
+          "Power": 44
+        },
+        {
+          "SkillId": "luoyu_2",
+          "DisplayName": "鳞甲水护",
+          "Description": "受到攻击时生成水盾吸收伤害",
+          "Element": "Water",
+          "Type": "Passive",
+          "Power": 33
+        },
+        {
+          "SkillId": "luoyu_3",
+          "DisplayName": "深渊低语",
+          "Description": "生命低于50%时技能冷却-20%",
+          "Element": "Water",
+          "Type": "Passive",
+          "Power": 27
+        }
+      ]
     },
     {
       "CharacterId": "char_r_dangang",
@@ -578,7 +1072,33 @@
       "WeaponVfx": "tusk_charge_wind",
       "AmbientVfx": "harvest_wind_leaves",
       "Weapon": "獠突·冲岳牙",
-      "WeaponDesc": "当康瑞兽野猪，以獠牙为冲撞兵装，突进如山岳之倾。"
+      "WeaponDesc": "当康瑞兽野猪，以獠牙为冲撞兵装，突进如山岳之倾。",
+      "Skills": [
+        {
+          "SkillId": "dangang_1",
+          "DisplayName": "丰穗冲撞",
+          "Description": "蓄力冲撞单体，造成伤害并击退",
+          "Element": "Wood",
+          "Type": "Active",
+          "Power": 43
+        },
+        {
+          "SkillId": "dangang_2",
+          "DisplayName": "瑞兽庇佑",
+          "Description": "战斗开始时为全队施加5%生命护盾",
+          "Element": "Wood",
+          "Type": "Passive",
+          "Power": 31
+        },
+        {
+          "SkillId": "dangang_3",
+          "DisplayName": "丰收之愈",
+          "Description": "每次击杀回复10%最大生命",
+          "Element": "Wood",
+          "Type": "Passive",
+          "Power": 29
+        }
+      ]
     },
     {
       "CharacterId": "char_ur_jinwu",
@@ -1360,7 +1880,7 @@
     {
       "PoolId": "pool_flame",
       "DisplayName": "业火轮盘 · UP",
-      "RarityWeights": [ 400, 300, 200, 100 ],
+      "RarityWeights": [ 0, 300, 200, 100 ],
       "HardPity": 80,
       "SingleCost": 160,
       "TenCost": 1600,
@@ -1395,7 +1915,56 @@
         "branch_defense",
         "branch_utility"
       ],
-      "Nodes": []
+      "Nodes": [
+        {
+          "NodeId": "char_ur_zhulong_t1",
+          "DisplayName": "强攻",
+          "Description": "攻击力+10%",
+          "BranchId": "branch_power",
+          "Cost": 1,
+          "PrerequisiteNodeIds": []
+        },
+        {
+          "NodeId": "char_ur_zhulong_t2",
+          "DisplayName": "破甲",
+          "Description": "无视敌方15%防御",
+          "BranchId": "branch_power",
+          "Cost": 2,
+          "PrerequisiteNodeIds": ["char_ur_zhulong_t1"]
+        },
+        {
+          "NodeId": "char_ur_zhulong_t3",
+          "DisplayName": "坚壁",
+          "Description": "防御力+10%",
+          "BranchId": "branch_defense",
+          "Cost": 1,
+          "PrerequisiteNodeIds": []
+        },
+        {
+          "NodeId": "char_ur_zhulong_t4",
+          "DisplayName": "铁壁",
+          "Description": "受到伤害-15%",
+          "BranchId": "branch_defense",
+          "Cost": 2,
+          "PrerequisiteNodeIds": ["char_ur_zhulong_t3"]
+        },
+        {
+          "NodeId": "char_ur_zhulong_t5",
+          "DisplayName": "疾风步",
+          "Description": "速度+8%",
+          "BranchId": "branch_utility",
+          "Cost": 1,
+          "PrerequisiteNodeIds": []
+        },
+        {
+          "NodeId": "char_ur_zhulong_t6",
+          "DisplayName": "灵动",
+          "Description": "闪避率+10%",
+          "BranchId": "branch_utility",
+          "Cost": 2,
+          "PrerequisiteNodeIds": ["char_ur_zhulong_t5"]
+        }
+      ]
     },
     {
       "TreeId": "tree_wuxu",
@@ -1404,7 +1973,56 @@
         "branch_defense",
         "branch_utility"
       ],
-      "Nodes": []
+      "Nodes": [
+        {
+          "NodeId": "char_ur_wuxu_t1",
+          "DisplayName": "强攻",
+          "Description": "攻击力+10%",
+          "BranchId": "branch_power",
+          "Cost": 1,
+          "PrerequisiteNodeIds": []
+        },
+        {
+          "NodeId": "char_ur_wuxu_t2",
+          "DisplayName": "破甲",
+          "Description": "无视敌方15%防御",
+          "BranchId": "branch_power",
+          "Cost": 2,
+          "PrerequisiteNodeIds": ["char_ur_wuxu_t1"]
+        },
+        {
+          "NodeId": "char_ur_wuxu_t3",
+          "DisplayName": "坚壁",
+          "Description": "防御力+10%",
+          "BranchId": "branch_defense",
+          "Cost": 1,
+          "PrerequisiteNodeIds": []
+        },
+        {
+          "NodeId": "char_ur_wuxu_t4",
+          "DisplayName": "铁壁",
+          "Description": "受到伤害-15%",
+          "BranchId": "branch_defense",
+          "Cost": 2,
+          "PrerequisiteNodeIds": ["char_ur_wuxu_t3"]
+        },
+        {
+          "NodeId": "char_ur_wuxu_t5",
+          "DisplayName": "疾风步",
+          "Description": "速度+8%",
+          "BranchId": "branch_utility",
+          "Cost": 1,
+          "PrerequisiteNodeIds": []
+        },
+        {
+          "NodeId": "char_ur_wuxu_t6",
+          "DisplayName": "灵动",
+          "Description": "闪避率+10%",
+          "BranchId": "branch_utility",
+          "Cost": 2,
+          "PrerequisiteNodeIds": ["char_ur_wuxu_t5"]
+        }
+      ]
     },
     {
       "TreeId": "tree_xingtian",
@@ -1413,7 +2031,56 @@
         "branch_defense",
         "branch_utility"
       ],
-      "Nodes": []
+      "Nodes": [
+        {
+          "NodeId": "char_ur_xingtian_t1",
+          "DisplayName": "强攻",
+          "Description": "攻击力+10%",
+          "BranchId": "branch_power",
+          "Cost": 1,
+          "PrerequisiteNodeIds": []
+        },
+        {
+          "NodeId": "char_ur_xingtian_t2",
+          "DisplayName": "破甲",
+          "Description": "无视敌方15%防御",
+          "BranchId": "branch_power",
+          "Cost": 2,
+          "PrerequisiteNodeIds": ["char_ur_xingtian_t1"]
+        },
+        {
+          "NodeId": "char_ur_xingtian_t3",
+          "DisplayName": "坚壁",
+          "Description": "防御力+10%",
+          "BranchId": "branch_defense",
+          "Cost": 1,
+          "PrerequisiteNodeIds": []
+        },
+        {
+          "NodeId": "char_ur_xingtian_t4",
+          "DisplayName": "铁壁",
+          "Description": "受到伤害-15%",
+          "BranchId": "branch_defense",
+          "Cost": 2,
+          "PrerequisiteNodeIds": ["char_ur_xingtian_t3"]
+        },
+        {
+          "NodeId": "char_ur_xingtian_t5",
+          "DisplayName": "疾风步",
+          "Description": "速度+8%",
+          "BranchId": "branch_utility",
+          "Cost": 1,
+          "PrerequisiteNodeIds": []
+        },
+        {
+          "NodeId": "char_ur_xingtian_t6",
+          "DisplayName": "灵动",
+          "Description": "闪避率+10%",
+          "BranchId": "branch_utility",
+          "Cost": 2,
+          "PrerequisiteNodeIds": ["char_ur_xingtian_t5"]
+        }
+      ]
     },
     {
       "TreeId": "tree_kikyo",
@@ -1422,7 +2089,56 @@
         "branch_defense",
         "branch_utility"
       ],
-      "Nodes": []
+      "Nodes": [
+        {
+          "NodeId": "char_ur_kikyo_t1",
+          "DisplayName": "强攻",
+          "Description": "攻击力+10%",
+          "BranchId": "branch_power",
+          "Cost": 1,
+          "PrerequisiteNodeIds": []
+        },
+        {
+          "NodeId": "char_ur_kikyo_t2",
+          "DisplayName": "破甲",
+          "Description": "无视敌方15%防御",
+          "BranchId": "branch_power",
+          "Cost": 2,
+          "PrerequisiteNodeIds": ["char_ur_kikyo_t1"]
+        },
+        {
+          "NodeId": "char_ur_kikyo_t3",
+          "DisplayName": "坚壁",
+          "Description": "防御力+10%",
+          "BranchId": "branch_defense",
+          "Cost": 1,
+          "PrerequisiteNodeIds": []
+        },
+        {
+          "NodeId": "char_ur_kikyo_t4",
+          "DisplayName": "铁壁",
+          "Description": "受到伤害-15%",
+          "BranchId": "branch_defense",
+          "Cost": 2,
+          "PrerequisiteNodeIds": ["char_ur_kikyo_t3"]
+        },
+        {
+          "NodeId": "char_ur_kikyo_t5",
+          "DisplayName": "疾风步",
+          "Description": "速度+8%",
+          "BranchId": "branch_utility",
+          "Cost": 1,
+          "PrerequisiteNodeIds": []
+        },
+        {
+          "NodeId": "char_ur_kikyo_t6",
+          "DisplayName": "灵动",
+          "Description": "闪避率+10%",
+          "BranchId": "branch_utility",
+          "Cost": 2,
+          "PrerequisiteNodeIds": ["char_ur_kikyo_t5"]
+        }
+      ]
     },
     {
       "TreeId": "tree_keqing",
@@ -1431,7 +2147,56 @@
         "branch_defense",
         "branch_utility"
       ],
-      "Nodes": []
+      "Nodes": [
+        {
+          "NodeId": "char_ur_keqing_t1",
+          "DisplayName": "强攻",
+          "Description": "攻击力+10%",
+          "BranchId": "branch_power",
+          "Cost": 1,
+          "PrerequisiteNodeIds": []
+        },
+        {
+          "NodeId": "char_ur_keqing_t2",
+          "DisplayName": "破甲",
+          "Description": "无视敌方15%防御",
+          "BranchId": "branch_power",
+          "Cost": 2,
+          "PrerequisiteNodeIds": ["char_ur_keqing_t1"]
+        },
+        {
+          "NodeId": "char_ur_keqing_t3",
+          "DisplayName": "坚壁",
+          "Description": "防御力+10%",
+          "BranchId": "branch_defense",
+          "Cost": 1,
+          "PrerequisiteNodeIds": []
+        },
+        {
+          "NodeId": "char_ur_keqing_t4",
+          "DisplayName": "铁壁",
+          "Description": "受到伤害-15%",
+          "BranchId": "branch_defense",
+          "Cost": 2,
+          "PrerequisiteNodeIds": ["char_ur_keqing_t3"]
+        },
+        {
+          "NodeId": "char_ur_keqing_t5",
+          "DisplayName": "疾风步",
+          "Description": "速度+8%",
+          "BranchId": "branch_utility",
+          "Cost": 1,
+          "PrerequisiteNodeIds": []
+        },
+        {
+          "NodeId": "char_ur_keqing_t6",
+          "DisplayName": "灵动",
+          "Description": "闪避率+10%",
+          "BranchId": "branch_utility",
+          "Cost": 2,
+          "PrerequisiteNodeIds": ["char_ur_keqing_t5"]
+        }
+      ]
     },
     {
       "TreeId": "tree_fenghuang",
@@ -1440,7 +2205,56 @@
         "branch_defense",
         "branch_utility"
       ],
-      "Nodes": []
+      "Nodes": [
+        {
+          "NodeId": "char_ssr_fenghuang_t1",
+          "DisplayName": "强攻",
+          "Description": "攻击力+10%",
+          "BranchId": "branch_power",
+          "Cost": 1,
+          "PrerequisiteNodeIds": []
+        },
+        {
+          "NodeId": "char_ssr_fenghuang_t2",
+          "DisplayName": "破甲",
+          "Description": "无视敌方15%防御",
+          "BranchId": "branch_power",
+          "Cost": 2,
+          "PrerequisiteNodeIds": ["char_ssr_fenghuang_t1"]
+        },
+        {
+          "NodeId": "char_ssr_fenghuang_t3",
+          "DisplayName": "坚壁",
+          "Description": "防御力+10%",
+          "BranchId": "branch_defense",
+          "Cost": 1,
+          "PrerequisiteNodeIds": []
+        },
+        {
+          "NodeId": "char_ssr_fenghuang_t4",
+          "DisplayName": "铁壁",
+          "Description": "受到伤害-15%",
+          "BranchId": "branch_defense",
+          "Cost": 2,
+          "PrerequisiteNodeIds": ["char_ssr_fenghuang_t3"]
+        },
+        {
+          "NodeId": "char_ssr_fenghuang_t5",
+          "DisplayName": "疾风步",
+          "Description": "速度+8%",
+          "BranchId": "branch_utility",
+          "Cost": 1,
+          "PrerequisiteNodeIds": []
+        },
+        {
+          "NodeId": "char_ssr_fenghuang_t6",
+          "DisplayName": "灵动",
+          "Description": "闪避率+10%",
+          "BranchId": "branch_utility",
+          "Cost": 2,
+          "PrerequisiteNodeIds": ["char_ssr_fenghuang_t5"]
+        }
+      ]
     },
     {
       "TreeId": "tree_xiangliu",
@@ -1449,7 +2263,56 @@
         "branch_defense",
         "branch_utility"
       ],
-      "Nodes": []
+      "Nodes": [
+        {
+          "NodeId": "char_ssr_xiangliu_t1",
+          "DisplayName": "强攻",
+          "Description": "攻击力+10%",
+          "BranchId": "branch_power",
+          "Cost": 1,
+          "PrerequisiteNodeIds": []
+        },
+        {
+          "NodeId": "char_ssr_xiangliu_t2",
+          "DisplayName": "破甲",
+          "Description": "无视敌方15%防御",
+          "BranchId": "branch_power",
+          "Cost": 2,
+          "PrerequisiteNodeIds": ["char_ssr_xiangliu_t1"]
+        },
+        {
+          "NodeId": "char_ssr_xiangliu_t3",
+          "DisplayName": "坚壁",
+          "Description": "防御力+10%",
+          "BranchId": "branch_defense",
+          "Cost": 1,
+          "PrerequisiteNodeIds": []
+        },
+        {
+          "NodeId": "char_ssr_xiangliu_t4",
+          "DisplayName": "铁壁",
+          "Description": "受到伤害-15%",
+          "BranchId": "branch_defense",
+          "Cost": 2,
+          "PrerequisiteNodeIds": ["char_ssr_xiangliu_t3"]
+        },
+        {
+          "NodeId": "char_ssr_xiangliu_t5",
+          "DisplayName": "疾风步",
+          "Description": "速度+8%",
+          "BranchId": "branch_utility",
+          "Cost": 1,
+          "PrerequisiteNodeIds": []
+        },
+        {
+          "NodeId": "char_ssr_xiangliu_t6",
+          "DisplayName": "灵动",
+          "Description": "闪避率+10%",
+          "BranchId": "branch_utility",
+          "Cost": 2,
+          "PrerequisiteNodeIds": ["char_ssr_xiangliu_t5"]
+        }
+      ]
     },
     {
       "TreeId": "tree_leishen",
@@ -1458,7 +2321,56 @@
         "branch_defense",
         "branch_utility"
       ],
-      "Nodes": []
+      "Nodes": [
+        {
+          "NodeId": "char_ssr_leishen_t1",
+          "DisplayName": "强攻",
+          "Description": "攻击力+10%",
+          "BranchId": "branch_power",
+          "Cost": 1,
+          "PrerequisiteNodeIds": []
+        },
+        {
+          "NodeId": "char_ssr_leishen_t2",
+          "DisplayName": "破甲",
+          "Description": "无视敌方15%防御",
+          "BranchId": "branch_power",
+          "Cost": 2,
+          "PrerequisiteNodeIds": ["char_ssr_leishen_t1"]
+        },
+        {
+          "NodeId": "char_ssr_leishen_t3",
+          "DisplayName": "坚壁",
+          "Description": "防御力+10%",
+          "BranchId": "branch_defense",
+          "Cost": 1,
+          "PrerequisiteNodeIds": []
+        },
+        {
+          "NodeId": "char_ssr_leishen_t4",
+          "DisplayName": "铁壁",
+          "Description": "受到伤害-15%",
+          "BranchId": "branch_defense",
+          "Cost": 2,
+          "PrerequisiteNodeIds": ["char_ssr_leishen_t3"]
+        },
+        {
+          "NodeId": "char_ssr_leishen_t5",
+          "DisplayName": "疾风步",
+          "Description": "速度+8%",
+          "BranchId": "branch_utility",
+          "Cost": 1,
+          "PrerequisiteNodeIds": []
+        },
+        {
+          "NodeId": "char_ssr_leishen_t6",
+          "DisplayName": "灵动",
+          "Description": "闪避率+10%",
+          "BranchId": "branch_utility",
+          "Cost": 2,
+          "PrerequisiteNodeIds": ["char_ssr_leishen_t5"]
+        }
+      ]
     },
     {
       "TreeId": "tree_feilian",
@@ -1467,7 +2379,56 @@
         "branch_defense",
         "branch_utility"
       ],
-      "Nodes": []
+      "Nodes": [
+        {
+          "NodeId": "char_ssr_feilian_t1",
+          "DisplayName": "强攻",
+          "Description": "攻击力+10%",
+          "BranchId": "branch_power",
+          "Cost": 1,
+          "PrerequisiteNodeIds": []
+        },
+        {
+          "NodeId": "char_ssr_feilian_t2",
+          "DisplayName": "破甲",
+          "Description": "无视敌方15%防御",
+          "BranchId": "branch_power",
+          "Cost": 2,
+          "PrerequisiteNodeIds": ["char_ssr_feilian_t1"]
+        },
+        {
+          "NodeId": "char_ssr_feilian_t3",
+          "DisplayName": "坚壁",
+          "Description": "防御力+10%",
+          "BranchId": "branch_defense",
+          "Cost": 1,
+          "PrerequisiteNodeIds": []
+        },
+        {
+          "NodeId": "char_ssr_feilian_t4",
+          "DisplayName": "铁壁",
+          "Description": "受到伤害-15%",
+          "BranchId": "branch_defense",
+          "Cost": 2,
+          "PrerequisiteNodeIds": ["char_ssr_feilian_t3"]
+        },
+        {
+          "NodeId": "char_ssr_feilian_t5",
+          "DisplayName": "疾风步",
+          "Description": "速度+8%",
+          "BranchId": "branch_utility",
+          "Cost": 1,
+          "PrerequisiteNodeIds": []
+        },
+        {
+          "NodeId": "char_ssr_feilian_t6",
+          "DisplayName": "灵动",
+          "Description": "闪避率+10%",
+          "BranchId": "branch_utility",
+          "Cost": 2,
+          "PrerequisiteNodeIds": ["char_ssr_feilian_t5"]
+        }
+      ]
     },
     {
       "TreeId": "tree_shangyang",
@@ -1476,7 +2437,56 @@
         "branch_defense",
         "branch_utility"
       ],
-      "Nodes": []
+      "Nodes": [
+        {
+          "NodeId": "char_ssr_shangyang_t1",
+          "DisplayName": "强攻",
+          "Description": "攻击力+10%",
+          "BranchId": "branch_power",
+          "Cost": 1,
+          "PrerequisiteNodeIds": []
+        },
+        {
+          "NodeId": "char_ssr_shangyang_t2",
+          "DisplayName": "破甲",
+          "Description": "无视敌方15%防御",
+          "BranchId": "branch_power",
+          "Cost": 2,
+          "PrerequisiteNodeIds": ["char_ssr_shangyang_t1"]
+        },
+        {
+          "NodeId": "char_ssr_shangyang_t3",
+          "DisplayName": "坚壁",
+          "Description": "防御力+10%",
+          "BranchId": "branch_defense",
+          "Cost": 1,
+          "PrerequisiteNodeIds": []
+        },
+        {
+          "NodeId": "char_ssr_shangyang_t4",
+          "DisplayName": "铁壁",
+          "Description": "受到伤害-15%",
+          "BranchId": "branch_defense",
+          "Cost": 2,
+          "PrerequisiteNodeIds": ["char_ssr_shangyang_t3"]
+        },
+        {
+          "NodeId": "char_ssr_shangyang_t5",
+          "DisplayName": "疾风步",
+          "Description": "速度+8%",
+          "BranchId": "branch_utility",
+          "Cost": 1,
+          "PrerequisiteNodeIds": []
+        },
+        {
+          "NodeId": "char_ssr_shangyang_t6",
+          "DisplayName": "灵动",
+          "Description": "闪避率+10%",
+          "BranchId": "branch_utility",
+          "Cost": 2,
+          "PrerequisiteNodeIds": ["char_ssr_shangyang_t5"]
+        }
+      ]
     },
     {
       "TreeId": "tree_suanni",
@@ -1485,7 +2495,56 @@
         "branch_defense",
         "branch_utility"
       ],
-      "Nodes": []
+      "Nodes": [
+        {
+          "NodeId": "char_sr_suanni_t1",
+          "DisplayName": "强攻",
+          "Description": "攻击力+10%",
+          "BranchId": "branch_power",
+          "Cost": 1,
+          "PrerequisiteNodeIds": []
+        },
+        {
+          "NodeId": "char_sr_suanni_t2",
+          "DisplayName": "破甲",
+          "Description": "无视敌方15%防御",
+          "BranchId": "branch_power",
+          "Cost": 2,
+          "PrerequisiteNodeIds": ["char_sr_suanni_t1"]
+        },
+        {
+          "NodeId": "char_sr_suanni_t3",
+          "DisplayName": "坚壁",
+          "Description": "防御力+10%",
+          "BranchId": "branch_defense",
+          "Cost": 1,
+          "PrerequisiteNodeIds": []
+        },
+        {
+          "NodeId": "char_sr_suanni_t4",
+          "DisplayName": "铁壁",
+          "Description": "受到伤害-15%",
+          "BranchId": "branch_defense",
+          "Cost": 2,
+          "PrerequisiteNodeIds": ["char_sr_suanni_t3"]
+        },
+        {
+          "NodeId": "char_sr_suanni_t5",
+          "DisplayName": "疾风步",
+          "Description": "速度+8%",
+          "BranchId": "branch_utility",
+          "Cost": 1,
+          "PrerequisiteNodeIds": []
+        },
+        {
+          "NodeId": "char_sr_suanni_t6",
+          "DisplayName": "灵动",
+          "Description": "闪避率+10%",
+          "BranchId": "branch_utility",
+          "Cost": 2,
+          "PrerequisiteNodeIds": ["char_sr_suanni_t5"]
+        }
+      ]
     },
     {
       "TreeId": "tree_jingwei",
@@ -1494,7 +2553,56 @@
         "branch_defense",
         "branch_utility"
       ],
-      "Nodes": []
+      "Nodes": [
+        {
+          "NodeId": "char_sr_jingwei_t1",
+          "DisplayName": "强攻",
+          "Description": "攻击力+10%",
+          "BranchId": "branch_power",
+          "Cost": 1,
+          "PrerequisiteNodeIds": []
+        },
+        {
+          "NodeId": "char_sr_jingwei_t2",
+          "DisplayName": "破甲",
+          "Description": "无视敌方15%防御",
+          "BranchId": "branch_power",
+          "Cost": 2,
+          "PrerequisiteNodeIds": ["char_sr_jingwei_t1"]
+        },
+        {
+          "NodeId": "char_sr_jingwei_t3",
+          "DisplayName": "坚壁",
+          "Description": "防御力+10%",
+          "BranchId": "branch_defense",
+          "Cost": 1,
+          "PrerequisiteNodeIds": []
+        },
+        {
+          "NodeId": "char_sr_jingwei_t4",
+          "DisplayName": "铁壁",
+          "Description": "受到伤害-15%",
+          "BranchId": "branch_defense",
+          "Cost": 2,
+          "PrerequisiteNodeIds": ["char_sr_jingwei_t3"]
+        },
+        {
+          "NodeId": "char_sr_jingwei_t5",
+          "DisplayName": "疾风步",
+          "Description": "速度+8%",
+          "BranchId": "branch_utility",
+          "Cost": 1,
+          "PrerequisiteNodeIds": []
+        },
+        {
+          "NodeId": "char_sr_jingwei_t6",
+          "DisplayName": "灵动",
+          "Description": "闪避率+10%",
+          "BranchId": "branch_utility",
+          "Cost": 2,
+          "PrerequisiteNodeIds": ["char_sr_jingwei_t5"]
+        }
+      ]
     },
     {
       "TreeId": "tree_qiongqi",
@@ -1503,7 +2611,56 @@
         "branch_defense",
         "branch_utility"
       ],
-      "Nodes": []
+      "Nodes": [
+        {
+          "NodeId": "char_sr_qiongqi_t1",
+          "DisplayName": "强攻",
+          "Description": "攻击力+10%",
+          "BranchId": "branch_power",
+          "Cost": 1,
+          "PrerequisiteNodeIds": []
+        },
+        {
+          "NodeId": "char_sr_qiongqi_t2",
+          "DisplayName": "破甲",
+          "Description": "无视敌方15%防御",
+          "BranchId": "branch_power",
+          "Cost": 2,
+          "PrerequisiteNodeIds": ["char_sr_qiongqi_t1"]
+        },
+        {
+          "NodeId": "char_sr_qiongqi_t3",
+          "DisplayName": "坚壁",
+          "Description": "防御力+10%",
+          "BranchId": "branch_defense",
+          "Cost": 1,
+          "PrerequisiteNodeIds": []
+        },
+        {
+          "NodeId": "char_sr_qiongqi_t4",
+          "DisplayName": "铁壁",
+          "Description": "受到伤害-15%",
+          "BranchId": "branch_defense",
+          "Cost": 2,
+          "PrerequisiteNodeIds": ["char_sr_qiongqi_t3"]
+        },
+        {
+          "NodeId": "char_sr_qiongqi_t5",
+          "DisplayName": "疾风步",
+          "Description": "速度+8%",
+          "BranchId": "branch_utility",
+          "Cost": 1,
+          "PrerequisiteNodeIds": []
+        },
+        {
+          "NodeId": "char_sr_qiongqi_t6",
+          "DisplayName": "灵动",
+          "Description": "闪避率+10%",
+          "BranchId": "branch_utility",
+          "Cost": 2,
+          "PrerequisiteNodeIds": ["char_sr_qiongqi_t5"]
+        }
+      ]
     },
     {
       "TreeId": "tree_xuanwu",
@@ -1512,7 +2669,56 @@
         "branch_defense",
         "branch_utility"
       ],
-      "Nodes": []
+      "Nodes": [
+        {
+          "NodeId": "char_sr_xuanwu_t1",
+          "DisplayName": "强攻",
+          "Description": "攻击力+10%",
+          "BranchId": "branch_power",
+          "Cost": 1,
+          "PrerequisiteNodeIds": []
+        },
+        {
+          "NodeId": "char_sr_xuanwu_t2",
+          "DisplayName": "破甲",
+          "Description": "无视敌方15%防御",
+          "BranchId": "branch_power",
+          "Cost": 2,
+          "PrerequisiteNodeIds": ["char_sr_xuanwu_t1"]
+        },
+        {
+          "NodeId": "char_sr_xuanwu_t3",
+          "DisplayName": "坚壁",
+          "Description": "防御力+10%",
+          "BranchId": "branch_defense",
+          "Cost": 1,
+          "PrerequisiteNodeIds": []
+        },
+        {
+          "NodeId": "char_sr_xuanwu_t4",
+          "DisplayName": "铁壁",
+          "Description": "受到伤害-15%",
+          "BranchId": "branch_defense",
+          "Cost": 2,
+          "PrerequisiteNodeIds": ["char_sr_xuanwu_t3"]
+        },
+        {
+          "NodeId": "char_sr_xuanwu_t5",
+          "DisplayName": "疾风步",
+          "Description": "速度+8%",
+          "BranchId": "branch_utility",
+          "Cost": 1,
+          "PrerequisiteNodeIds": []
+        },
+        {
+          "NodeId": "char_sr_xuanwu_t6",
+          "DisplayName": "灵动",
+          "Description": "闪避率+10%",
+          "BranchId": "branch_utility",
+          "Cost": 2,
+          "PrerequisiteNodeIds": ["char_sr_xuanwu_t5"]
+        }
+      ]
     },
     {
       "TreeId": "tree_bifang",
@@ -1521,7 +2727,56 @@
         "branch_defense",
         "branch_utility"
       ],
-      "Nodes": []
+      "Nodes": [
+        {
+          "NodeId": "char_sr_bifang_t1",
+          "DisplayName": "强攻",
+          "Description": "攻击力+10%",
+          "BranchId": "branch_power",
+          "Cost": 1,
+          "PrerequisiteNodeIds": []
+        },
+        {
+          "NodeId": "char_sr_bifang_t2",
+          "DisplayName": "破甲",
+          "Description": "无视敌方15%防御",
+          "BranchId": "branch_power",
+          "Cost": 2,
+          "PrerequisiteNodeIds": ["char_sr_bifang_t1"]
+        },
+        {
+          "NodeId": "char_sr_bifang_t3",
+          "DisplayName": "坚壁",
+          "Description": "防御力+10%",
+          "BranchId": "branch_defense",
+          "Cost": 1,
+          "PrerequisiteNodeIds": []
+        },
+        {
+          "NodeId": "char_sr_bifang_t4",
+          "DisplayName": "铁壁",
+          "Description": "受到伤害-15%",
+          "BranchId": "branch_defense",
+          "Cost": 2,
+          "PrerequisiteNodeIds": ["char_sr_bifang_t3"]
+        },
+        {
+          "NodeId": "char_sr_bifang_t5",
+          "DisplayName": "疾风步",
+          "Description": "速度+8%",
+          "BranchId": "branch_utility",
+          "Cost": 1,
+          "PrerequisiteNodeIds": []
+        },
+        {
+          "NodeId": "char_sr_bifang_t6",
+          "DisplayName": "灵动",
+          "Description": "闪避率+10%",
+          "BranchId": "branch_utility",
+          "Cost": 2,
+          "PrerequisiteNodeIds": ["char_sr_bifang_t5"]
+        }
+      ]
     },
     {
       "TreeId": "tree_lili",
@@ -1530,7 +2785,56 @@
         "branch_defense",
         "branch_utility"
       ],
-      "Nodes": []
+      "Nodes": [
+        {
+          "NodeId": "char_r_lili_t1",
+          "DisplayName": "强攻",
+          "Description": "攻击力+10%",
+          "BranchId": "branch_power",
+          "Cost": 1,
+          "PrerequisiteNodeIds": []
+        },
+        {
+          "NodeId": "char_r_lili_t2",
+          "DisplayName": "破甲",
+          "Description": "无视敌方15%防御",
+          "BranchId": "branch_power",
+          "Cost": 2,
+          "PrerequisiteNodeIds": ["char_r_lili_t1"]
+        },
+        {
+          "NodeId": "char_r_lili_t3",
+          "DisplayName": "坚壁",
+          "Description": "防御力+10%",
+          "BranchId": "branch_defense",
+          "Cost": 1,
+          "PrerequisiteNodeIds": []
+        },
+        {
+          "NodeId": "char_r_lili_t4",
+          "DisplayName": "铁壁",
+          "Description": "受到伤害-15%",
+          "BranchId": "branch_defense",
+          "Cost": 2,
+          "PrerequisiteNodeIds": ["char_r_lili_t3"]
+        },
+        {
+          "NodeId": "char_r_lili_t5",
+          "DisplayName": "疾风步",
+          "Description": "速度+8%",
+          "BranchId": "branch_utility",
+          "Cost": 1,
+          "PrerequisiteNodeIds": []
+        },
+        {
+          "NodeId": "char_r_lili_t6",
+          "DisplayName": "灵动",
+          "Description": "闪避率+10%",
+          "BranchId": "branch_utility",
+          "Cost": 2,
+          "PrerequisiteNodeIds": ["char_r_lili_t5"]
+        }
+      ]
     },
     {
       "TreeId": "tree_qinyuan",
@@ -1539,7 +2843,56 @@
         "branch_defense",
         "branch_utility"
       ],
-      "Nodes": []
+      "Nodes": [
+        {
+          "NodeId": "char_r_qinyuan_t1",
+          "DisplayName": "强攻",
+          "Description": "攻击力+10%",
+          "BranchId": "branch_power",
+          "Cost": 1,
+          "PrerequisiteNodeIds": []
+        },
+        {
+          "NodeId": "char_r_qinyuan_t2",
+          "DisplayName": "破甲",
+          "Description": "无视敌方15%防御",
+          "BranchId": "branch_power",
+          "Cost": 2,
+          "PrerequisiteNodeIds": ["char_r_qinyuan_t1"]
+        },
+        {
+          "NodeId": "char_r_qinyuan_t3",
+          "DisplayName": "坚壁",
+          "Description": "防御力+10%",
+          "BranchId": "branch_defense",
+          "Cost": 1,
+          "PrerequisiteNodeIds": []
+        },
+        {
+          "NodeId": "char_r_qinyuan_t4",
+          "DisplayName": "铁壁",
+          "Description": "受到伤害-15%",
+          "BranchId": "branch_defense",
+          "Cost": 2,
+          "PrerequisiteNodeIds": ["char_r_qinyuan_t3"]
+        },
+        {
+          "NodeId": "char_r_qinyuan_t5",
+          "DisplayName": "疾风步",
+          "Description": "速度+8%",
+          "BranchId": "branch_utility",
+          "Cost": 1,
+          "PrerequisiteNodeIds": []
+        },
+        {
+          "NodeId": "char_r_qinyuan_t6",
+          "DisplayName": "灵动",
+          "Description": "闪避率+10%",
+          "BranchId": "branch_utility",
+          "Cost": 2,
+          "PrerequisiteNodeIds": ["char_r_qinyuan_t5"]
+        }
+      ]
     },
     {
       "TreeId": "tree_sishu",
@@ -1548,7 +2901,56 @@
         "branch_defense",
         "branch_utility"
       ],
-      "Nodes": []
+      "Nodes": [
+        {
+          "NodeId": "char_r_sishu_t1",
+          "DisplayName": "强攻",
+          "Description": "攻击力+10%",
+          "BranchId": "branch_power",
+          "Cost": 1,
+          "PrerequisiteNodeIds": []
+        },
+        {
+          "NodeId": "char_r_sishu_t2",
+          "DisplayName": "破甲",
+          "Description": "无视敌方15%防御",
+          "BranchId": "branch_power",
+          "Cost": 2,
+          "PrerequisiteNodeIds": ["char_r_sishu_t1"]
+        },
+        {
+          "NodeId": "char_r_sishu_t3",
+          "DisplayName": "坚壁",
+          "Description": "防御力+10%",
+          "BranchId": "branch_defense",
+          "Cost": 1,
+          "PrerequisiteNodeIds": []
+        },
+        {
+          "NodeId": "char_r_sishu_t4",
+          "DisplayName": "铁壁",
+          "Description": "受到伤害-15%",
+          "BranchId": "branch_defense",
+          "Cost": 2,
+          "PrerequisiteNodeIds": ["char_r_sishu_t3"]
+        },
+        {
+          "NodeId": "char_r_sishu_t5",
+          "DisplayName": "疾风步",
+          "Description": "速度+8%",
+          "BranchId": "branch_utility",
+          "Cost": 1,
+          "PrerequisiteNodeIds": []
+        },
+        {
+          "NodeId": "char_r_sishu_t6",
+          "DisplayName": "灵动",
+          "Description": "闪避率+10%",
+          "BranchId": "branch_utility",
+          "Cost": 2,
+          "PrerequisiteNodeIds": ["char_r_sishu_t5"]
+        }
+      ]
     },
     {
       "TreeId": "tree_luoyu",
@@ -1557,7 +2959,56 @@
         "branch_defense",
         "branch_utility"
       ],
-      "Nodes": []
+      "Nodes": [
+        {
+          "NodeId": "char_r_luoyu_t1",
+          "DisplayName": "强攻",
+          "Description": "攻击力+10%",
+          "BranchId": "branch_power",
+          "Cost": 1,
+          "PrerequisiteNodeIds": []
+        },
+        {
+          "NodeId": "char_r_luoyu_t2",
+          "DisplayName": "破甲",
+          "Description": "无视敌方15%防御",
+          "BranchId": "branch_power",
+          "Cost": 2,
+          "PrerequisiteNodeIds": ["char_r_luoyu_t1"]
+        },
+        {
+          "NodeId": "char_r_luoyu_t3",
+          "DisplayName": "坚壁",
+          "Description": "防御力+10%",
+          "BranchId": "branch_defense",
+          "Cost": 1,
+          "PrerequisiteNodeIds": []
+        },
+        {
+          "NodeId": "char_r_luoyu_t4",
+          "DisplayName": "铁壁",
+          "Description": "受到伤害-15%",
+          "BranchId": "branch_defense",
+          "Cost": 2,
+          "PrerequisiteNodeIds": ["char_r_luoyu_t3"]
+        },
+        {
+          "NodeId": "char_r_luoyu_t5",
+          "DisplayName": "疾风步",
+          "Description": "速度+8%",
+          "BranchId": "branch_utility",
+          "Cost": 1,
+          "PrerequisiteNodeIds": []
+        },
+        {
+          "NodeId": "char_r_luoyu_t6",
+          "DisplayName": "灵动",
+          "Description": "闪避率+10%",
+          "BranchId": "branch_utility",
+          "Cost": 2,
+          "PrerequisiteNodeIds": ["char_r_luoyu_t5"]
+        }
+      ]
     },
     {
       "TreeId": "tree_dangang",
@@ -1566,7 +3017,56 @@
         "branch_defense",
         "branch_utility"
       ],
-      "Nodes": []
+      "Nodes": [
+        {
+          "NodeId": "char_r_dangang_t1",
+          "DisplayName": "强攻",
+          "Description": "攻击力+10%",
+          "BranchId": "branch_power",
+          "Cost": 1,
+          "PrerequisiteNodeIds": []
+        },
+        {
+          "NodeId": "char_r_dangang_t2",
+          "DisplayName": "破甲",
+          "Description": "无视敌方15%防御",
+          "BranchId": "branch_power",
+          "Cost": 2,
+          "PrerequisiteNodeIds": ["char_r_dangang_t1"]
+        },
+        {
+          "NodeId": "char_r_dangang_t3",
+          "DisplayName": "坚壁",
+          "Description": "防御力+10%",
+          "BranchId": "branch_defense",
+          "Cost": 1,
+          "PrerequisiteNodeIds": []
+        },
+        {
+          "NodeId": "char_r_dangang_t4",
+          "DisplayName": "铁壁",
+          "Description": "受到伤害-15%",
+          "BranchId": "branch_defense",
+          "Cost": 2,
+          "PrerequisiteNodeIds": ["char_r_dangang_t3"]
+        },
+        {
+          "NodeId": "char_r_dangang_t5",
+          "DisplayName": "疾风步",
+          "Description": "速度+8%",
+          "BranchId": "branch_utility",
+          "Cost": 1,
+          "PrerequisiteNodeIds": []
+        },
+        {
+          "NodeId": "char_r_dangang_t6",
+          "DisplayName": "灵动",
+          "Description": "闪避率+10%",
+          "BranchId": "branch_utility",
+          "Cost": 2,
+          "PrerequisiteNodeIds": ["char_r_dangang_t5"]
+        }
+      ]
     },
     {
       "TreeId": "tree_jinwu",
@@ -1575,7 +3075,56 @@
         "branch_defense",
         "branch_utility"
       ],
-      "Nodes": []
+      "Nodes": [
+        {
+          "NodeId": "char_ur_jinwu_t1",
+          "DisplayName": "强攻",
+          "Description": "攻击力+10%",
+          "BranchId": "branch_power",
+          "Cost": 1,
+          "PrerequisiteNodeIds": []
+        },
+        {
+          "NodeId": "char_ur_jinwu_t2",
+          "DisplayName": "破甲",
+          "Description": "无视敌方15%防御",
+          "BranchId": "branch_power",
+          "Cost": 2,
+          "PrerequisiteNodeIds": ["char_ur_jinwu_t1"]
+        },
+        {
+          "NodeId": "char_ur_jinwu_t3",
+          "DisplayName": "坚壁",
+          "Description": "防御力+10%",
+          "BranchId": "branch_defense",
+          "Cost": 1,
+          "PrerequisiteNodeIds": []
+        },
+        {
+          "NodeId": "char_ur_jinwu_t4",
+          "DisplayName": "铁壁",
+          "Description": "受到伤害-15%",
+          "BranchId": "branch_defense",
+          "Cost": 2,
+          "PrerequisiteNodeIds": ["char_ur_jinwu_t3"]
+        },
+        {
+          "NodeId": "char_ur_jinwu_t5",
+          "DisplayName": "疾风步",
+          "Description": "速度+8%",
+          "BranchId": "branch_utility",
+          "Cost": 1,
+          "PrerequisiteNodeIds": []
+        },
+        {
+          "NodeId": "char_ur_jinwu_t6",
+          "DisplayName": "灵动",
+          "Description": "闪避率+10%",
+          "BranchId": "branch_utility",
+          "Cost": 2,
+          "PrerequisiteNodeIds": ["char_ur_jinwu_t5"]
+        }
+      ]
     },
     {
       "TreeId": "tree_nuwa",
@@ -1584,7 +3133,56 @@
         "branch_defense",
         "branch_utility"
       ],
-      "Nodes": []
+      "Nodes": [
+        {
+          "NodeId": "char_ur_nuwa_t1",
+          "DisplayName": "强攻",
+          "Description": "攻击力+10%",
+          "BranchId": "branch_power",
+          "Cost": 1,
+          "PrerequisiteNodeIds": []
+        },
+        {
+          "NodeId": "char_ur_nuwa_t2",
+          "DisplayName": "破甲",
+          "Description": "无视敌方15%防御",
+          "BranchId": "branch_power",
+          "Cost": 2,
+          "PrerequisiteNodeIds": ["char_ur_nuwa_t1"]
+        },
+        {
+          "NodeId": "char_ur_nuwa_t3",
+          "DisplayName": "坚壁",
+          "Description": "防御力+10%",
+          "BranchId": "branch_defense",
+          "Cost": 1,
+          "PrerequisiteNodeIds": []
+        },
+        {
+          "NodeId": "char_ur_nuwa_t4",
+          "DisplayName": "铁壁",
+          "Description": "受到伤害-15%",
+          "BranchId": "branch_defense",
+          "Cost": 2,
+          "PrerequisiteNodeIds": ["char_ur_nuwa_t3"]
+        },
+        {
+          "NodeId": "char_ur_nuwa_t5",
+          "DisplayName": "疾风步",
+          "Description": "速度+8%",
+          "BranchId": "branch_utility",
+          "Cost": 1,
+          "PrerequisiteNodeIds": []
+        },
+        {
+          "NodeId": "char_ur_nuwa_t6",
+          "DisplayName": "灵动",
+          "Description": "闪避率+10%",
+          "BranchId": "branch_utility",
+          "Cost": 2,
+          "PrerequisiteNodeIds": ["char_ur_nuwa_t5"]
+        }
+      ]
     },
     {
       "TreeId": "tree_chiyou",
@@ -1593,7 +3191,56 @@
         "branch_defense",
         "branch_utility"
       ],
-      "Nodes": []
+      "Nodes": [
+        {
+          "NodeId": "char_ssr_chiyou_t1",
+          "DisplayName": "强攻",
+          "Description": "攻击力+10%",
+          "BranchId": "branch_power",
+          "Cost": 1,
+          "PrerequisiteNodeIds": []
+        },
+        {
+          "NodeId": "char_ssr_chiyou_t2",
+          "DisplayName": "破甲",
+          "Description": "无视敌方15%防御",
+          "BranchId": "branch_power",
+          "Cost": 2,
+          "PrerequisiteNodeIds": ["char_ssr_chiyou_t1"]
+        },
+        {
+          "NodeId": "char_ssr_chiyou_t3",
+          "DisplayName": "坚壁",
+          "Description": "防御力+10%",
+          "BranchId": "branch_defense",
+          "Cost": 1,
+          "PrerequisiteNodeIds": []
+        },
+        {
+          "NodeId": "char_ssr_chiyou_t4",
+          "DisplayName": "铁壁",
+          "Description": "受到伤害-15%",
+          "BranchId": "branch_defense",
+          "Cost": 2,
+          "PrerequisiteNodeIds": ["char_ssr_chiyou_t3"]
+        },
+        {
+          "NodeId": "char_ssr_chiyou_t5",
+          "DisplayName": "疾风步",
+          "Description": "速度+8%",
+          "BranchId": "branch_utility",
+          "Cost": 1,
+          "PrerequisiteNodeIds": []
+        },
+        {
+          "NodeId": "char_ssr_chiyou_t6",
+          "DisplayName": "灵动",
+          "Description": "闪避率+10%",
+          "BranchId": "branch_utility",
+          "Cost": 2,
+          "PrerequisiteNodeIds": ["char_ssr_chiyou_t5"]
+        }
+      ]
     },
     {
       "TreeId": "tree_baihu",
@@ -1602,7 +3249,56 @@
         "branch_defense",
         "branch_utility"
       ],
-      "Nodes": []
+      "Nodes": [
+        {
+          "NodeId": "char_ssr_baihu_t1",
+          "DisplayName": "强攻",
+          "Description": "攻击力+10%",
+          "BranchId": "branch_power",
+          "Cost": 1,
+          "PrerequisiteNodeIds": []
+        },
+        {
+          "NodeId": "char_ssr_baihu_t2",
+          "DisplayName": "破甲",
+          "Description": "无视敌方15%防御",
+          "BranchId": "branch_power",
+          "Cost": 2,
+          "PrerequisiteNodeIds": ["char_ssr_baihu_t1"]
+        },
+        {
+          "NodeId": "char_ssr_baihu_t3",
+          "DisplayName": "坚壁",
+          "Description": "防御力+10%",
+          "BranchId": "branch_defense",
+          "Cost": 1,
+          "PrerequisiteNodeIds": []
+        },
+        {
+          "NodeId": "char_ssr_baihu_t4",
+          "DisplayName": "铁壁",
+          "Description": "受到伤害-15%",
+          "BranchId": "branch_defense",
+          "Cost": 2,
+          "PrerequisiteNodeIds": ["char_ssr_baihu_t3"]
+        },
+        {
+          "NodeId": "char_ssr_baihu_t5",
+          "DisplayName": "疾风步",
+          "Description": "速度+8%",
+          "BranchId": "branch_utility",
+          "Cost": 1,
+          "PrerequisiteNodeIds": []
+        },
+        {
+          "NodeId": "char_ssr_baihu_t6",
+          "DisplayName": "灵动",
+          "Description": "闪避率+10%",
+          "BranchId": "branch_utility",
+          "Cost": 2,
+          "PrerequisiteNodeIds": ["char_ssr_baihu_t5"]
+        }
+      ]
     },
     {
       "TreeId": "tree_huayao",
@@ -1611,7 +3307,56 @@
         "branch_defense",
         "branch_utility"
       ],
-      "Nodes": []
+      "Nodes": [
+        {
+          "NodeId": "char_sr_huayao_t1",
+          "DisplayName": "强攻",
+          "Description": "攻击力+10%",
+          "BranchId": "branch_power",
+          "Cost": 1,
+          "PrerequisiteNodeIds": []
+        },
+        {
+          "NodeId": "char_sr_huayao_t2",
+          "DisplayName": "破甲",
+          "Description": "无视敌方15%防御",
+          "BranchId": "branch_power",
+          "Cost": 2,
+          "PrerequisiteNodeIds": ["char_sr_huayao_t1"]
+        },
+        {
+          "NodeId": "char_sr_huayao_t3",
+          "DisplayName": "坚壁",
+          "Description": "防御力+10%",
+          "BranchId": "branch_defense",
+          "Cost": 1,
+          "PrerequisiteNodeIds": []
+        },
+        {
+          "NodeId": "char_sr_huayao_t4",
+          "DisplayName": "铁壁",
+          "Description": "受到伤害-15%",
+          "BranchId": "branch_defense",
+          "Cost": 2,
+          "PrerequisiteNodeIds": ["char_sr_huayao_t3"]
+        },
+        {
+          "NodeId": "char_sr_huayao_t5",
+          "DisplayName": "疾风步",
+          "Description": "速度+8%",
+          "BranchId": "branch_utility",
+          "Cost": 1,
+          "PrerequisiteNodeIds": []
+        },
+        {
+          "NodeId": "char_sr_huayao_t6",
+          "DisplayName": "灵动",
+          "Description": "闪避率+10%",
+          "BranchId": "branch_utility",
+          "Cost": 2,
+          "PrerequisiteNodeIds": ["char_sr_huayao_t5"]
+        }
+      ]
     },
     {
       "TreeId": "tree_taotie",
@@ -1620,7 +3365,56 @@
         "branch_defense",
         "branch_utility"
       ],
-      "Nodes": []
+      "Nodes": [
+        {
+          "NodeId": "char_sr_taotie_t1",
+          "DisplayName": "强攻",
+          "Description": "攻击力+10%",
+          "BranchId": "branch_power",
+          "Cost": 1,
+          "PrerequisiteNodeIds": []
+        },
+        {
+          "NodeId": "char_sr_taotie_t2",
+          "DisplayName": "破甲",
+          "Description": "无视敌方15%防御",
+          "BranchId": "branch_power",
+          "Cost": 2,
+          "PrerequisiteNodeIds": ["char_sr_taotie_t1"]
+        },
+        {
+          "NodeId": "char_sr_taotie_t3",
+          "DisplayName": "坚壁",
+          "Description": "防御力+10%",
+          "BranchId": "branch_defense",
+          "Cost": 1,
+          "PrerequisiteNodeIds": []
+        },
+        {
+          "NodeId": "char_sr_taotie_t4",
+          "DisplayName": "铁壁",
+          "Description": "受到伤害-15%",
+          "BranchId": "branch_defense",
+          "Cost": 2,
+          "PrerequisiteNodeIds": ["char_sr_taotie_t3"]
+        },
+        {
+          "NodeId": "char_sr_taotie_t5",
+          "DisplayName": "疾风步",
+          "Description": "速度+8%",
+          "BranchId": "branch_utility",
+          "Cost": 1,
+          "PrerequisiteNodeIds": []
+        },
+        {
+          "NodeId": "char_sr_taotie_t6",
+          "DisplayName": "灵动",
+          "Description": "闪避率+10%",
+          "BranchId": "branch_utility",
+          "Cost": 2,
+          "PrerequisiteNodeIds": ["char_sr_taotie_t5"]
+        }
+      ]
     },
     {
       "TreeId": "tree_shanxiao",
@@ -1629,7 +3423,56 @@
         "branch_defense",
         "branch_utility"
       ],
-      "Nodes": []
+      "Nodes": [
+        {
+          "NodeId": "char_r_shanxiao_t1",
+          "DisplayName": "强攻",
+          "Description": "攻击力+10%",
+          "BranchId": "branch_power",
+          "Cost": 1,
+          "PrerequisiteNodeIds": []
+        },
+        {
+          "NodeId": "char_r_shanxiao_t2",
+          "DisplayName": "破甲",
+          "Description": "无视敌方15%防御",
+          "BranchId": "branch_power",
+          "Cost": 2,
+          "PrerequisiteNodeIds": ["char_r_shanxiao_t1"]
+        },
+        {
+          "NodeId": "char_r_shanxiao_t3",
+          "DisplayName": "坚壁",
+          "Description": "防御力+10%",
+          "BranchId": "branch_defense",
+          "Cost": 1,
+          "PrerequisiteNodeIds": []
+        },
+        {
+          "NodeId": "char_r_shanxiao_t4",
+          "DisplayName": "铁壁",
+          "Description": "受到伤害-15%",
+          "BranchId": "branch_defense",
+          "Cost": 2,
+          "PrerequisiteNodeIds": ["char_r_shanxiao_t3"]
+        },
+        {
+          "NodeId": "char_r_shanxiao_t5",
+          "DisplayName": "疾风步",
+          "Description": "速度+8%",
+          "BranchId": "branch_utility",
+          "Cost": 1,
+          "PrerequisiteNodeIds": []
+        },
+        {
+          "NodeId": "char_r_shanxiao_t6",
+          "DisplayName": "灵动",
+          "Description": "闪避率+10%",
+          "BranchId": "branch_utility",
+          "Cost": 2,
+          "PrerequisiteNodeIds": ["char_r_shanxiao_t5"]
+        }
+      ]
     },
     {
       "TreeId": "tree_yecha",
@@ -1638,7 +3481,56 @@
         "branch_defense",
         "branch_utility"
       ],
-      "Nodes": []
+      "Nodes": [
+        {
+          "NodeId": "char_r_yecha_t1",
+          "DisplayName": "强攻",
+          "Description": "攻击力+10%",
+          "BranchId": "branch_power",
+          "Cost": 1,
+          "PrerequisiteNodeIds": []
+        },
+        {
+          "NodeId": "char_r_yecha_t2",
+          "DisplayName": "破甲",
+          "Description": "无视敌方15%防御",
+          "BranchId": "branch_power",
+          "Cost": 2,
+          "PrerequisiteNodeIds": ["char_r_yecha_t1"]
+        },
+        {
+          "NodeId": "char_r_yecha_t3",
+          "DisplayName": "坚壁",
+          "Description": "防御力+10%",
+          "BranchId": "branch_defense",
+          "Cost": 1,
+          "PrerequisiteNodeIds": []
+        },
+        {
+          "NodeId": "char_r_yecha_t4",
+          "DisplayName": "铁壁",
+          "Description": "受到伤害-15%",
+          "BranchId": "branch_defense",
+          "Cost": 2,
+          "PrerequisiteNodeIds": ["char_r_yecha_t3"]
+        },
+        {
+          "NodeId": "char_r_yecha_t5",
+          "DisplayName": "疾风步",
+          "Description": "速度+8%",
+          "BranchId": "branch_utility",
+          "Cost": 1,
+          "PrerequisiteNodeIds": []
+        },
+        {
+          "NodeId": "char_r_yecha_t6",
+          "DisplayName": "灵动",
+          "Description": "闪避率+10%",
+          "BranchId": "branch_utility",
+          "Cost": 2,
+          "PrerequisiteNodeIds": ["char_r_yecha_t5"]
+        }
+      ]
     },
     {
       "TreeId": "tree_ironman",
@@ -1647,7 +3539,56 @@
         "branch_defense",
         "branch_utility"
       ],
-      "Nodes": []
+      "Nodes": [
+        {
+          "NodeId": "char_ur_ironman_t1",
+          "DisplayName": "强攻",
+          "Description": "攻击力+10%",
+          "BranchId": "branch_power",
+          "Cost": 1,
+          "PrerequisiteNodeIds": []
+        },
+        {
+          "NodeId": "char_ur_ironman_t2",
+          "DisplayName": "破甲",
+          "Description": "无视敌方15%防御",
+          "BranchId": "branch_power",
+          "Cost": 2,
+          "PrerequisiteNodeIds": ["char_ur_ironman_t1"]
+        },
+        {
+          "NodeId": "char_ur_ironman_t3",
+          "DisplayName": "坚壁",
+          "Description": "防御力+10%",
+          "BranchId": "branch_defense",
+          "Cost": 1,
+          "PrerequisiteNodeIds": []
+        },
+        {
+          "NodeId": "char_ur_ironman_t4",
+          "DisplayName": "铁壁",
+          "Description": "受到伤害-15%",
+          "BranchId": "branch_defense",
+          "Cost": 2,
+          "PrerequisiteNodeIds": ["char_ur_ironman_t3"]
+        },
+        {
+          "NodeId": "char_ur_ironman_t5",
+          "DisplayName": "疾风步",
+          "Description": "速度+8%",
+          "BranchId": "branch_utility",
+          "Cost": 1,
+          "PrerequisiteNodeIds": []
+        },
+        {
+          "NodeId": "char_ur_ironman_t6",
+          "DisplayName": "灵动",
+          "Description": "闪避率+10%",
+          "BranchId": "branch_utility",
+          "Cost": 2,
+          "PrerequisiteNodeIds": ["char_ur_ironman_t5"]
+        }
+      ]
     },
     {
       "TreeId": "tree_thor",
@@ -1656,7 +3597,56 @@
         "branch_defense",
         "branch_utility"
       ],
-      "Nodes": []
+      "Nodes": [
+        {
+          "NodeId": "char_ur_thor_t1",
+          "DisplayName": "强攻",
+          "Description": "攻击力+10%",
+          "BranchId": "branch_power",
+          "Cost": 1,
+          "PrerequisiteNodeIds": []
+        },
+        {
+          "NodeId": "char_ur_thor_t2",
+          "DisplayName": "破甲",
+          "Description": "无视敌方15%防御",
+          "BranchId": "branch_power",
+          "Cost": 2,
+          "PrerequisiteNodeIds": ["char_ur_thor_t1"]
+        },
+        {
+          "NodeId": "char_ur_thor_t3",
+          "DisplayName": "坚壁",
+          "Description": "防御力+10%",
+          "BranchId": "branch_defense",
+          "Cost": 1,
+          "PrerequisiteNodeIds": []
+        },
+        {
+          "NodeId": "char_ur_thor_t4",
+          "DisplayName": "铁壁",
+          "Description": "受到伤害-15%",
+          "BranchId": "branch_defense",
+          "Cost": 2,
+          "PrerequisiteNodeIds": ["char_ur_thor_t3"]
+        },
+        {
+          "NodeId": "char_ur_thor_t5",
+          "DisplayName": "疾风步",
+          "Description": "速度+8%",
+          "BranchId": "branch_utility",
+          "Cost": 1,
+          "PrerequisiteNodeIds": []
+        },
+        {
+          "NodeId": "char_ur_thor_t6",
+          "DisplayName": "灵动",
+          "Description": "闪避率+10%",
+          "BranchId": "branch_utility",
+          "Cost": 2,
+          "PrerequisiteNodeIds": ["char_ur_thor_t5"]
+        }
+      ]
     },
     {
       "TreeId": "tree_strange",
@@ -1665,7 +3655,56 @@
         "branch_defense",
         "branch_utility"
       ],
-      "Nodes": []
+      "Nodes": [
+        {
+          "NodeId": "char_ur_strange_t1",
+          "DisplayName": "强攻",
+          "Description": "攻击力+10%",
+          "BranchId": "branch_power",
+          "Cost": 1,
+          "PrerequisiteNodeIds": []
+        },
+        {
+          "NodeId": "char_ur_strange_t2",
+          "DisplayName": "破甲",
+          "Description": "无视敌方15%防御",
+          "BranchId": "branch_power",
+          "Cost": 2,
+          "PrerequisiteNodeIds": ["char_ur_strange_t1"]
+        },
+        {
+          "NodeId": "char_ur_strange_t3",
+          "DisplayName": "坚壁",
+          "Description": "防御力+10%",
+          "BranchId": "branch_defense",
+          "Cost": 1,
+          "PrerequisiteNodeIds": []
+        },
+        {
+          "NodeId": "char_ur_strange_t4",
+          "DisplayName": "铁壁",
+          "Description": "受到伤害-15%",
+          "BranchId": "branch_defense",
+          "Cost": 2,
+          "PrerequisiteNodeIds": ["char_ur_strange_t3"]
+        },
+        {
+          "NodeId": "char_ur_strange_t5",
+          "DisplayName": "疾风步",
+          "Description": "速度+8%",
+          "BranchId": "branch_utility",
+          "Cost": 1,
+          "PrerequisiteNodeIds": []
+        },
+        {
+          "NodeId": "char_ur_strange_t6",
+          "DisplayName": "灵动",
+          "Description": "闪避率+10%",
+          "BranchId": "branch_utility",
+          "Cost": 2,
+          "PrerequisiteNodeIds": ["char_ur_strange_t5"]
+        }
+      ]
     }
   ]
 }

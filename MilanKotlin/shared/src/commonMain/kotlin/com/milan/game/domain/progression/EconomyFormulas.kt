@@ -150,6 +150,20 @@ object EconomyFormulas {
         else -> 30
     }
 
+    /**
+     * 无尽之塔的层数上界（M6，2026-08-28 审查引入）：服务层防御性护栏。
+     * 超过该层号后 [towerRewardSoft] 与 [towerEnemyStatScale] 的数值量级会脱离设计区间
+     * （并存在 Int 溢出敞口），故在服务层显式拒绝而非静默产出异常数值。
+     */
+    fun towerMaxFloor(): Int = 999
+
+    /**
+     * 通关第 [floor] 层给出战编队发放的经验（2026-08-28 F4 引入：经验条的唯一驱动源）。
+     * 50×floor+50 —— 首层 100 点，恰好等于 [expForLevel](1)，即首次通关升 1 级。
+     * 与 [towerRewardSoft] 不同，经验在**每次胜利**都发（含复刷），星尘只在刷新纪录时发。
+     */
+    fun towerRewardExp(floor: Int): Int = 50 * floor.coerceAtLeast(1) + 50
+
     /** 通关任意层的战票（BATTLE_TICKET 道具）奖励数量。胜利返 1 张（净消耗 0），亏损局才是真消耗。 */
     fun towerRewardTickets(): Int = 1
 

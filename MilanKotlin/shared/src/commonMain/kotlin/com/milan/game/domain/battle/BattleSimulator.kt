@@ -62,7 +62,10 @@ class BattleSimulator(private val rng: Random) {
             if (a.isNotEmpty() && a.all { it.hp <= 0 }) return done(false, turn, a, b, log)
         }
 
-        return done(false, turns, a, b, log)
+        // P3-7：回合耗尽双方仍存活 → 平局（此前误判为负，消耗门票且无奖励）；
+        // 一方为空（防空敌队/己方全灭被前面拦截后）不视为平局。
+        val bothAlive = a.any { it.hp > 0 } && b.any { it.hp > 0 }
+        return done(victory = false, turns, a, b, log, draw = bothAlive)
     }
 
     private fun done(
@@ -71,12 +74,14 @@ class BattleSimulator(private val rng: Random) {
         a: List<S>,
         b: List<S>,
         log: List<StrikeEvent>,
+        draw: Boolean = false,
     ): BattleResult = BattleResult(
         victory = victory,
         turns = turns,
         remainingHp = a.sumOf { it.hp.coerceAtLeast(0) },
         opponentRemainingHp = b.sumOf { it.hp.coerceAtLeast(0) },
         log = log.toList(),
+        draw = draw,
     )
 
     companion object {
