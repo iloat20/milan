@@ -18,7 +18,7 @@ import kotlinx.serialization.json.Json
 @Serializable
 class SaveData(
     @SerialName("Version") var version: Int = 1,
-    @SerialName("SoftCurrency") var softCurrency: Int = 999999,
+    @SerialName("SoftCurrency") var softCurrency: Int = DEFAULT_SOFT_CURRENCY,
     @SerialName("HardCurrency") var hardCurrency: Int = 0,
     @SerialName("OwnedCharacters") var ownedCharacters: List<CharacterSaveState?> = emptyList(),
     @SerialName("OwnedSkins") var ownedSkins: List<String?> = emptyList(),
@@ -45,6 +45,12 @@ class SaveData(
     // ── 2026-08 三期新增（带默认值：旧档缺字段自动落默认，向后兼容）──
     /** 抽卡历史（追加式，上限 [Companion.MAX_PULL_HISTORY] 丢最旧；仅展示用途）。 */
     @SerialName("PullHistory") var pullHistory: List<PullLogEntry?> = emptyList(),
+    /**
+     * 累计抽卡次数（2026-08 三期补；**永不清零**，与 [GachaCounters] 语义严格区分）。
+     * [gachaCounters] 是保底计数，出货即归零——用它当「累计抽数」会让累计型成就进度
+     * 随出货倒退（F3）。本字段是成就「寻访百次」等累计判定的唯一口径。
+     */
+    @SerialName("TotalPullCount") var totalPullCount: Int = 0,
     /** UP 定轨「上次歪了」的池标记（true = 下次最高稀有度必中 UP 角色）。 */
     @SerialName("GachaFeaturedLost") var gachaFeaturedLost: List<PoolFlagEntry?> = emptyList(),
 ) {
@@ -55,9 +61,12 @@ class SaveData(
         gachaCounters.firstOrNull { it?.poolId == poolId }?.count ?: 0
 
     fun setGachaCounter(poolId: String, count: Int) {
+        // 防御：保底计数器不得为负——反序列化脏数据 / 回滚计算溢出时钳到 0，
+        // 与 sanitize() 的 onEach { it.count = it.count.coerceAtLeast(0) } 口径一致。
+        val safe = count.coerceAtLeast(0)
         val entry = gachaCounters.firstOrNull { it?.poolId == poolId }
-        if (entry != null) entry.count = count
-        else gachaCounters = gachaCounters + GachaCounterEntry(poolId = poolId, count = count)
+        if (entry != null) entry.count = safe
+        else gachaCounters = gachaCounters + GachaCounterEntry(poolId = poolId, count = safe)
     }
 
     /**
@@ -94,7 +103,9 @@ class SaveData(
                 merged[it.itemId] = it
             }
         }
-        items = merged.values.toMutableList()
+        // M7（2026-08-28 审查修复）：丢弃数量为 0 的道具条目。
+        // 养成扣减把碎片扣到 0 后会残留 count=0 的幽灵条目（历史 BUG_REVIEW #10）。
+        items = merged.values.filter { it.count > 0 }.toMutableList()
 
         val seenPools = HashSet<String>()
         gachaCounters = gachaCounters.filterNotNull()
@@ -114,10 +125,15 @@ class SaveData(
         if (userId.isEmpty()) userId = ""
 
         // 编队（2026-08）：过滤空槽/空 id、去重保首条、钳制上限——脏档不得让战斗构建越界。
+        // M7（2026-08-28 审查修复）：额外校验「成员必须已拥有」。旧档/内容变更可能残留
+        // 未拥有的 id，会让编队页显示幽灵角色、战力预览与实战人数不符
+        //（战斗侧 mapNotNull 会静默跳过，UI 却照常显示）。
         val seenFormation = HashSet<String>()
+        val ownedIds = HashSet<String>().apply { unique.forEach { add(it.characterId) } }
         formation = formation.filterNotNull()
             .filter { it.isNotEmpty() }
             .filter { seenFormation.add(it) }
+            .filter { it in ownedIds }
             .take(MAX_FORMATION_SIZE)
             .toList()
 
@@ -140,6 +156,9 @@ class SaveData(
         pullHistory = pullHistory.filterNotNull().let { list ->
             if (list.size > MAX_PULL_HISTORY) list.drop(list.size - MAX_PULL_HISTORY) else list
         }.toMutableList()
+
+        // 累计抽数（F3）：负值脏档钳到 0，绝不因脏数据让累计型成就判定异常。
+        if (totalPullCount < 0) totalPullCount = 0
 
         // UP 定轨标记：滤空 id、同池去重保首条。
         val seenFlagPools = HashSet<String>()
@@ -180,6 +199,13 @@ class SaveData(
     fun pullHistoryEntries(): List<PullLogEntry> = pullHistory.filterNotNull()
 
     companion object {
+        /**
+         * 新档起始星尘（H1，2026-08-28 审查修复）：原为 **999999**，系开发期调试遗留——
+         * 新玩家开局即可十连 600+ 次，抽卡与养成经济被完全压平。
+         * 1600 恰好等于一次十连（[GameService] 的 TenCost），保留「先来一发十连」的开局体验。
+         */
+        const val DEFAULT_SOFT_CURRENCY = 1600
+
         /** 战绩列表上限（recordBattle 与 sanitize 共用同一契约，禁止就地写 50）。 */
         const val MAX_BATTLE_RECORDS = 50
 
