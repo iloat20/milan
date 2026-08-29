@@ -5,12 +5,16 @@ import android.content.ClipboardManager
 import android.content.Context
 import android.widget.Toast
 import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -28,11 +32,13 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -44,6 +50,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -55,6 +62,7 @@ import androidx.compose.ui.unit.sp
 import com.milan.game.infrastructure.CrashReporter
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import com.milan.game.services.CharacterDataEntry
 import com.milan.game.ui.GameState
@@ -63,6 +71,7 @@ import com.milan.game.ui.components.GoldButton
 import com.milan.game.ui.components.NeonButton
 import com.milan.game.ui.components.PortraitImage
 import com.milan.game.ui.components.PortraitTarget
+import com.milan.game.ui.components.SealStamp
 import com.milan.game.ui.nav.GameNavBar
 import com.milan.game.ui.nav.NavItem
 import com.milan.game.ui.nav.ResourceBar
@@ -70,9 +79,9 @@ import com.milan.game.ui.effects.FluidBackground
 import com.milan.game.ui.theme.AppTheme
 
 /**
- * 主页（C# HomeActivity 翻译）。
- * 资源栏 / 主视觉（Hero 光晕 + 立绘漂浮 + 铭牌）/ 动作按钮 / 诸神名录横滑条 / 底部导航。
- * 立绘经 PortraitImage 按角色 CharacterId 动态加载（drawable/char_<rarity>_<pinyin>.png），
+ * 主页（水墨国风版）。
+ * 资源栏 / 主视觉（Hero 光晕 + 立绘漂浮 + 铭牌）/ 动画按钮 / 丹青名录横滑条 / 底部导航。
+ * 立绘经 PortraitImage 按角色 CharacterId 动态加载（drawable/char_<rarity>_<pinyin>.webp），
  * 缺图自动回退首字占位；R8 保留规则见 res/raw/keep.xml。
  */
 @Composable
@@ -85,6 +94,19 @@ fun HomeScreen(
     onOpenAchievements: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
+    var entered by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) { entered = true }
+    val titleAlpha by animateFloatAsState(
+        targetValue = if (entered) 1f else 0f,
+        animationSpec = tween(500),
+        label = "titleAlpha",
+    )
+    val titleOffset by animateFloatAsState(
+        targetValue = if (entered) 0f else 12f,
+        animationSpec = spring(dampingRatio = 0.7f, stiffness = Spring.StiffnessLow),
+        label = "titleOffset",
+    )
+
     Box(
         modifier = modifier.fillMaxSize(),
     ) {
@@ -100,14 +122,18 @@ fun HomeScreen(
             ) {
                 Column {
                     Text(
-                        text = "MILAN",
+                        text = "丹青录",
                         fontSize = 22.sp,
                         fontWeight = FontWeight.Bold,
                         color = AppTheme.Gold,
                         letterSpacing = 2.6.sp,
+                        modifier = Modifier.graphicsLayer {
+                            alpha = titleAlpha
+                            translationY = titleOffset.dp.toPx()
+                        },
                     )
                     Text(
-                        text = "诸神黄昏·东方",
+                        text = "山海经·神话卡牌",
                         fontSize = 10.sp,
                         color = AppTheme.Text2,
                         modifier = Modifier.padding(top = 1.dp),
@@ -122,17 +148,28 @@ fun HomeScreen(
                 val container = LocalWindowInfo.current.containerSize
                 val heroHeight =
                     if (container.width > container.height) 300.dp else 430.dp
+                val homeListState = rememberLazyListState()
+                // 水墨视差：滚动进度驱动 Hero 滞后
+                val heroParallax by remember {
+                    derivedStateOf {
+                        val first = homeListState.layoutInfo.visibleItemsInfo.firstOrNull()
+                        if (first != null && first.index == 0) {
+                            first.offset.toFloat() / first.size.coerceAtLeast(1)
+                        } else 0f
+                    }
+                }
                 LazyColumn(
+                    state = homeListState,
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = androidx.compose.foundation.layout.PaddingValues(
                         start = 14.dp, top = 6.dp, end = 14.dp, bottom = 8.dp
                     ),
                 ) {
-                    item { Hero(heroHeight) }
+                    item { Hero(heroHeight, heroParallax) }
                     item { Spacer(Modifier.height(10.dp)) }
                     item { HeroButtons(onOpenGacha, onOpenCollection, onOpenTower, onOpenAchievements) }
                     item { Spacer(Modifier.height(14.dp)) }
-                    item { HomeSectionTitle("诸神名录", "UNIFIED AVATARS") }
+                    item { HomeSectionTitle("丹青名录", "ROSTER") }
                     item { Spacer(Modifier.height(8.dp)) }
                     item { AvatarStrip(onOpenCharacter) }
                     item {
@@ -156,18 +193,29 @@ fun HomeScreen(
 
         // 上次异常退出现场回显
         CrashDialogIfAny()
+
+        // 朱印装饰：右上角
+        SealStamp(
+            text = "丹",
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(top = 52.dp, end = 14.dp)
+                .alpha(0.55f),
+        )
     }
 }
 
 // ── 主视觉：角色大图 + 底部铭牌 ──
 
 @Composable
-private fun Hero(fixedH: androidx.compose.ui.unit.Dp) {
+private fun Hero(fixedH: androidx.compose.ui.unit.Dp, scrollProgress: Float = 0f) {
     // 快照 revision 驱动：抽到更高稀有度角色后回主页，主视觉随之更新
-    // （此前 remember 无 key 缓存，组合不销毁就一直显示旧角色）
     val snap by GameState.snapshot.collectAsStateWithLifecycle()
     val def = remember(snap.revision) { featuredCharacter() }
     val rarityColor = AppTheme.rarityColor(def.baseRarity)
+
+    // 水墨视差：Hero 立绘以 0.4x 速率滚动，与内容层产生宣纸深度感
+    val parallaxOffset = scrollProgress * 0.4f
 
     Box(
         modifier = Modifier
@@ -181,7 +229,7 @@ private fun Hero(fixedH: androidx.compose.ui.unit.Dp) {
         Halo(rarityColor, Modifier.fillMaxSize())
 
         // 主视觉立绘：稀有度光晕之上叠真实立绘（缺图自动回退首字占位）
-        HeroPortrait(def, rarityColor, Modifier.fillMaxSize())
+        HeroPortrait(def, rarityColor, Modifier.fillMaxSize().graphicsLayer { translationY = parallaxOffset })
 
         // 底部暗化渐变 + 铭牌
         Column(
@@ -191,15 +239,15 @@ private fun Hero(fixedH: androidx.compose.ui.unit.Dp) {
                 .background(
                     Brush.verticalGradient(
                         listOf(
-                            Color(0xFF07070F).copy(alpha = 0f),
-                            Color(0xFF07070F).copy(alpha = 0.5f),
-                            Color(0xFF07070F).copy(alpha = 0.9f),
+                            AppTheme.BgDeepest.copy(alpha = 0f),
+                            AppTheme.BgDeepest.copy(alpha = 0.5f),
+                            AppTheme.BgDeepest.copy(alpha = 0.9f),
                         )
                     )
                 )
                 .padding(start = 18.dp, top = 48.dp, end = 18.dp, bottom = 16.dp),
         ) {
-            // 顶部金色渐隐分隔线
+            // 顶部金色渐隐分隔线（水墨画轴风格）
             Box(
                 Modifier
                     .fillMaxWidth()
@@ -255,7 +303,7 @@ private fun Hero(fixedH: androidx.compose.ui.unit.Dp) {
     }
 }
 
-/** 稀有度径向光晕：呼吸脉动（C# HaloView）。 */
+/** 稀有度径向光晕：呼吸脉动（水墨画意韵）。 */
 @Composable
 private fun Halo(color: Color, modifier: Modifier = Modifier) {
     val t = rememberInfiniteTransition(label = "halo")
@@ -282,12 +330,12 @@ private fun Halo(color: Color, modifier: Modifier = Modifier) {
     )
 }
 
-/** 主视觉立绘：稀有度渐变底 + 真实立绘（浮动缓动；C# ObjectAnimator 6s 循环）。
- * 立绘资源名 = 角色 CharacterId（drawable/char_<rarity>_<pinyin>.png），
+/** 主视觉立绘：稀有度渐变底 + 真实立绘（浮动缓动）。
+ * 立绘资源名 = 角色 CharacterId（drawable/char_<rarity>_<pinyin>.webp），
  * 经 PortraitImage 动态加载，缺图自动回退首字占位。 */
 @Composable
 private fun HeroPortrait(def: CharacterDataEntry, rarityColor: Color, modifier: Modifier = Modifier) {
-    // 立绘漂浮（±10dp 缓动，伪 3D 呼吸感；C# ObjectAnimator 6s 循环）
+    // 立绘漂浮（±10dp 缓动，伪 3D 呼吸感）
     val t = rememberInfiniteTransition(label = "float")
     val offsetY by t.animateFloat(
         initialValue = 0f, targetValue = -10f,
@@ -320,7 +368,7 @@ private fun HeroPortrait(def: CharacterDataEntry, rarityColor: Color, modifier: 
     }
 }
 
-/** 主视觉下方动作钮：金色召唤 + 霓虹图鉴；次行无尽之塔 / 成就双入口（2026-08 二期）。 */
+/** 主视觉下方动作钮：金箔召唤 + 石青图鉴；次行无尽之塔 / 成就双入口。 */
 @Composable
 private fun HeroButtons(
     onOpenGacha: () -> Unit,
@@ -335,7 +383,7 @@ private fun HeroButtons(
         ) {
             GoldButton("✦ 前往召唤", Modifier.weight(1f), onOpenGacha)
             Spacer(Modifier.width(12.dp))
-            NeonButton("神谱图鉴", Modifier.weight(1f), onOpenCollection)
+            NeonButton("丹青图鉴", Modifier.weight(1f), onOpenCollection)
         }
         Spacer(Modifier.height(10.dp))
         Row(
@@ -349,18 +397,15 @@ private fun HeroButtons(
     }
 }
 
-// ── 诸神名录：统一头像横滑 ──
+// ── 丹青名录：统一头像横滑 ──
 
-/** 名录优先精选（C# HomeActivity 同款语义）：运行时校验存在性——内容表 id 失配时
- *  该项跳过并按稀有度降序补足，不再整排静默消失（坑因：旧版硬编码 Triple 列表，
- *  data.json 改 id 后 `character(id)` 全 null，`?: return@items` 把横滑条清空）。 */
+/** 名录优先精选：运行时校验存在性——内容表 id 失配时该项跳过并按稀有度降序补足。 */
 private val PickIds = listOf(
     "char_ur_zhulong", "char_ur_xingtian", "char_ssr_fenghuang",
     "char_sr_bifang", "char_sr_jingwei", "char_ssr_leishen",
 )
 
-/** 名录条目：解析后的内容定义 + 展示文案（短名取 DisplayName 首个空格前段，
- *  出处小字用稀有度名——原手写「山海经/中国神话」与数据字段无映射，改用可推导事实）。 */
+/** 名录条目：解析后的内容定义 + 展示文案。 */
 private data class AvatarEntry(
     val def: CharacterDataEntry,
     val name: String,
@@ -398,10 +443,30 @@ private fun AvatarStrip(onOpenCharacter: (String) -> Unit) {
         verticalAlignment = Alignment.CenterVertically,
     ) {
         items(entries, key = { it.def.characterId }) { e ->
+            val idx = entries.indexOf(e)
+            var itemReady by remember { mutableStateOf(false) }
+            LaunchedEffect(Unit) {
+                delay(idx * 60L)
+                itemReady = true
+            }
+            val itemAlpha by animateFloatAsState(
+                targetValue = if (itemReady) 1f else 0f,
+                animationSpec = tween(300),
+                label = "itemAlpha",
+            )
+            val itemOffset by animateFloatAsState(
+                targetValue = if (itemReady) 0f else 10f,
+                animationSpec = spring(dampingRatio = 0.75f, stiffness = Spring.StiffnessLow),
+                label = "itemOffset",
+            )
             Column(
                 modifier = Modifier
                     .clickable { onOpenCharacter(e.def.characterId) }
-                    .padding(end = 12.dp),
+                    .padding(end = 12.dp)
+                    .graphicsLayer {
+                        alpha = itemAlpha
+                        translationY = itemOffset.dp.toPx()
+                    },
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 AvatarCircle(e.def, Modifier.size(58.dp))
@@ -418,29 +483,56 @@ private fun AvatarStrip(onOpenCharacter: (String) -> Unit) {
     }
 }
 
-/** 名录头像：稀有度色圆环 + 真实立绘（C# UnifiedAvatarView；缺图自动回退首字）。 */
+/** 名录头像：水墨笔触圆环 + 真实立绘（缺图自动回退首字）。 */
 @Composable
 private fun AvatarCircle(def: CharacterDataEntry, modifier: Modifier = Modifier) {
     val c = AppTheme.rarityColor(def.baseRarity)
-    Box(
-        modifier = modifier
-            .clip(CircleShape)
-            .background(c.copy(alpha = 0.20f))
-            .border(1.5.dp, c.copy(alpha = 0.7f), CircleShape),
-        contentAlignment = Alignment.Center,
-    ) {
+    Box(modifier = modifier, contentAlignment = Alignment.Center) {
+        // 水墨笔触圆环：多层不同粗细/透明度的环叠加，模拟毛笔蘸墨的自然笔触
+        Canvas(Modifier.fillMaxSize()) {
+            val cx = size.width / 2f
+            val cy = size.height / 2f
+            val maxR = minOf(cx, cy)
+            // 外环：浓墨主笔
+            drawCircle(
+                color = c.copy(alpha = 0.75f),
+                radius = maxR,
+                style = Stroke(width = 3.dp.toPx()),
+            )
+            // 中环：淡墨渗化
+            drawCircle(
+                color = c.copy(alpha = 0.35f),
+                radius = maxR - 2.dp.toPx(),
+                style = Stroke(width = 1.5.dp.toPx()),
+            )
+            // 内环：极淡水痕
+            drawCircle(
+                color = c.copy(alpha = 0.15f),
+                radius = maxR - 4.dp.toPx(),
+                style = Stroke(width = 0.8.dp.toPx()),
+            )
+        }
+        // 背底：浓墨深色衬托
+        Box(
+            Modifier
+                .fillMaxSize()
+                .clip(CircleShape)
+                .background(AppTheme.BgDeepest),
+        )
         PortraitImage(
             characterId = def.characterId,
             rarity = def.baseRarity,
             name = def.displayName,
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier
+                .fillMaxSize()
+                .clip(CircleShape),
             contentScale = ContentScale.Crop,
             target = PortraitTarget.Thumb,
         )
     }
 }
 
-// ── 小标题：左金线 + 标题 + 英文副标 ──
+// ── 小标题：左金线 + 标题 + 英文副标（水墨画轴风格） ──
 
 @Composable
 private fun HomeSectionTitle(title: String, en: String) {
@@ -473,7 +565,7 @@ private fun HomeSectionTitle(title: String, en: String) {
     }
 }
 
-// ── 主视觉角色选取（C# FeaturedCharacter）──
+// ── 主视觉角色选取 ──
 
 private fun featuredCharacter(): CharacterDataEntry {
     // 存档角色可能在内容表查不到：先取已拥有最高稀有度（Def 非空）
@@ -498,7 +590,7 @@ private fun featuredCharacter(): CharacterDataEntry {
     )
 }
 
-// ── 上次异常退出现场回显（C# ShowPreviousCrashIfAny）──
+// ── 上次异常退出现场回显 ──
 
 @Composable
 private fun CrashDialogIfAny() {
@@ -507,8 +599,6 @@ private fun CrashDialogIfAny() {
     var report by remember { mutableStateOf("") }
 
     LaunchedEffect(Unit) {
-        // P3-6：崩溃取证文件读取移到 IO 线程（readAndClear/previousBootTrace 是文件 IO，
-        // 此前在 LaunchedEffect 默认主线程调度器上执行）
         val r = withContext(Dispatchers.IO) {
             var r = CrashReporter.readAndClear() ?: ""
             if (r.isEmpty() && CrashReporter.previousBootIncomplete()) {
@@ -521,13 +611,9 @@ private fun CrashDialogIfAny() {
             report = r
             show = true
         }
-        // 启动流程完成标记：HomeScreen 首次组合成功 = 启动走完。
-        // 坑因：此前该标记从未写入，previousBootIncomplete() 恒真，每次启动都误报「上次未走完/疑似 native 崩溃」。
-        // 必须放在回显判断之后：本轮标记只影响下一次启动的判定，与 prev_boot_trace（上一轮归档）互不干扰。
         CrashReporter.boot("home.oncreate.done")
     }
 
-    // 2026-08 UI 现代化：Material AlertDialog/TextButton → GlassDialog/NeonButton（全站统一视觉语言）
     GlassDialog(
         show = show,
         onDismiss = { show = false },

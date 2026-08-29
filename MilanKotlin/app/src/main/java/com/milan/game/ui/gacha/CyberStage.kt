@@ -45,6 +45,7 @@ import androidx.compose.ui.unit.sp
 import com.milan.game.services.CharacterDataEntry
 import com.milan.game.services.PullResult
 import com.milan.game.ui.theme.AppTheme
+import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.random.Random
 import kotlinx.coroutines.delay
@@ -72,20 +73,24 @@ import kotlinx.coroutines.isActive
  */
 enum class RevealStage { Charge, Beam, Single, Ten, Done }
 
-/** 赛博霓虹演出色板（仅演出族文件使用；不动 AppTheme —— 该文件与他人并行修改中）。 */
+/**
+ * 水墨国风演出色板（仅演出族文件使用；不动 AppTheme —— 该文件与他人并行修改中）。
+ * 从赛博霓虹（青/品红/紫）迁移到水墨调性（朱砂/金箔/石青/浓墨/宣纸白）。
+ * 命名保持 Cyan/Magenta/VioletGlow 等不变，以最小化对 CyberCards/Beam/Charge 的侵入。
+ */
 internal object CyberPalette {
-    /** 霓虹青（主色） */
-    val Cyan = Color(0xFF00E5FF)
-    /** 霓虹品红（辅色） */
-    val Magenta = Color(0xFFFF2DD1)
-    /** 暮紫辉光 */
-    val VioletGlow = Color(0xFF7A5CFF)
-    /** 演出深底 */
-    val DeepBg = Color(0xFF05060F)
-    /** 光柱核心（近白） */
-    val BeamCore = Color(0xFFE0F9FF)
-    /** 网格线 */
-    val Grid = Color(0x2600E5FF)
+    /** 朱砂红（主色，替代霓虹青）—— 对应 AppTheme.SealRed / Danger */
+    val Cyan = Color(0xFFBF3A3A)
+    /** 金箔（辅色，替代霓虹品红）—— 对应 AppTheme.Gold */
+    val Magenta = Color(0xFFD4A853)
+    /** 石青淡彩（替代暮紫辉光）—— 对应 AppTheme.Frost */
+    val VioletGlow = Color(0xFF7EBAB1)
+    /** 浓墨深底（替代赛博深底） */
+    val DeepBg = Color(0xFF0A0A0F)
+    /** 宣纸白（光柱核心，替代赛博白） */
+    val BeamCore = Color(0xFFF0E8D8)
+    /** 淡墨网格线 */
+    val Grid = Color(0x26F0E8D8)
 }
 
 /** CyberHerald 内核辉光渐变色板（文件级常量：配合 drawWithCache 消除逐帧 Brush/色表分配）。 */
@@ -116,7 +121,7 @@ internal fun rarityLabel(r: Int): String = when (r) {
     else -> "R"
 }
 
-/** 故障双影文字：青/品红残影错位 + 主色正文。 */
+/** 水墨双影文字：朱砂/金箔残影错位 + 主色正文。 */
 @Composable
 internal fun GlitchText(
     text: String,
@@ -185,7 +190,7 @@ private fun NeonGridBackdrop(modifier: Modifier = Modifier) {
     }
 }
 
-/** 故障闪烁层：随机青/品红条带（seed 每 90ms 重掷，营造数据错乱感）。 */
+/** 水墨晕染闪烁层：随机朱砂/金箔条带（seed 每 90ms 重掷，营造墨迹渗透感）。 */
 @Composable
 private fun GlitchField(modifier: Modifier = Modifier) {
     var seed by remember { mutableIntStateOf(0) }
@@ -215,7 +220,7 @@ private fun GlitchField(modifier: Modifier = Modifier) {
 
 /**
  * 待机能量枢纽（替换旧八卦法阵的常驻演出，GachaScreen 主界面抽卡区）。
- * 虚线外环 + 品红旋转刻度弧 + 青紫内核脉动；180° 周期 14s，内核呼吸 1.8s。
+ * 虚线外环 + 金箔旋转刻度弧 + 朱砂内核脉动；180° 周期 14s，内核呼吸 1.8s。
  */
 @Composable
 fun CyberHerald(modifier: Modifier = Modifier) {
@@ -273,12 +278,58 @@ fun CyberHerald(modifier: Modifier = Modifier) {
                     }
                 },
         )
+        // 墨粒轨道：8 颗墨点绕中心旋转，营造水墨丹青仪式感
+        InkParticles(Modifier.fillMaxSize())
         Text("✦", color = CyberPalette.BeamCore, fontSize = 30.sp)
     }
 }
 
 /**
- * 演出总装：深底 + 全息网格 + 故障层 + 按 [RevealStage] 渲染阶段内容 + 震屏 + 整屏点击跳过。
+ * 待机枢纽内嵌墨粒轨道：8 颗墨点沿椭圆轨道绕中心旋转，
+ * 半径/速度/相位各异，配合 sin 波产生有机呼吸感。
+ */
+@Composable
+private fun InkParticles(modifier: Modifier = Modifier) {
+    var time by remember { mutableFloatStateOf(0f) }
+    LaunchedEffect(Unit) {
+        while (isActive) {
+            withFrameNanos { nano -> time = nano / 1_000_000_000f }
+        }
+    }
+    // 固定种子保证每次渲染一致
+    val particles = remember {
+        val r = Random(20260829)
+        List(8) { i ->
+            val radius = 0.34f + r.nextFloat() * 0.14f // 0.34~0.48（归一化，乘画布半径）
+            val speed = 0.45f + r.nextFloat() * 0.3f   // 0.45~0.75 rad/s
+            val phase = r.nextFloat() * 6.28f
+            val wobbleAmp = 0.02f + r.nextFloat() * 0.03f
+            val dotRadius = 2.5f + r.nextFloat() * 2f   // dp
+            Triple(radius, speed, phase) to Pair(wobbleAmp, dotRadius)
+        }
+    }
+    Canvas(modifier) {
+        val cx = size.width / 2f
+        val cy = size.height / 2f
+        val baseR = size.minDimension * 0.42f
+        particles.forEach { (orbit, props) ->
+            val (radius, speed, phase) = orbit
+            val (wobbleAmp, dotR) = props
+            val angle = time * speed + phase
+            val r = baseR * radius * (1f + wobbleAmp * sin(angle * 2.3f))
+            val px = cx + r * cos(angle)
+            val py = cy + r * sin(angle) * 0.85f // 椭圆压扁
+            drawCircle(
+                color = CyberPalette.Cyan.copy(alpha = 0.28f),
+                radius = dotR.dp.toPx(),
+                center = Offset(px, py),
+            )
+        }
+    }
+}
+
+/**
+ * 演出总装：浓墨深底 + 水墨网格 + 晕染层 + 按 [RevealStage] 渲染阶段内容 + 震屏 + 整屏点击跳过。
  * 翻到 SSR/UR 触发震屏（Single 进入时按稀有度，Ten 翻开时按单卡稀有度）。
  * stage == Done 时调用方不应组合本组件（外层 if 控制）。
  */

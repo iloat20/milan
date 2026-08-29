@@ -12,14 +12,20 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.LinearEasing
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -27,6 +33,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.milan.game.domain.battle.UnitStats
 import com.milan.game.domain.progression.TalentEngine
 import com.milan.game.services.TalentNodeData
 import com.milan.game.ui.GameState
@@ -97,7 +104,11 @@ internal fun LevelPanel(
 ) {
     val save = view.save
     val cap = GameState.service.maxLevelForStage(save.stage)
-    val soft = GameState.service.snapshot.value.softCurrency
+    // M2（2026-08-28 审查修复）：改为订阅快照（与上方 ResourceBar 同范式）。
+    // 直读 .value 不建立订阅，星尘变化不会触发本面板重组，升级按钮的可用性会停留在旧值，
+    // 此前仅靠外层重组「碰巧」生效。
+    val snap by GameState.snapshot.collectAsStateWithLifecycle()
+    val soft = snap.softCurrency
     val (cur, need) = GameState.service.expProgress(save.characterId)
 
     val canLevel = owned && save.level < cap && soft >= GameState.service.levelCost(save.level)
@@ -129,23 +140,46 @@ internal fun LevelPanel(
             }
             Spacer(Modifier.height(8.dp))
 
-            // 经验条（暗轨 + 金填充，权重控制比例）
-            Row(
+            // 经验条（暗轨 + 金填充，动画过渡）
+            val targetFraction = cur.toFloat() / need.toFloat().coerceAtLeast(1f)
+            val animatedFraction by animateFloatAsState(
+                targetValue = targetFraction,
+                animationSpec = tween(600, easing = LinearEasing),
+                label = "expFill",
+            )
+            Box(
                 Modifier
                     .fillMaxWidth()
                     .height(12.dp)
                     .clip(RoundedCornerShape(6.dp))
-                    .background(Color(0x3C000000)),
+                    .background(Color(0x3C0A0A0F)),
             ) {
-                // 满级时 cur==need，填充占满整条（C# weight 用 max(0.001, …) 防除零）
+                // 金墨汁填充：从左向右平滑增长
                 Box(
                     Modifier
+                        .fillMaxWidth(animatedFraction.coerceIn(0f, 1f))
                         .fillMaxSize()
-                        .weight(cur.toFloat().coerceAtLeast(0.001f))
                         .clip(RoundedCornerShape(6.dp))
                         .background(AppTheme.Gold),
                 )
-                Box(Modifier.weight((need - cur).toFloat().coerceAtLeast(0.001f)))
+                // 填充前沿光效：微弱脉冲辉光
+                Box(
+                    Modifier
+                        .fillMaxWidth(animatedFraction.coerceIn(0f, 1f))
+                        .height(12.dp),
+                    contentAlignment = Alignment.CenterEnd,
+                ) {
+                    Box(
+                        Modifier
+                            .width(8.dp)
+                            .fillMaxSize()
+                            .background(
+                                Brush.horizontalGradient(
+                                    colors = listOf(Color.Transparent, AppTheme.Gold.copy(alpha = 0.6f)),
+                                ),
+                            ),
+                    )
+                }
             }
             Spacer(Modifier.height(12.dp))
 
@@ -202,8 +236,11 @@ internal fun AscendPanel(
     onAscend: () -> Unit,
 ) {
     val save = view.save
-    val soft = GameState.service.snapshot.value.softCurrency
-    val frags = GameState.service.getStarFragments()
+    // M2（2026-08-28 审查修复）：订阅快照（同 LevelPanel / ResourceBar 范式），
+    // 直读 .value 不建立订阅会让突破按钮的可用性停留在旧余额。
+    val snap by GameState.snapshot.collectAsStateWithLifecycle()
+    val soft = snap.softCurrency
+    val frags = snap.starFragments
     val atMax = save.stage >= defMaxStage
     val aFrag = GameState.service.ascendFragments(save.stage)
     val aSoft = GameState.service.ascendSoft(save.stage)
@@ -303,6 +340,17 @@ private data class StatRow(
     val nstar: Int?,
 )
 
+/**
+ * [StatsPanel] 的四组推导结果（M4：整体记忆化用）。
+ * 当前属性 + 「升一级 / 突破 / 升星」三个预览，共 4 次 [GameState.computeStats] 全量推导。
+ */
+private data class StatsBundle(
+    val cur: UnitStats,
+    val nextLv: UnitStats?,
+    val nextStg: UnitStats?,
+    val nextStar: UnitStats?,
+)
+
 @Composable
 internal fun StatsPanel(
     view: OwnedCharacterView,
@@ -310,13 +358,27 @@ internal fun StatsPanel(
     defMaxStars: Int,
 ) {
     val save = view.save
-    val cur = GameState.computeStats(view)
-    val cap = GameState.service.maxLevelForStage(save.stage)
-    val nextLv = if (save.level < cap) GameState.computeStatsAt(view, save.level + 1, save.stage) else null
-    val nextStg = if (save.stage < defMaxStage) GameState.computeStatsAt(view, save.level, save.stage + 1) else null
-    val nextStar = if (save.stars < defMaxStars) {
-        GameState.computeStatsAt(view, save.level, save.stage, save.stars + 1)
-    } else null
+    // M4（2026-08-28 审查修复）：4 次全属性推导（当前 + 升一级/突破/升星预览）
+    // 原先在每次重组时无条件重算；改为按养成度键记忆化，只在相关字段变化时重算。
+    val statsBundle = remember(
+        save.characterId, save.level, save.stage, save.stars,
+        save.talentPoints.size, defMaxStage, defMaxStars,
+    ) {
+        val cur = GameState.computeStats(view)
+        val cap = GameState.service.maxLevelForStage(save.stage)
+        StatsBundle(
+            cur = cur,
+            nextLv = if (save.level < cap) GameState.computeStatsAt(view, save.level + 1, save.stage) else null,
+            nextStg = if (save.stage < defMaxStage) GameState.computeStatsAt(view, save.level, save.stage + 1) else null,
+            nextStar = if (save.stars < defMaxStars) {
+                GameState.computeStatsAt(view, save.level, save.stage, save.stars + 1)
+            } else null,
+        )
+    }
+    val cur = statsBundle.cur
+    val nextLv = statsBundle.nextLv
+    val nextStg = statsBundle.nextStg
+    val nextStar = statsBundle.nextStar
 
     val rows = listOf(
         StatRow("攻击", cur.atk, nextLv?.atk, nextStg?.atk, nextStar?.atk),
@@ -462,7 +524,7 @@ private fun TalentNode(
     val bg = when {
         allocated -> col.copy(alpha = 70f / 255f)
         canAlloc -> col.copy(alpha = 28f / 255f)
-        else -> Color(0x1E14101E)
+        else -> AppTheme.SurfaceNested
     }
     val stroke = when {
         allocated -> col
