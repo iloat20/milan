@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.milan.game.ui.effects.inkSplash
 import com.milan.game.ui.theme.AppTheme
 
 /**
@@ -100,6 +101,7 @@ fun NeonButton(
             .background(color.copy(alpha = 0.06f), RoundedCornerShape(10.dp))
             .border(1.5.dp, color, RoundedCornerShape(10.dp))
             .clickable(enabled = enabled, onClick = onClick)
+            .inkSplash()
             .padding(horizontal = 28.dp, vertical = 12.dp),
         contentAlignment = Alignment.Center,
     ) {

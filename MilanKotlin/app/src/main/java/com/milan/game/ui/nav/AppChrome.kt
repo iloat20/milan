@@ -1,7 +1,21 @@
 package com.milan.game.ui.nav
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.SizeTransform
+import androidx.compose.animation.core.InfiniteRepeatableSpec
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateIntAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
+import kotlin.math.sin
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -22,6 +36,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shadow
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
@@ -68,22 +84,45 @@ fun AppTopBar(
                 color = AppTheme.Gold,
             )
         }
-        Text(
-            text = title,
-            fontSize = 20.sp,
-            fontWeight = FontWeight.Bold,
-            color = AppTheme.Text1,
-            letterSpacing = 0.5.sp,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            style = TextStyle(
-                shadow = Shadow(
-                    color = AppTheme.Gold.copy(alpha = 0.6f),
-                    blurRadius = 8f,
-                    offset = androidx.compose.ui.geometry.Offset(0f, 2f),
+        AnimatedContent(
+            targetState = title,
+            transitionSpec = {
+                slideInHorizontally { it / 3 } + fadeIn(tween(250)) togetherWith
+                    slideOutHorizontally { -it / 3 } + fadeOut(tween(200))
+            },
+            label = "topBarTitle",
+        ) { t ->
+            // 水墨浮动：标题文字以 3s 周期微幅上下浮动 ±1.5dp，如墨滴在水面轻荡
+            val infiniteTransition = rememberInfiniteTransition(label = "titleFloat")
+            val phase by infiniteTransition.animateFloat(
+                initialValue = 0f,
+                targetValue = 6.2832f, // 2π
+                animationSpec = InfiniteRepeatableSpec(
+                    animation = tween(durationMillis = 3000, easing = LinearEasing),
+                    repeatMode = RepeatMode.Restart,
                 ),
-            ),
-        )
+                label = "titlePhase",
+            )
+            Text(
+                text = t,
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold,
+                color = AppTheme.Text1,
+                letterSpacing = 0.5.sp,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.graphicsLayer {
+                    translationY = sin(phase) * 1.5f
+                },
+                style = TextStyle(
+                    shadow = Shadow(
+                        color = AppTheme.Gold.copy(alpha = 0.6f),
+                        blurRadius = 8f,
+                        offset = androidx.compose.ui.geometry.Offset(0f, 2f),
+                    ),
+                ),
+            )
+        }
         if (showResource) {
             Spacer(Modifier.weight(1f))
             ResourceBar()

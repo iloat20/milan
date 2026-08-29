@@ -10,9 +10,11 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.unit.dp
@@ -87,10 +89,17 @@ fun CharacterDetailScreen(
     val rarityCol = AppTheme.rarityColor(view.rarity)
     val (eFrom, _, _, eGlyph) = ElementTheme.forElement(view.element)
 
-    // P3-1：属性计算 remember 化——快照驱动的重组不再重复全表推导，仅 save/def 变化时重算
-    val stats = remember(view) { GameState.computeStats(view) }
+    // P3-1：属性计算 remember 化——快照驱动的重组不再重复全表推导，仅 save/def 变化时重算。
+    // M3（2026-08-28 审查修复）：key 必须是**稳定值**。原用 remember(view)，而 view 每次重组
+    // 都在此处新建（见上方 :86），OwnedCharacterView 又是无 equals 的普通 class →
+    // key 恒不相等、记忆化完全失效，与注释意图相反。改用影响推导结果的稳定字段。
+    val stats = remember(
+        def, save.characterId, save.level, save.stage, save.stars, save.talentPoints.size,
+    ) { GameState.computeStats(view) }
     // C# ComputeBaseStats：StatAtLevel(1, stage, 1f) —— stars=1 → 星级倍率 ×1.0
-    val baseStats = remember(view) { GameState.computeStatsAt(view, 1, max(1, save.stage), stars = 1) }
+    val baseStats = remember(def, save.characterId, save.stage) {
+        GameState.computeStatsAt(view, 1, max(1, save.stage), stars = 1)
+    }
 
     val chars = remember { GameState.service.characters }
     // C# SwitchCharacter：全表循环切换（含未拥有角色，图鉴剪影也能左右浏览）
@@ -118,11 +127,18 @@ fun CharacterDetailScreen(
         }
     } else Modifier
 
+    // 水墨视差：滚动时立绘滞后 30%，产生宣纸层叠深度感
+    val scrollState = rememberScrollState()
+    val heroParallax by remember {
+        derivedStateOf { scrollState.value * 0.3f }
+    }
+    val parallaxPortraitModifier = portraitModifier.graphicsLayer { translationY = heroParallax }
+
     PageBackground(modifier = modifier) {
         Column(
             Modifier
                 .fillMaxSize()
-                .verticalScroll(rememberScrollState()),
+                .verticalScroll(scrollState),
         ) {
             SubPageHero(
                 view = view,
@@ -133,7 +149,7 @@ fun CharacterDetailScreen(
                 fadeHeight = 150.dp,
                 owned = owned,
                 onOpenProgression = onOpenProgression,
-                portraitModifier = portraitModifier,
+                portraitModifier = parallaxPortraitModifier,
                 onBack = onBack,
                 onPrev = { switch(-1) },
                 onNext = { switch(1) },

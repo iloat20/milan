@@ -2,9 +2,11 @@ package com.milan.game.ui.components
 
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.SharedTransitionScope
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -21,11 +23,16 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -33,22 +40,16 @@ import androidx.compose.ui.unit.sp
 import com.milan.game.ui.LocalSharedTransitionScope
 import com.milan.game.ui.theme.AppTheme
 import com.milan.game.ui.theme.ElementTheme
+import kotlinx.coroutines.launch
 
 /**
- * 角色卡（R1/I1 统一：DeckCard / ListCard / CollectionCard 三份逐字重复模板收敛至此）。
+ * 角色卡 — 水墨国风版（宣纸底 + 印章稀有度 + 金箔边框）。
  *
- * 2026-08 卡牌化重构（对标主流卡牌的呈现惯例——立绘即卡面）：
- * - 立绘占卡面主体：竖版定比（aspectRatio 0.82），不再是小缩略图条；
- * - 元素渐变打底（from→to 对角渐入 Surface），替代纯色淡底；
- * - 稀有度角标（左上胶囊）+ 元素徽章（右上圆片）悬浮在卡面上，替代文本行罗列；
- * - 卡面底部暗化渐变承托视觉重心；铭牌区收进下栏（名字/称号/footer 插槽）。
- *
- * 差异走参数：
- *  - [locked] 未拥有蒙层（黑底 + 锁，立绘成剪影，图鉴页用）；
- *  - [animatedVisibilityScope] 共享元素过渡作用域（宿主页 NavHost composable 的 `this`；
- *    传 null 安全降级为普通渲染——旧接入点不传也不崩）；
- *  - [footer] 铭牌区末行插槽（星级 / 「未获得」，可为 null）。
- * 共享元素 key 与详情页 Hero 同约定：`portrait_<characterId>`（全 app 唯一，见 CharacterDetailScreen.HeroRegion）。
+ * 2026-08 水墨国风重构：
+ * - 卡面底色从暗紫玻璃切换到墨色宣纸感；
+ * - 边框从纯色切换到金箔描边（UR 时增强）；
+ * - 稀有度角标改为朱砂/金箔印章风格；
+ * - 元素渐变打底保留但降低饱和度适配水墨调性。
  */
 @Composable
 fun CharacterCard(
@@ -76,36 +77,53 @@ fun CharacterCard(
         }
     } else Modifier
 
+    // ── 按压缩放动画（水墨卡牌微交互）──
+    val scale = remember { Animatable(1f) }
+    val scope = rememberCoroutineScope()
+
     Column(
         modifier = modifier
-            .padding(5.dp) // C# margin 5dp
+            .graphicsLayer {
+                scaleX = scale.value
+                scaleY = scale.value
+            }
+            .padding(5.dp)
             .clip(MaterialTheme.shapes.large)
             .background(AppTheme.Surface, MaterialTheme.shapes.large)
-            .border(2.dp, rarityCol, MaterialTheme.shapes.large)
-            .clickable(onClick = onClick),
+            .border(1.5.dp, rarityCol.copy(alpha = 0.6f), MaterialTheme.shapes.large)
+            .pointerInput(Unit) {
+                detectTapGestures(
+                    onPress = {
+                        scope.launch { scale.animateTo(0.96f, spring()) }
+                        tryAwaitRelease()
+                        scope.launch { scale.animateTo(1f, spring()) }
+                        onClick()
+                    }
+                )
+            },
     ) {
-        // ── 卡面主视觉：立绘占主导（C# 卡牌语义：art 即 card face）──
+        // ── 卡面主视觉：立绘占主导 ──
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .aspectRatio(0.82f)
                 .then(portraitModifier),
         ) {
-            // 元素渐变打底（缺图回退时它就是底色）
+            // 元素渐变打底（水墨风：降低饱和度）
             Box(
                 Modifier
                     .fillMaxSize()
                     .background(
                         Brush.verticalGradient(
                             listOf(
-                                elem.from.copy(alpha = 0.34f),
-                                elem.to.copy(alpha = 0.12f),
+                                elem.from.copy(alpha = 0.28f),
+                                elem.to.copy(alpha = 0.10f),
                                 AppTheme.Surface,
                             ),
                         ),
                     ),
             )
-            // 立绘（Crop 填满卡面；缺图回退稀有度渐变 + 首字）
+            // 立绘
             PortraitImage(
                 characterId = characterId,
                 rarity = rarity,
@@ -117,17 +135,18 @@ fun CharacterCard(
                 glowScale = 0.7f,
             )
 
-            // 稀有度角标（左上胶囊）
+            // 稀有度角标（印章风格：圆角 + 金箔/朱砂底色）
             Text(
                 text = AppTheme.rarityName(rarity),
                 style = MaterialTheme.typography.labelSmall,
                 fontWeight = FontWeight.Bold,
-                color = AppTheme.BgDeepest,
+                color = if (rarity >= 4) AppTheme.GoldTextOn else AppTheme.BgDeepest,
                 modifier = Modifier
                     .align(Alignment.TopStart)
                     .padding(6.dp)
                     .clip(MaterialTheme.shapes.extraSmall)
                     .background(rarityCol.copy(alpha = 0.88f))
+                    .border(0.5.dp, rarityCol, MaterialTheme.shapes.extraSmall)
                     .padding(horizontal = 7.dp, vertical = 2.dp),
             )
 
@@ -138,14 +157,14 @@ fun CharacterCard(
                     .padding(6.dp)
                     .size(24.dp)
                     .clip(CircleShape)
-                    .background(Color.Black.copy(alpha = 0.35f))
+                    .background(AppTheme.BgDeepest.copy(alpha = 0.5f))
                     .border(1.dp, elem.glow.copy(alpha = 0.9f), CircleShape),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(text = elem.glyph, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold, color = elem.glow)
             }
 
-            // 底部暗化渐变（承托铭牌视觉重心）
+            // 底部暗化渐变
             Box(
                 Modifier
                     .align(Alignment.BottomCenter)
@@ -153,13 +172,12 @@ fun CharacterCard(
                     .height(42.dp)
                     .background(
                         Brush.verticalGradient(
-                            listOf(Color.Transparent, Color.Black.copy(alpha = 0.55f)),
+                            listOf(Color.Transparent, AppTheme.BgDeepest.copy(alpha = 0.7f)),
                         ),
                     ),
             )
 
             if (locked) {
-                // 未收录：黑蒙层 + 锁（立绘成剪影）；盖住角标之上保持剪影语义
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
@@ -171,7 +189,7 @@ fun CharacterCard(
             }
         }
 
-        // ── 铭牌区：名字 / 称号 / footer（星级等）──
+        // ── 铭牌区：名字 / 称号 / footer ──
         Column(Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 8.dp)) {
             Text(
                 text = name,

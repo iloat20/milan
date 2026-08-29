@@ -5,11 +5,6 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.SharedTransitionLayout
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -62,6 +57,7 @@ import com.milan.game.ui.nav.SettingsRoute
 import com.milan.game.ui.nav.ShopRoute
 import com.milan.game.ui.nav.TowerRoute
 import com.milan.game.ui.nav.toNavRoute
+import com.milan.game.ui.nav.InkTransitions
 import com.milan.game.ui.progression.ProgressionScreen
 import com.milan.game.ui.shop.ShopScreen
 import com.milan.game.ui.settings.SettingsScreen
@@ -186,9 +182,11 @@ private fun MilanNavHost(openGachaOnStart: Boolean = false) {
                 navController = navController,
                 startDestination = HomeRoute,
                 modifier = Modifier.fillMaxSize(),
-                // 统一过渡：fade + 轻微上滑（D4，与原 AnimatedContent 一致；Predictive Back 由 Navigation 自动接入）
-                enterTransition = { fadeIn(tween(280)) + slideInVertically(initialOffsetY = { it / 24 }) },
-                exitTransition = { fadeOut(tween(200)) + slideOutVertically(targetOffsetY = { -it / 24 }) },
+                // 水墨国风转场：墨汁泼入/干涸（InkTransitions）
+                enterTransition = { InkTransitions.slideInFromRight },
+                exitTransition = { InkTransitions.slideOutToLeft },
+                popEnterTransition = { InkTransitions.slideInFromLeft },
+                popExitTransition = { InkTransitions.slideOutToRight },
             ) {
                 composable<HomeRoute> {
                     HomeScreen(
