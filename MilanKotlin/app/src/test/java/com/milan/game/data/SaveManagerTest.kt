@@ -32,7 +32,7 @@ class SaveManagerTest {
 
         val data = manager.load()
 
-        assertEquals(999999, data.softCurrency)
+        assertEquals(SaveData.DEFAULT_SOFT_CURRENCY, data.softCurrency)
         assertNotNull(manager.current)
         assertTrue(provider.traces.isEmpty())
     }
@@ -61,7 +61,7 @@ class SaveManagerTest {
 
         val data = manager.load()
 
-        assertEquals(999999, data.softCurrency)
+        assertEquals(SaveData.DEFAULT_SOFT_CURRENCY, data.softCurrency)
         assertEquals(listOf("save.load.fallback: all sources corrupt"), provider.traces)
     }
 
@@ -73,7 +73,7 @@ class SaveManagerTest {
 
         val data = manager.load()
 
-        assertEquals(999999, data.softCurrency)
+        assertEquals(SaveData.DEFAULT_SOFT_CURRENCY, data.softCurrency)
         assertTrue(
             "应留痕 io 失败：${provider.traces}",
             provider.traces.any { it.startsWith("save.load.failed:") && it.contains("io boom") },
@@ -88,7 +88,7 @@ class SaveManagerTest {
         assertTrue(manager.save())
 
         assertNotNull(manager.current)
-        assertEquals(999999, manager.current?.softCurrency)
+        assertEquals(SaveData.DEFAULT_SOFT_CURRENCY, manager.current?.softCurrency)
     }
 
     @Test

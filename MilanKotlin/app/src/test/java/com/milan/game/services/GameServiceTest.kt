@@ -3,6 +3,7 @@ package com.milan.game.services
 import com.milan.game.data.BattleRecord
 import com.milan.game.data.CharacterSaveState
 import com.milan.game.data.ItemSaveState
+import com.milan.game.data.SaveData
 import com.milan.game.data.SaveProvider
 import com.milan.game.domain.progression.EconomyFormulas
 import com.milan.game.infrastructure.eventbus.CurrencyChanged
@@ -17,6 +18,13 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
+
+/**
+ * 测试基准余额：多数用例要做「十连 + 商店 + 养成」多步经济操作，需要一个充裕起点。
+ * 刻意不复用 [RICH_SOFT] —— 那是**产品数值**（H1 已从 999999 调为 1600），
+ * 产品数值调整不应牵动测试断言。需要验证余额不足的用例请显式花光或传入小额。
+ */
+private const val RICH_SOFT = 1_000_000
 
 /**
  * GameService 编排层测试（C# 无对应测试，补事务关键路径）：
@@ -100,7 +108,9 @@ class GameServiceTest {
         provider: FakeProvider = FakeProvider(),
         content: String? = testContent,
         seed: Long = 42,
+        soft: Int = RICH_SOFT,
     ): GameService = GameService(provider, content, provider.traces::add, Random(seed))
+        .also { it.saveData.softCurrency = soft }
 
     // ── 抽卡 ──
 
@@ -124,7 +134,7 @@ class GameServiceTest {
         assertTrue(results.drop(1).all { !it.isNew })
         assertEquals(0, results.first().fragmentsAwarded)
         assertTrue(results.drop(1).all { it.fragmentsAwarded == 20 })
-        assertEquals(999999 - 1600, service.saveData.softCurrency)
+        assertEquals(RICH_SOFT - 1600, service.saveData.softCurrency)
         // 新角色只追加一条拥有条目；9 次重复 → 9×20 = 180 碎片
         assertEquals(1, service.saveData.ownedCharacters.size)
         assertEquals(180, service.getStarFragments())
@@ -166,7 +176,7 @@ class GameServiceTest {
         assertEquals(1, results.size)
         assertTrue(results[0].isNew)
         assertEquals(0, results[0].fragmentsAwarded)
-        assertEquals(999999 - 160, service.saveData.softCurrency)
+        assertEquals(RICH_SOFT - 160, service.saveData.softCurrency)
         assertEquals(1, events.currency)
     }
 
@@ -189,7 +199,7 @@ class GameServiceTest {
         val service = makeService()
 
         assertEquals(PullOutcome.Rejected, service.pull("no_such_pool", tenPull = true))
-        assertEquals(999999, service.saveData.softCurrency)
+        assertEquals(RICH_SOFT, service.saveData.softCurrency)
     }
 
     @Test
@@ -201,7 +211,7 @@ class GameServiceTest {
         val outcome = service.pull("pool_test", tenPull = true)
 
         assertEquals(PullOutcome.SaveFailed, outcome)
-        assertEquals(999999, service.saveData.softCurrency)
+        assertEquals(RICH_SOFT, service.saveData.softCurrency)
         assertTrue(service.saveData.ownedCharacters.isEmpty())
         assertEquals(0, service.getStarFragments())
         assertEquals(0, service.saveData.getGachaCounter("pool_test"))
@@ -229,7 +239,7 @@ class GameServiceTest {
         val events = EventCounter()
 
         assertEquals(WriteOutcome.SaveFailed, service.spendSoft(10))
-        assertEquals(999999, service.saveData.softCurrency)
+        assertEquals(RICH_SOFT, service.saveData.softCurrency)
         assertEquals(0, events.currency)
     }
 
@@ -239,7 +249,7 @@ class GameServiceTest {
         val events = EventCounter()
 
         assertEquals(WriteOutcome.Success, service.addSoft(100))
-        assertEquals(999999 + 100, service.saveData.softCurrency)
+        assertEquals(RICH_SOFT + 100, service.saveData.softCurrency)
         assertEquals(1, events.currency)
     }
 
@@ -272,7 +282,7 @@ class GameServiceTest {
         assertEquals(WriteOutcome.Rejected, service.spendHard(-10))
         assertEquals(WriteOutcome.Rejected, service.addHard(-10))
         assertEquals(WriteOutcome.Rejected, service.spendSoft(0))
-        assertEquals(999999, service.saveData.softCurrency)
+        assertEquals(RICH_SOFT, service.saveData.softCurrency)
         assertEquals(0, service.saveData.hardCurrency)
         assertEquals(0, events.currency)
     }
@@ -302,7 +312,7 @@ class GameServiceTest {
         assertEquals(2, save.level)
         assertEquals(1, save.unspentPoints)
         // levelCost(1) = 50
-        assertEquals(999999 - 1600 - 50, service.saveData.softCurrency)
+        assertEquals(RICH_SOFT - 1600 - 50, service.saveData.softCurrency)
         assertEquals(1, events.currency)
         assertEquals(1, events.progression)
     }
@@ -353,7 +363,7 @@ class GameServiceTest {
         val save = service.getSave("char_a")!!
         assertEquals(1, save.level)
         assertEquals(0, save.unspentPoints)
-        assertEquals(999999, service.saveData.softCurrency)
+        assertEquals(RICH_SOFT, service.saveData.softCurrency)
         assertEquals(0, events.currency)
     }
 
@@ -374,7 +384,7 @@ class GameServiceTest {
         assertEquals(1, save.level)
         assertEquals(50, save.totalExp) // 零头保留，内存与磁盘一致
         assertEquals(0, save.unspentPoints)
-        assertEquals(999999, service.saveData.softCurrency)
+        assertEquals(RICH_SOFT, service.saveData.softCurrency)
         assertEquals(0, events.currency)
         assertEquals(0, events.progression)
     }
@@ -467,7 +477,7 @@ class GameServiceTest {
         assertEquals(2, save.stage)
         // ascendFragments(1)=20，ascendSoft(1)=500
         assertEquals(80, service.getStarFragments())
-        assertEquals(999999 - 500, service.saveData.softCurrency)
+        assertEquals(RICH_SOFT - 500, service.saveData.softCurrency)
         assertEquals(1, events.currency)
         assertEquals(1, events.progression)
     }
@@ -661,12 +671,12 @@ class GameServiceTest {
         val events = EventCounter()
 
         assertEquals(WriteOutcome.Success, service.buyFragmentPack(1))
-        assertEquals(999999 - 1000, service.saveData.softCurrency)
+        assertEquals(RICH_SOFT - 1000, service.saveData.softCurrency)
         assertEquals(10, service.getStarFragments())
 
         // 大包在既有条目上累加
         assertEquals(WriteOutcome.Success, service.buyFragmentPack(2))
-        assertEquals(999999 - 1000 - 5500, service.saveData.softCurrency)
+        assertEquals(RICH_SOFT - 1000 - 5500, service.saveData.softCurrency)
         assertEquals(70, service.getStarFragments())
         assertEquals(2, events.currency)
         assertEquals(0, events.progression)
@@ -675,7 +685,7 @@ class GameServiceTest {
     @Test
     fun buyFragmentPack_insufficientFunds_rejectedNoEvent() = runTest {
         val service = makeService()
-        service.spendSoft(999999)
+        service.spendSoft(service.saveData.softCurrency)
         val events = EventCounter()
 
         assertEquals(WriteOutcome.Rejected, service.buyFragmentPack(1))
@@ -690,7 +700,7 @@ class GameServiceTest {
 
         assertEquals(WriteOutcome.Rejected, service.buyFragmentPack(0))
         assertEquals(WriteOutcome.Rejected, service.buyFragmentPack(3))
-        assertEquals(999999, service.saveData.softCurrency)
+        assertEquals(RICH_SOFT, service.saveData.softCurrency)
         assertEquals(0, service.getStarFragments())
     }
 
@@ -701,7 +711,7 @@ class GameServiceTest {
         provider.failSave = true
 
         assertEquals(WriteOutcome.SaveFailed, service.buyFragmentPack(1))
-        assertEquals(999999, service.saveData.softCurrency)
+        assertEquals(RICH_SOFT, service.saveData.softCurrency)
         assertEquals(0, service.getStarFragments())
         // 新增条目整体移除，不残留幽灵道具
         assertEquals(0, service.saveData.items.size)
@@ -716,7 +726,7 @@ class GameServiceTest {
         provider.failSave = true
         assertEquals(WriteOutcome.SaveFailed, service.buyFragmentPack(1))
         assertEquals(10, service.getStarFragments()) // 回滚到购买前
-        assertEquals(999999 - 1000, service.saveData.softCurrency)
+        assertEquals(RICH_SOFT - 1000, service.saveData.softCurrency)
     }
 
     @Test
@@ -731,7 +741,7 @@ class GameServiceTest {
         assertEquals(WriteOutcome.Success, service.addHard(100))
         assertEquals(WriteOutcome.Success, service.buyDiamondExchange())
         assertEquals(0, service.saveData.hardCurrency)
-        assertEquals(999999 + 20000, service.saveData.softCurrency)
+        assertEquals(RICH_SOFT + 20000, service.saveData.softCurrency)
         // addHard 与兑换各广播一次
         assertEquals(2, events.currency)
     }
@@ -745,7 +755,7 @@ class GameServiceTest {
         provider.failSave = true
         assertEquals(WriteOutcome.SaveFailed, service.buyDiamondExchange())
         assertEquals(100, service.saveData.hardCurrency)
-        assertEquals(999999, service.saveData.softCurrency)
+        assertEquals(RICH_SOFT, service.saveData.softCurrency)
     }
 
     // ── 设置与重置 ──
@@ -791,7 +801,8 @@ class GameServiceTest {
 
         assertTrue(service.resetSave())
 
-        assertEquals(999999, service.saveData.softCurrency)
+        // 重置回**默认档**：余额应为产品默认起始值（而非本测试的 RICH_SOFT 基准）
+        assertEquals(SaveData.DEFAULT_SOFT_CURRENCY, service.saveData.softCurrency)
         assertEquals(0, service.saveData.hardCurrency)
         assertTrue(service.saveData.ownedCharacters.isEmpty())
         assertTrue(service.saveData.items.isEmpty())
@@ -806,7 +817,7 @@ class GameServiceTest {
 
         provider.failDelete = true
         assertFalse(service.resetSave())
-        assertEquals(999999 + 1000, service.saveData.softCurrency) // 内存未动
+        assertEquals(RICH_SOFT + 1000, service.saveData.softCurrency) // 内存未动
     }
 
     @Test
@@ -820,7 +831,8 @@ class GameServiceTest {
 
         // 重置后新档可正常落盘（FakeProvider.stored 已被 delete 清空，save 会重建）
         assertEquals(WriteOutcome.Success, service.addSoft(500))
-        assertEquals(999999 + 500, service.saveData.softCurrency)
+        // 基准是重置后的默认档起始值，不是 RICH_SOFT
+        assertEquals(SaveData.DEFAULT_SOFT_CURRENCY + 500, service.saveData.softCurrency)
     }
 
     @Test
@@ -966,7 +978,7 @@ class GameServiceTest {
 
         assertTrue("历史必须随事务回滚", service.pullHistory().isEmpty())
         assertFalse(service.saveData.isFeaturedGuaranteed("pool_up"))
-        assertEquals("扣款已回滚", 999999, service.saveData.softCurrency)
+        assertEquals("扣款已回滚", RICH_SOFT, service.saveData.softCurrency)
         assertTrue(service.saveData.ownedCharacters.isEmpty())
     }
 

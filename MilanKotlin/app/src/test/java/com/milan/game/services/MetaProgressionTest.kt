@@ -16,6 +16,13 @@ import org.junit.Test
  * 二期系统测试（2026-08）：爬塔战票门槛/返还、每日商店限购与跨日重置、成就领取一次性。
  * today 提供器注入固定「今天」，全部断言不依赖真实时钟。
  */
+/**
+ * 测试基准余额（与 GameServiceTest 同思路）：多步经济用例需要充裕起点。
+ * 刻意不复用 [com.milan.game.data.SaveData.DEFAULT_SOFT_CURRENCY]——那是产品数值，
+ * 产品数值调整不应牵动测试断言。
+ */
+private const val RICH_SOFT = 1_000_000
+
 class MetaProgressionTest {
 
     private val testContent = """
@@ -78,7 +85,11 @@ class MetaProgressionTest {
         EventBus.clear()
     }
 
-    private fun makeService(failSave: Boolean = false, day: Long = 20_000L): GameService {
+    private fun makeService(
+        failSave: Boolean = false,
+        day: Long = 20_000L,
+        soft: Int = RICH_SOFT,
+    ): GameService {
         val provider = FakeProvider(failSave)
         return GameService(
             saveProvider = provider,
@@ -86,7 +97,7 @@ class MetaProgressionTest {
             onTrace = provider.traces::add,
             rng = Random(42),
             today = { day },
-        )
+        ).also { it.saveData.softCurrency = soft }
     }
 
     private fun GameService.own(vararg ids: Pair<String, Int>) {
@@ -124,9 +135,10 @@ class MetaProgressionTest {
         val outcome = svc.runTowerFloor(1)
         assertTrue(outcome is TowerOutcome.Completed)
         assertTrue((outcome as TowerOutcome.Completed).victory)
-        // 入场 -1 + 胜利返 +1 = 净 0；星尘奖励照发
+        // F1：入场 -1 + 胜利返 +1 = 净 0（仅刷新纪录才返票；复刷已通层净耗 1 张）；
+        // 星尘同样只在刷新纪录时发放，本用例为首通故照发。
         assertEquals(1, svc.ticketCount())
-        assertEquals(EconomyFormulas.towerRewardSoft(1), svc.saveData.softCurrency - 999_999)
+        assertEquals(EconomyFormulas.towerRewardSoft(1), svc.saveData.softCurrency - RICH_SOFT)
     }
 
     @Test
@@ -287,5 +299,36 @@ class MetaProgressionTest {
         assertTrue(svc.claimAchievement("first_summon") is WriteOutcome.SaveFailed)
         assertEquals(softBefore, svc.saveData.softCurrency)
         assertEquals(emptyList<String>(), svc.saveData.claimedAchievementIds())
+    }
+
+    /**
+     * F3（2026-08-28 审查回归）：累计型成就进度**不得随出货倒退**。
+     * 此前 totalPulls 取 `gachaCounters`（保底计数，出货即归零），实测抽 120 次却显示 45，
+     * 且第 75 抽时从 74 直接掉到 0。现改读永不清零的 `SaveData.totalPullCount`。
+     */
+    @Test
+    fun achievement_pullProgress_neverRegresses() = runTest {
+        val svc = makeService()
+        svc.saveData.softCurrency = 10_000_000
+
+        var prev = 0
+        repeat(120) { i ->
+            svc.pull("pool_test", false)
+            val now = svc.saveData.totalPullCount
+            assertTrue("累计抽数不得倒退（第 ${i + 1} 抽：$prev -> $now）", now >= prev)
+            prev = now
+        }
+        assertEquals("累计抽数应等于实际抽卡次数", 120, svc.saveData.totalPullCount)
+    }
+
+    @Test
+    fun achievement_pulls100_unlocksAfter100Pulls() = runTest {
+        val svc = makeService()
+        svc.saveData.softCurrency = 10_000_000
+        repeat(100) { svc.pull("pool_test", false) }
+
+        val status = svc.achievementStatuses().first { it.def.id == "pulls_100" }
+        assertTrue("抽满 100 次后成就应解锁（实际 totalPullCount=${svc.saveData.totalPullCount}）", status.unlocked)
+        assertTrue(svc.claimAchievement("pulls_100") is WriteOutcome.Success)
     }
 }

@@ -119,4 +119,64 @@ class DataJsonContentTest {
             assertEquals("${j.characterId}.lore", j.lore, f.lore)
         }
     }
+
+    /**
+     * C4（2026-08-28 审查回归）：每个角色都必须带技能。
+     * 此前 data.json 仅 11/31 角色有 `Skills`，其余 20 个（含**全部 UR/SSR**）在角色详情页
+     * 的技能面板显示空态；旧断言唯独漏了 skills，故缺口被静默放过。
+     */
+    @Test
+    fun `每个角色都必须带技能`() {
+        val service = GameService(MemoryProvider(), dataJson)
+        service.characters.forEach { c ->
+            assertTrue("${c.characterId} 缺少技能（详情页技能面板会空白）", c.skills.isNotEmpty())
+            c.skills.forEach { s ->
+                assertFalse("${c.characterId} 技能 ${s.skillId} 缺名称", s.displayName.isEmpty())
+                assertFalse("${c.characterId} 技能 ${s.skillId} 缺描述", s.description.isEmpty())
+            }
+        }
+    }
+
+    /**
+     * C2（2026-08-28 审查回归）：声明的 weaponVfx 必须有对应资源文件。
+     * 缺图时 CharacterDetailScreen 回退显示武器名（不崩溃），但玩家看到的是空白武器区。
+     */
+    @Test
+    fun `全部 weaponVfx 均有对应资源文件`() {
+        val service = GameService(MemoryProvider(), dataJson)
+        val dir = File("src/main/assets/weapons")
+        val available = dir.takeIf { it.exists() }?.listFiles()
+            ?.map { it.nameWithoutExtension }
+            ?.toSet()
+            ?: error("武器资源目录不存在：${dir.path}")
+        service.characters.forEach { c ->
+            assertTrue(
+                "${c.characterId} 的武器图缺失：weapons/${c.weaponVfx}.webp",
+                c.weaponVfx in available,
+            )
+        }
+    }
+
+    /**
+     * C1（2026-08-28 审查回归）：非零权重档位必须有候选角色。
+     * 无候选的档位权重会被 [GameService.resolveRarityWithCandidates] 就近上抬，造成概率失真——
+     * UP 池曾有 R 档 40% 权重但 0 候选，全部塌缩进仅 1 个候选的 SR 档，
+     * 导致饕餮独占该池 70% 出货（名义仅 30%）。权重为 0 属刻意设计，放行。
+     */
+    @Test
+    fun `非零权重档位必须有候选角色（防概率塌缩）`() {
+        val service = GameService(MemoryProvider(), dataJson)
+        assertTrue("应加载真实卡池", service.pools.isNotEmpty())
+        service.pools.forEach { pool ->
+            pool.rarityWeights.forEachIndexed { i, w ->
+                if (w > 0) {
+                    assertTrue(
+                        "池 ${pool.poolId} 的档位 ${i + 1} 权重为 $w 却没有候选角色 —— " +
+                            "该档产出会被上抬到邻近档位，造成概率塌缩",
+                        pool.entries.any { it.rarityIndex == i + 1 },
+                    )
+                }
+            }
+        }
+    }
 }

@@ -51,13 +51,14 @@ class BattleSimulatorTest {
         assertEquals(1000, r.remainingHp)
     }
 
-    // 双方伤害恒为 1、血量极大，maxTurns 内无人阵亡。
+    // 双方伤害恒为 1、血量极大，maxTurns 内无人阵亡 → P3-7 改为平局（draw=true）。
     @Test
     fun simulate_stalemate_hitsTurnCap() {
         val a = arrayOf(u(100, 200, 100000, 12))
         val b = arrayOf(u(100, 200, 100000, 12))
         val r = BattleSimulator(Random(12345)).simulate(a, b, 50)
         assertFalse(r.victory)
+        assertTrue("回合耗尽应为平局", r.draw)
         assertEquals(50, r.turns)
         assertTrue(r.remainingHp > 0)
     }

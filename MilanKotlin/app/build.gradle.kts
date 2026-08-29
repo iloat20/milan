@@ -62,6 +62,13 @@ android {
     buildFeatures {
         compose = true
     }
+    // Robolectric 跑 Compose UI 测试需要访问 Android 资源（读取 assets/drawable 等）。
+    // 不开此项会在 setContent 时因找不到资源而失败。
+    testOptions {
+        unitTests {
+            isIncludeAndroidResources = true
+        }
+    }
 }
 
 kotlin {
@@ -99,5 +106,12 @@ dependencies {
     implementation(project(":shared"))
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
+    // ── Compose UI 测试（2026-08-28 P0）──
+    // 项目此前 9624 行 UI 代码零测试覆盖，UI 缺陷只能靠静态审查发现（第三轮审查 6/14 个 bug 在 UI 层）。
+    // 采用 Robolectric 在 JVM 上跑 Compose：无需模拟器/真机，可进 CI。
+    // ui-test-manifest 必须走 debugImplementation（提供测试用的 AndroidManifest 合并项）。
+    testImplementation(libs.androidx.ui.test.junit4)
+    testImplementation(libs.robolectric)
+    debugImplementation(libs.androidx.ui.test.manifest)
     debugImplementation(libs.androidx.ui.tooling)
 }
