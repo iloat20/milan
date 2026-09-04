@@ -17,7 +17,7 @@ val keystoreProps = Properties().apply {
 
 android {
     namespace = "com.milan.game"
-    // compileSdk 37：Compose BOM 2026.06.01 的 ui 1.12.0-alpha03 强制要求（AGP 9.1.0+）
+    // compileSdk 37：Compose BOM 2026.08.00 (Compose 1.12) 要求；AGP 9.1.0+
     compileSdk = 37
 
     signingConfigs {

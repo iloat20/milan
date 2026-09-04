@@ -53,7 +53,7 @@
 
 - 覆盖：`SaveDataTest` / `SaveManagerTest` / `BattleSimulatorTest` / `GachaEngineTest` / `PityCounterTest` / `EconomyFormulasTest` / `ProgressionEngineTest` / `TalentEngineTest` / `EventBusTest` / `DataJsonContentTest` / `PortraitLoaderTest` / `RoutesTest`（JUnit4 + coroutines-test）。领域类虽迁入 `:shared`，领域测试仍留在 app 测试集（经 `implementation(project(":shared"))` 解析），后续可逐步下沉 commonTest。
 - 领域引擎都支持注入 seed（`kotlin.random.Random`）保证确定性；新增领域逻辑请配套单测。
-- `GameServiceTest`（app/src/test/java/com/milan/game/services/GameServiceTest.kt）覆盖服务层（抽卡/货币/养成/战绩，写操作断言 `WriteOutcome`/`PullOutcome` 类型化结果）；`RoutesTest` 覆盖类型安全路由的 `NavItem.toNavRoute()` 映射与 `@Serializable` 序列化往返（纯 Kotlin 逻辑）；UI 层 Compose 渲染目前无测试。
+- `GameServiceTest`（app/src/test/java/com/milan/game/services/GameServiceTest.kt）覆盖服务层（抽卡/货币/养成/战绩，写操作断言 `WriteOutcome`/`PullOutcome` 类型化结果）；`AffinityLoopServiceTest.kt` 覆盖好感度完整闭环（赠送净扣净加/满级拒绝/上限钳位/战斗胜利全员 +20 与回滚，净变动断言口径）；`FormationTowerServiceTest.kt` 覆盖编队 + 爬塔结算（胜负/奖励/回滚/经济永动机回归）；`RoutesTest` 覆盖类型安全路由的 `NavItem.toNavRoute()` 映射与 `@Serializable` 序列化往返（纯 Kotlin 逻辑）。UI 层 Compose 渲染测试（Robolectric + Compose UI Test，`@Config(sdk = [34])`）：`ComposeUiSmokeTest` / `TowerResultCardTest` / `GachaDeckScreenTest` 等。**⚠️ 单例竞态**：Robolectric 每个测试类都会实例化 MilanApp，其 `onCreate` 后台异步注入真实 data.json，会与测试 `@BeforeClass` 的注入竞争进程级单例 `GameState`——全量套件下真实内容先赢。**触碰 GameState 的测试类必须先在 @BeforeClass/@Before 调 `GameState.resetForTest()`（internal，仅测试可用）再注入，即可顺序无关**；文本断言仍建议内容无关（取 `GameState.service.pools.first().displayName` 做存在性断言），勿硬编码 testContent 字符串；CJK 文本在 Robolectric 字体度量下可能被量成近零宽，`assertIsDisplayed` 易误报。
 - `:benchmark`（Macrobenchmark，2026-08-13 修复并接入 settings）需真机/模拟器执行 `:benchmark:benchmarkRelease`；`:app` 已配 `benchmark` buildType。
 
 ## Android 注册与内容数据

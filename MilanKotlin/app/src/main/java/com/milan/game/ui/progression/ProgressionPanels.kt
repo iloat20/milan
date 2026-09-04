@@ -101,6 +101,7 @@ internal fun LevelPanel(
     view: OwnedCharacterView,
     owned: Boolean,
     onLevel: (Int) -> Unit,
+    busy: Boolean = false,
 ) {
     val save = view.save
     val cap = GameState.service.maxLevelForStage(save.stage)
@@ -152,7 +153,7 @@ internal fun LevelPanel(
                     .fillMaxWidth()
                     .height(12.dp)
                     .clip(RoundedCornerShape(6.dp))
-                    .background(Color(0x3C0A0A0F)),
+                    .background(AppTheme.BgDeepest.copy(alpha = 0.24f)),
             ) {
                 // 金墨汁填充：从左向右平滑增长
                 Box(
@@ -184,9 +185,9 @@ internal fun LevelPanel(
             Spacer(Modifier.height(12.dp))
 
             Row {
-                LevelButton("升级 ×1", gold = true, enabled = canLevel) { onLevel(1) }
-                LevelButton("升级 ×5", gold = false, enabled = canLevel) { onLevel(5) }
-                LevelButton("升满", gold = false, enabled = canLevel) { onLevel(Int.MAX_VALUE) }
+                LevelButton("升级 ×1", gold = true, enabled = canLevel && !busy) { onLevel(1) }
+                LevelButton("升级 ×5", gold = false, enabled = canLevel && !busy) { onLevel(5) }
+                LevelButton("升满", gold = false, enabled = canLevel && !busy) { onLevel(Int.MAX_VALUE) }
             }
         }
     }
@@ -200,11 +201,12 @@ private fun RowScope.LevelButton(
     enabled: Boolean,
     onClick: () -> Unit,
 ) {
+    // 禁用态视觉统一由 GoldButton / NeonButton 内部处理（ThemeButtons 内 alpha 0.45f），
+    // 此处不再叠加外层 alpha —— 叠加会变成 0.4 × 0.45 ≈ 0.18，过暗。
     Box(
         Modifier
             .weight(1f)
-            .padding(horizontal = 6.dp)
-            .alpha(if (enabled) 1f else 0.4f),
+            .padding(horizontal = 6.dp),
     ) {
         if (gold) {
             GoldButton(
@@ -234,6 +236,7 @@ internal fun AscendPanel(
     defMaxStage: Int,
     owned: Boolean,
     onAscend: () -> Unit,
+    busy: Boolean = false,
 ) {
     val save = view.save
     // M2（2026-08-28 审查修复）：订阅快照（同 LevelPanel / ResourceBar 范式），
@@ -266,13 +269,14 @@ internal fun AscendPanel(
             }
             Spacer(Modifier.height(10.dp))
 
-            Box(Modifier.fillMaxWidth().alpha(if (canAscend) 1f else 0.4f)) {
+            // 禁用态视觉由 GoldButton 内部处理，此处不叠加 alpha（避免双重变暗）。
+            Box(Modifier.fillMaxWidth()) {
                 GoldButton(
                     text = "突 破",
                     modifier = Modifier.fillMaxWidth(),
                     onClick = onAscend,
                     textSize = 15.sp,
-                    enabled = canAscend,
+                    enabled = canAscend && !busy,
                 )
             }
         }
@@ -287,9 +291,13 @@ internal fun StarPanel(
     defMaxStars: Int,
     owned: Boolean,
     onStarUp: () -> Unit,
+    busy: Boolean = false,
 ) {
     val save = view.save
-    val frags = GameState.service.getStarFragments()
+    // 附带修复：与 LevelPanel 同范式改为订阅快照。直读 getStarFragments() 不建立订阅，
+    // 星尘/碎片变化不会触发本面板重组，升星按钮的可用性会停留在旧值。
+    val snap by GameState.snapshot.collectAsStateWithLifecycle()
+    val frags = snap.starFragments
     val starMax = save.stars >= defMaxStars
     val sFrag = GameState.service.starUpFragments(save.stars)
     val canStar = owned && !starMax && frags >= sFrag
@@ -317,13 +325,14 @@ internal fun StarPanel(
             }
             Spacer(Modifier.height(10.dp))
 
-            Box(Modifier.fillMaxWidth().alpha(if (canStar) 1f else 0.4f)) {
+            // 禁用态视觉由 GoldButton 内部处理，此处不叠加 alpha（避免双重变暗）。
+            Box(Modifier.fillMaxWidth()) {
                 GoldButton(
                     text = "升 星",
                     modifier = Modifier.fillMaxWidth(),
                     onClick = onStarUp,
                     textSize = 15.sp,
-                    enabled = canStar,
+                    enabled = canStar && !busy,
                 )
             }
         }
@@ -434,6 +443,7 @@ internal fun TalentPanel(
     view: OwnedCharacterView,
     owned: Boolean,
     onTalent: (String) -> Unit,
+    busy: Boolean = false,
 ) {
     val save = view.save
     val tree = GameState.service.getTalentTree(characterId)
@@ -485,6 +495,7 @@ internal fun TalentPanel(
                                 col = col,
                                 allocated = isAlloc,
                                 canAlloc = canAlloc,
+                                enabled = canAlloc && !busy,
                                 onClick = { onTalent(node.nodeId) },
                             )
                             Spacer(Modifier.height(8.dp))
@@ -519,6 +530,7 @@ private fun TalentNode(
     col: Color,
     allocated: Boolean,
     canAlloc: Boolean,
+    enabled: Boolean = true,
     onClick: () -> Unit,
 ) {
     val bg = when {
@@ -540,7 +552,7 @@ private fun TalentNode(
             .clip(RoundedCornerShape(12.dp))
             .background(bg)
             .border(strokeWidth.dp, stroke, RoundedCornerShape(12.dp))
-            .clickable(enabled = canAlloc, onClick = onClick)
+            .clickable(enabled = canAlloc && enabled, onClick = onClick)
             .padding(horizontal = 8.dp, vertical = 8.dp),
     ) {
         Text(

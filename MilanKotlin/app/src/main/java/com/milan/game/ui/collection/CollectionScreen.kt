@@ -118,11 +118,11 @@ fun CollectionScreen(
             if (visible.isEmpty()) {
                 // 空态：全量页只在筛选无结果时出现
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
-                    Text(
-                        text = "没有符合条件的角色",
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = AppTheme.Text3,
-                        modifier = Modifier.padding(top = 80.dp),
+                    com.milan.game.ui.components.EmptyState(
+                        icon = "🔍",
+                        title = "没有符合条件的角色",
+                        subtitle = "试试调整筛选条件",
+                        modifier = Modifier.padding(top = 60.dp),
                     )
                 }
             } else {

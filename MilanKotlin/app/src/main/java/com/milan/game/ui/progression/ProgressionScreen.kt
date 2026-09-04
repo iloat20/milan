@@ -196,6 +196,7 @@ fun ProgressionScreen(
                         view = view,
                         owned = owned,
                         onLevel = ::onLevel,
+                        busy = busy,
                     )
                 }
                 Spacer(Modifier.height(14.dp))
@@ -208,6 +209,7 @@ fun ProgressionScreen(
                         defMaxStage = def.maxStage,
                         owned = owned,
                         onAscend = ::onAscend,
+                        busy = busy,
                     )
                 }
                 Spacer(Modifier.height(14.dp))
@@ -220,6 +222,7 @@ fun ProgressionScreen(
                         defMaxStars = def.maxStars,
                         owned = owned,
                         onStarUp = ::onStarUp,
+                        busy = busy,
                     )
                 }
                 Spacer(Modifier.height(14.dp))
@@ -239,6 +242,7 @@ fun ProgressionScreen(
                         view = view,
                         owned = owned,
                         onTalent = ::onTalent,
+                        busy = busy,
                     )
                 }
 

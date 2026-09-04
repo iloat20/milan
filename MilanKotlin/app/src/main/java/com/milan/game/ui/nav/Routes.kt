@@ -58,6 +58,26 @@ data object AchievementRoute
 @Serializable
 data object PullHistoryRoute
 
+/** 剧情系统（2026-09）：子页，盖住底部 tab，返回回主页。 */
+@Serializable
+data object StoryRoute
+
+/** 剧情关卡（2026-09）：子页，盖住底部 tab，返回回章节列表。 */
+@Serializable
+data class DialogueRoute(val stageId: String)
+
+/** 每日任务（2026-09）：子页，盖住底部 tab，返回回主页。 */
+@Serializable
+data object DailyMissionRoute
+
+/** Battle Pass 纪行（2026-09）：子页，盖住底部 tab，返回回主页。 */
+@Serializable
+data object BattlePassRoute
+
+/** 角色好感度（2026-09）：子页，盖住底部 tab，返回回主页。 */
+@Serializable
+data object AffinityRoute
+
 /** [NavItem] → 对应 tab 路由（底部导航统一映射入口；命名 toNavRoute 避免与 androidx.navigation.toRoute 扩展同名）。 */
 fun NavItem.toNavRoute(): TabRoute = when (this) {
     NavItem.Home -> HomeRoute

@@ -5,7 +5,7 @@ kotlin = "2.4.10"
 coreKtx = "1.19.0"
 lifecycle = "2.11.0"
 activityCompose = "1.13.0"
-composeBom = "2026.06.01"
+composeBom = "2026.08.00"
 serialization = "1.11.0"
 coroutines = "1.11.0"
 junit = "4.13.2"
@@ -32,11 +32,9 @@ androidx-compose-bom = { group = "androidx.compose", name = "compose-bom", versi
 androidx-ui = { group = "androidx.compose.ui", name = "ui" }
 androidx-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling" }
 androidx-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview" }
-# 显式覆盖：BOM 2026.06.01 默认 material3 = 1.4.0（expressive 主题仍实验期，需 opt-in）。
-# 1.5.0-alpha22 是最后一个仍基于 Compose 1.11.x 的版本，且 MaterialExpressiveTheme 已在 1.5.0-alpha18 毕业为非实验（无需 opt-in）。
-# 选 alpha22 而非 alpha23，是因为 alpha23 把 Compose 依赖抬到 1.12.0-beta01，会与 BOM 的 1.11.x 产生版本错位。
-# 待 material3 1.5.0 稳定后可直接移除本覆盖行，让 BOM 重新接管。
-androidx-material3 = { group = "androidx.compose.material3", name = "material3", version = "1.5.0-alpha22" }
+# Compose BOM 2026.08.00 默认 material3 = 1.4.0（稳定版），MaterialExpressiveTheme 已毕业为非实验。
+# 此前 BOM 2026.06.01 的 material3 仍为 alpha，需显式覆盖到 1.5.0-alpha22；现已无需覆盖。
+androidx-material3 = { group = "androidx.compose.material3", name = "material3" }
 androidx-compose-material-icons-core = { group = "androidx.compose.material", name = "material-icons-core", version.ref = "materialIcons" }
 kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "serialization" }
 kotlinx-coroutines-android = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-android", version.ref = "coroutines" }

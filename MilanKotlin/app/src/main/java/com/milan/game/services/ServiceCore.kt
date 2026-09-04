@@ -6,6 +6,7 @@ import com.milan.game.data.ItemSaveState
 import com.milan.game.data.Rarity
 import com.milan.game.data.SaveData
 import com.milan.game.data.SaveManager
+import com.milan.game.data.StatValue
 import com.milan.game.domain.battle.UnitStats
 import com.milan.game.domain.gacha.GachaEngine
 import com.milan.game.domain.progression.EconomyFormulas
@@ -42,6 +43,17 @@ import kotlinx.serialization.decodeFromString
  * 事务范式（AGENTS.md 红线，拆分后保持不变）：
  * 预算/校验 → 改内存 → 落盘 → 失败回滚 → 仅成功广播；回滚路径不广播事件。
  */
+
+/** 装备属性加成聚合（含暴击，UnitStats 无此字段，由 [calculateEquipmentStats] 返回）。 */
+private data class EquipmentStatBonus(
+    val atk: Int = 0,
+    val def: Int = 0,
+    val hp: Int = 0,
+    val spd: Int = 0,
+    val critRate: Double = 0.0,
+    val critDmg: Double = 0.0,
+)
+
 internal class ServiceCore(
     val saveManager: SaveManager,
     val gacha: GachaEngine,
@@ -115,7 +127,15 @@ internal class ServiceCore(
         set(value) {
             field = value
             talentTreesById = value.associateBy { it.treeId }
+            // R4-05：前置索引随内容一次性重建，读者永不写（见 [prereqMap]）。
+            prereqIndex = value.associate { t ->
+                t.treeId to t.nodes.associate { n -> n.nodeId to n.prerequisiteNodeIds }
+            }
         }
+    
+    // ── 装备系统新增 ──
+    var equipmentTemplates: List<EquipmentData> = emptyList()
+    var equipmentSets: List<EquipmentSetData> = emptyList()
 
     private var charactersById: Map<String, CharacterDataEntry> = emptyMap()
     private var talentTreesById: Map<String, TalentTreeData> = emptyMap()
@@ -131,6 +151,12 @@ internal class ServiceCore(
     /**
      * 事务模板核心。**调用方必须已持有 [writeMutex]**（Mutex 不可重入）。
      * mutate 改内存 → 落盘成功 → onCommit；落盘失败 → rollback 恢复内存 → 留痕 → SaveFailed。
+     *
+     * R4-06（2026-08-30 审查修复）：**mutate 自身抛异常也纳入事务语义**。
+     * 旧实现只覆盖「落盘失败」，mutate 抛异常时内存已被部分改写（如十连循环跑到第 3 次）、
+     * 而 rollback 不执行、save() 不执行、onTrace 不留痕；锁随 withLock 的 finally 释放后，
+     * 残留的半截状态会被后续任意一次成功落盘持久化 —— 磁盘与内存静默分叉且无排查线索。
+     * 现行为：先回滚（回滚自身失败单独留痕，不掩盖原始异常）→ 留痕 → 原样上抛。
      */
     suspend inline fun transactionLocked(
         tag: String,
@@ -138,7 +164,17 @@ internal class ServiceCore(
         rollback: () -> Unit,
         onCommit: () -> Unit,
     ): WriteOutcome {
-        mutate()
+        try {
+            mutate()
+        } catch (t: Throwable) {
+            try {
+                rollback()
+            } catch (rt: Throwable) {
+                onTrace("$tag.rollback.threw: ${rt.message}")
+            }
+            onTrace("$tag.mutate.threw: ${t.message}")
+            throw t
+        }
         val saved = withContext(Dispatchers.IO) { saveManager.save() }
         if (saved) {
             onCommit()
@@ -196,6 +232,26 @@ internal class ServiceCore(
     }
 
     /**
+     * 货币饱和增减（R5-I11 溢出收口）：用 Long 预算（toLong()+delta）避免 Int 溢出，
+     * 结果钳到 [0, Int.MAX]——奖励溢出封顶而非翻负，扣减永不为负。
+     * 须在 [writeMutex] 临界区内调用（非 suspend，与 [addItemDelta]/[addAffinityDelta] 同范式）。
+     *
+     * 边界：「扣减/兑换」入口（余额不足必须整体拒绝）仍走调用方的 Long 预检 + Rejected
+     * （如 [EconomyService.applyCurrencyDelta] / TowerService.runTowerFloor 的 165-171），
+     * 本辅助用于「奖励发放」类就地增减（正常路径 delta 有界，钳制不触发；异常溢出封顶兜底）。
+     */
+    fun addCurrencyDelta(softDelta: Int = 0, hardDelta: Int = 0) {
+        if (softDelta != 0) {
+            saveData.softCurrency = (saveData.softCurrency.toLong() + softDelta)
+                .coerceIn(0L, Int.MAX_VALUE.toLong()).toInt()
+        }
+        if (hardDelta != 0) {
+            saveData.hardCurrency = (saveData.hardCurrency.toLong() + hardDelta)
+                .coerceIn(0L, Int.MAX_VALUE.toLong()).toInt()
+        }
+    }
+
+    /**
      * 回滚道具到事务前快照：此前不存在 → 整条移除（防幽灵零数量条目）；
      * 此前已存在 → 恢复原数量。须在临界区内调用。
      */
@@ -204,6 +260,28 @@ internal class ServiceCore(
             saveData.items.firstOrNull { it?.itemId == itemId }?.count = originalCount
         } else {
             saveData.items = saveData.items.filterNot { it?.itemId == itemId }
+        }
+    }
+
+    /**
+     * 角色好感度（不存在视为 0）。须在临界区内调用。
+     * 好感数据自 2026-09-02 起成为多服务共享字段（赠送/战斗胜利/剧情选项三处写），
+     * 读写统一走本辅助 + [addAffinityDelta]，勿在聚合服务里散落就地修改。
+     */
+    fun affinityOf(characterId: String): Int =
+        saveData.characterAffinityData?.get(characterId) ?: 0
+
+    /**
+     * 好感度增加（钳到 [AffinityFormulas.MAX_AFFINITY]；delta<=0 无操作）。
+     * 满级时静默不加（数值安全由本辅助兜底，业务层可另行 Rejected）。须在临界区内调用。
+     */
+    fun addAffinityDelta(characterId: String, delta: Int) {
+        if (delta <= 0) return
+        val map = saveData.characterAffinityData ?: emptyMap()
+        val current = map[characterId] ?: 0
+        val next = minOf(current + delta, AffinityFormulas.MAX_AFFINITY)
+        if (next != current) {
+            saveData.characterAffinityData = map + (characterId to next)
         }
     }
 
@@ -221,6 +299,8 @@ internal class ServiceCore(
     /**
      * 由存档 + 内容定义构建战斗单位属性（[StatsCalculator] 单一事实来源）。
      * 角色未拥有或内容定义缺失返回 null（调用方跳过，绝不让脏档炸战斗路径）。
+     * 
+     * 2026-08 装备系统更新：现在会考虑装备属性加成。
      */
     fun unitStatsFor(characterId: String): UnitStats? {
         val save = saveData.ownedCharacters.firstOrNull { it?.characterId == characterId } ?: return null
@@ -228,7 +308,9 @@ internal class ServiceCore(
         val branchIds = def.talentTreeId.let { talentTreesById[it] }
             ?.nodes?.filter { node -> save.talentPoints.contains(node.nodeId) }
             ?.map { it.branchId }.orEmpty()
-        return StatsCalculator.compute(
+        
+        // 计算基础属性
+        val baseUnitStats = StatsCalculator.compute(
             baseStats = def.baseStats,
             level = save.level,
             stage = save.stage,
@@ -238,6 +320,125 @@ internal class ServiceCore(
             progression = progression,
             talent = talent,
         ).copy(element = def.element)
+        
+        // 计算装备属性加成
+        val equipmentStats = calculateEquipmentStats(characterId)
+        
+        // 合并属性：四主属性 + 暴击属性
+        return baseUnitStats.copy(
+            atk = baseUnitStats.atk + equipmentStats.atk,
+            def = baseUnitStats.def + equipmentStats.def,
+            hp = baseUnitStats.hp + equipmentStats.hp,
+            spd = baseUnitStats.spd + equipmentStats.spd,
+            critRate = baseUnitStats.critRate + equipmentStats.critRate,
+            critDmg = baseUnitStats.critDmg + equipmentStats.critDmg,
+        )
+    }
+    
+    /**
+     * 计算角色装备的总属性加成。
+     * 返回 [EquipmentStatBonus]（含暴击字段）；[unitStatsFor] 只取主属性合并到 [UnitStats]。
+     */
+    private fun calculateEquipmentStats(characterId: String): EquipmentStatBonus {
+        val save = saveData.ownedCharacters.firstOrNull { it?.characterId == characterId }
+            ?: return EquipmentStatBonus()
+        
+        var atk = 0
+        var def = 0
+        var hp = 0
+        var spd = 0
+        var critRate = 0.0
+        var critDmg = 0.0
+        
+        // 收集所有装备的属性
+        for (equipId in save.getEquippedIds()) {
+            val equipment = saveData.ownedEquipments.firstOrNull { it?.equipmentId == equipId }
+                ?: continue
+            
+            // 主属性
+            when (equipment.mainStat.statType) {
+                StatValue.STAT_ATTACK -> atk += equipment.mainStat.value
+                StatValue.STAT_DEFENSE -> def += equipment.mainStat.value
+                StatValue.STAT_HP -> hp += equipment.mainStat.value
+                StatValue.STAT_SPEED -> spd += equipment.mainStat.value
+                StatValue.STAT_CRIT_RATE -> critRate += equipment.mainStat.value / 100.0
+                StatValue.STAT_CRIT_DMG -> critDmg += equipment.mainStat.value / 100.0
+                else -> {}
+            }
+            
+            // 副属性
+            for (subStat in equipment.subStats.filterNotNull()) {
+                when (subStat.statType) {
+                    StatValue.STAT_ATTACK -> atk += subStat.value
+                    StatValue.STAT_DEFENSE -> def += subStat.value
+                    StatValue.STAT_HP -> hp += subStat.value
+                    StatValue.STAT_SPEED -> spd += subStat.value
+                    StatValue.STAT_CRIT_RATE -> critRate += subStat.value / 100.0
+                    StatValue.STAT_CRIT_DMG -> critDmg += subStat.value / 100.0
+                    else -> {}
+                }
+            }
+        }
+        
+        // 计算套装效果
+        val setBonuses = calculateSetBonuses(characterId)
+        for (bonus in setBonuses) {
+            when (bonus.statType) {
+                StatValue.STAT_ATTACK -> atk += bonus.value
+                StatValue.STAT_DEFENSE -> def += bonus.value
+                StatValue.STAT_HP -> hp += bonus.value
+                StatValue.STAT_SPEED -> spd += bonus.value
+                StatValue.STAT_CRIT_RATE -> critRate += bonus.value / 100.0
+                StatValue.STAT_CRIT_DMG -> critDmg += bonus.value / 100.0
+                else -> {}
+            }
+        }
+        
+        return EquipmentStatBonus(
+            atk = atk,
+            def = def,
+            hp = hp,
+            spd = spd,
+            critRate = critRate,
+            critDmg = critDmg,
+        )
+    }
+    
+    /**
+     * 计算套装效果。
+     */
+    private fun calculateSetBonuses(characterId: String): List<StatBonus> {
+        val save = saveData.ownedCharacters.firstOrNull { it?.characterId == characterId }
+            ?: return emptyList()
+        
+        // 统计套装数量
+        val setCounts = mutableMapOf<String, Int>()
+        for (equipId in save.getEquippedIds()) {
+            val equipment = saveData.ownedEquipments.firstOrNull { it?.equipmentId == equipId }
+                ?: continue
+            val template = equipmentTemplates.firstOrNull { it.equipmentId == equipment.templateId }
+                ?: continue
+            
+            if (template.setId.isNotEmpty()) {
+                setCounts[template.setId] = (setCounts[template.setId] ?: 0) + 1
+            }
+        }
+        
+        // 计算套装加成
+        val bonuses = mutableListOf<StatBonus>()
+        for ((setId, count) in setCounts) {
+            val setData = equipmentSets.firstOrNull { it.setId == setId }
+                ?: continue
+            
+            if (count >= 2) {
+                bonuses.addAll(setData.twoPieceBonus.statBonuses)
+            }
+            if (count >= 4) {
+                bonuses.addAll(setData.fourPieceBonus.statBonuses)
+            }
+        }
+        
+        return bonuses
     }
 
     /** 当日 UTC 日序号字符串（存档内跨日比对键）。 */
@@ -251,15 +452,22 @@ internal class ServiceCore(
     fun ascendSoft(stage: Int): Int = EconomyFormulas.ascendSoft(stage)
     fun starUpFragments(stars: Int): Int = EconomyFormulas.starUpFragments(stars)
 
-    // ── 天赋前置映射缓存（内容重载时由 [loadContent] 作废）──
+    // ── 天赋前置索引（内容加载时随 talentTrees 一次性构建，读者只读）──
 
-    private var prereqCache: MutableMap<String, Map<String, List<String>>>? = null
+    private var prereqIndex: Map<String, Map<String, List<String>>> = emptyMap()
 
-    /** 构建 nodeId → 前置节点列表 的映射，喂给 TalentEngine.canAllocate。 */
-    fun prereqMap(tree: TalentTreeData): Map<String, List<String>> {
-        val cache = prereqCache ?: mutableMapOf<String, Map<String, List<String>>>().also { prereqCache = it }
-        return cache.getOrPut(tree.treeId) { tree.nodes.associate { it.nodeId to it.prerequisiteNodeIds } }
-    }
+    /**
+     * 构建 nodeId → 前置节点列表 的映射，喂给 TalentEngine.canAllocate。
+     *
+     * R4-05（2026-08-30 审查修复）：旧实现用懒初始化的可变 HashMap 做缓存，是**全服务层
+     * 唯一在无锁路径上写的共享可变状态**——canAllocateTalent（主线程，非 suspend 读接口）
+     * 与 allocateTalent（writeMutex 内的后台线程）会并发 getOrPut，LinkedHashMap 并发写
+     * 可能触发 resize 竞态 → 结构损坏甚至死循环（CPU 100% / ANR）；loadContent 置 null 与
+     * `?.also{}` 之间还存在 check-then-act 竞态，会让内容重载后仍返回旧树的前置映射。
+     * 现改为内容加载时构建不可变索引，读者只做查表，索引缺失时按传入树即时兜底。
+     */
+    fun prereqMap(tree: TalentTreeData): Map<String, List<String>> =
+        prereqIndex[tree.treeId] ?: tree.nodes.associate { it.nodeId to it.prerequisiteNodeIds }
 
     // ─────────────────────────── 内容加载 ───────────────────────────
 
@@ -268,7 +476,8 @@ internal class ServiceCore(
      * 过滤口径见各条注释；两条加载路径都会经过 [GameContent.enrich] 补齐派生字段（#31）。
      */
     fun loadContent(rawJson: String?) {
-        prereqCache = null // 内容重载 → 前置映射可能变化，缓存作废
+        // R4-05：前置索引不再需要手工作废——它由 talentTrees 的 setter 同步重建，
+        // 任何加载路径（json / 兜底）都不会漏，也不存在 check-then-act 竞态。
         if (rawJson != null) {
             try {
                 val root = ContentJson.decodeFromString<RootData>(rawJson)
@@ -297,6 +506,9 @@ internal class ServiceCore(
                     }
                     // 丢弃空树（Nodes 为 null 的树会让养成界面静默空白）
                     talentTrees = root.talentTrees.filterNotNull().filter { it.nodes.isNotEmpty() }
+                    
+                    // 加载装备数据（如果存在）
+                    loadEquipmentContent(rawJson)
 
                     // 与兜底路径一致：补齐全量角色字段（武器名/背景故事/语音等）
                     GameContent.enrich(characters)
@@ -308,7 +520,8 @@ internal class ServiceCore(
                     onTrace(
                         "content.loaded.from.json chars=${characters.size} " +
                             "pools=${pools.size} entries=${pools.firstOrNull()?.entries?.size ?: 0} " +
-                            "trees=${talentTrees.size}",
+                            "trees=${talentTrees.size} " +
+                            "equipments=${equipmentTemplates.size} sets=${equipmentSets.size}",
                     )
                     return
                 }
@@ -328,6 +541,155 @@ internal class ServiceCore(
         talentTrees = GameContent.buildTalentTrees(characters)
         // 与 data.json 路径一致：补齐派生字段（C# #31 要求两条路径口径一致）
         GameContent.enrich(characters)
+        
+        // 加载装备兜底数据
+        loadEquipmentFallback()
+    }
+    
+    /**
+     * 从data.json加载装备数据。
+     */
+    private fun loadEquipmentContent(rawJson: String) {
+        try {
+            // 尝试解析装备数据（如果data.json包含装备部分）
+            // 注意：当前data.json可能不包含装备数据，所以这里先用兜底数据
+            loadEquipmentFallback()
+        } catch (e: Exception) {
+            onTrace("equipment.load.failed: ${e.message}")
+            loadEquipmentFallback()
+        }
+    }
+    
+    /**
+     * 加载装备兜底数据。
+     */
+    private fun loadEquipmentFallback() {
+        // 定义基础装备模板
+        equipmentTemplates = listOf(
+            // 武器
+            EquipmentData(
+                equipmentId = "eq_weapon_r_001",
+                displayName = "铁剑",
+                description = "普通的铁剑",
+                rarity = 1,
+                type = "weapon",
+                setId = "",
+                baseStats = listOf(StatData(StatValue.STAT_ATTACK, 10, 15, false, 100)),
+                subStatPool = listOf(
+                    StatData(StatValue.STAT_HP, 20, 50, false, 100),
+                    StatData(StatValue.STAT_DEFENSE, 5, 15, false, 100),
+                    StatData(StatValue.STAT_CRIT_RATE, 1, 3, false, 50),
+                ),
+                maxLevel = 15,
+                expPerLevel = listOf(100, 150, 200, 250, 300, 350, 400, 450, 500, 550, 600, 650, 700, 750, 800),
+                goldPerLevel = listOf(1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000, 5500, 6000, 6500, 7000, 7500, 8000),
+            ),
+            EquipmentData(
+                equipmentId = "eq_weapon_sr_001",
+                displayName = "精钢剑",
+                description = "精钢打造的长剑",
+                rarity = 2,
+                type = "weapon",
+                setId = "set_attack",
+                baseStats = listOf(StatData(StatValue.STAT_ATTACK, 20, 30, false, 100)),
+                subStatPool = listOf(
+                    StatData(StatValue.STAT_HP, 30, 80, false, 100),
+                    StatData(StatValue.STAT_DEFENSE, 10, 25, false, 100),
+                    StatData(StatValue.STAT_CRIT_RATE, 2, 5, false, 75),
+                    StatData(StatValue.STAT_CRIT_DMG, 4, 10, false, 50),
+                ),
+                maxLevel = 15,
+                expPerLevel = listOf(100, 150, 200, 250, 300, 350, 400, 450, 500, 550, 600, 650, 700, 750, 800),
+                goldPerLevel = listOf(1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000, 5500, 6000, 6500, 7000, 7500, 8000),
+            ),
+            // 头盔
+            EquipmentData(
+                equipmentId = "eq_head_r_001",
+                displayName = "皮盔",
+                description = "普通的皮质头盔",
+                rarity = 1,
+                type = "head",
+                setId = "",
+                baseStats = listOf(StatData(StatValue.STAT_HP, 50, 100, false, 100)),
+                subStatPool = listOf(
+                    StatData(StatValue.STAT_ATTACK, 5, 15, false, 100),
+                    StatData(StatValue.STAT_DEFENSE, 5, 15, false, 100),
+                    StatData(StatValue.STAT_CRIT_RATE, 1, 3, false, 50),
+                ),
+                maxLevel = 15,
+                expPerLevel = listOf(100, 150, 200, 250, 300, 350, 400, 450, 500, 550, 600, 650, 700, 750, 800),
+                goldPerLevel = listOf(1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000, 5500, 6000, 6500, 7000, 7500, 8000),
+            ),
+            // 铠甲
+            EquipmentData(
+                equipmentId = "eq_body_r_001",
+                displayName = "皮甲",
+                description = "普通的皮质铠甲",
+                rarity = 1,
+                type = "body",
+                setId = "",
+                baseStats = listOf(StatData(StatValue.STAT_DEFENSE, 10, 20, false, 100)),
+                subStatPool = listOf(
+                    StatData(StatValue.STAT_ATTACK, 5, 15, false, 100),
+                    StatData(StatValue.STAT_HP, 20, 50, false, 100),
+                    StatData(StatValue.STAT_CRIT_RATE, 1, 3, false, 50),
+                ),
+                maxLevel = 15,
+                expPerLevel = listOf(100, 150, 200, 250, 300, 350, 400, 450, 500, 550, 600, 650, 700, 750, 800),
+                goldPerLevel = listOf(1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000, 5500, 6000, 6500, 7000, 7500, 8000),
+            ),
+            // 饰品
+            EquipmentData(
+                equipmentId = "eq_accessory_r_001",
+                displayName = "生命戒指",
+                description = "增加生命值的戒指",
+                rarity = 1,
+                type = "accessory",
+                setId = "",
+                baseStats = listOf(
+                    StatData(StatValue.STAT_HP, 30, 60, false, 100),
+                    StatData(StatValue.STAT_ATTACK, 5, 10, false, 50),
+                ),
+                subStatPool = listOf(
+                    StatData(StatValue.STAT_DEFENSE, 5, 15, false, 100),
+                    StatData(StatValue.STAT_SPEED, 2, 5, false, 75),
+                    StatData(StatValue.STAT_CRIT_RATE, 1, 3, false, 50),
+                ),
+                maxLevel = 15,
+                expPerLevel = listOf(100, 150, 200, 250, 300, 350, 400, 450, 500, 550, 600, 650, 700, 750, 800),
+                goldPerLevel = listOf(1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000, 5500, 6000, 6500, 7000, 7500, 8000),
+            ),
+        )
+        
+        // 定义套装效果
+        equipmentSets = listOf(
+            EquipmentSetData(
+                setId = "set_attack",
+                displayName = "攻击套",
+                description = "2件套：攻击力+15%；4件套：暴击率+10%",
+                twoPieceBonus = SetBonus(
+                    description = "攻击力+15%",
+                    statBonuses = listOf(StatBonus(StatValue.STAT_ATTACK, 15, true)),
+                ),
+                fourPieceBonus = SetBonus(
+                    description = "暴击率+10%",
+                    statBonuses = listOf(StatBonus(StatValue.STAT_CRIT_RATE, 10, true)),
+                ),
+            ),
+            EquipmentSetData(
+                setId = "set_defense",
+                displayName = "防御套",
+                description = "2件套：防御力+15%；4件套：生命值+20%",
+                twoPieceBonus = SetBonus(
+                    description = "防御力+15%",
+                    statBonuses = listOf(StatBonus(StatValue.STAT_DEFENSE, 15, true)),
+                ),
+                fourPieceBonus = SetBonus(
+                    description = "生命值+20%",
+                    statBonuses = listOf(StatBonus(StatValue.STAT_HP, 20, true)),
+                ),
+            ),
+        )
     }
 
     companion object {

@@ -123,11 +123,11 @@ fun CharacterListScreen(
 
             if (owned.isEmpty() || visible.isEmpty()) {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
-                    Text(
-                        text = "没有符合条件的角色",
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = AppTheme.Text3,
-                        modifier = Modifier.padding(top = 80.dp),
+                    com.milan.game.ui.components.EmptyState(
+                        icon = if (owned.isEmpty()) "✦" else "🔍",
+                        title = if (owned.isEmpty()) "还没有角色" else "没有符合条件的角色",
+                        subtitle = if (owned.isEmpty()) "去寻访吧" else "试试调整筛选条件",
+                        modifier = Modifier.padding(top = 60.dp),
                     )
                 }
             } else {

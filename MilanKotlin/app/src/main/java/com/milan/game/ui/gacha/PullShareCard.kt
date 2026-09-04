@@ -74,25 +74,27 @@ object PullShareCard {
         val bmp = Bitmap.createBitmap(WIDTH, height, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bmp)
 
-        // 背景：浓墨底色 + 顶部金色饰线（水墨国风调性）
-        canvas.drawColor(0xFF0A0A0F.toInt())
-        val accent = Paint().apply { color = 0xFFD4A853.toInt() }
+        // 背景：浓墨底色 + 顶部金箔饰线（水墨国风调性）
+        // U-04：全部改走 AppTheme 水墨 token（Canvas 侧取 toArgb）。
+        // 原 0xFFF2F2F2 / 0xFF9AA3B5 是冷白冷灰，与宣纸暖调不符，已改为 Text1(宣纸白) / Text2。
+        canvas.drawColor(AppTheme.BgDeepest.toArgb())
+        val accent = Paint().apply { color = AppTheme.Gold.toArgb() }
         canvas.drawRect(0f, 0f, WIDTH.toFloat(), 6f, accent)
 
         val titlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = 0xFFD4A853.toInt(); textSize = 52f; isFakeBoldText = true
+            color = AppTheme.Gold.toArgb(); textSize = 52f; isFakeBoldText = true
         }
         canvas.drawText("丹青寻访 · 抽卡结果", PAD.toFloat(), (PAD + 44).toFloat(), titlePaint)
 
-        val cellFill = Paint().apply { color = 0xFF141620.toInt() }
+        val cellFill = Paint().apply { color = AppTheme.BgMid.toArgb() }
         val namePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = 0xFFF2F2F2.toInt(); textSize = 26f; textAlign = Paint.Align.CENTER
+            color = AppTheme.Text1.toArgb(); textSize = 26f; textAlign = Paint.Align.CENTER
         }
         val rarityPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             textSize = 30f; isFakeBoldText = true; textAlign = Paint.Align.CENTER
         }
         val footerPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = 0xFF9AA3B5.toInt(); textSize = 30f
+            color = AppTheme.Text2.toArgb(); textSize = 30f
         }
         val border = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE; strokeWidth = 5f }
         val rect = RectF()

@@ -82,9 +82,14 @@ class GachaGlanceWidget : GlanceAppWidget() {
     private companion object {
         /** 主卡池 id（对齐 data.json PoolId，widget 不加载内容也拿得到保底计数）。 */
         const val POOL_ID_MAIN = "pool_main"
-        val GOLD = 0xFFE8B84B.toInt()
-        val TEXT_MAIN = 0xFFF3ECFF.toInt()
-        val TEXT_SUB = 0xFFB7A6CF.toInt()
+        // U-02（2026-08-30）：对齐 AppTheme 水墨色板。
+        // 旧值 GOLD E8B84B 偏亮黄，TEXT_MAIN F3ECFF 与 TEXT_SUB B7A6CF 是**冷紫调**
+        // （旧「暗夜神性·诸神黄昏」残留），与宣纸暖白调性冲突。
+        // Glance 走 ColorProvider（RemoteViews 体系），无法直接复用 Compose Color，
+        // 故以 Int 常量镜像水墨色板 —— 改色板时须同步此处。
+        val GOLD = 0xFFD4A853.toInt()      // = AppTheme.Gold（金箔）
+        val TEXT_MAIN = 0xFFF0E8D8.toInt() // = AppTheme.Text1（宣纸白）
+        val TEXT_SUB = 0xFFB0A898.toInt()  // = AppTheme.Text2（淡墨灰）
     }
 }
 

@@ -87,11 +87,15 @@ fun DeckScreen(
     // 快速连点时两次都基于同一份过期快照计算，后提交者覆盖前者，前一次点击被静默丢弃。
     val toggleFormation: (String) -> Unit = { id ->
         scope.launch {
-            when (GameState.service.toggleFormation(id)) {
-                WriteOutcome.Success -> Unit
-                // 列表内的角色必定已拥有，Rejected 只剩「编队已满」一种语义
-                WriteOutcome.Rejected -> feedback.show("编队已满（${GameState.maxFormationSize} 人），请先移出一名角色")
-                WriteOutcome.SaveFailed -> feedback.show("保存失败，请重试")
+            try {
+                when (GameState.service.toggleFormation(id)) {
+                    WriteOutcome.Success -> Unit
+                    // 列表内的角色必定已拥有，Rejected 只剩「编队已满」一种语义
+                    WriteOutcome.Rejected -> feedback.show("编队已满（${GameState.maxFormationSize} 人），请先移出一名角色")
+                    WriteOutcome.SaveFailed -> feedback.show("保存失败，请重试")
+                }
+            } catch (_: Exception) {
+                feedback.show("操作异常，请重试")
             }
         }
     }
@@ -116,7 +120,15 @@ fun DeckScreen(
                     members = members,
                     maxSlots = GameState.maxFormationSize,
                     onSlotClick = { onOpenDeckSlot ->
-                        if (onOpenDeckSlot != null) previewId = onOpenDeckSlot
+                        if (onOpenDeckSlot != null) {
+                            // 已入队槽位：弹出该角色预览层（可移出编队/查看详情）
+                            previewId = onOpenDeckSlot
+                        } else {
+                            // M2 修复：空槽此前静默 no-op（点了没反应）。
+                            // 卡组页本身就是编队页——点空槽的意图是「往空位放人」，
+                            // 与 TowerScreen 的「跳去组队页」语义不同，此处给可见引导指向下方角色网格。
+                            scope.launch { feedback.show("点下方角色卡片，在预览中「加入编队」") }
+                        }
                     },
                     modifier = Modifier.padding(horizontal = 18.dp),
                 )
@@ -130,25 +142,13 @@ fun DeckScreen(
                         .fillMaxWidth(),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(
-                            text = "✦",
-                            fontSize = 40.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = AppTheme.Gold.copy(alpha = 0.6f),
-                        )
-                        Text(
-                            text = "还没有角色，去寻访吧",
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = AppTheme.Text3,
-                            modifier = Modifier.padding(top = 8.dp),
-                        )
-                        NeonButton(
-                            text = "前往寻访",
-                            onClick = { onNav(NavItem.Gacha) },
-                            modifier = Modifier.padding(top = 20.dp),
-                        )
-                    }
+                    com.milan.game.ui.components.EmptyState(
+                        icon = "✦",
+                        title = "还没有角色",
+                        subtitle = "去寻访吧",
+                        actionText = "前往寻访",
+                        onAction = { onNav(NavItem.Gacha) },
+                    )
                 }
             } else {
                 val deckGridState = rememberLazyGridState()

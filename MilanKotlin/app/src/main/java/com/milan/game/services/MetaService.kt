@@ -241,8 +241,8 @@ internal class MetaService(private val core: ServiceCore) {
         core.transactionLocked(
             tag = "achievement",
             mutate = {
-                if (def.rewardSoft > 0) saveData.softCurrency += def.rewardSoft
-                if (def.rewardHard > 0) saveData.hardCurrency += def.rewardHard
+                if (def.rewardSoft > 0) core.addCurrencyDelta(def.rewardSoft, 0)
+                if (def.rewardHard > 0) core.addCurrencyDelta(0, def.rewardHard)
                 if (def.rewardTickets > 0) core.addItemDelta(ServiceCore.BattleTicketItemId, def.rewardTickets)
                 saveData.claimedAchievements = saveData.claimedAchievements + id
             },

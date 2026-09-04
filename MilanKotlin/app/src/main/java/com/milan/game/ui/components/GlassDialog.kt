@@ -1,9 +1,12 @@
 package com.milan.game.ui.components
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.scaleIn
+import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -65,7 +68,12 @@ fun GlassDialog(
             Box(Modifier.pointerInput(Unit) { detectTapGestures { } }) {
                 AnimatedVisibility(
                     visible = true,
-                    enter = fadeIn(tween(240)) + scaleIn(initialScale = 0.92f, animationSpec = tween(240)),
+                    enter = fadeIn(tween(200)) +
+                            slideInVertically(
+                                initialOffsetY = { it / 8 },
+                                animationSpec = spring(dampingRatio = 0.7f, stiffness = Spring.StiffnessMedium),
+                            ) +
+                            scaleIn(initialScale = 0.95f, animationSpec = spring(dampingRatio = 0.7f, stiffness = Spring.StiffnessMedium)),
                 ) {
                     Column(
                         modifier = Modifier

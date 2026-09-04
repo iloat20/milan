@@ -3,13 +3,16 @@ package com.milan.game.ui.components
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
@@ -64,16 +67,20 @@ fun GoldButton(
     textSize: TextUnit = 16.sp,
     enabled: Boolean = true,
 ) {
+    val interactionSource = remember { MutableInteractionSource() }
     Box(
         modifier = modifier
+            // I3 修复：enabled=false 原本只禁用点击、视觉毫无变化，
+            // 用户仍会以为"点了没反应"。补一个明确的禁用态（降透明度）。
+            .alpha(if (enabled) 1f else 0.45f)
             .clip(CutShape)
             .background(
                 Brush.verticalGradient(listOf(AppTheme.GoldHi, AppTheme.Gold, AppTheme.GoldDeep)),
                 CutShape,
             )
             .border(1.dp, Color.White.copy(alpha = 0.47f), CutShape)
-            .clickable(enabled = enabled, onClick = onClick)
-            .inkSplash()
+            .inkSplash(interactionSource)
+            .clickable(interactionSource = interactionSource, indication = null, enabled = enabled, onClick = onClick)
             .padding(horizontal = 32.dp, vertical = 13.dp),
         contentAlignment = Alignment.Center,
     ) {
@@ -96,13 +103,16 @@ fun NeonButton(
     color: Color = AppTheme.Frost,
     enabled: Boolean = true,
 ) {
+    val interactionSource = remember { MutableInteractionSource() }
     Box(
         modifier = modifier
+            // I3 修复：同 GoldButton，补禁用态视觉。
+            .alpha(if (enabled) 1f else 0.45f)
             .clip(RoundedCornerShape(10.dp))
             .background(color.copy(alpha = 0.06f), RoundedCornerShape(10.dp))
             .border(1.5.dp, color, RoundedCornerShape(10.dp))
-            .clickable(enabled = enabled, onClick = onClick)
-            .inkSplash()
+            .inkSplash(interactionSource)
+            .clickable(interactionSource = interactionSource, indication = null, enabled = enabled, onClick = onClick)
             .padding(horizontal = 28.dp, vertical = 12.dp),
         contentAlignment = Alignment.Center,
     ) {

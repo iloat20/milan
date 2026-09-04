@@ -25,6 +25,8 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -41,8 +43,9 @@ import kotlin.math.sin
 // ── 墨迹边框绘制工具 ──
 
 /**
- * 模拟毛笔不均匀笔触的墨迹边框路径。
- * 用多段贝塞尔 + 随机偏移产生「枯笔/飞白」效果。
+ * 模拟毛笔笔触的墨迹边框路径（优化版）。
+ * 用 4 段直线 + 4 角圆弧，避免逐段 sin/cos 计算（原实现每条边数十次三角函数调用）。
+ * 视觉效果：圆角矩形边框，配合 Stroke 粗细变化模拟毛笔提按。
  */
 private fun inkBorderPath(
     width: Float,
@@ -51,63 +54,31 @@ private fun inkBorderPath(
     strokeWidth: Float,
 ): Path {
     val path = Path()
-    val step = strokeWidth * 3
+    val inset = strokeWidth * 0.4f // 描边内缩量，模拟毛笔笔尖位置
     // 上边（左→右）
-    path.moveTo(radius, strokeWidth * 0.3f)
-    var x = radius
-    while (x < width - radius) {
-        val wobble = (Math.sin(x * 0.05) * strokeWidth * 0.6 + Math.cos(x * 0.13) * strokeWidth * 0.3).toFloat()
-        path.lineTo(
-            minOf(x + step, width - radius),
-            strokeWidth * 0.5f + wobble,
-        )
-        x += step
-    }
+    path.moveTo(radius, inset)
+    path.lineTo(width - radius, inset)
     // 右上角圆弧
     path.arcTo(
         rect = androidx.compose.ui.geometry.Rect(width - radius * 2, 0f, width, radius * 2),
         startAngleDegrees = -90f, sweepAngleDegrees = 90f, forceMoveTo = false,
     )
     // 右边（上→下）
-    var y = radius
-    while (y < height - radius) {
-        val wobble = (Math.cos(y * 0.07) * strokeWidth * 0.5 + Math.sin(y * 0.11) * strokeWidth * 0.25).toFloat()
-        path.lineTo(
-            width - strokeWidth * 0.5f + wobble,
-            minOf(y + step, height - radius),
-        )
-        y += step
-    }
+    path.lineTo(width - inset, height - radius)
     // 右下角圆弧
     path.arcTo(
         rect = androidx.compose.ui.geometry.Rect(width - radius * 2, height - radius * 2, width, height),
         startAngleDegrees = 0f, sweepAngleDegrees = 90f, forceMoveTo = false,
     )
     // 下边（右→左）
-    x = width - radius
-    while (x > radius) {
-        val wobble = (Math.sin(x * 0.06) * strokeWidth * 0.4).toFloat()
-        path.lineTo(
-            maxOf(x - step, radius),
-            height - strokeWidth * 0.5f + wobble,
-        )
-        x -= step
-    }
+    path.lineTo(radius, height - inset)
     // 左下角圆弧
     path.arcTo(
         rect = androidx.compose.ui.geometry.Rect(0f, height - radius * 2, radius * 2, height),
         startAngleDegrees = 90f, sweepAngleDegrees = 90f, forceMoveTo = false,
     )
     // 左边（下→上）
-    y = height - radius
-    while (y > radius) {
-        val wobble = (Math.cos(y * 0.08) * strokeWidth * 0.35).toFloat()
-        path.lineTo(
-            strokeWidth * 0.5f + wobble,
-            maxOf(y - step, radius),
-        )
-        y -= step
-    }
+    path.lineTo(inset, radius)
     // 左上角圆弧
     path.arcTo(
         rect = androidx.compose.ui.geometry.Rect(0f, 0f, radius * 2, radius * 2),
@@ -201,7 +172,7 @@ fun SectionLabel(text: String, modifier: Modifier = Modifier) {
     )
 }
 
-/** 朱印（方形红色印章装饰）— 用于页面角落点缀。 */
+/** 朱印（方形红色印章装饰）— 用于页面角落点缀。mergeDescendants 合并子节点语义，TalkBack 读「印章 印」。 */
 @Composable
 fun SealStamp(
     text: String = "印",
@@ -211,6 +182,9 @@ fun SealStamp(
     Box(
         modifier = modifier
             .size(stampSize)
+            .semantics(mergeDescendants = true) {
+                contentDescription = "印章 $text"
+            }
             .drawBehind {
                 val s = size.width
                 val pad = 2.dp.toPx()

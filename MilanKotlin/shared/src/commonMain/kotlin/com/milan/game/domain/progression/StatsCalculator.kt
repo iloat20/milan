@@ -58,12 +58,14 @@ object StatsCalculator {
             hp = (progression.statAtLevel(base(2, 1000), lv, stg, starMul) * (1 + m.hp)).toInt(),
             spd = (progression.statAtLevel(base(3, 12), lv, stg, starMul) * (1 + m.spd)).toInt(),
             characterId = characterId,
+            // critRate/critDmg 由装备/共鸣注入，此处默认值；unitStatsFor 合并装备属性时覆盖
         )
     }
 
-    /** 次级属性推导：从主属性透明映射（C# DeriveSecondary；纯函数，无 Android 依赖）。 */
+    /** 次级属性推导：从主属性透明映射（C# DeriveSecondary；纯函数，无 Android 依赖）。
+     *  暴击：基础 8 + atk/120，叠加装备暴击率（UnitStats.critRate，0.0~1.0 → 百分比）。 */
     fun deriveSecondary(s: UnitStats): SecondaryStats = SecondaryStats(
-        crit = (8 + s.atk / 120).coerceIn(8, 60),
+        crit = (8 + s.atk / 120 + (s.critRate * 100).toInt()).coerceIn(8, 100),
         haste = (5 + s.spd * 2).coerceIn(5, 50),
         armor = (s.def * 1.6 + s.hp * 0.05).toInt(),
         block = (3 + s.def / 200).coerceIn(3, 30),

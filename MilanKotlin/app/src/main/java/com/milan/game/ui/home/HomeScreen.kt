@@ -16,6 +16,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -93,6 +94,10 @@ fun HomeScreen(
     onOpenCharacter: (String) -> Unit,
     onOpenTower: () -> Unit = {},
     onOpenAchievements: () -> Unit = {},
+    onOpenStory: () -> Unit = {},
+    onOpenDailyMissions: () -> Unit = {},
+    onOpenBattlePass: () -> Unit = {},
+    onOpenAffinity: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     var entered by remember { mutableStateOf(false) }
@@ -166,9 +171,9 @@ fun HomeScreen(
                         start = 14.dp, top = 6.dp, end = 14.dp, bottom = 8.dp
                     ),
                 ) {
-                    item { Hero(heroHeight, heroParallax) }
+                    item { Hero(heroHeight, heroParallax, onOpenCharacter) }
                     item { Spacer(Modifier.height(10.dp)) }
-                    item { HeroButtons(onOpenGacha, onOpenCollection, onOpenTower, onOpenAchievements) }
+                    item { HeroButtons(onOpenGacha, onOpenCollection, onOpenTower, onOpenAchievements, onOpenStory, onOpenDailyMissions, onOpenBattlePass, onOpenAffinity) }
                     item { Spacer(Modifier.height(14.dp)) }
                     item { HomeSectionTitle("丹青名录", "ROSTER") }
                     item { Spacer(Modifier.height(8.dp)) }
@@ -209,7 +214,11 @@ fun HomeScreen(
 // ── 主视觉：角色大图 + 底部铭牌 ──
 
 @Composable
-private fun Hero(fixedH: androidx.compose.ui.unit.Dp, scrollProgress: Float = 0f) {
+private fun Hero(
+    fixedH: androidx.compose.ui.unit.Dp,
+    scrollProgress: Float = 0f,
+    onOpenCharacter: (String) -> Unit,
+) {
     // 快照 revision 驱动：抽到更高稀有度角色后回主页，主视觉随之更新
     val snap by GameState.snapshot.collectAsStateWithLifecycle()
     val def = remember(snap.revision) { featuredCharacter() }
@@ -300,6 +309,25 @@ private fun Hero(fixedH: androidx.compose.ui.unit.Dp, scrollProgress: Float = 0f
                         .padding(horizontal = 10.dp, vertical = 3.dp),
                 )
             }
+            // CTA 按钮：进入角色详情（铭牌区域底部右侧）
+            Box(
+                modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
+                contentAlignment = Alignment.CenterEnd,
+            ) {
+                androidx.compose.material3.TextButton(
+                    // B1 修复：此前为空实现（注释谎称"由外层处理"，实际无处处理）→
+                    // 首页主视觉 CTA 点了完全没反应。现直接接通角色详情路由。
+                    onClick = { onOpenCharacter(def.characterId) },
+                    contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 12.dp, vertical = 0.dp),
+                ) {
+                    Text(
+                        text = "查看详情 ›",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = rarityColor,
+                    )
+                }
+            }
         }
     }
 }
@@ -376,6 +404,10 @@ private fun HeroButtons(
     onOpenCollection: () -> Unit,
     onOpenTower: () -> Unit,
     onOpenAchievements: () -> Unit,
+    onOpenStory: () -> Unit,
+    onOpenDailyMissions: () -> Unit,
+    onOpenBattlePass: () -> Unit,
+    onOpenAffinity: () -> Unit,
 ) {
     Column {
         Row(
@@ -394,6 +426,24 @@ private fun HeroButtons(
             NeonButton("♾ 无尽之塔", Modifier.weight(1f), onOpenTower)
             Spacer(Modifier.width(12.dp))
             NeonButton("✦ 成 就", Modifier.weight(1f), onOpenAchievements)
+        }
+        Spacer(Modifier.height(10.dp))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            NeonButton("📖 剧 情", Modifier.weight(1f), onOpenStory)
+            Spacer(Modifier.width(12.dp))
+            NeonButton("📋 每日任务", Modifier.weight(1f), onOpenDailyMissions)
+        }
+        Spacer(Modifier.height(10.dp))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            NeonButton("🎫 纪 行", Modifier.weight(1f), onOpenBattlePass)
+            Spacer(Modifier.width(12.dp))
+            NeonButton("❤️ 好感度", Modifier.weight(1f), onOpenAffinity)
         }
     }
 }
@@ -460,10 +510,11 @@ private fun AvatarStrip(onOpenCharacter: (String) -> Unit) {
                 animationSpec = spring(dampingRatio = 0.75f, stiffness = Spring.StiffnessLow),
                 label = "itemOffset",
             )
+            val avatarInteraction = remember { MutableInteractionSource() }
             Column(
                 modifier = Modifier
-                    .clickable { onOpenCharacter(e.def.characterId) }
-                    .inkSplash()
+                    .inkSplash(avatarInteraction)
+                    .clickable(interactionSource = avatarInteraction, indication = null) { onOpenCharacter(e.def.characterId) }
                     .padding(end = 12.dp)
                     .graphicsLayer {
                         alpha = itemAlpha

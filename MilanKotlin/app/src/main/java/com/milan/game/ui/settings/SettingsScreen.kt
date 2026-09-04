@@ -32,6 +32,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.milan.game.infrastructure.CrashReporter
 import com.milan.game.infrastructure.DailySupplyNotifier
 import com.milan.game.infrastructure.MilanAudio
@@ -49,6 +50,9 @@ import com.milan.game.ui.nav.GameNavBar
 import com.milan.game.ui.nav.NavItem
 import com.milan.game.ui.feedback.LocalFeedback
 import com.milan.game.ui.theme.AppTheme
+import com.milan.game.ai.AIRecommendationEngine
+import com.milan.game.ai.CharacterRecommendation
+import com.milan.game.ai.GachaRecommendation
 import kotlinx.coroutines.launch
 
 /**
@@ -219,6 +223,92 @@ fun SettingsScreen(
                             }
                         },
                     )
+                }
+
+                SectionTitle("AI 智能推荐")
+                EntranceItem(index = 6) {
+                    val recs by produceState(initialValue = emptyList<CharacterRecommendation>()) {
+                        value = AIRecommendationEngine.recommendCharactersToLevelUp(
+                            save = service.saveData,
+                            service = service,
+                        )
+                    }
+                    GlassPanel(modifier = Modifier.fillMaxWidth()) {
+                        Column(Modifier.padding(14.dp)) {
+                            Text("角色培养推荐", color = AppTheme.Gold, style = MaterialTheme.typography.titleSmall)
+                            Spacer(Modifier.height(8.dp))
+                            if (recs.isEmpty()) {
+                                Text("暂无推荐", color = AppTheme.Text2, style = MaterialTheme.typography.labelLarge)
+                            } else {
+                                recs.take(3).forEach { rec ->
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                    ) {
+                                        Column(Modifier.weight(1f)) {
+                                            Text(
+                                                rec.characterName,
+                                                color = AppTheme.Text1,
+                                                fontWeight = FontWeight.Bold,
+                                                fontSize = 13.sp,
+                                            )
+                                            Spacer(Modifier.height(2.dp))
+                                            Text(
+                                                rec.reasons.firstOrNull() ?: "",
+                                                color = AppTheme.Text2,
+                                                fontSize = 11.sp,
+                                            )
+                                        }
+                                        Text(
+                                            "评分 ${rec.score}",
+                                            color = AppTheme.Gold,
+                                            fontSize = 12.sp,
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                EntranceItem(index = 7) {
+                    val gachaRec by produceState(initialValue = null as GachaRecommendation?) {
+                        value = AIRecommendationEngine.recommendGachaStrategy(
+                            save = service.saveData,
+                            service = service,
+                        )
+                    }
+                    GlassPanel(modifier = Modifier.fillMaxWidth()) {
+                        Column(Modifier.padding(14.dp)) {
+                            Text("抽卡策略", color = AppTheme.Gold, style = MaterialTheme.typography.titleSmall)
+                            Spacer(Modifier.height(8.dp))
+                            if (gachaRec != null) {
+                                val g = gachaRec!!
+                                Text(
+                                    "累计 ${g.currentPity} 抽 · 可抽 ${g.pullsAvailable} 次",
+                                    color = AppTheme.Text2,
+                                    fontSize = 12.sp,
+                                )
+                                Spacer(Modifier.height(4.dp))
+                                g.recommendations.take(2).forEach { tip ->
+                                    Text(
+                                        "· $tip",
+                                        color = AppTheme.Text1,
+                                        fontSize = 11.sp,
+                                        modifier = Modifier.padding(top = 2.dp),
+                                    )
+                                }
+                                Spacer(Modifier.height(4.dp))
+                                Text(
+                                    "建议: ${g.suggestedPool}",
+                                    color = AppTheme.Frost,
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                )
+                            } else {
+                                Text("暂无推荐", color = AppTheme.Text2, style = MaterialTheme.typography.labelLarge)
+                            }
+                        }
+                    }
                 }
 
                 SectionTitle("关于")

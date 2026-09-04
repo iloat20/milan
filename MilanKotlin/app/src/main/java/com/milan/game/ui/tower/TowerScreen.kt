@@ -146,13 +146,13 @@ fun TowerScreen(
                 Spacer(Modifier.height(16.dp))
 
                 if (snapshot.formation.isEmpty()) {
-                    Text(
-                        text = "还没有出战编队，先去卡组页点选角色入队。",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = AppTheme.Text3,
+                    com.milan.game.ui.components.EmptyState(
+                        icon = "⚔",
+                        title = "还没有出战编队",
+                        subtitle = "先去卡组页点选角色入队",
+                        actionText = "前往编队",
+                        onAction = onOpenDeck,
                     )
-                    Spacer(Modifier.height(10.dp))
-                    NeonButton(text = "前往编队", onClick = onOpenDeck, modifier = Modifier.fillMaxWidth())
                 } else {
                     // 下一层挑战：奖励预览按 EconomyFormulas 计算，禁止就地写数字。
                     Text(
@@ -179,8 +179,11 @@ fun TowerScreen(
                             if (running || !canChallenge) return@GoldButton
                             running = true
                             scope.launch {
-                                result = GameState.service.runTowerFloor(nextFloor)
-                                running = false
+                                try {
+                                    result = GameState.service.runTowerFloor(nextFloor)
+                                } finally {
+                                    running = false
+                                }
                             }
                         },
                         modifier = Modifier.fillMaxWidth(),
@@ -195,8 +198,11 @@ fun TowerScreen(
                                 if (running || !canChallenge) return@NeonButton
                                 running = true
                                 scope.launch {
-                                    result = GameState.service.runTowerFloor(best)
-                                    running = false
+                                    try {
+                                        result = GameState.service.runTowerFloor(best)
+                                    } finally {
+                                        running = false
+                                    }
                                 }
                             },
                             modifier = Modifier.fillMaxWidth(),

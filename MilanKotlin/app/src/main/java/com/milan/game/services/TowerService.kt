@@ -4,6 +4,7 @@ import com.milan.game.data.BattleRecord
 import com.milan.game.data.CharacterSaveState
 import com.milan.game.data.SaveData
 import com.milan.game.domain.battle.BattleSimulator
+import com.milan.game.domain.battle.StrategicBattleSimulator
 import com.milan.game.domain.battle.TeamResonance
 import com.milan.game.domain.battle.UnitStats
 import com.milan.game.domain.progression.EconomyFormulas
@@ -22,6 +23,9 @@ import kotlinx.coroutines.sync.withLock
 internal class TowerService(private val core: ServiceCore) {
 
     private val saveData get() = core.saveData
+    
+    // 策略战斗模拟器（支持玩家输入）
+    private val strategicSimulator = StrategicBattleSimulator(core.rng)
 
     // ─────────────────────────── 出战编队 ───────────────────────────
 
@@ -170,6 +174,8 @@ internal class TowerService(private val core: ServiceCore) {
         val originalHard = saveData.hardCurrency
         val originalBest = saveData.towerBestFloor
         val originalRecords = saveData.battleRecords
+        // 2026-09-02：胜利好感产出的事务前快照（rollback 用）。
+        val origAffinity = saveData.characterAffinityData
         // F4（2026-08-28 审查修复）：胜利给出战编队发放经验，让经验条真正能推进。
         // 注意 ProgressionService.addExp 是 suspend 且内部持 writeMutex —— 本函数已在临界区内，
         // Mutex 不可重入，直接调用会死锁，故内联同口径实现（totalExp 驱动 + expToLevel 派生）。
@@ -209,12 +215,20 @@ internal class TowerService(private val core: ServiceCore) {
                         teamPower = team.sumOf { it.atk },
                     ),
                 )
+                // 2026-09-02：胜利给出战编队全员发好感（数值走 AffinityFormulas，
+                // addAffinityDelta 钳位到 MAX_AFFINITY）。失败/平局不发。
+                if (result.victory) {
+                    for (id in teamIds) {
+                        core.addAffinityDelta(id, AffinityFormulas.BATTLE_WIN_AFFINITY)
+                    }
+                }
             },
             rollback = {
                 saveData.softCurrency = originalSoft
                 saveData.hardCurrency = originalHard
                 saveData.towerBestFloor = originalBest
                 saveData.battleRecords = originalRecords
+                saveData.characterAffinityData = origAffinity
                 // F4：经验与自动升级一并回滚
                 for (snap in expSnapshots) {
                     snap.save.totalExp = snap.totalExp
@@ -225,7 +239,7 @@ internal class TowerService(private val core: ServiceCore) {
             },
             onCommit = {
                 if (reward > 0 || rewardHard > 0 || ticketDelta != 0) core.publishCurrencyChanged()
-                if (expSnapshots.isNotEmpty()) core.publishProgressionChanged()
+                if (expSnapshots.isNotEmpty() || result.victory) core.publishProgressionChanged()
             },
         )
 
@@ -278,4 +292,220 @@ internal class TowerService(private val core: ServiceCore) {
         val level: Int,
         val unspentPoints: Int,
     )
+    
+    // ─────────────────────────── 策略战斗系统 ───────────────────────────
+    
+    /**
+     * 初始化策略战斗状态。
+     * 
+     * @param floor 无尽之塔层数
+     * @return 初始战斗状态
+     */
+    fun initializeStrategicBattle(floor: Int): com.milan.game.domain.battle.BattleState {
+        val teamIds = saveData.getFormationIds()
+        val myUnits = teamIds.mapNotNull { core.unitStatsFor(it) }
+        val team = TeamResonance.apply(myUnits).toTypedArray()
+        val enemyTeam = buildTowerEnemies(floor)
+        
+        return strategicSimulator.initializeBattle(team.toList(), enemyTeam.toList())
+    }
+    
+    /**
+     * 执行玩家行动（策略战斗）。
+     * 
+     * @param state 当前战斗状态
+     * @param action 玩家行动
+     * @return 新的战斗状态
+     */
+    fun executeStrategicAction(
+        state: com.milan.game.domain.battle.BattleState,
+        action: com.milan.game.domain.battle.PlayerAction,
+    ): com.milan.game.domain.battle.BattleState {
+        return strategicSimulator.executePlayerAction(state, action)
+    }
+    
+    /**
+     * 执行敌方回合（策略战斗）。
+     * 
+     * @param state 当前战斗状态
+     * @return 新的战斗状态
+     */
+    fun executeStrategicEnemyTurn(
+        state: com.milan.game.domain.battle.BattleState,
+    ): com.milan.game.domain.battle.BattleState {
+        return strategicSimulator.executeEnemyTurn(state)
+    }
+    
+    /**
+     * 更新回合状态（策略战斗）。
+     * 
+     * @param state 当前战斗状态
+     * @return 新的战斗状态
+     */
+    fun updateStrategicTurnState(
+        state: com.milan.game.domain.battle.BattleState,
+    ): com.milan.game.domain.battle.BattleState {
+        return strategicSimulator.updateTurnState(state)
+    }
+    
+    /**
+     * 检查战斗结果（策略战斗）。
+     * 
+     * @param state 当前战斗状态
+     * @return 战斗阶段
+     */
+    fun checkStrategicBattleResult(
+        state: com.milan.game.domain.battle.BattleState,
+    ): com.milan.game.domain.battle.BattlePhase {
+        return strategicSimulator.checkBattleResult(state)
+    }
+    
+    /**
+     * 获取可用的玩家行动（策略战斗）。
+     * 
+     * @param state 当前战斗状态
+     * @param actorIndex 行动角色索引
+     * @return 可用行动列表
+     */
+    fun getStrategicAvailableActions(
+        state: com.milan.game.domain.battle.BattleState,
+        actorIndex: Int,
+    ): List<com.milan.game.domain.battle.PlayerAction> {
+        return strategicSimulator.getAvailableActions(state, actorIndex)
+    }
+    
+    /**
+     * 结算策略战斗奖励。
+     * 
+     * R5-I1（2026-09-03 审查修复）：补 floor 上下界 + 空编队校验，并统一胜利好感发放
+     * （对齐 [runTowerFloor] 口径）——此前三者皆无，floor=巨值可把 towerBestFloor 刷到
+     * 存档级损坏（此后 1..N 层「刷新纪录」恒 false、爬塔奖励/返票永久锁死）。
+     * 注：`victory` 仍由调用方断言（策略战斗状态机在 UI 侧维护），服务端不重放战斗；
+     * 该项的彻底收口依赖策略战斗状态机下沉到领域层，属后续接线项。
+     * 
+     * @param floor 无尽之塔层数
+     * @param victory 是否胜利
+     * @param turns 回合数
+     * @return 塔挑战结果
+     */
+    suspend fun settleStrategicBattle(
+        floor: Int,
+        victory: Boolean,
+        turns: Int,
+    ): TowerOutcome = core.writeMutex.withLock {
+        // R5-I1：补层数上下界（复用 runTowerFloor 的 M6 校验口径）
+        if (floor < 1 || floor > EconomyFormulas.towerMaxFloor()) return@withLock TowerOutcome.Rejected
+        
+        // 复用原有runTowerFloor的结算逻辑
+        val ticketCost = EconomyFormulas.towerTicketCost()
+        val ticketsExisted = saveData.items.any { it?.itemId == ServiceCore.BattleTicketItemId }
+        val origTickets = core.itemCount(ServiceCore.BattleTicketItemId)
+        if (origTickets < ticketCost) return@withLock TowerOutcome.Rejected
+        
+        val teamIds = saveData.getFormationIds()
+        if (teamIds.isEmpty()) return@withLock TowerOutcome.Rejected
+        val team = teamIds.mapNotNull { core.unitStatsFor(it) }
+        if (team.isEmpty()) return@withLock TowerOutcome.Rejected
+        
+        val oldBest = saveData.towerBestFloor
+        val newBest = if (victory && floor > oldBest) floor else null
+        val reward = if (newBest != null) EconomyFormulas.towerRewardSoft(floor) else 0
+        val rewardHard = if (newBest != null) {
+            (oldBest + 1..newBest).sumOf { f -> EconomyFormulas.towerRewardHard(f) }
+        } else 0
+        val ticketDelta = -ticketCost + (if (newBest != null) EconomyFormulas.towerRewardTickets() else 0)
+        
+        // 防溢出
+        if (reward > 0 && saveData.softCurrency.toLong() + reward > Int.MAX_VALUE) {
+            return@withLock TowerOutcome.Rejected
+        }
+        if (rewardHard > 0 && saveData.hardCurrency.toLong() + rewardHard > Int.MAX_VALUE) {
+            return@withLock TowerOutcome.Rejected
+        }
+        
+        val originalSoft = saveData.softCurrency
+        val originalHard = saveData.hardCurrency
+        val originalBest = saveData.towerBestFloor
+        val originalRecords = saveData.battleRecords
+        // R5-I1：胜利好感产出的事务前快照（rollback 用）
+        val origAffinity = saveData.characterAffinityData
+        
+        val expGain = if (victory) EconomyFormulas.towerRewardExp(floor) else 0
+        val expSnapshots = if (expGain > 0) {
+            teamIds.mapNotNull { id ->
+                core.getSave(id)?.let { ExpSnapshot(it, it.totalExp, it.level, it.unspentPoints) }
+            }
+        } else {
+            emptyList()
+        }
+        
+        val outcome = core.transactionLocked(
+            tag = "tower.strategic",
+            mutate = {
+                if (newBest != null) saveData.towerBestFloor = newBest
+                if (reward > 0) core.addCurrencyDelta(reward, 0)
+                if (rewardHard > 0) core.addCurrencyDelta(0, rewardHard)
+                
+                for (snap in expSnapshots) {
+                    val s = snap.save
+                    s.totalExp += expGain
+                    val target = minOf(core.progression.expToLevel(s.totalExp), core.maxLevelForStage(s.stage))
+                    if (target > s.level) {
+                        s.unspentPoints += target - s.level
+                        s.level = target
+                    }
+                }
+                
+                core.addItemDelta(ServiceCore.BattleTicketItemId, ticketDelta)
+                core.appendBattleRecordCapped(
+                    BattleRecord(
+                        enemyName = "无尽之塔·第${floor}层（策略模式）",
+                        enemyElement = "",
+                        victory = victory,
+                        turns = turns,
+                        remainingHp = 0,  // 策略战斗需要从状态中获取
+                        teamPower = team.sumOf { it.atk },
+                    ),
+                )
+                // R5-I1：胜利给出战编队全员发好感（对齐 runTowerFloor，两结算路径口径统一）
+                if (victory) {
+                    for (id in teamIds) {
+                        core.addAffinityDelta(id, AffinityFormulas.BATTLE_WIN_AFFINITY)
+                    }
+                }
+            },
+            rollback = {
+                saveData.softCurrency = originalSoft
+                saveData.hardCurrency = originalHard
+                saveData.towerBestFloor = originalBest
+                saveData.battleRecords = originalRecords
+                saveData.characterAffinityData = origAffinity
+                for (snap in expSnapshots) {
+                    snap.save.totalExp = snap.totalExp
+                    snap.save.level = snap.level
+                    snap.save.unspentPoints = snap.unspentPoints
+                }
+                core.restoreItemCount(ServiceCore.BattleTicketItemId, ticketsExisted, origTickets)
+            },
+            onCommit = {
+                if (reward > 0 || rewardHard > 0 || ticketDelta != 0) core.publishCurrencyChanged()
+                if (expSnapshots.isNotEmpty() || victory) core.publishProgressionChanged()
+            },
+        )
+        
+        when (outcome) {
+            WriteOutcome.Success -> TowerOutcome.Completed(
+                victory = victory,
+                turns = turns,
+                rewardSoft = reward,
+                rewardHard = rewardHard,
+                bestFloorAfter = newBest ?: saveData.towerBestFloor,
+                log = emptyList(),  // 策略战斗日志在UI中维护
+                rewardExp = expGain,
+                recordAdvanced = newBest != null,
+            )
+            WriteOutcome.Rejected -> TowerOutcome.Rejected
+            WriteOutcome.SaveFailed -> TowerOutcome.SaveFailed
+        }
+    }
 }

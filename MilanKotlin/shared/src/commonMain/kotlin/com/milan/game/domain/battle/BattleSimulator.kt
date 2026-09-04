@@ -41,8 +41,8 @@ class BattleSimulator(private val rng: Random) {
                 val target = enemies.filter { it.hp > 0 }.minByOrNull { it.hp }
                 if (target == null || target.hp <= 0) continue
                 // 伤害公式唯一事实来源：与手动出牌走同一入口；
-                // 元素克制在结算点乘算（ElementChart 单一事实来源），保底 1 点防 0 伤。
-                val base = strikeDamage(actor.stats, target.stats)
+                // 元素克制在结算点乘算（ElementChart 单一事实来源），暴击在 strikeDamage 内乘算，保底 1 点防 0 伤。
+                val base = strikeDamage(actor.stats, target.stats, rng)
                 val mul = ElementChart.damageMultiplier(actor.stats.element, target.stats.element)
                 val damage = (base * mul).toInt().coerceAtLeast(1)
                 target.hp -= damage
@@ -87,9 +87,19 @@ class BattleSimulator(private val rng: Random) {
     companion object {
         /** 单体攻击结算的基础伤害（simulate 与手动出牌共用，单一事实来源）。
          * 攻方属性由 StatsCalculator 生成，已含等级/突破/天赋/升星的加成；
-         * 元素克制倍率不在本函数内——由 [simulate] 结算点查 [ElementChart] 乘算。 */
-        fun strikeDamage(attacker: UnitStats, defender: UnitStats): Int =
-            (attacker.atk - defender.def / 2).coerceAtLeast(1)
+         * 元素克制倍率不在本函数内——由 [simulate] 结算点查 [ElementChart] 乘算。
+         * 
+         * 暴击判定：攻击方 critRate 随机 → 命中则伤害乘 critDmg。 */
+        fun strikeDamage(attacker: UnitStats, defender: UnitStats, rng: Random? = null): Int {
+            val base = (attacker.atk - defender.def / 2).coerceAtLeast(1)
+            // 暴击判定：rng 不为 null 且 critRate > 0 时掷骰
+            val critMul = if (rng != null && attacker.critRate > 0.0) {
+                if (rng.nextDouble() < attacker.critRate.coerceIn(0.0, 1.0)) attacker.critDmg.coerceAtLeast(1.0) else 1.0
+            } else {
+                1.0
+            }
+            return (base * critMul).toInt().coerceAtLeast(1)
+        }
     }
 
     private class S(val stats: UnitStats, var hp: Int, val a: Boolean)

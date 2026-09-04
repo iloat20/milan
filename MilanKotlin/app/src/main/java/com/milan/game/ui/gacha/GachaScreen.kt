@@ -3,6 +3,7 @@ package com.milan.game.ui.gacha
 import android.os.Build
 import android.view.HapticFeedbackConstants
 import androidx.activity.compose.BackHandler
+import com.milan.game.infrastructure.HapticManager
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
@@ -24,10 +25,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.LinearProgressIndicator
@@ -75,6 +77,9 @@ import com.milan.game.ui.nav.GameNavBar
 import com.milan.game.ui.nav.ResourceBar
 import com.milan.game.ui.nav.NavItem
 import com.milan.game.ui.theme.AppTheme
+import com.milan.game.ui.effects.GachaBeamParticles
+import com.milan.game.ui.effects.GachaStarBurst
+import com.milan.game.ui.effects.RarityMeshGradient
 import com.milan.game.ui.effects.inkSplash
 import java.util.Locale
 import kotlinx.coroutines.delay
@@ -94,6 +99,7 @@ fun GachaScreen(
     onOpenCharacter: (String) -> Unit,
     onOpenHistory: () -> Unit,
     modifier: Modifier = Modifier,
+    testMode: Boolean = false,
 ) {
     val context = LocalContext.current
     val feedback = LocalFeedback.current
@@ -119,12 +125,12 @@ fun GachaScreen(
 
     LaunchedEffect(Unit) { entered = true }
 
-    /** 触觉反馈（View 级，兼容非 Composable 路径）。 */
+    /** 触觉反馈（统一委托 HapticManager）。 */
     fun buzz(effect: Int) {
         if (!snap.vibrationEnabled) return
         try {
             val view = (context as? android.app.Activity)?.window?.decorView ?: return
-            view.performHapticFeedback(effect)
+            HapticManager.performHapticFeedback(view, effect)
         } catch (_: Exception) { }
     }
 
@@ -140,11 +146,12 @@ fun GachaScreen(
         busy = false
     }
 
-    /** 跳过演出：递增 token 作废挂起编排，立即出结果。 */
+    /** 跳过演出：仅递增 token 作废挂起编排。
+     *  finishReveal 由动画协程检测 token 变化后调用——
+     *  避免 busy=false 在协程退出前被复位，引发新旧 doPull 并发。 */
     fun skipReveal() {
         if (!busy || !reveal.visible) return
         reveal = reveal.copy(token = reveal.token + 1)
-        finishReveal()
     }
 
     // 演出中系统返回拦截——转跳过演出
@@ -161,90 +168,107 @@ fun GachaScreen(
         }
         busy = true
         scope.launch {
-            val pulled = when (val outcome = GameState.service.pull(p.poolId, tenPull)) {
-                is PullOutcome.Success -> outcome.results
-                is PullOutcome.Rejected -> {
+            try {
+                val pulled = when (val outcome = GameState.service.pull(p.poolId, tenPull)) {
+                    is PullOutcome.Success -> outcome.results
+                    is PullOutcome.Rejected -> {
+                        busy = false
+                        feedback.show("抽卡失败，请重试")
+                        try { CrashReporter.boot("gacha.pull.rejected poolId=${p.poolId}") } catch (_: Exception) { }
+                        return@launch
+                    }
+                    is PullOutcome.SaveFailed -> {
+                        busy = false
+                        feedback.show("保存失败，请重试")
+                        try { CrashReporter.boot("gacha.pull.saveFailed poolId=${p.poolId}") } catch (_: Exception) { }
+                        return@launch
+                    }
+                }
+                val best = pulled.maxByOrNull { it.rarity }
+                if (best == null || best.characterId == null) {
                     busy = false
                     feedback.show("抽卡失败，请重试")
-                    try { CrashReporter.boot("gacha.pull.rejected poolId=${p.poolId}") } catch (_: Exception) { }
+                    try { CrashReporter.boot("gacha.pull.empty poolId=${p.poolId}") } catch (_: Exception) { }
                     return@launch
                 }
-                is PullOutcome.SaveFailed -> {
-                    busy = false
-                    feedback.show("保存失败，请重试")
-                    try { CrashReporter.boot("gacha.pull.saveFailed poolId=${p.poolId}") } catch (_: Exception) { }
-                    return@launch
+                val bestDef = best.characterId.let { GameState.service.character(it) }
+                val token = reveal.token + 1
+                // 按稀有度分级触觉反馈：UR=丰富振动，SSR=CONFIRM，SR=KEYBOARD_TAP，R=CLOCK_TICK
+                when (best.rarity) {
+                    4 -> HapticManager.gachaUrSpecial(context)
+                    3 -> buzz(if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R)
+                        HapticFeedbackConstants.CONFIRM else HapticFeedbackConstants.LONG_PRESS)
+                    2 -> buzz(HapticFeedbackConstants.KEYBOARD_TAP)
+                    else -> buzz(HapticFeedbackConstants.CLOCK_TICK)
                 }
-            }
-            val best = pulled.maxByOrNull { it.rarity }
-            if (best == null || best.characterId == null) {
+                MilanAudio.playSfx("gacha_pull")
+                // 稀有度分级演出时长：UR 拉满仪式感，R 快速过场
+                val chargeMs = when (best.rarity) {
+                    4 -> 900L   // UR：浓墨蓄力
+                    3 -> 600L   // SSR：金箔凝聚
+                    2 -> 420L   // SR：默认水墨
+                    else -> 300L // R：快速闪烁
+                }
+                val beamMs = when (best.rarity) {
+                    4 -> 640L   // UR：光柱扩展
+                    3 -> 520L   // SSR：金箔光柱
+                    else -> 480L // R/SR：标准
+                }
+                val revealMs = when {
+                    tenPull -> when (best.rarity) {
+                        4 -> 4800L  // UR 十连：加长展示
+                        3 -> 4000L  // SSR 十连
+                        else -> 3600L
+                    }
+                    else -> when (best.rarity) {
+                        4 -> 3000L  // UR 单抽：仪式感
+                        3 -> 2400L  // SSR 单抽
+                        2 -> 1500L  // SR 单抽
+                        else -> 1000L // R 单抽：一闪而过
+                    }
+                }
+                // 阶段一：蓄能
+                reveal = RevealUiState(
+                    token = token,
+                    staged = pulled,
+                    def = bestDef,
+                    rarity = best.rarity,
+                    flashColor = AppTheme.rarityColor(best.rarity),
+                    fortune = bestDef?.let { FortuneAgentRegistry.activeAgent.fortune(it, it.characterId.hashCode().toLong() + token) } ?: "",
+                    stage = RevealStage.Charge,
+                )
+                delay(chargeMs)
+                if (token != reveal.token) { finishReveal(); return@launch }
+                // 阶段二：光柱爆发
+                reveal = reveal.copy(stage = RevealStage.Beam, flashVisible = true)
+                delay(beamMs)
+                if (token != reveal.token) { finishReveal(); return@launch }
+                reveal = reveal.copy(flashVisible = false)
+                delay(120)
+                if (token != reveal.token) { finishReveal(); return@launch }
+                // 阶段三：揭晓
+                reveal = reveal.copy(
+                    cardIn = true,
+                    visible = true,
+                    stage = if (tenPull) RevealStage.Ten else RevealStage.Single,
+                )
+                MilanAudio.playSfx("gacha_reveal")
+                if (best.rarity >= 3) {
+                    val confirm = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R)
+                        HapticFeedbackConstants.CONFIRM else HapticFeedbackConstants.LONG_PRESS
+                    buzz(confirm)
+                } else {
+                    buzz(HapticFeedbackConstants.VIRTUAL_KEY)
+                }
+                delay(revealMs)
+                if (token != reveal.token) { finishReveal(); return@launch }
+                // 阶段四：结果
+                finishReveal()
+            } catch (e: Exception) {
                 busy = false
-                feedback.show("抽卡失败，请重试")
-                try { CrashReporter.boot("gacha.pull.empty poolId=${p.poolId}") } catch (_: Exception) { }
-                return@launch
+                feedback.show("抽卡异常，请重试")
+                try { CrashReporter.traceNonFatal("gacha.pull.exception", e) } catch (_: Exception) { }
             }
-            val bestDef = best.characterId.let { GameState.service.character(it) }
-            val token = reveal.token + 1
-            buzz(HapticFeedbackConstants.KEYBOARD_TAP)
-            MilanAudio.playSfx("gacha_pull")
-            // 稀有度分级演出时长：UR 拉满仪式感，R 快速过场
-            val chargeMs = when (best.rarity) {
-                4 -> 900L   // UR：浓墨蓄力
-                3 -> 600L   // SSR：金箔凝聚
-                2 -> 420L   // SR：默认水墨
-                else -> 300L // R：快速闪烁
-            }
-            val beamMs = when (best.rarity) {
-                4 -> 640L   // UR：光柱扩展
-                3 -> 520L   // SSR：金箔光柱
-                else -> 480L // R/SR：标准
-            }
-            val revealMs = when {
-                tenPull -> when (best.rarity) {
-                    4 -> 4800L  // UR 十连：加长展示
-                    3 -> 4000L  // SSR 十连
-                    else -> 3600L
-                }
-                else -> when (best.rarity) {
-                    4 -> 3000L  // UR 单抽：仪式感
-                    3 -> 2400L  // SSR 单抽
-                    2 -> 1500L  // SR 单抽
-                    else -> 1000L // R 单抽：一闪而过
-                }
-            }
-            // 阶段一：蓄能
-            reveal = RevealUiState(
-                token = token,
-                staged = pulled,
-                def = bestDef,
-                rarity = best.rarity,
-                flashColor = AppTheme.rarityColor(best.rarity),
-                fortune = bestDef?.let { FortuneAgentRegistry.activeAgent.fortune(it, it.characterId.hashCode().toLong() + token) } ?: "",
-                stage = RevealStage.Charge,
-            )
-            delay(chargeMs); if (token != reveal.token) return@launch
-            // 阶段二：光柱爆发
-            reveal = reveal.copy(stage = RevealStage.Beam, flashVisible = true)
-            delay(beamMs); if (token != reveal.token) return@launch
-            reveal = reveal.copy(flashVisible = false)
-            delay(120); if (token != reveal.token) return@launch
-            // 阶段三：揭晓
-            reveal = reveal.copy(
-                cardIn = true,
-                visible = true,
-                stage = if (tenPull) RevealStage.Ten else RevealStage.Single,
-            )
-            MilanAudio.playSfx("gacha_reveal")
-            if (best.rarity >= 3) {
-                val confirm = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R)
-                    HapticFeedbackConstants.CONFIRM else HapticFeedbackConstants.LONG_PRESS
-                buzz(confirm)
-            } else {
-                buzz(HapticFeedbackConstants.VIRTUAL_KEY)
-            }
-            delay(revealMs); if (token != reveal.token) return@launch
-            // 阶段四：结果
-            finishReveal()
         }
     }
 
@@ -263,6 +287,7 @@ fun GachaScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(start = 20.dp, end = 20.dp, top = 14.dp)
+                .verticalScroll(rememberScrollState())
                 .graphicsLayer { alpha = entranceAlpha },
         ) {
             // ── 标题 + 资源胶囊 ──
@@ -285,19 +310,31 @@ fun GachaScreen(
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         pools.forEach { p ->
                             val selected = p.poolId == pool.poolId
-                            Text(
-                                text = p.displayName.ifEmpty { "常驻卡池" },
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = if (selected) AppTheme.GoldTextOn else AppTheme.Text2,
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(16.dp))
-                                    .background(if (selected) AppTheme.Gold else AppTheme.Surface)
-                                    .border(1.dp, if (selected) AppTheme.Gold else AppTheme.Stroke, RoundedCornerShape(16.dp))
-                                    .clickable { selectedPoolId = p.poolId }
-                                    .inkSplash()
-                                    .padding(horizontal = 14.dp, vertical = 6.dp),
-                            )
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text(
+                                    text = p.displayName.ifEmpty { "常驻卡池" },
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (selected) AppTheme.GoldTextOn else AppTheme.Text2,
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(16.dp))
+                                        .background(if (selected) AppTheme.Gold else AppTheme.Surface)
+                                        .border(1.dp, if (selected) AppTheme.Gold else AppTheme.Stroke, RoundedCornerShape(16.dp))
+                                        .clickable { selectedPoolId = p.poolId }
+                                        .padding(horizontal = 14.dp, vertical = 6.dp),
+                                )
+                                // 选中池金色指示线
+                                if (selected) {
+                                    Box(
+                                        Modifier
+                                            .padding(top = 4.dp)
+                                            .width(20.dp)
+                                            .height(2.dp)
+                                            .clip(RoundedCornerShape(1.dp))
+                                            .background(AppTheme.Gold),
+                                    )
+                                }
+                            }
                         }
                     }
                     Spacer(Modifier.height(10.dp))
@@ -378,11 +415,12 @@ fun GachaScreen(
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     items(pool.entries, key = { it.characterId }, contentType = { "poolEntry" }) { entry ->
                         val def = GameState.service.character(entry.characterId)
+                        val entryInteraction = remember { MutableInteractionSource() }
                         Column(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(10.dp))
-                                .clickable { def?.let { onOpenCharacter(it.characterId) } }
-                                .inkSplash()
+                                .inkSplash(entryInteraction)
+                                .clickable(interactionSource = entryInteraction, indication = null) { def?.let { onOpenCharacter(it.characterId) } }
                                 .padding(4.dp),
                             horizontalAlignment = Alignment.CenterHorizontally,
                         ) {
@@ -408,7 +446,7 @@ fun GachaScreen(
             Spacer(Modifier.height(14.dp))
 
             // ── 待机能量枢纽（水墨丹青法阵）──
-            CyberHerald(modifier = Modifier.align(Alignment.CenterHorizontally))
+            CyberHerald(modifier = Modifier.align(Alignment.CenterHorizontally), testMode = testMode)
             Spacer(Modifier.height(16.dp))
 
             Text(
@@ -422,9 +460,10 @@ fun GachaScreen(
 
             // ── 单抽 / 十连 ──
             Row(Modifier.fillMaxWidth().padding(horizontal = 30.dp)) {
-                NeonButton("单 抽", Modifier.weight(1f), onClick = { doPull(false) })
+                // I3 修复：演出/结算期间禁用（此前按钮视觉如常但 doPull 首行 if(busy) return 静默吞点击）
+                NeonButton("单 抽", Modifier.weight(1f), enabled = !busy, onClick = { doPull(false) })
                 Spacer(Modifier.width(14.dp))
-                GoldButton("十 连", Modifier.weight(1f), onClick = { doPull(true) })
+                GoldButton("十 连", Modifier.weight(1f), enabled = !busy, onClick = { doPull(true) })
             }
             Spacer(Modifier.height(10.dp))
 
@@ -440,6 +479,7 @@ fun GachaScreen(
                     modifier = Modifier.weight(1f),
                 )
                 if (results.isNotEmpty()) {
+                    val shareInteraction = remember { MutableInteractionSource() }
                     Text(
                         text = "分享",
                         fontSize = 12.sp,
@@ -447,9 +487,9 @@ fun GachaScreen(
                         color = AppTheme.Gold,
                         modifier = Modifier
                             .clip(RoundedCornerShape(10.dp))
+                            .inkSplash(shareInteraction)
                             // U1：绘制 + 压缩 + 写盘已 suspend 化（移出主线程），此处在协程中调用
-                            .clickable { scope.launch { PullShareCard.shareResults(context, results) } }
-                            .inkSplash()
+                            .clickable(interactionSource = shareInteraction, indication = null) { scope.launch { PullShareCard.shareResults(context, results) } }
                             .padding(horizontal = 8.dp, vertical = 4.dp),
                     )
                 }
@@ -461,7 +501,6 @@ fun GachaScreen(
                     modifier = Modifier
                         .clip(RoundedCornerShape(10.dp))
                         .clickable(onClick = onOpenHistory)
-                        .inkSplash()
                         .padding(horizontal = 8.dp, vertical = 4.dp),
                 )
             }
@@ -477,11 +516,16 @@ fun GachaScreen(
             Spacer(Modifier.height(4.dp))
 
             // ── 结果网格 ──
-            LazyColumn(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                itemsIndexed(results.chunked(5), key = { idx, _ -> idx }) { rowIdx, row ->
+            // P5 修复：将 LazyColumn 替换为 Column——外层 Column 已有 verticalScroll，
+            // 嵌套同方向可滚动容器（LazyColumn）在 Compose BOM 2026+ 会抛
+            // IllegalStateException（"Nesting scrollable in the same direction"），
+            // 十连结果 10 项触发布局计算，单抽 1 项刚好不触发。
+            // 结果列表最多 10 项（2×5），Column 全量渲染无性能问题。
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                results.chunked(5).forEachIndexed { rowIdx, row ->
                     Row(Modifier.fillMaxWidth()) {
                         row.forEachIndexed { i, r ->
-                            key(i, r) {
+                            key("${r.characterId}_${rowIdx}_$i") {
                                 GachaChip(
                                     r = r,
                                     delayMs = (rowIdx * 5 + i) * 60,
@@ -511,6 +555,28 @@ fun GachaScreen(
                     .fillMaxSize()
                     .background(reveal.flashColor)
                     .graphicsLayer { alpha = flashAlpha },
+            )
+        }
+
+        // ── 粒子特效层（抽卡演出）──
+        val isRevealActive = reveal.stage == RevealStage.Beam ||
+            reveal.stage == RevealStage.Single ||
+            reveal.stage == RevealStage.Ten
+        if (isRevealActive && reveal.rarity >= 2) {
+            // Mesh Gradient 背景（稀有度驱动的动态渐变）
+            RarityMeshGradient(
+                rarity = reveal.rarity,
+                modifier = Modifier.fillMaxSize(),
+            )
+            GachaStarBurst(
+                rarity = reveal.rarity,
+                active = true,
+                modifier = Modifier.fillMaxSize(),
+            )
+            GachaBeamParticles(
+                rarity = reveal.rarity,
+                active = reveal.stage == RevealStage.Beam,
+                modifier = Modifier.fillMaxSize(),
             )
         }
 

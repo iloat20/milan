@@ -1,6 +1,9 @@
 package com.milan.game.ui.nav
 
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -23,11 +26,11 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.List
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.ShoppingCart
-import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.automirrored.outlined.List
+import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material.icons.outlined.ShoppingCart
+import androidx.compose.material.icons.outlined.Star
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -48,11 +51,11 @@ import com.milan.game.ui.theme.AppTheme
 
 /** 全局底部导航项（水墨国风版：墨色玻璃底座 + 金箔选中态）。 */
 enum class NavItem(val icon: ImageVector, val label: String) {
-    Home(Icons.Filled.Home, "主页"),
-    Gacha(Icons.Filled.Star, "抽卡"),
-    Deck(Icons.AutoMirrored.Filled.List, "卡组"),
-    Shop(Icons.Filled.ShoppingCart, "商店"),
-    Settings(Icons.Filled.Settings, "设置"),
+    Home(Icons.Outlined.Home, "主页"),
+    Gacha(Icons.Outlined.Star, "抽卡"),
+    Deck(Icons.AutoMirrored.Outlined.List, "卡组"),
+    Shop(Icons.Outlined.ShoppingCart, "商店"),
+    Settings(Icons.Outlined.Settings, "设置"),
 }
 
 /**
@@ -104,14 +107,27 @@ private fun NavCell(
     val interaction = remember { MutableInteractionSource() }
     val pressed by interaction.collectIsPressedAsState()
     val scale by animateFloatAsState(if (pressed) 0.94f else 1f, label = "navScale")
+    // 选中弹跳：从 0.92 弹到 1.0，spring(0.65) 与按压缩放同阻尼
+    val selectScale by animateFloatAsState(
+        targetValue = if (selected) 1f else 0.92f,
+        animationSpec = spring(dampingRatio = 0.65f, stiffness = Spring.StiffnessMedium),
+        label = "navSelectScale",
+    )
     val isSelected = selected
+
+    // 金线宽度动画：选中时从 0 弹射到 32dp
+    val goldLineWidth by animateDpAsState(
+        targetValue = if (selected) 32.dp else 0.dp,
+        animationSpec = spring(dampingRatio = 0.65f, stiffness = Spring.StiffnessMedium),
+        label = "goldLineWidth",
+    )
 
     val glyphColor = if (selected) AppTheme.Gold else AppTheme.Frost.copy(alpha = 0.7f)
     val labelColor = if (selected) AppTheme.Gold else AppTheme.Text2
 
     Box(
         modifier = modifier
-            .scale(scale)
+            .scale(scale * selectScale)
             .graphicsLayer { alpha = if (pressed) 0.85f else 1f }
             .then(
                 if (selected) Modifier
@@ -135,13 +151,13 @@ private fun NavCell(
             ),
         contentAlignment = Alignment.Center,
     ) {
-        // 顶部金箔指示线
+        // 顶部金箔指示线（宽度从 0 弹射到 32dp）
         if (selected) {
             Box(
                 modifier = Modifier
                     .align(Alignment.TopCenter)
                     .offset(y = 4.dp)
-                    .width(24.dp)
+                    .width(goldLineWidth)
                     .height(2.dp)
                     .background(
                         Brush.horizontalGradient(
@@ -164,7 +180,7 @@ private fun NavCell(
                 imageVector = item.icon,
                 contentDescription = item.label,
                 tint = glyphColor,
-                modifier = Modifier.size(22.dp),
+                modifier = Modifier.size(24.dp),
             )
             Text(
                 text = item.label,

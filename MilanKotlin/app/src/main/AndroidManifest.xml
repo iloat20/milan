@@ -3,6 +3,8 @@
 
     <!-- 每日补给本地提醒（API 33+ 运行时请求；低版本自动生效） -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- 触觉反馈（VibrationEffect API）：抽卡/战斗/交互 -->
+    <uses-permission android:name="android.permission.VIBRATE" />
 
     <application
         android:name=".MilanApp"

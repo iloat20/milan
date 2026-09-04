@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -55,7 +56,7 @@ fun MissingCharacter(onBack: () -> Unit, modifier: Modifier = Modifier) {
     }
 }
 
-/** 「‹ 返 回」金箔胶囊按钮（水墨国风版）。 */
+/** 「‹ 返 回」金箔胶囊按钮（水墨国风版）。触控热区 ≥48dp（WCAG/Material3 无障碍标准）。 */
 @Composable
 fun BackCapsule(onClick: () -> Unit, modifier: Modifier = Modifier, text: String = "‹ 返 回") {
     Text(
@@ -64,11 +65,13 @@ fun BackCapsule(onClick: () -> Unit, modifier: Modifier = Modifier, text: String
         fontWeight = FontWeight.Bold,
         color = AppTheme.Gold,
         modifier = modifier
+            .defaultMinSize(minWidth = 48.dp, minHeight = 48.dp)
             .clip(RoundedCornerShape(20.dp))
             .background(AppTheme.Surface)
             .border(1.dp, AppTheme.Gold.copy(alpha = 0.65f), RoundedCornerShape(20.dp))
             .padding(horizontal = 12.dp, vertical = 8.dp)
-            .clickable(onClick = onClick),
+            .clickable(onClick = onClick)
+            .semantics { contentDescription = "返回" },
     )
 }
 
@@ -179,10 +182,10 @@ fun GlassArrow(
         color = AppTheme.Gold,
         textAlign = TextAlign.Center,
         modifier = modifier
-            .size(44.dp)
-            .clip(RoundedCornerShape(22.dp))
+            .size(48.dp)
+            .clip(RoundedCornerShape(24.dp))
             .background(AppTheme.Surface)
-            .border(1.dp, AppTheme.Gold.copy(alpha = 0.65f), RoundedCornerShape(22.dp))
+            .border(1.dp, AppTheme.Gold.copy(alpha = 0.65f), RoundedCornerShape(24.dp))
             .clickable(onClick = onClick)
             .semantics { this.contentDescription = desc },
     )

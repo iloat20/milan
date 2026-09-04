@@ -40,10 +40,15 @@ fun GoldSwitch(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
 ) {
-    val trackWidth = 46.dp
     val trackHeight = 26.dp
     val thumbSize = 20.dp
-    val thumbTravel = trackWidth - thumbSize - 6.dp
+    // 轨道宽度动画：开启时 46dp → 50dp（微扩反馈）
+    val animatedTrackWidth by animateDpAsState(
+        targetValue = if (checked) 50.dp else 46.dp,
+        animationSpec = spring(dampingRatio = 0.65f, stiffness = Spring.StiffnessMedium),
+        label = "goldSwitchTrackWidth",
+    )
+    val thumbTravel = animatedTrackWidth - thumbSize - 6.dp
     val thumbX by animateDpAsState(
         targetValue = if (checked) thumbTravel else 3.dp,
         animationSpec = spring(dampingRatio = 0.65f, stiffness = Spring.StiffnessMedium),
@@ -52,7 +57,7 @@ fun GoldSwitch(
     val interaction = remember { MutableInteractionSource() }
     Box(
         modifier
-            .width(trackWidth)
+            .width(animatedTrackWidth)
             .height(trackHeight)
             .clip(RoundedCornerShape(trackHeight / 2))
             .background(

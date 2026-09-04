@@ -45,6 +45,40 @@ class SaveData(
     // ── 2026-08 三期新增（带默认值：旧档缺字段自动落默认，向后兼容）──
     /** 抽卡历史（追加式，上限 [Companion.MAX_PULL_HISTORY] 丢最旧；仅展示用途）。 */
     @SerialName("PullHistory") var pullHistory: List<PullLogEntry?> = emptyList(),
+    // ── 2026-08 装备系统新增 ──
+    /** 已拥有的装备列表。 */
+    @SerialName("OwnedEquipments") var ownedEquipments: List<EquipmentSaveState?> = emptyList(),
+    // ── 2026-08 PVP竞技场新增 ──
+    /** 竞技场数据。 */
+    @SerialName("ArenaData") var arenaData: ArenaSaveData? = null,
+    /** PVP战斗记录。 */
+    @SerialName("ArenaBattleRecords") var arenaBattleRecords: List<PvPBattleRecord?> = emptyList(),
+    // ── 2026-08 PVE内容新增 ──
+    /** 深渊数据。 */
+    @SerialName("AbyssData") var abyssData: AbyssSaveData? = null,
+    /** 日常副本数据。 */
+    @SerialName("DailyDungeonData") var dailyDungeonData: DailyDungeonSaveData? = null,
+    // ── 2026-08 检视系统增强新增 ──
+    /** 360°检视系统数据。 */
+    @SerialName("InspectionData") var inspectionData: InspectionSaveData? = null,
+    // ── 2026-08 社交系统新增 ──
+    /** 社交系统数据（好友、公会、赠礼）。 */
+    @SerialName("SocialData") var socialData: SocialSaveData? = null,
+    // ── 2026-08 变现模型新增 ──
+    /** 变现模型数据（月卡、通行证、充值）。 */
+    @SerialName("MonetizationData") var monetizationData: MonetizationSaveData? = null,
+    // ── 2026-08 活动运营新增 ──
+    /** 活动运营数据（活动、任务、商店、签到）。 */
+    @SerialName("EventRhythmData") var eventRhythmData: EventRhythmSaveData? = null,
+    // ── 2026-09 剧情系统新增 ──
+    /** 剧情系统数据（章节进度、关卡完成、奖励领取）。 */
+    @SerialName("StoryData") var storyData: StorySaveData? = null,
+    // ── 2026-09 每日任务新增 ──
+    /** 每日任务数据（每日6个任务、活跃度宝箱）。 */
+    @SerialName("DailyMissionData") var dailyMissionData: DailyMissionSaveData? = null,
+    // ── 2026-09 角色好感度新增 ──
+    /** 角色好感度数据（角色ID → 好感度等级/经验）。 */
+    @SerialName("CharacterAffinityData") var characterAffinityData: Map<String, Int?>? = null,
     /**
      * 累计抽卡次数（2026-08 三期补；**永不清零**，与 [GachaCounters] 语义严格区分）。
      * [gachaCounters] 是保底计数，出货即归零——用它当「累计抽数」会让累计型成就进度
@@ -166,6 +200,269 @@ class SaveData(
             .filter { it.poolId.isNotEmpty() }
             .filter { seenFlagPools.add(it.poolId) }
             .toMutableList()
+        
+        // 装备系统：滤空 id、同装备去重保首条、钳制等级。
+        val seenEquipments = HashSet<String>()
+        ownedEquipments = ownedEquipments.filterNotNull()
+            .filter { it.equipmentId.isNotEmpty() }
+            .filter { seenEquipments.add(it.equipmentId) }
+            .onEach {
+                it.level = it.level.coerceIn(1, EquipmentSaveState.MAX_LEVEL)
+                it.exp = it.exp.coerceAtLeast(0)
+                it.subStats = it.subStats.filterNotNull().take(EquipmentSaveState.MAX_SUB_STATS)
+            }
+            .toMutableList()
+        
+        // 清理角色装备引用：移除不存在的装备ID。
+        val ownedEquipmentIds = HashSet<String>().apply { 
+            ownedEquipments.forEach { it?.let { equip -> add(equip.equipmentId) } }
+        }
+        for (char in unique) {
+            val validEquipment = char.equipment.filter { (slot, equipId) ->
+                equipId == null || equipId in ownedEquipmentIds
+            }
+            char.equipment = validEquipment
+        }
+        
+        // 竞技场数据：确保防御队伍引用有效。
+        arenaData?.let { arena ->
+            val seenDefense = HashSet<String>()
+            arena.defenseTeam = arena.defenseTeam.filterNotNull()
+                .filter { it.isNotEmpty() }
+                .filter { seenDefense.add(it) }
+                .filter { it in ownedIds }
+                .take(MAX_FORMATION_SIZE)
+                .toList()
+            
+            // 积分钳制
+            arena.arenaPoints = arena.arenaPoints.coerceIn(ArenaSaveData.MIN_POINTS, ArenaSaveData.MAX_POINTS)
+            arena.attackCount = arena.attackCount.coerceAtLeast(0)
+            arena.winCount = arena.winCount.coerceAtLeast(0)
+            arena.loseCount = arena.loseCount.coerceAtLeast(0)
+        }
+        
+        // PVP战斗记录：去重、滤空。
+        val seenPvPRecords = HashSet<String>()
+        arenaBattleRecords = arenaBattleRecords.filterNotNull()
+            .filter { it.recordId.isNotEmpty() }
+            .filter { seenPvPRecords.add(it.recordId) }
+            .take(50)  // 保留最近50条
+            .toMutableList()
+        
+        // 深渊数据：确保层数有效。
+        abyssData?.let { abyss ->
+            abyss.currentFloor = abyss.currentFloor.coerceIn(1, AbyssSaveData.MAX_FLOORS)
+            abyss.currentStage = abyss.currentStage.coerceIn(1, AbyssSaveData.STAGES_PER_FLOOR)
+            abyss.bestFloor = abyss.bestFloor.coerceIn(0, AbyssSaveData.MAX_FLOORS)
+            abyss.totalStars = abyss.totalStars.coerceAtLeast(0)
+            abyss.challengeCount = abyss.challengeCount.coerceAtLeast(0)
+        }
+        
+        // 日常副本数据：确保挑战次数有效。
+        dailyDungeonData?.let { dungeon ->
+            val validCounts = mutableMapOf<String, Int>()
+            for ((key, value) in dungeon.challengeCounts) {
+                if (key.isNotEmpty()) {
+                    validCounts[key] = (value ?: 0).coerceIn(0, DailyDungeonSaveData.MAX_CHALLENGES_PER_TYPE)
+                }
+            }
+            dungeon.challengeCounts = validCounts
+            dungeon.totalChallenges = dungeon.totalChallenges.coerceAtLeast(0)
+        }
+        
+        // 检视系统数据：清理无效收藏照片和检视计数。
+        inspectionData?.let { inspection ->
+            // 收藏照片去重、滤空、钳上限。
+            val seenPhotos = HashSet<String>()
+            inspection.photoCollection = inspection.photoCollection.filterNotNull()
+                .filter { it.photoId.isNotEmpty() }
+                .filter { seenPhotos.add(it.photoId) }
+                .take(InspectionSaveData.MAX_PHOTOS)
+                .toMutableList()
+            
+            // 检视计数：滤空 id、钳非负。
+            val validCounts = mutableMapOf<String, Int>()
+            for ((key, value) in inspection.inspectionCounts) {
+                if (key.isNotEmpty()) {
+                    validCounts[key] = (value ?: 0).coerceAtLeast(0)
+                }
+            }
+            inspection.inspectionCounts = validCounts
+            
+            // 已解锁动作：去重、滤空。
+            val seenActions = HashSet<String>()
+            inspection.unlockedActions = inspection.unlockedActions.filterNotNull()
+                .filter { it.isNotEmpty() }
+                .filter { seenActions.add(it) }
+                .toList()
+            
+            // 已触发互动：去重、滤空。
+            val seenInteractions = HashSet<String>()
+            inspection.triggeredInteractions = inspection.triggeredInteractions.filterNotNull()
+                .filter { it.isNotEmpty() }
+                .filter { seenInteractions.add(it) }
+                .toList()
+        }
+        
+        // 社交系统数据：清理好友、赠礼、公会。
+        socialData?.let { social ->
+            // 好友列表：去重、滤空、钳上限。
+            val seenFriends = HashSet<String>()
+            social.friends = social.friends.filterNotNull()
+                .filter { it.friendId.isNotEmpty() }
+                .filter { seenFriends.add(it.friendId) }
+                .take(SocialSaveData.MAX_FRIENDS)
+                .toList()
+            
+            // 好友申请：去重、滤空、限 20 条。
+            val seenRequests = HashSet<String>()
+            social.friendRequests = social.friendRequests.filterNotNull()
+                .filter { it.requestId.isNotEmpty() }
+                .filter { seenRequests.add(it.requestId) }
+                .take(20)
+                .toList()
+            
+            // 已赠礼好友：去重、滤空、钳上限。
+            val seenGifted = HashSet<String>()
+            social.giftedFriends = social.giftedFriends.filterNotNull()
+                .filter { it.isNotEmpty() }
+                .filter { seenGifted.add(it) }
+                .take(SocialSaveData.DAILY_GIFT_LIMIT)
+                .toList()
+            
+            // 体力：钳上限。
+            social.receivedStamina = social.receivedStamina.coerceIn(0, SocialSaveData.MAX_RECEIVED_STAMINA)
+            social.guildContributions = social.guildContributions.coerceAtLeast(0)
+        }
+        
+        // 变现模型数据：确保月卡天数、通行证等级有效。
+        monetizationData?.let { mono ->
+            mono.monthlyCardDaysLeft = if (mono.monthlyCardActive) {
+                mono.monthlyCardDaysLeft.coerceIn(0, MonetizationSaveData.MONTHLY_CARD_DURATION)
+            } else {
+                -1
+            }
+            mono.battlePassLevel = mono.battlePassLevel.coerceIn(1, MonetizationSaveData.BP_MAX_LEVEL)
+            mono.battlePassExp = mono.battlePassExp.coerceAtLeast(0)
+            mono.totalChargeAmount = mono.totalChargeAmount.coerceAtLeast(0)
+            
+            // 已领取通行证奖励：去重、滤空、钳有效等级。
+            val seenBP = HashSet<Int>()
+            mono.claimedBPRewards = mono.claimedBPRewards.filterNotNull()
+                .filter { it in 1..MonetizationSaveData.BP_MAX_LEVEL }
+                .filter { seenBP.add(it) }
+                .toList()
+            
+            // 首充档位：去重、滤空。
+            val seenFC = HashSet<String>()
+            mono.firstChargeClaimed = mono.firstChargeClaimed.filterNotNull()
+                .filter { it.isNotEmpty() }
+                .filter { seenFC.add(it) }
+                .toList()
+            
+            // 累计充值里程碑：去重、滤空。
+            val seenCM = HashSet<Int>()
+            mono.claimedChargeMilestones = mono.claimedChargeMilestones.filterNotNull()
+                .filter { it > 0 }
+                .filter { seenCM.add(it) }
+                .toList()
+            
+            // 限时礼包：去重、滤空。
+            val seenTL = HashSet<String>()
+            mono.purchasedTimeLimited = mono.purchasedTimeLimited.filterNotNull()
+                .filter { it.isNotEmpty() }
+                .filter { seenTL.add(it) }
+                .toList()
+        }
+        
+        // 活动运营数据：清理活跃活动、商店兑换、任务进度、签到。
+        eventRhythmData?.let { evt ->
+            // 活跃活动：滤空、钳上限。
+            val now = System.currentTimeMillis()
+            evt.activeEvents = evt.activeEvents.filterNotNull()
+                .filter { it.eventId.isNotEmpty() }
+                .take(EventRhythmSaveData.MAX_ACTIVE_EVENTS)
+                .toList()
+            
+            // 已完成活动：去重、滤空。
+            val seenCompleted = HashSet<String>()
+            evt.completedEvents = evt.completedEvents.filterNotNull()
+                .filter { it.isNotEmpty() }
+                .filter { seenCompleted.add(it) }
+                .toList()
+            
+            // 商店兑换：清理无效活动ID，钳上限。
+            val validShop = mutableMapOf<String, Map<String, Int>>()
+            for ((eventId, redemptions) in evt.shopRedemptions) {
+                if (eventId.isNotEmpty() && redemptions != null) {
+                    val validRedemptions = mutableMapOf<String, Int>()
+                    for ((itemId, count) in redemptions) {
+                        if (itemId.isNotEmpty()) {
+                            validRedemptions[itemId] = (count ?: 0)
+                                .coerceIn(0, EventRhythmSaveData.MAX_SHOP_REDEMPTION_PER_ITEM)
+                        }
+                    }
+                    if (validRedemptions.isNotEmpty()) {
+                        validShop[eventId] = validRedemptions
+                    }
+                }
+            }
+            evt.shopRedemptions = validShop
+            
+            // 任务进度：清理无效活动/任务ID。
+            val validTasks = mutableMapOf<String, Map<String, Int>>()
+            for ((eventId, tasks) in evt.eventTaskProgress) {
+                if (eventId.isNotEmpty() && tasks != null) {
+                    val validTaskProgress = mutableMapOf<String, Int>()
+                    for ((taskId, progress) in tasks) {
+                        if (taskId.isNotEmpty()) {
+                            validTaskProgress[taskId] = progress.coerceAtLeast(0)
+                        }
+                    }
+                    if (validTaskProgress.isNotEmpty()) {
+                        validTasks[eventId] = validTaskProgress
+                    }
+                }
+            }
+            evt.eventTaskProgress = validTasks
+            
+            // 签到进度：清理无效ID、钳非负。
+            val validSignIn = mutableMapOf<String, Int>()
+            for ((eventId, days) in evt.signInProgress) {
+                if (eventId.isNotEmpty()) {
+                    validSignIn[eventId] = (days ?: 0).coerceAtLeast(0)
+                }
+            }
+            evt.signInProgress = validSignIn
+
+            // 活动代币余额（R5-C1）：滤空键、钳非负；未知代币类型一并剔除，
+            // 避免脏档残留无法被任何商店消费的幽灵余额。
+            val validBalances = mutableMapOf<String, Int>()
+            for ((currencyType, balance) in evt.eventCurrencyBalances) {
+                if (currencyType.isNotEmpty() &&
+                    EventCurrencyType.entries.any { it.name == currencyType }
+                ) {
+                    validBalances[currencyType] = balance.coerceAtLeast(0)
+                }
+            }
+            evt.eventCurrencyBalances = validBalances
+        }
+
+        // R5-I5（2026-09-03 审查修复）：为所有「按需懒创建的嵌套数据」补齐默认实例，
+        // 使 load/createDefault 产出后各字段恒非 null。这样服务层的 getXxxData() 只读接口
+        // 不再需要 `?: XxxData().also { saveData.x = it }` 的锁外懒写——旧实现会在 writeMutex
+        // 外改写共享存档，且与 resetSave 整体替换 saveData 引用并发竞态（check-then-act）。
+        // 默认实例是干净初值，无需再过 sanitize 的 `.let` 钳制块。
+        if (arenaData == null) arenaData = ArenaSaveData()
+        if (abyssData == null) abyssData = AbyssSaveData()
+        if (dailyDungeonData == null) dailyDungeonData = DailyDungeonSaveData()
+        if (inspectionData == null) inspectionData = InspectionSaveData()
+        if (socialData == null) socialData = SocialSaveData()
+        if (monetizationData == null) monetizationData = MonetizationSaveData()
+        if (eventRhythmData == null) eventRhythmData = EventRhythmSaveData()
+        if (storyData == null) storyData = StorySaveData()
+        if (dailyMissionData == null) dailyMissionData = DailyMissionSaveData()
+        if (characterAffinityData == null) characterAffinityData = emptyMap()
     }
 
     /** 编队 characterId 列表（已滤空槽；顺序即槽位顺序）。 */
@@ -246,6 +543,6 @@ class SaveData(
             }
         }
 
-        fun createDefault(): SaveData = SaveData()
+        fun createDefault(): SaveData = SaveData().apply { sanitize() }
     }
 }

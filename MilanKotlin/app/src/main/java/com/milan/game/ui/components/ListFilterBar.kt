@@ -1,8 +1,13 @@
 package com.milan.game.ui.components
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.horizontalScroll
 import com.milan.game.ui.effects.inkSplash
 import androidx.compose.foundation.layout.Box
@@ -19,10 +24,15 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -156,24 +166,50 @@ fun ListFilterBar(
     }
 }
 
-/** 单个筛选 chip（C# ListFilterBar.AddChip：选中金底 / 未选玻璃底，12sp 加粗）。 */
+/** 单个筛选 chip（C# ListFilterBar.AddChip：选中金底 / 未选玻璃底，12sp 加粗）。
+ *  P2-15：animateColorAsState 颜色过渡 + scale 弹簧选中动效。 */
 @Composable
 private fun FilterChip(label: String, active: Boolean, onClick: () -> Unit) {
+    val filterInteraction = remember { MutableInteractionSource() }
     val shape = MaterialTheme.shapes.medium
+    // 颜色过渡：选中/未选之间 200ms 渐变
+    val textColor by animateColorAsState(
+        targetValue = if (active) AppTheme.Gold else AppTheme.Text2,
+        animationSpec = spring(dampingRatio = 1f, stiffness = Spring.StiffnessMedium),
+        label = "chipTextColor",
+    )
+    val borderColor by animateColorAsState(
+        targetValue = if (active) AppTheme.Gold else AppTheme.Stroke,
+        animationSpec = spring(dampingRatio = 1f, stiffness = Spring.StiffnessMedium),
+        label = "chipBorderColor",
+    )
+    // scale 弹簧：选中时 1.05x → 1.0，未选时缩回 0.97x → 1.0
+    val chipScale by animateFloatAsState(
+        targetValue = if (active) 1.05f else 1f,
+        animationSpec = spring(dampingRatio = 0.65f, stiffness = Spring.StiffnessMedium),
+        label = "chipScale",
+    )
     Text(
         text = label,
         style = MaterialTheme.typography.labelLarge,
-        color = if (active) AppTheme.Gold else AppTheme.Text2,
+        color = textColor,
         modifier = Modifier
+            .graphicsLayer {
+                scaleX = chipScale
+                scaleY = chipScale
+            }
+            .semantics {
+                contentDescription = "$label${if (active) "，已选中" else ""}"
+            }
             .clip(shape)
             .background(AppTheme.Surface, shape)
             .border(
                 width = if (active) 1.5.dp else 1.dp,
-                color = if (active) AppTheme.Gold else AppTheme.Stroke,
+                color = borderColor,
                 shape = shape,
             )
-            .clickable(onClick = onClick)
-            .inkSplash()
+            .inkSplash(filterInteraction)
+            .clickable(interactionSource = filterInteraction, indication = null, onClick = onClick)
             .padding(horizontal = 12.dp, vertical = 6.dp),
     )
 }

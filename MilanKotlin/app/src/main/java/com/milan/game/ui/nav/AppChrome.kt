@@ -112,7 +112,9 @@ fun AppTopBar(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.graphicsLayer {
-                    translationY = sin(phase) * 1.5f
+                    // 水墨呼吸：透明度在 0.84~1.0 间波动，替代原 translationY 浮动
+                    // （translate 浮动会让标题与底栏重叠产生闪烁，alpha 更稳定）
+                    alpha = 0.92f + sin(phase) * 0.08f
                 },
                 style = TextStyle(
                     shadow = Shadow(
@@ -165,7 +167,12 @@ private fun Chip(glyph: String, value: Int, color: Color) {
         animationSpec = tween(400),
         label = "chipValue",
     )
-    Row(verticalAlignment = Alignment.CenterVertically) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.semantics {
+            contentDescription = "$glyph $value"
+        },
+    ) {
         Text(
             text = glyph,
             fontSize = 14.sp,

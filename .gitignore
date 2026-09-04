@@ -57,5 +57,21 @@ docs/superpowers/art-direction/portraits-v2/zp3-gen-extra/
 docs/superpowers/art-direction/portraits-v2/zp3-nobg/
 docs/superpowers/art-direction/portraits-v2/zp3-pick/
 docs/superpowers/art-direction/portraits-v2/zp3-test/
+# p1/p2 批次生成中间产物（成品在 final/ 与 res/drawable-nodpi）
+docs/superpowers/art-direction/portraits-v2/p2-native/
+docs/superpowers/art-direction/portraits-v2/p2-out/
+docs/superpowers/art-direction/portraits-v2/samples/
+docs/superpowers/art-direction/portraits-v2/gen/
+docs/superpowers/art-direction/portraits-v2/gen-free-v22/
+docs/superpowers/art-direction/portraits-v2/p1-gen/
+docs/superpowers/art-direction/portraits-v2/p1-work/
+docs/superpowers/art-direction/portraits-v2/out/
 docs/superpowers/art-direction/portraits-v2/*.log
 docs/superpowers/art-direction/portraits-v2/*.err
+
+# 本地 Android SDK 解压目录（构建环境产物，非源码，11734 文件）
+/android-sdk/
+
+# 临时备份文件（脚本改写前自动留存，不入库）
+*.bak
+*.tmp
