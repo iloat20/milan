@@ -13,9 +13,9 @@ import org.junit.Test
  * - 两条加载路径（data.json / GameContent 兜底）都必须经过 [GameContent.enrich] 且口径一致；
  * - enrich 只补空字段：data.json 已有值（UR/SSR 的 Story/Weapon 等）不被覆盖。
  *
- * 已知内容缺口（从旧版继承，非本任务回归）：SR/R 角色的 Weapon/WeaponDesc 在 data.json 与
- * enrich 武器表里均无数据 → 两条路径下一致为空。本测试只断言「两路径一致」，不固化空值：
- * 内容方补齐 SR/R 武器名后，一致性断言依旧成立。
+ * 内容完整性（2026-08-30 校正）：SR/R 角色的 Weapon/WeaponDesc 已于 2026-08 武器重做后全量补齐
+ * （31/31 非空），旧注释「两路径同为空」已失真。本测试只断言「两路径一致」，不固化空值：
+ * 内容方再改武器名后，一致性断言依旧成立。
  */
 class DataJsonContentTest {
 
@@ -60,8 +60,13 @@ class DataJsonContentTest {
         val upPool = service.pools.first { it.poolId == "pool_flame" }
         assertEquals(31, mainPool.entries.size)
         assertEquals("char_ur_zhulong", upPool.featuredCharacterId)
-        // data.json 的 31 棵天赋树 Nodes 全空 → loadContent 丢弃后由 buildTalentTrees 兜底补全
+        // R4-57（2026-08-30）：Nodes 已全量补齐，旧注释「全空 → 兜底补全」已失真。
+        // 逐树断言非空——否则一旦再退化为空树，会被 loadContent 静默丢弃并由兜底掩盖，
+        // 本断言（只比数量 31）对此毫无鉴别力。
         assertEquals(31, service.talentTrees.size)
+        service.talentTrees.forEach { t ->
+            assertTrue("天赋树 ${t.treeId} 的 Nodes 为空会被 loadContent 静默丢弃", t.nodes.isNotEmpty())
+        }
 
         // 所有角色的核心派生字段最终非空（data.json 已有或 enrich 补齐）
         service.characters.forEach { c ->
@@ -76,7 +81,7 @@ class DataJsonContentTest {
         val zhulong = service.characters.first { it.characterId == "char_ur_zhulong" }
         assertEquals("阖辟神瞳·昼夜轮", zhulong.weapon)
         assertTrue(zhulong.weaponDesc.startsWith("由烛龙本瞳炼化的神环"))
-        assertTrue(zhulong.story.startsWith("烛龙是 Shinwa 的最高图腾之一"))
+        assertTrue(zhulong.story.startsWith("本源：烛龙"))
     }
 
     @Test
@@ -88,21 +93,29 @@ class DataJsonContentTest {
         assertTrue("应走兜底路径：${traces.joinToString(" | ")}", traces.any { it == "content.load.fallback" })
         assertEquals(31, fallbackService.characters.size)
         assertEquals(jsonService.characters.size, fallbackService.characters.size)
-        // 2026-08 三期收敛：UP 定轨进主来源，两路径同为「常驻 + UP」双池（消除兜底独有差异）；
-        // 仍仅对 pool_main 做逐字段口径断言（UP 池条目集允许内容方演进，只固化定轨角色一致）
+        // 2026-08 三期收敛：UP 定轨进主来源，两路径同为「常驻 + UP」双池。
+        // R4-03（2026-08-30）：改为**逐池**比对权重与条目集。此前只比 pool_main，
+        // 兜底 pool_flame「R 档 40% 权重 / 0 候选」的塌缩因此被静默放过——
+        // 而 loadContent 的池校验只作用于 json 路径，兜底池绕过校验，两路径呈现两套概率。
         assertEquals(2, jsonService.pools.size)
         assertEquals(2, fallbackService.pools.size)
-        val jsonMain = jsonService.pools.first { it.poolId == "pool_main" }
-        val fallbackMain = fallbackService.pools.first { it.poolId == "pool_main" }
-        assertEquals(jsonMain.entries.size, fallbackMain.entries.size)
-        assertEquals(jsonMain.rarityWeights, fallbackMain.rarityWeights)
-        assertEquals(jsonMain.hardPity, fallbackMain.hardPity)
-        assertEquals(jsonMain.singleCost, fallbackMain.singleCost)
-        assertEquals(jsonMain.tenCost, fallbackMain.tenCost)
-        val jsonUp = jsonService.pools.first { it.poolId == "pool_flame" }
-        val fallbackUp = fallbackService.pools.first { it.poolId == "pool_flame" }
-        assertEquals(jsonUp.featuredCharacterId, fallbackUp.featuredCharacterId)
-        assertEquals("char_ur_zhulong", jsonUp.featuredCharacterId)
+        jsonService.pools.forEach { jp ->
+            val fp = fallbackService.pools.first { it.poolId == jp.poolId }
+            assertEquals("${jp.poolId}.rarityWeights", jp.rarityWeights, fp.rarityWeights)
+            assertEquals("${jp.poolId}.hardPity", jp.hardPity, fp.hardPity)
+            assertEquals("${jp.poolId}.singleCost", jp.singleCost, fp.singleCost)
+            assertEquals("${jp.poolId}.tenCost", jp.tenCost, fp.tenCost)
+            assertEquals("${jp.poolId}.featuredCharacterId", jp.featuredCharacterId, fp.featuredCharacterId)
+            assertEquals(
+                "${jp.poolId}.entries",
+                jp.entries.map { it.characterId }.toSet(),
+                fp.entries.map { it.characterId }.toSet(),
+            )
+        }
+        assertEquals(
+            "char_ur_zhulong",
+            jsonService.pools.first { it.poolId == "pool_flame" }.featuredCharacterId,
+        )
         assertEquals(jsonService.talentTrees.size, fallbackService.talentTrees.size)
 
         // 逐角色逐字段一致性：包括「SR/R 武器名两路径同为空」的现状（不固化空值，只固化一致性）
@@ -162,19 +175,28 @@ class DataJsonContentTest {
      * 无候选的档位权重会被 [GameService.resolveRarityWithCandidates] 就近上抬，造成概率失真——
      * UP 池曾有 R 档 40% 权重但 0 候选，全部塌缩进仅 1 个候选的 SR 档，
      * 导致饕餮独占该池 70% 出货（名义仅 30%）。权重为 0 属刻意设计，放行。
+     *
+     * R4-03（2026-08-30）：**两条加载路径都必须校验**。C1 只在 data.json 侧修复，
+     * 兜底 GameContent.buildPools 原样复现同一缺陷（R 权重 400 / 0 候选 → SR 档 70%），
+     * 而本测试此前只对 json 路径执行，兜底路径完全在网外。
      */
     @Test
-    fun `非零权重档位必须有候选角色（防概率塌缩）`() {
-        val service = GameService(MemoryProvider(), dataJson)
-        assertTrue("应加载真实卡池", service.pools.isNotEmpty())
-        service.pools.forEach { pool ->
-            pool.rarityWeights.forEachIndexed { i, w ->
-                if (w > 0) {
-                    assertTrue(
-                        "池 ${pool.poolId} 的档位 ${i + 1} 权重为 $w 却没有候选角色 —— " +
-                            "该档产出会被上抬到邻近档位，造成概率塌缩",
-                        pool.entries.any { it.rarityIndex == i + 1 },
-                    )
+    fun `非零权重档位必须有候选角色（防概率塌缩，两路径）`() {
+        val bothPaths = listOf(
+            "json" to GameService(MemoryProvider(), dataJson),
+            "fallback" to GameService(MemoryProvider(), null),
+        )
+        bothPaths.forEach { (label, service) ->
+            assertTrue("$label 路径应加载真实卡池", service.pools.isNotEmpty())
+            service.pools.forEach { pool ->
+                pool.rarityWeights.forEachIndexed { i, w ->
+                    if (w > 0) {
+                        assertTrue(
+                            "$label 路径：池 ${pool.poolId} 的档位 ${i + 1} 权重为 $w 却没有候选角色 —— " +
+                                "该档产出会被上抬到邻近档位，造成概率塌缩",
+                            pool.entries.any { it.rarityIndex == i + 1 },
+                        )
+                    }
                 }
             }
         }

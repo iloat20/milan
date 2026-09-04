@@ -91,7 +91,10 @@ fun CharacterCard(
             .clip(MaterialTheme.shapes.large)
             .background(AppTheme.Surface, MaterialTheme.shapes.large)
             .border(1.5.dp, rarityCol.copy(alpha = 0.6f), MaterialTheme.shapes.large)
-            .pointerInput(Unit) {
+            // I2 修复：key 从常量 Unit 改为 characterId。
+            // 原写法 pointerInput 协程永不重启，闭包始终持有首次组合时捕获的 onClick；
+            // 列表因筛选/排序在同一槽位换绑不同角色后，点击会打开「切换前的那个角色」。
+            .pointerInput(characterId) {
                 detectTapGestures(
                     onPress = {
                         scope.launch { scale.animateTo(0.96f, spring()) }
@@ -102,7 +105,7 @@ fun CharacterCard(
                 )
             },
     ) {
-        // ── 卡面主视觉：立绘占主导 ──
+        // ── 卡面主视觉：立绘占主导（装裱册页：画心 + 隔水金线内框）──
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -136,6 +139,24 @@ fun CharacterCard(
             )
 
             // 稀有度角标（印章风格：圆角 + 金箔/朱砂底色）
+            // UR: 1.15x 缩放 + 1dp 描边（更醒目）
+            // SSR: 全 alpha 正常尺寸
+            // R: 0.6 alpha 低调处理
+            val rarityBadgeScale = when {
+                rarity >= 4 -> 1.15f // UR
+                rarity == 3 -> 1f    // SSR
+                else -> 0.85f        // SR/R
+            }
+            val rarityBadgeAlpha = when {
+                rarity >= 4 -> 1f    // UR
+                rarity == 3 -> 1f    // SSR
+                rarity == 2 -> 0.85f // SR
+                else -> 0.6f         // R
+            }
+            val rarityBadgeBorder = when {
+                rarity >= 4 -> 1.dp  // UR: 加粗描边
+                else -> 0.5.dp
+            }
             Text(
                 text = AppTheme.rarityName(rarity),
                 style = MaterialTheme.typography.labelSmall,
@@ -144,9 +165,14 @@ fun CharacterCard(
                 modifier = Modifier
                     .align(Alignment.TopStart)
                     .padding(6.dp)
+                    .graphicsLayer {
+                        scaleX = rarityBadgeScale
+                        scaleY = rarityBadgeScale
+                        alpha = rarityBadgeAlpha
+                    }
                     .clip(MaterialTheme.shapes.extraSmall)
                     .background(rarityCol.copy(alpha = 0.88f))
-                    .border(0.5.dp, rarityCol, MaterialTheme.shapes.extraSmall)
+                    .border(rarityBadgeBorder, rarityCol, MaterialTheme.shapes.extraSmall)
                     .padding(horizontal = 7.dp, vertical = 2.dp),
             )
 
@@ -187,9 +213,16 @@ fun CharacterCard(
                     Text(text = "🔒", fontSize = 18.sp)
                 }
             }
+
+            // 隔水金线（画心与装裱边分隔，末层叠加保证覆盖立绘边缘）
+            Box(
+                Modifier
+                    .fillMaxSize()
+                    .border(1.dp, AppTheme.Gold.copy(alpha = 0.20f)),
+            )
         }
 
-        // ── 铭牌区：名字 / 称号 / footer ──
+        // ── 铭牌区：名字 / 称号 / rarity 标签 / footer ──
         Column(Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 8.dp)) {
             Text(
                 text = name,
@@ -204,6 +237,14 @@ fun CharacterCard(
                 color = AppTheme.Text2,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
+            )
+            // 稀有度文字标签（底部铭牌区，与顶部印章呼应）
+            Text(
+                text = AppTheme.rarityName(rarity),
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.Bold,
+                color = rarityCol,
+                modifier = Modifier.padding(top = 2.dp),
             )
             footer?.invoke(this)
         }

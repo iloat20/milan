@@ -1,0 +1,17 @@
+{
+  "count": 5,
+  "note": "outlander P1 — 5 domain-outlander portraits regenerated to match renamed identities (公输玄/苍霆/玄微/青璃/曜). All UR rarity, canvas 1536x2304.",
+  "canvas_ladder": {
+    "UR": "1536x2304",
+    "SSR": "1280x1920",
+    "SR": "1024x1536",
+    "R": "832x1248"
+  },
+  "items": [
+    {"src": "Regenerate_this_bronze_mechani_2026-09-04T07-25-49.png", "id": "char_ur_ironman", "name_cn": "公输玄", "pinyin": "GongshuXuan", "title": "机巧偃师", "world": "Ironveil", "element": "Metal", "rarity": "UR", "canvas": "1536x2304"},
+    {"src": "Full_body_character_portrait_o_2026-09-04T07-25-52.png", "id": "char_ur_thor",    "name_cn": "苍霆",   "pinyin": "Cangting",   "title": "破晓雷神", "world": "Shinwa",   "element": "Thunder","rarity": "UR", "canvas": "1536x2304"},
+    {"src": "Full_body_character_portrait_o_2026-09-04T07-25-47.png", "id": "char_ur_strange", "name_cn": "玄微",   "pinyin": "Xuanwei",   "title": "观星秘术", "world": "Shinwa",   "element": "Light",  "rarity": "UR", "canvas": "1536x2304"},
+    {"src": "Full_body_character_portrait_o_2026-09-04T07-25-51.png", "id": "char_ur_keqing",  "name_cn": "曜",     "pinyin": "Yao",       "title": "雷部神女", "world": "Aether",   "element": "Thunder","rarity": "UR", "canvas": "1536x2304"},
+    {"src": "Full_body_character_portrait_o_2026-09-04T07-28-50.png", "id": "char_ur_kikyo",   "name_cn": "青璃",   "pinyin": "Qingli",    "title": "净世巫女", "world": "Shinwa",   "element": "Shadow", "rarity": "UR", "canvas": "1536x2304"}
+  ]
+}

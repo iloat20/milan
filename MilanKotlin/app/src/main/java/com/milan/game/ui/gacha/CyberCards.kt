@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
@@ -34,7 +35,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -49,36 +49,56 @@ import kotlinx.coroutines.delay
 
 // P4-2（2026-08-27）：揭晓卡牌族从 CyberStage.kt 拆出（分镜 3/4：Single / Ten）。
 
-/** 赛博卡背（十连牌桌待翻面）：深底 + 网格 + 品红能量环 + 中央徽记。 */
+/** 装裱册页卡背（十连牌桌待翻面）：绫绢底 + 金箔隔水双线 + 中央朱砂落印。 */
 @Composable
 internal fun CyberCardBack(modifier: Modifier = Modifier) {
     Box(
         modifier = modifier
             .clip(RoundedCornerShape(10.dp))
-            .background(CyberPalette.DeepBg.copy(alpha = 0.92f))
-            .border(1.dp, CyberPalette.Cyan.copy(alpha = 0.55f), RoundedCornerShape(10.dp)),
+            .background(CyberPalette.DeepBg)
+            .border(1.dp, CyberPalette.Magenta.copy(alpha = 0.55f), RoundedCornerShape(10.dp)),
         contentAlignment = Alignment.Center,
     ) {
+        // 绫绢底：淡墨经纬织纹（低 alpha 网格，喻绢丝）
         Canvas(Modifier.fillMaxSize()) {
-            val sp = 10.dp.toPx()
+            val sp = 12.dp.toPx()
             var y = sp
             while (y < size.height) {
-                drawLine(CyberPalette.Cyan.copy(alpha = 0.10f), Offset(0f, y), Offset(size.width, y), 1f)
+                drawLine(CyberPalette.Grid, Offset(0f, y), Offset(size.width, y), 1f)
                 y += sp
             }
             var x = sp
             while (x < size.width) {
-                drawLine(CyberPalette.Cyan.copy(alpha = 0.10f), Offset(x, 0f), Offset(x, size.height), 1f)
+                drawLine(CyberPalette.Grid, Offset(x, 0f), Offset(x, size.height), 1f)
                 x += sp
             }
-            drawCircle(
-                color = CyberPalette.Magenta.copy(alpha = 0.30f),
-                radius = size.minDimension * 0.22f,
-                center = center,
-                style = Stroke(1.5.dp.toPx()),
-            )
         }
-        Text("✦", color = CyberPalette.Cyan, fontSize = 22.sp, fontWeight = FontWeight.Bold)
+        // 隔水：内层金箔细线框
+        Box(
+            Modifier
+                .fillMaxSize()
+                .padding(7.dp)
+                .border(1.dp, CyberPalette.Magenta.copy(alpha = 0.28f), RoundedCornerShape(6.dp)),
+        )
+        // 画心留白区（更深墨色衬托落印）
+        Box(
+            Modifier
+                .fillMaxSize()
+                .padding(14.dp)
+                .background(CyberPalette.DeepBg.copy(alpha = 0.55f))
+                .border(1.dp, CyberPalette.Cyan.copy(alpha = 0.16f), RoundedCornerShape(4.dp)),
+        )
+        // 中央朱砂落印（方章）
+        Box(
+            Modifier
+                .size(30.dp)
+                .clip(RoundedCornerShape(5.dp))
+                .background(CyberPalette.Cyan.copy(alpha = 0.82f))
+                .border(1.dp, CyberPalette.Cyan.copy(alpha = 0.55f), RoundedCornerShape(5.dp)),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text("墨", color = CyberPalette.BeamCore, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+        }
     }
 }
 
@@ -121,30 +141,53 @@ internal fun SingleCard(
                 .width(232.dp)
                 .height(300.dp)
                 .clip(RoundedCornerShape(14.dp))
-                .background(Color.Black.copy(alpha = 0.55f))
+                .background(AppTheme.Surface)
                 .border(1.5.dp, frame, RoundedCornerShape(14.dp)),
         ) {
-            PortraitImage(
-                characterId = def?.characterId.orEmpty(),
-                rarity = rarity,
-                name = def?.displayName,
-                aura = true,
-                glowScale = 1f + rarity * 0.18f,
-                modifier = Modifier.fillMaxSize(),
-            )
+            // 画心：立绘 + 隔水金线内框（装裱册页结构）
             Box(
                 Modifier
-                    .align(Alignment.BottomCenter)
-                    .fillMaxWidth()
-                    .height(64.dp)
-                    .background(Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = 0.72f)))),
-            )
+                    .fillMaxSize()
+                    .padding(5.dp)
+                    .clip(RoundedCornerShape(10.dp))
+                    .border(1.dp, AppTheme.Gold.copy(alpha = 0.32f), RoundedCornerShape(10.dp)),
+            ) {
+                PortraitImage(
+                    characterId = def?.characterId.orEmpty(),
+                    rarity = rarity,
+                    name = def?.displayName,
+                    aura = true,
+                    glowScale = 1f + rarity * 0.18f,
+                    modifier = Modifier.fillMaxSize(),
+                )
+                Box(
+                    Modifier
+                        .align(Alignment.BottomCenter)
+                        .fillMaxWidth()
+                        .height(64.dp)
+                        .background(Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = 0.72f)))),
+                )
+                Text(
+                    text = def?.displayName.orEmpty(),
+                    modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 8.dp),
+                    color = Color.White,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                )
+            }
+            // 稀有度朱砂落印（右上角方章）
             Text(
-                text = def?.displayName.orEmpty(),
-                modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 8.dp),
-                color = Color.White,
-                fontSize = 18.sp,
+                text = rarityLabel(rarity),
+                color = AppTheme.BgDeepest,
+                fontSize = 12.sp,
                 fontWeight = FontWeight.Bold,
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(12.dp)
+                    .clip(RoundedCornerShape(4.dp))
+                    .background(AppTheme.rarityColor(rarity))
+                    .border(1.dp, AppTheme.rarityColor(rarity).copy(alpha = 0.6f), RoundedCornerShape(4.dp))
+                    .padding(horizontal = 6.dp, vertical = 2.dp),
             )
         }
         GlitchText(rarityLabel(rarity), frame, 22.sp, Modifier.padding(top = 10.dp))
@@ -245,31 +288,40 @@ internal fun TenCard(
             Box(
                 Modifier
                     .fillMaxSize()
-                    .background(Color.Black.copy(alpha = 0.55f))
+                    .background(AppTheme.Surface)
                     .border(1.dp, frame, RoundedCornerShape(8.dp)),
             ) {
-                PortraitImage(
-                    characterId = result.characterId.orEmpty(),
-                    rarity = result.rarity,
-                    name = result.characterName,
-                    aura = true,
-                    target = PortraitTarget.Thumb,
-                    modifier = Modifier.fillMaxSize(),
-                )
+                // 画心 + 隔水金线内框（装裱册页结构）
                 Box(
                     Modifier
-                        .align(Alignment.BottomCenter)
-                        .fillMaxWidth()
-                        .height(20.dp)
-                        .background(Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = 0.8f)))),
-                )
-                Text(
-                    text = rarityLabel(result.rarity),
-                    color = frame,
-                    fontSize = 10.sp,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 2.dp),
-                )
+                        .fillMaxSize()
+                        .padding(3.dp)
+                        .clip(RoundedCornerShape(6.dp))
+                        .border(1.dp, AppTheme.Gold.copy(alpha = 0.28f), RoundedCornerShape(6.dp)),
+                ) {
+                    PortraitImage(
+                        characterId = result.characterId.orEmpty(),
+                        rarity = result.rarity,
+                        name = result.characterName,
+                        aura = true,
+                        target = PortraitTarget.Thumb,
+                        modifier = Modifier.fillMaxSize(),
+                    )
+                    Box(
+                        Modifier
+                            .align(Alignment.BottomCenter)
+                            .fillMaxWidth()
+                            .height(20.dp)
+                            .background(Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = 0.8f)))),
+                    )
+                    Text(
+                        text = rarityLabel(result.rarity),
+                        color = frame,
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 2.dp),
+                    )
+                }
             }
         } else {
             CyberCardBack(Modifier.fillMaxSize())

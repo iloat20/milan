@@ -223,6 +223,10 @@ private fun InkWashPortrait(
                 val dx = (w - bitmap.width * scale) / 2f
                 val dy = (h - bitmap.height * scale) / 2f
                 translate(dx, dy)
+                // R4-02（2026-08-30 审查修复）：此前只 translate 不 scale，
+                // 「按缩放后尺寸算出的 dx/dy」+「1:1 原图绘制」两个错误叠加，
+                // 立绘既缩水又被上移出容器（Thumb 档仅占 35% 宽、上移 198px）。
+                scale(scale, scale)
                 drawBitmap(bitmap, 0f, 0f, portraitPaint)
                 restore()
 

@@ -1,0 +1,41 @@
+{
+  "count": 26,
+  "note": "P2 native-body batch — 26 v1 native-body portraits regenerated to v2 spec (serial generation, timestamps recorded per-call, no collision).",
+  "canvas_ladder": {
+    "UR": "1536x2304",
+    "SSR": "1280x1920",
+    "SR": "1024x1536",
+    "R": "832x1248"
+  },
+  "items": [
+    {"src": "_1__主体__Full_body_character_po_2026-09-04T08-20-23.png", "id": "char_ur_zhulong",   "name_cn": "烛龙", "rarity": "UR", "canvas": "1536x2304"},
+    {"src": "_1__主体__Full_body_character_po_2026-09-04T08-21-00.png", "id": "char_ur_wuxu",      "name_cn": "虚无", "rarity": "UR", "canvas": "1536x2304"},
+    {"src": "_1__主体__Full_body_character_po_2026-09-04T08-21-29.png", "id": "char_ur_xingtian",  "name_cn": "刑天", "rarity": "UR", "canvas": "1536x2304"},
+    {"src": "_1__主体__Full_body_character_po_2026-09-04T08-22-03.png", "id": "char_ur_jinwu",     "name_cn": "金乌", "rarity": "UR", "canvas": "1536x2304"},
+    {"src": "_1__主体__Full_body_character_po_2026-09-04T08-22-45.png", "id": "char_ur_nuwa",      "name_cn": "女娲", "rarity": "UR", "canvas": "1536x2304"},
+
+    {"src": "_1__主体__Full_body_character_po_2026-09-04T08-23-29.png", "id": "char_ssr_fenghuang","name_cn": "凤凰", "rarity": "SSR", "canvas": "1280x1920"},
+    {"src": "_1__主体__Full_body_character_po_2026-09-04T08-24-01.png", "id": "char_ssr_xiangliu", "name_cn": "相柳", "rarity": "SSR", "canvas": "1280x1920"},
+    {"src": "_1__主体__Full_body_character_po_2026-09-04T08-24-35.png", "id": "char_ssr_leishen",  "name_cn": "雷神", "rarity": "SSR", "canvas": "1280x1920"},
+    {"src": "_1__主体__Full_body_character_po_2026-09-04T08-25-03.png", "id": "char_ssr_feilian",  "name_cn": "飞廉", "rarity": "SSR", "canvas": "1280x1920"},
+    {"src": "_1__主体__Full_body_character_po_2026-09-04T08-25-36.png", "id": "char_ssr_shangyang","name_cn": "商羊", "rarity": "SSR", "canvas": "1280x1920"},
+    {"src": "_1__主体__Full_body_character_po_2026-09-04T08-26-11.png", "id": "char_ssr_chiyou",   "name_cn": "蚩尤", "rarity": "SSR", "canvas": "1280x1920"},
+    {"src": "_1__主体__Full_body_character_po_2026-09-04T08-26-54.png", "id": "char_ssr_baihu",    "name_cn": "白虎", "rarity": "SSR", "canvas": "1280x1920"},
+
+    {"src": "_1__主体__Full_body_character_po_2026-09-04T08-27-34.png", "id": "char_sr_suanni",    "name_cn": "狻猊", "rarity": "SR", "canvas": "1024x1536"},
+    {"src": "_1__主体__Full_body_character_po_2026-09-04T08-28-05.png", "id": "char_sr_jingwei",   "name_cn": "精卫", "rarity": "SR", "canvas": "1024x1536"},
+    {"src": "_1__主体__Full_body_character_po_2026-09-04T08-28-43.png", "id": "char_sr_qiongqi",   "name_cn": "穷奇", "rarity": "SR", "canvas": "1024x1536"},
+    {"src": "_1__主体__Full_body_character_po_2026-09-04T08-29-15.png", "id": "char_sr_xuanwu",    "name_cn": "旋龟", "rarity": "SR", "canvas": "1024x1536"},
+    {"src": "_1__主体__Full_body_character_po_2026-09-04T08-29-49.png", "id": "char_sr_bifang",    "name_cn": "毕方", "rarity": "SR", "canvas": "1024x1536"},
+    {"src": "_1__主体__Full_body_character_po_2026-09-04T08-30-24.png", "id": "char_sr_huayao",    "name_cn": "花妖", "rarity": "SR", "canvas": "1024x1536"},
+    {"src": "_1__主体__Full_body_character_po_2026-09-04T08-31-34.png", "id": "char_sr_taotie",    "name_cn": "饕餮", "rarity": "SR", "canvas": "1024x1536"},
+
+    {"src": "_1__主体__Full_body_character_po_2026-09-04T08-32-18.png", "id": "char_r_lili",       "name_cn": "狸力", "rarity": "R", "canvas": "832x1248"},
+    {"src": "_1__主体__Full_body_character_po_2026-09-04T08-32-55.png", "id": "char_r_qinyuan",    "name_cn": "钦原", "rarity": "R", "canvas": "832x1248"},
+    {"src": "_1__主体__Full_body_character_po_2026-09-04T08-33-59.png", "id": "char_r_sishu",      "name_cn": "跂踵", "rarity": "R", "canvas": "832x1248"},
+    {"src": "_1__主体__Full_body_character_po_2026-09-04T08-34-28.png", "id": "char_r_luoyu",      "name_cn": "蠃鱼", "rarity": "R", "canvas": "832x1248"},
+    {"src": "_1__主体__Full_body_character_po_2026-09-04T08-34-58.png", "id": "char_r_dangang",    "name_cn": "当康", "rarity": "R", "canvas": "832x1248"},
+    {"src": "_1__主体__Full_body_character_po_2026-09-04T08-35-37.png", "id": "char_r_shanxiao",   "name_cn": "山魈", "rarity": "R", "canvas": "832x1248"},
+    {"src": "_1__主体__Full_body_character_po_2026-09-04T08-36-02.png", "id": "char_r_yecha",      "name_cn": "夜叉", "rarity": "R", "canvas": "832x1248"}
+  ]
+}

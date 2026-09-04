@@ -79,18 +79,18 @@ enum class RevealStage { Charge, Beam, Single, Ten, Done }
  * 命名保持 Cyan/Magenta/VioletGlow 等不变，以最小化对 CyberCards/Beam/Charge 的侵入。
  */
 internal object CyberPalette {
-    /** 朱砂红（主色，替代霓虹青）—— 对应 AppTheme.SealRed / Danger */
-    val Cyan = Color(0xFFBF3A3A)
-    /** 金箔（辅色，替代霓虹品红）—— 对应 AppTheme.Gold */
-    val Magenta = Color(0xFFD4A853)
-    /** 石青淡彩（替代暮紫辉光）—— 对应 AppTheme.Frost */
-    val VioletGlow = Color(0xFF7EBAB1)
-    /** 浓墨深底（替代赛博深底） */
-    val DeepBg = Color(0xFF0A0A0F)
-    /** 宣纸白（光柱核心，替代赛博白） */
-    val BeamCore = Color(0xFFF0E8D8)
-    /** 淡墨网格线 */
-    val Grid = Color(0x26F0E8D8)
+    /** 朱砂红（主色）。命名 Cyan 为历史遗留（原赛博霓虹色），改名需同步 CyberCards/Beam/Charge。 */
+    val Cyan = AppTheme.SealRed
+    /** 金箔（辅色）。命名 Magenta 为历史遗留。 */
+    val Magenta = AppTheme.Gold
+    /** 石青淡彩。命名 VioletGlow 为历史遗留。 */
+    val VioletGlow = AppTheme.Frost
+    /** 浓墨深底。 */
+    val DeepBg = AppTheme.BgDeepest
+    /** 宣纸白（光柱核心）。 */
+    val BeamCore = AppTheme.Text1
+    /** 淡墨网格线。 */
+    val Grid = AppTheme.Text1.copy(alpha = 0.15f)
 }
 
 /** CyberHerald 内核辉光渐变色板（文件级常量：配合 drawWithCache 消除逐帧 Brush/色表分配）。 */
@@ -223,14 +223,16 @@ private fun GlitchField(modifier: Modifier = Modifier) {
  * 虚线外环 + 金箔旋转刻度弧 + 朱砂内核脉动；180° 周期 14s，内核呼吸 1.8s。
  */
 @Composable
-fun CyberHerald(modifier: Modifier = Modifier) {
-    val spin by rememberInfiniteTransition(label = "herald").animateFloat(
+fun CyberHerald(modifier: Modifier = Modifier, testMode: Boolean = false) {
+    val spin by if (testMode) remember { mutableFloatStateOf(0f) }
+    else rememberInfiniteTransition(label = "herald").animateFloat(
         initialValue = 0f,
         targetValue = 360f,
         animationSpec = infiniteRepeatable(tween(14000, easing = LinearEasing)),
         label = "heraldSpin",
     )
-    val pulse by rememberInfiniteTransition(label = "heraldPulse").animateFloat(
+    val pulse by if (testMode) remember { mutableFloatStateOf(0.5f) }
+    else rememberInfiniteTransition(label = "heraldPulse").animateFloat(
         initialValue = 0f,
         targetValue = 1f,
         animationSpec = infiniteRepeatable(tween(1800, easing = LinearEasing), RepeatMode.Reverse),
@@ -279,7 +281,7 @@ fun CyberHerald(modifier: Modifier = Modifier) {
                 },
         )
         // 墨粒轨道：8 颗墨点绕中心旋转，营造水墨丹青仪式感
-        InkParticles(Modifier.fillMaxSize())
+        if (!testMode) InkParticles(Modifier.fillMaxSize())
         Text("✦", color = CyberPalette.BeamCore, fontSize = 30.sp)
     }
 }

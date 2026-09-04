@@ -116,7 +116,7 @@ internal fun WeaponPanel(
 
             if (def.weaponVfx.isNotBlank()) {
                 Text(
-                    "武器特效 · ${def.weaponVfx}",
+                    "专属武器特效",
                     fontSize = 12.sp,
                     color = worldColor.glow,
                     modifier = Modifier.padding(top = 6.dp),

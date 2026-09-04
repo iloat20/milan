@@ -39,184 +39,184 @@ internal object GameContent {
     fun buildCharacters(): List<CharacterDataEntry> {
         val chars = mutableListOf<CharacterDataEntry>()
         // ========== UR 4★ ==========
-        // 烛龙 Zhulong - 山海经"烛龙"，睁眼为昼闭眼为夜，漫威凤凰之力+DC火神
+        // 烛龙 Zhulong - 山海经"烛龙"，睁眼为昼闭眼为夜
         add(chars, "char_ur_zhulong", "烛龙 Zhulong", "昼夜之主", "Shinwa", "Flame", 4,
             listOf(165, 95, 1250, 19), 7, true,
-            "上古山海经所载烛龙，睁眼为白昼、闭眼为长夜，吐息化为天火。漫威凤凰之力与DC火神之威在其体内共鸣，觉醒之日，星辰为之焚尽。",
+            "上古山海经所载烛龙，睁眼为白昼、闭眼为长夜，吐息化为天火。神話世界的最高图腾，昼夜的化身，觉醒之日，星辰为之焚尽。",
             "tree_zhulong", listOf(
                 sk("zhulong_1", "烛照八荒", "以烛龙真火焚烧全体敌人，造成巨额火焰伤害", "Flame", "Ultimate", 95),
                 sk("zhulong_2", "昼夜轮转", "切换昼夜：昼间攻速+30%，夜间暴击+25%", "Flame", "Active", 70),
                 sk("zhulong_3", "不灭之焰", "受到致命伤害时保留1点生命并回复30%血量（每场一次）", "Flame", "Passive", 60),
             ))
-        // 虚无 Wuxu - 山海经"混沌"+漫威湮灭(DC反物质)
+        // 虚无 Wuxu - 山海经"混沌"
         add(chars, "char_ur_wuxu", "虚无 Wuxu", "万象终焉", "Aether", "Shadow", 4,
             listOf(155, 125, 1150, 17), 7, true,
-            "山海经所载混沌之形，无面无相，万物归虚。漫威湮灭与DC反监视者的力量在此交汇，它来自维度裂隙深处，以星辰为食，所余唯有虚无。",
+            "山海经所载混沌之形，无面无相，万物归虚。它来自维度裂隙深处，以星辰为食，所余唯有虚无。",
             "tree_wuxu", listOf(
                 sk("wuxu_1", "湮灭奇点", "在敌阵制造黑洞，持续吸引并撕裂范围内所有目标", "Shadow", "Ultimate", 92),
                 sk("wuxu_2", "虚化", "进入虚无形态，闪避下一次攻击并回复能量", "Shadow", "Active", 68),
                 sk("wuxu_3", "存在抹消", "普攻有15%概率直接削减目标15%当前生命", "Shadow", "Passive", 65),
             ))
-        // 刑天 Xingtian - 山海经"刑天"，漫威金刚狼+DC毁灭日
+        // 刑天 Xingtian - 山海经"刑天"
         add(chars, "char_ur_xingtian", "刑天 Xingtian", "不死战神", "Ironveil", "Metal", 4,
             listOf(170, 155, 1500, 13), 7, true,
-            "山海经刑天，断首仍以乳为目、以脐为口，执干戚而舞。漫威金刚狼的不愈与DC毁灭日的进化在其合金躯壳中重生，铁帷纪元最不屈的战士。",
+            "山海经刑天，断首仍以乳为目、以脐为口，执干戚而舞。铁帷纪元最不屈的战士，胸口能量核心随情绪明灭。",
             "tree_xingtian", listOf(
                 sk("xingtian_1", "干戚狂舞", "挥舞巨斧横扫前方，造成范围伤害并击退", "Metal", "Ultimate", 90),
                 sk("xingtian_2", "不死之躯", "受到伤害时叠加狂暴层数，每层+8%攻击", "Metal", "Passive", 72),
                 sk("xingtian_3", "断首重生", "阵亡后复活一次，回复50%生命并获得霸体", "Metal", "Passive", 75),
             ))
-        // 桔梗 Kikyo ——《犬夜叉》孤独的巫女，封印四魂之玉的破魔之弓
-        add(chars, "char_ur_kikyo", "桔梗 Kikyo", "悲运的巫女", "Shinwa", "Shadow", 4,
+        // 青璃 Qingli —— 域外净世巫女
+        add(chars, "char_ur_kikyo", "青璃 Qingli", "净世巫女", "Shinwa", "Shadow", 4,
             listOf(158, 90, 1050, 20), 7, true,
-            "《犬夜叉》传奇巫女桔梗，灵力高强、清冷孤高。曾奉命守护四魂之玉，与半妖犬夜叉相知相爱，却遭奈落阴谋所害，含恨而终。后以陶土复生，带着前世记忆与执念独行于乱世，以破魔之箭净化众生、封印邪祟。她是不被世间的巫女，行走于生死之间，以悲悯之心超度亡魂。",
+            "域外净世巫女，灵力高强、清冷孤高。以陶土复生，携前世执念独行于世，以破魔之箭净化众生、封印邪祟。",
             "tree_kikyo", listOf(
                 sk("kikyo_1", "破魂之箭", "射出贯穿一切的破魔箭，对单体造成巨额真实伤害并封印其技能3秒", "Shadow", "Ultimate", 90),
                 sk("kikyo_2", "净化之阵", "展开净化结界，持续驱散队友负面状态并回复生命", "Shadow", "Active", 68),
                 sk("kikyo3", "孤独之念", "场上每有一名队友阵亡，自身攻击与暴击大幅提升", "Shadow", "Passive", 72),
             ))
-        // 刻晴 Keqing ——《原神》璃月七星之玉衡，坚信人可胜天的雷之剑士
-        add(chars, "char_ur_keqing", "刻晴 Keqing", "玉衡星", "Aether", "Thunder", 4,
+        // 曜 Yao —— 域外雷部剑客
+        add(chars, "char_ur_keqing", "曜 Yao", "雷部神女", "Aether", "Thunder", 4,
             listOf(162, 105, 1150, 21), 7, true,
-            "《原神》璃月七星之玉衡星刻晴，勤勉正直、不信神明。她坚信人类的命运应由自己掌握，而非托付于仙家神力。身为雷元素使用者，她将雷电之力融入剑术，创造出独一无二的「云来剑法」。以凡人之躯比肩神明，以雷霆之势守护璃月。",
+            "域外雷部剑客，勤勉正直、不信天命。坚信凡人命运应由自己掌握，以雷霆剑法守护此界。",
             "tree_keqing", listOf(
                 sk("keqing_1", "天街游移", "化身雷霆穿梭敌阵，对路径上所有敌人造成多段雷伤并瞬移至终点", "Thunder", "Ultimate", 91),
-                sk("keqing_2", "雷楔瞬斩", "投掷雷楔标记敌人，瞬移至目标身后发动必定暴击的斩击", "Thunder", "Active", 72),
-                sk("keqing_3", "玉衡之誓", "普攻积攒「玉衡」层数，满层后下次技能伤害翻倍", "Thunder", "Passive", 70),
+                sk("keqing_2", "惊雷瞬斩", "投掷雷钉标记敌人，瞬移至目标身后发动必定暴击的斩击", "Thunder", "Active", 72),
+                sk("keqing_3", "雷部之誓", "普攻积攒「雷势」层数，满层后下次技能伤害翻倍", "Thunder", "Passive", 70),
             ))
         // ========== SSR 3★ ==========
-        // 凤凰 Fenghuang - 山海经"凤凰"，漫威凤凰女+DC火星猎人
+        // 凤凰 Fenghuang - 山海经"凤凰"
         add(chars, "char_ssr_fenghuang", "凤凰 Fenghuang", "涅槃圣禽", "Shinwa", "Flame", 3,
             listOf(125, 85, 1050, 16), 6, true,
-            "山海经凤凰，五色而文，德义礼仁信。漫威凤凰女琴·葛蕾的念力与DC火星猎人的火焰在其羽翼中涅槃，浴火重生，不死不灭。",
+            "山海经凤凰，五色而文，德义礼仁信。浴火重生，不死不灭，每一次涅槃都在星空留下新的星座。",
             "tree_fenghuang", listOf(
                 sk("fenghuang_1", "涅槃之火", "以凤凰真火焚烧全体，命中目标灼烧5秒", "Flame", "Ultimate", 82),
                 sk("fenghuang_2", "浴火重生", "阵亡时化为火卵，3秒后复活并回复40%生命", "Flame", "Passive", 70),
                 sk("fenghuang_3", "凤鸣朝阳", "鸣叫提升全队20%攻击力，持续8秒", "Flame", "Active", 60),
             ))
-        // 相柳 Xiangliu - 山海经"相柳"，漫威毒液+DC小丑
+        // 相柳 Xiangliu - 山海经"相柳"
         add(chars, "char_ssr_xiangliu", "相柳 Xiangliu", "九首毒厄", "Aether", "Shadow", 3,
             listOf(118, 95, 1100, 14), 6, false,
-            "山海经相柳，九首蛇身，所到之处化为毒泽。漫威毒液的共生体与小丑的剧毒在其血液中流淌，吐息即瘟疫，触碰即腐蚀。",
+            "山海经相柳，九首蛇身，所到之处化为毒泽。吐息即瘟疫，触碰即腐蚀。",
             "tree_xiangliu", listOf(
                 sk("xiangliu_1", "九首噬天", "九首齐出撕咬前方，造成多段伤害并叠加中毒", "Shadow", "Ultimate", 80),
                 sk("xiangliu_2", "毒泽万里", "在地面制造毒沼，踏入的敌人持续掉血减速", "Shadow", "Active", 65),
                 sk("xiangliu_3", "腐蚀之血", "攻击附带中毒，中毒目标受到治疗量降低50%", "Shadow", "Passive", 58),
             ))
-        // 雷神 Leishen - 山海经"雷兽"，漫威雷神索尔+DC宙斯
+        // 雷神 Leishen - 山海经"雷兽"
         add(chars, "char_ssr_leishen", "雷神 Leishen", "雷霆裁决", "Ironveil", "Thunder", 3,
             listOf(130, 90, 1000, 17), 6, false,
-            "山海经雷兽，龙身人头，腹中雷鸣。漫威雷神索尔的妙尔尼尔与DC宙斯的雷霆在其机械核心中锻造，以闪电审判一切。",
+            "山海经雷兽，龙身人头，腹中雷鸣。铁帷城邦的能量核心守护者，以雷霆审判一切。",
             "tree_leishen", listOf(
                 sk("leishen_1", "雷霆万钧", "召唤巨型闪电劈向敌阵，主目标伤害翻倍", "Thunder", "Ultimate", 84),
                 sk("leishen2", "雷神之锤", "投掷雷霆之锤，命中后弹射至多3个敌人", "Thunder", "Active", 66),
                 sk("leishen_3", "静电充能", "每次受到攻击积累静电，下次技能伤害+25%", "Thunder", "Passive", 56),
             ))
-        // 飞廉 Feilian - 山海经"飞廉"，漫威快银+DC闪电侠
+        // 飞廉 Feilian - 山海经"飞廉"
         add(chars, "char_ssr_feilian", "飞廉 Feilian", "风驰电掣", "Shinwa", "Wood", 3,
             listOf(122, 70, 880, 24), 6, false,
-            "山海经飞廉，鹿身雀首，司掌风伯。漫威快银的神速与DC闪电侠的神速力在其血脉中奔袭，疾风迅雷，唯快不破。",
+            "山海经飞廉，鹿身雀首，司掌风伯。疾风迅雷，唯快不破。",
             "tree_feilian", listOf(
                 sk("feilian_1", "神速连斩", "以超越视觉的速度连续斩击单体12次", "Wood", "Ultimate", 78),
                 sk("feilian_2", "疾风步", "瞬移至敌人身后发动背刺，必定暴击", "Wood", "Active", 62),
                 sk("feilian_3", "风之残影", "闪避后留下残影，残影爆炸对周围造成伤害", "Wood", "Passive", 55),
             ))
-        // 商羊 Shangyang - 山海经"商羊"，漫威X教授+DC命运博士
+        // 商羊 Shangyang - 山海经"商羊"
         add(chars, "char_ssr_shangyang", "商羊 Shangyang", "预知神鸟", "Aether", "Light", 3,
             listOf(115, 100, 1080, 15), 6, false,
-            "山海经商羊，一足鸟身，预知风雨。漫威X教授的精神力与DC命运博士的纳布神盔赋予其预知未来的能力，以星象指引命运。",
+            "山海经商羊，一足鸟身，预知风雨。以太议会首席预言者，以星象指引命运。",
             "tree_shangyang", listOf(
                 sk("shangyang_1", "星轨预言", "揭示敌方弱点，全队暴击率+30%持续6秒", "Light", "Ultimate", 76),
                 sk("shangyang_2", "预知闪避", "预判下一次攻击，必定闪避并反击", "Light", "Active", 60),
                 sk("shangyang3", "命运织网", "战斗开始时随机标记一名敌人，其受到伤害+20%", "Light", "Passive", 54),
             ))
         // ========== SR 2★ ==========
-        // 狻猊 Suanni - 山海经"狻猊"，漫威黑豹+DC蝙蝠侠
+        // 狻猊 Suanni - 山海经"狻猊"
         add(chars, "char_sr_suanni", "狻猊 Suanni", "狮吼震魂", "Shinwa", "Flame", 2,
             listOf(95, 75, 900, 14), 5, false,
-            "山海经狻猊，狮形豹步，食虎豹。漫威黑豹的振金战甲与DC蝙蝠侠的战术智慧在其血脉中传承，以狮吼震慑敌魂。",
+            "山海经狻猊，龙子之一，狮形豹步，食虎豹。以狮吼震慑敌魂。",
             "tree_suanni", listOf(
                 sk("suanni_1", "狮王怒吼", "狮吼震慑前方敌人，造成伤害并降低其攻击", "Flame", "Active", 55),
                 sk("suanni_2", "烈焰扑击", "扑向目标撕咬，造成单体高额伤害", "Flame", "Active", 50),
                 sk("suanni_3", "兽王威严", "生命低于40%时攻击+25%", "Flame", "Passive", 40),
             ))
-        // 精卫 Jingwei - 山海经"精卫"，漫威黑寡妇+DC猫女
+        // 精卫 Jingwei - 山海经"精卫"
         add(chars, "char_sr_jingwei", "精卫 Jingwei", "衔石填海", "Aether", "Wood", 2,
             listOf(88, 72, 850, 16), 5, false,
-            "山海经精卫，炎帝之女溺于东海，化为神鸟衔石填海。漫威黑寡妇的坚韧与DC猫女的敏捷赋予其不屈意志，以柔克刚。",
+            "山海经精卫，炎帝之女溺于东海，化为神鸟衔石填海。以柔克刚，矢志不停。",
             "tree_jingwei", listOf(
                 sk("jingwei_1", "衔石连射", "连续发射碎石攻击单体，每次伤害递增", "Wood", "Active", 52),
                 sk("jingwei_2", "填海之志", "每回合结束时未死亡则回复5%最大生命", "Wood", "Passive", 42),
                 sk("jingwei_3", "风翼庇护", "闪避后制造风盾，吸收下一次伤害", "Wood", "Passive", 38),
             ))
-        // 穷奇 Qiongqi - 山海经"穷奇"，漫威死侍+DC丧钟
+        // 穷奇 Qiongqi - 山海经"穷奇"
         add(chars, "char_sr_qiongqi", "穷奇 Qiongqi", "噬罪凶兽", "Ironveil", "Metal", 2,
             listOf(100, 88, 980, 11), 5, false,
-            "山海经穷奇，状如牛蝟毛，性噬恶人。漫威死侍的再生与DC丧钟的精准射击在其机械兽躯中融合，以暴制暴。",
+            "山海经穷奇，状如牛而有蝟毛，性噬恶人。铁帷雇佣兵，以暴制暴。",
             "tree_qiongqi", listOf(
                 sk("qiongqi_1", "噬罪撕咬", "撕咬单体造成真实伤害，无视防御", "Metal", "Active", 56),
                 sk("qiongqi_2", "凶兽再生", "每次击杀回复20%最大生命", "Metal", "Passive", 44),
                 sk("qiongqi_3", "蝟毛反击", "受到普攻时反弹30%伤害", "Metal", "Passive", 40),
             ))
-        // 旋龟 Xuanwu - 山海经"旋龟"，漫威钢力士+DC钢骨
+        // 旋龟 Xuanwu - 山海经"旋龟"
         add(chars, "char_sr_xuanwu", "旋龟 Xuanwu", "玄甲守护", "Shinwa", "Earth", 2,
             listOf(92, 115, 1100, 9), 5, false,
-            "山海经旋龟，鸟首虺尾，其音如判木。漫威钢力士的钢躯与DC钢骨的机械防护化为玄龟坚甲，以守为攻。",
+            "山海经旋龟，鸟首虺尾，其音如判木。女娲浮岛的守护者，以守为攻。",
             "tree_xuanwu", listOf(
                 sk("xuanwu_1", "玄甲护体", "为全队施加护盾，吸收伤害持续6秒", "Earth", "Active", 54),
                 sk("xuanwu_2", "龟缩防御", "进入龟壳形态，减伤60%但无法攻击", "Earth", "Active", 46),
                 sk("xuanwu3", "大地之根", "站立不动3秒后每秒回复4%生命", "Earth", "Passive", 38),
             ))
-        // 毕方 Bifang - 山海经"毕方"，漫威猎鹰+DC鹰女
+        // 毕方 Bifang - 山海经"毕方"
         add(chars, "char_sr_bifang", "毕方 Bifang", "焚羽烈鸟", "Aether", "Thunder", 2,
             listOf(90, 70, 820, 18), 5, false,
-            "山海经毕方，一足鹤身，见则讹火。漫威猎鹰的翼装与DC鹰女的 N金属羽翼化为雷电之翼，所过之处雷火交加。",
+            "山海经毕方，一足鹤身，见则讹火。雷火交加的独足神鸟。",
             "tree_bifang", listOf(
                 sk("bifang_1", "焚羽俯冲", "自高空俯冲，对路径上敌人造成雷电伤害", "Thunder", "Active", 53),
                 sk("bifang_2", "雷羽散射", "散射雷电羽毛攻击随机3个敌人", "Thunder", "Active", 48),
                 sk("bifang3", "闪电之翼", "每次闪避后下次攻击附加雷电伤害", "Thunder", "Passive", 36),
             ))
         // ========== R 1★ ==========
-        // 狸力 LiLi - 山海经"狸力"，漫威蚁人+DC原子侠
+        // 狸力 LiLi - 山海经"狸力"
         add(chars, "char_r_lili", "狸力 LiLi", "遁地灵兽", "Shinwa", "Earth", 1,
             listOf(72, 65, 750, 12), 4, false,
-            "山海经狸力，状如豚有距，其音如狗吠。漫威蚁人的缩放与DC原子侠的原子操控赋予其遁地穿土之能，身形虽小，来去无踪。",
+            "山海经狸力，状如豚有距，其音如狗吠。身形虽小，来去无踪。",
             "tree_lili", listOf(
                 sk("lili_1", "遁地突袭", "潜入地下后从敌人脚下突袭，必定暴击", "Earth", "Active", 40),
                 sk("lili_2", "土遁闪避", "受到攻击时有25%概率遁地闪避", "Earth", "Passive", 30),
                 sk("lili_3", "掘地之爪", "普攻附带破甲，降低目标10%防御", "Earth", "Passive", 25),
             ))
-        // 钦原 Qinyuan - 山海经"钦原"，漫威黄蜂女+DC黑金丝雀
+        // 钦原 Qinyuan - 山海经"钦原"
         add(chars, "char_r_qinyuan", "钦原 Qinyuan", "毒蜂刺羽", "Aether", "Metal", 1,
             listOf(76, 60, 700, 15), 4, false,
-            "山海经钦原，蛰鸟兽则死，蛰木则枯。黄蜂女的蜂群战衣与黑金丝雀的声波在其机械蜂翼中融合，以毒针刺穿敌阵。",
+            "山海经钦原，蛰鸟兽则死，蛰木则枯。铁帷小型无人机原型，后生自我意识。",
             "tree_qinyuan", listOf(
                 sk("qinyuan_1", "毒蜂连射", "连续发射毒针攻击单体3次", "Metal", "Active", 42),
                 sk("qinyuan_2", "蜂毒侵蚀", "毒针附带中毒，每秒掉血持续4秒", "Metal", "Passive", 32),
                 sk("qinyuan_3", "蜂翼振翅", "攻击有20%概率额外攻击一次", "Metal", "Passive", 28),
             ))
-        // 跂踵 SiShu - 山海经"蟋蟀/跂踵"，漫威蜘蛛侠+DC夜翼
+        // 跂踵 SiShu - 山海经"蟋蟀/跂踵"
         add(chars, "char_r_sishu", "跂踵 SiShu", "夜行游侠", "Ironveil", "Shadow", 1,
             listOf(74, 62, 720, 16), 4, false,
-            "山海经跂踵，状如鹊而九尾，见则其国多疫。蜘蛛侠的蛛丝感应与DC夜翼的杂技格斗在其暗影战衣中觉醒，夜行无声。",
+            "山海经跂踵，状如鹊而九尾。铁帷贫民窟的义警，只在夜间行动。",
             "tree_sishu", listOf(
                 sk("sishu_1", "蛛丝束缚", "发射蛛丝缠绕单体，使其无法行动2秒", "Shadow", "Active", 41),
                 sk("sishu_2", "蜘蛛感应", "受到攻击前摇时自动闪避", "Shadow", "Passive", 30),
                 sk("sishu_3", "暗影打击", "从暗处攻击额外造成50%伤害", "Shadow", "Passive", 26),
             ))
-        // 蠃鱼 Luoyu - 山海经"蠃鱼"，漫威海王纳摩+DC水行侠
+        // 蠃鱼 Luoyu - 山海经"蠃鱼"
         add(chars, "char_r_luoyu", "蠃鱼 Luoyu", "渊海游灵", "Shinwa", "Water", 1,
             listOf(70, 68, 780, 13), 4, false,
-            "山海经蠃鱼，鱼身鸟翼，音如鸳鸯。漫威海王纳摩的深海之力与DC水行侠的亚特兰蒂斯之能在其鳞翼中流淌，御水而行。",
+            "山海经蠃鱼，鱼身鸟翼，音如鸳鸯。御水而行，守护被污染的海洋。",
             "tree_luoyu", listOf(
                 sk("luoyu_1", "寒流冲击", "喷射寒流造成伤害并减速目标30%", "Water", "Active", 44),
                 sk("luoyu_2", "鳞甲水护", "受到攻击时生成水盾吸收伤害", "Water", "Passive", 33),
                 sk("luoyu_3", "深渊低语", "生命低于50%时技能冷却-20%", "Water", "Passive", 27),
             ))
-        // 当康 Dangang - 山海经"当康"，漫威野兽+DC火星猎人
+        // 当康 Dangang - 山海经"当康"
         add(chars, "char_r_dangang", "当康 Dangang", "丰穗瑞兽", "Aether", "Wood", 1,
             listOf(78, 72, 820, 11), 4, false,
-            "山海经当康，状如豚而有牙，其鸣自叫，见则天下大穰。漫威野兽的蛮力与DC火星猎人的兽性在其瑞兽之躯中苏醒，以丰收之名为战。",
+            "山海经当康，状如豚而有牙，其鸣自叫，见则天下大穰。",
             "tree_dangang", listOf(
                 sk("dangang_1", "丰穗冲撞", "蓄力冲撞单体，造成伤害并击退", "Wood", "Active", 43),
                 sk("dangang_2", "瑞兽庇佑", "战斗开始时为全队施加5%生命护盾", "Wood", "Passive", 31),
@@ -227,7 +227,7 @@ internal object GameContent {
         // UR 金乌 Jinwu - Shinwa 太阳神鸟，与烛龙并肩对抗虚无
         add(chars, "char_ur_jinwu", "金乌 Jinwu", "十日巡天", "Shinwa", "Flame", 4,
             listOf(168, 92, 1220, 20), 7, true,
-            "太阳的化身，山海经载其载日而行。裂隙纪元中，十日中的九日被虚无吞噬，仅剩金乌独自照耀神話残片。漫威太阳黑子的聚变之躯与DC火风暴的原子重构之力，在金乌羽翼中共鸣，使其每一次振翅都能点燃大气中的氧原子。",
+            "太阳的化身，山海经载其载日而行。十日九陨，仅剩金乌独自照耀神話残片，每一次振翅都能点燃大气。",
             "tree_jinwu", listOf(
                 sk("jinwu_1", "日轮天罚", "射出凝聚太阳核心的等离子箭矢，对单体造成巨额火焰伤害并灼烧周围敌人", "Flame", "Ultimate", 94),
                 sk("jinwu_2", "耀斑冲击", "释放太阳耀斑，对全体敌人造成火焰伤害并附加致盲", "Flame", "Active", 72),
@@ -236,7 +236,7 @@ internal object GameContent {
         // UR 女娲 Nuwa - Aether 创世女神，浮岛守护者
         add(chars, "char_ur_nuwa", "女娲 Nuwa", "泥塑苍天", "Aether", "Earth", 4,
             listOf(150, 135, 1400, 16), 7, true,
-            "创造人类的古神，以大地的五色石补天。裂隙纪元中，原初之环的碎片不断崩落，女娲以最后一块补天石为锚，在以太星空中托起一座浮岛，庇护流离的凡人。漫威凤凰女的生命念力与DC沼泽怪物的大地共鸣，使女娲能将泥土化为生命、将废墟重塑为壁垒。",
+            "创造人类的古神，以五色石补天。在以太星空托起浮岛，庇护流离的凡人。",
             "tree_nuwa", listOf(
                 sk("nuwa_1", "五色补天", "以五色石重塑战场，为全队回复大量生命并清除负面状态", "Earth", "Ultimate", 88),
                 sk("nuwa_2", "泥塑众生", "召唤土灵协助战斗，土灵会嘲讽敌人并分担伤害", "Earth", "Active", 70),
@@ -245,7 +245,7 @@ internal object GameContent {
         // SSR 蚩尤 Chiyou - Ironveil 兵主魔神
         add(chars, "char_ssr_chiyou", "蚩尤 Chiyou", "兵主魔神", "Ironveil", "Metal", 3,
             listOf(135, 105, 1150, 15), 6, false,
-            "上古战神，铜头铁额，八肱八趾。铁帷城邦在大崩解后挖掘出蚩尤残躯，以合金与能量核心将其复活，编入兵主军团。漫威绿巨人的无限愤怒与DC毁灭日的进化杀戮本能，在蚩尤体内形成永不熄灭的战意。",
+            "上古兵主，铜头铁额，八肱八趾。铁帷以合金与能量核心将其复活，编入兵主军团。",
             "tree_chiyou", listOf(
                 sk("chiyou_1", "虎魄裂天", "挥舞虎魄魔刀劈出金属碎片风暴，对前方敌人造成范围伤害", "Metal", "Ultimate", 84),
                 sk("chiyou_2", "兵主狂血", "损失生命以换取攻击力提升，击杀敌人后回复生命", "Metal", "Active", 66),
@@ -254,7 +254,7 @@ internal object GameContent {
         // SSR 白虎 Baihu - Shinwa 西方圣兽
         add(chars, "char_ssr_baihu", "白虎 Baihu", "西方圣兽", "Shinwa", "Metal", 3,
             listOf(132, 88, 1020, 22), 6, false,
-            "四象之一，主杀伐与西方。在神話残片，白虎沉睡了千年，直到裂隙中的金属风暴撕裂山林，它才睁开金色的兽瞳。漫威黑豹的振金战甲与DC猫女的优雅致命，在白虎身上化为兼具力量与速度的金属圣兽。",
+            "四象之一，主杀伐与西方。沉睡千年，因裂隙中的金属风暴撕裂山林而睁开金色兽瞳。",
             "tree_baihu", listOf(
                 sk("baihu_1", "西方白虎杀", "化作银色残影连续斩击单体，无视部分防御", "Metal", "Ultimate", 82),
                 sk("baihu_2", "金风破甲", "虎爪撕裂目标护甲，使其受到物理伤害增加", "Metal", "Active", 64),
@@ -263,7 +263,7 @@ internal object GameContent {
         // SR 花妖 Huayao - Aether 千瓣灵魅
         add(chars, "char_sr_huayao", "花妖 Huayao", "千瓣灵魅", "Aether", "Wood", 2,
             listOf(85, 78, 860, 18), 5, false,
-            "原是 Aether 浮空花园中一株千年灵植，因裂隙能量涌入而化形。漫威暴风女的大气操控与DC毒藤女的植物共鸣，使她可以呼唤风携带花瓣形成治愈或剧毒领域。",
+            "以太浮空花园中的千年灵植，因裂隙能量涌入而化形。千瓣灵魅。",
             "tree_huayao", listOf(
                 sk("huayao_1", "千瓣愈风", "召唤花瓣之风为全队回复生命并提升速度", "Wood", "Active", 52),
                 sk("huayao_2", "毒藤缠绕", "用毒藤束缚单体敌人，造成持续伤害并降低其攻击", "Wood", "Active", 48),
@@ -272,7 +272,7 @@ internal object GameContent {
         // SR 饕餮 Taotie - Shinwa 贪食凶兽
         add(chars, "char_sr_taotie", "饕餮 Taotie", "贪食无厌", "Shinwa", "Flame", 2,
             listOf(98, 120, 1050, 10), 5, false,
-            "山海经中的贪食凶兽，有首无身，永不餍足。裂隙纪元中，饕餮被神話阵营封印于青铜巨鼎内，只在最危急的战局中被放出。漫威毒液的吞噬渴望与DC所罗门·格兰迪的无穷饥饿，使饕餮能吞噬敌人的攻击并转化为自身烈焰。",
+            "山海经贪食凶兽，有首无身，永不餍足。被封印于青铜巨鼎，只在危急战局被放出。",
             "tree_taotie", listOf(
                 sk("taotie_1", "贪食天地", "吞噬前方敌人，造成火焰伤害并回复自身生命", "Flame", "Active", 54),
                 sk("taotie_2", "青铜业火", "喷出青铜色烈焰，对全体敌人造成灼烧", "Flame", "Active", 50),
@@ -281,7 +281,7 @@ internal object GameContent {
         // R 山魈 Shanxiao - Ironveil 机械林精
         add(chars, "char_r_shanxiao", "山魈 Shanxiao", "机械林精", "Ironveil", "Earth", 1,
             listOf(75, 68, 740, 17), 4, false,
-            "本是山林小鬼，大崩解时被铁帷的机械风暴卷入工厂废墟，身体与废弃机械融合。漫威火箭浣熊的机械天赋与DC野兽小子的野性本能，让它成为能在钢铁丛林中快速穿行的小个子战士。",
+            "本是山林小鬼，大崩解时被机械风暴卷入工厂废墟，身体与废弃机械融合。",
             "tree_shanxiao", listOf(
                 sk("shanxiao_1", "零件陷阱", "布置机械陷阱，触发时造成伤害并眩晕", "Earth", "Active", 40),
                 sk("shanxiao_2", "废土闪避", "受到攻击时概率遁入废墟闪避", "Earth", "Passive", 32),
@@ -290,40 +290,45 @@ internal object GameContent {
         // R 夜叉 Yecha - Aether 裂隙低语
         add(chars, "char_r_yecha", "夜叉 Yecha", "裂隙低语", "Aether", "Shadow", 1,
             listOf(78, 58, 680, 19), 4, false,
-            "Aether 裂隙中最常见的低等虚空生物，由迷失者的影子凝聚而成。漫威夜魔侠的感官增强与DC暗影侠的黑暗潜行，使夜叉能在阴影中无声移动，用低语瓦解敌人意志。",
+            "以太裂隙中最常见的低等虚空生物，由迷失者的影子凝聚而成。",
             "tree_yecha", listOf(
                 sk("yecha_1", "影袭", "从阴影中突袭单体，造成暗影伤害", "Shadow", "Active", 42),
                 sk("yecha_2", "恐惧低语", "降低单个敌人攻击并使其有概率混乱", "Shadow", "Active", 36),
                 sk("yecha_3", "群影战术", "场上每存在一个夜叉，自身伤害提升", "Shadow", "Passive", 26),
             ))
-        // ========== 漫威联动 UR（2026-08-26 新增） ==========
-        // 钢铁侠 Iron Man —— 漫威托尼·斯塔克，裂隙坠入铁帷纪元，方舟反应堆×铁帷锻造共鸣
-        add(chars, "char_ur_ironman", "钢铁侠 Iron Man", "钢铁意志", "Ironveil", "Metal", 4,
+        // ========== 域外来客 UR（2026-08-26 新增，2026-09-04 原创化） ==========
+        // 公输玄 Gongshu Xuan —— 域外机巧偃师，坠入铁帷纪元
+        add(chars, "char_ur_ironman", "公输玄 Gongshu Xuan", "机巧偃师", "Ironveil", "Metal", 4,
             listOf(160, 135, 1300, 16), 7, true,
-            "「凡人之躯，比肩神明。」漫威天才发明家托尼·斯塔克在一场跨维度实验中被裂隙吞噬，坠入铁帷纪元。方舟反应堆的脉冲与铁帷锻造核心同源共鸣，他以废墟残骸重铸战甲——马克系列的每一道合金纹路，都是他拒绝认输的宣言。",
+            "域外机巧文明的天才偃师，一场跨维度实验中被裂隙吞噬，坠入铁帷纪元。以废墟残骸重铸偃甲——凡人之躯，比肩神明。",
             "tree_ironman", listOf(
-                sk("ironman_1", "掌心雷暴", "双掌聚能轰出方舟聚变光束，对直线上敌人造成巨额金属伤害并击退", "Metal", "Ultimate", 93),
+                sk("ironman_1", "掌心雷暴", "双掌聚能轰出偃甲聚变光束，对直线上敌人造成巨额金属伤害并击退", "Metal", "Ultimate", 93),
                 sk("ironman_2", "纳米重构", "纳米蜂群瞬间重构装甲，回复生命并展开可吸收伤害的护盾", "Metal", "Active", 70),
-                sk("ironman_3", "方舟过载", "每次释放技能叠加过载层数，满层后下一次攻击必定暴击", "Metal", "Passive", 66),
+                sk("ironman_3", "偃甲过载", "每次释放技能叠加过载层数，满层后下一次攻击必定暴击", "Metal", "Passive", 66),
             ))
-        // 托尔 Thor —— 漫威雷神，追猎裂隙恶魔时被放逐至神話天空，妙尔尼尔×山海雷兽共鸣
-        add(chars, "char_ur_thor", "托尔 Thor", "九界雷霆", "Shinwa", "Thunder", 4,
+        // 苍霆 Cangting —— 域外雷神，追猎裂隙之兽时被放逐至神話天空
+        add(chars, "char_ur_thor", "苍霆 Cangting", "破晓雷神", "Shinwa", "Thunder", 4,
             listOf(168, 120, 1400, 15), 7, true,
-            "阿斯加德的雷霆之子托尔，追猎撕裂诸界的裂隙恶魔时被放逐至神話天空。妙尔尼尔的雷霆与山海雷兽的腹鸣在此共鸣——此界雷法只认其心，不认其血。他举起锤的那一刻便懂了：真正的王冠不是奥丁赐下的，而是配得上雷霆的那颗头颅。",
+            "域外雷神，追猎撕裂诸界的裂隙之兽时被放逐至神話天空。所持雷锤与此界雷法共鸣——雷霆只认其心，不认其血。",
             "tree_thor", listOf(
-                sk("thor_1", "诸界黄昏", "召唤九界雷霆灌入妙尔尼尔，对全体敌人造成巨额雷伤并麻痹", "Thunder", "Ultimate", 94),
+                sk("thor_1", "诸界黄昏", "召唤九界雷霆灌入雷锤，对全体敌人造成巨额雷伤并麻痹", "Thunder", "Ultimate", 94),
                 sk("thor_2", "雷锤回旋", "掷出雷锤弹射至多4个敌人，回旋时将目标拉拽聚拢", "Thunder", "Active", 71),
                 sk("thor_3", "风暴加身", "受击积攒静电，满层召唤环绕风暴，反弹部分伤害", "Thunder", "Passive", 67),
             ))
-        // 奇异博士 Doctor Strange —— 漫威至尊法师，看穿米兰裂隙与多元宇宙裂缝同源
-        add(chars, "char_ur_strange", "奇异博士 Doctor Strange", "至尊法师", "Shinwa", "Light", 4,
+        // 玄微 Xuanwei —— 域外秘术师，看穿裂隙与多元宇宙裂缝同源
+        add(chars, "char_ur_strange", "玄微 Xuanwei", "观星秘术", "Shinwa", "Light", 4,
             listOf(150, 110, 1150, 18), 7, true,
-            "曾经的外科圣手史蒂芬·斯特兰奇因车祸毁去双手，远赴卡玛泰姬习法，终成漫威宇宙的至尊法师。他看穿米兰裂隙与多元宇宙裂缝同源——阿戈摩托之眼中，亿万种结局里只有一线生机。他以曼陀罗结界守护此界，以绯红枷锁缚住终焉。",
+            "域外秘术师，窥见裂隙与多元宇宙裂缝同源。以结界守护此界，以秘仪缚住终焉。",
             "tree_strange", listOf(
                 sk("strange_1", "绯红枷锁", "召唤绯红魔力锁链缚住全体敌人，造成光耀伤害并封印其技能", "Light", "Ultimate", 90),
                 sk("strange_2", "曼陀罗圣盾", "展开多层符文结界，为全队抵挡伤害并驱散负面效果", "Light", "Active", 69),
                 sk("strange_3", "时序回溯", "队友首次阵亡时回溯时间线将其复活（每场一次），自身回复能量", "Light", "Passive", 72),
             ))
+        // 域外来客阵营（2026-09-04 原创化）：跨三界但同属「域外」，对齐 data.json Faction
+        val outlanderIds = setOf(
+            "char_ur_kikyo", "char_ur_keqing", "char_ur_ironman", "char_ur_thor", "char_ur_strange",
+        )
+        chars.forEach { if (it.characterId in outlanderIds) it.faction = "域外" }
         return chars
     }
 
@@ -378,6 +383,10 @@ internal object GameContent {
             },
         )
         val all = characters.map(::entryFor)
+        // R5-T2：兜底路径若 JSON 角色集缺 zhulong/taotie，不硬编码引用，避免 UP 池
+        // featured/候选指向不存在的角色，进而与 data.json 逐条一致性断言失配。
+        val hasFeatured = characters.any { it.characterId == "char_ur_zhulong" }
+        val hasTaotie = characters.any { it.characterId == "char_sr_taotie" }
         return listOf(
             GachaPoolDataEntry(
                 poolId = "pool_main", displayName = "次元裂缝 · 常驻",
@@ -386,10 +395,18 @@ internal object GameContent {
             ),
             GachaPoolDataEntry(
                 poolId = "pool_flame", displayName = "业火轮盘 · UP",
-                rarityWeights = listOf(400, 300, 200, 100), hardPity = 80,
+                // R4-03（2026-08-30 审查修复）：R 档权重由 400 归零，条目集与 data.json 对齐。
+                // 旧实现给 R 档 40% 权重却用「element==Flame || baseRarity>=3」组条目
+                // （19 个候选中 R 档为 0），40% 掷档会被 resolveRarityWithCandidates 就近上抬到
+                // SR 档 → SR 实际占比 70%（饕餮 + 狻猊）、UR 率从 16.7% 掉到 10%。
+                // 这正是 C1（2026-08-28）在 data.json 侧已修、却在兜底路径原样复现的同一缺陷。
+                rarityWeights = listOf(0, 300, 200, 100), hardPity = 80,
                 singleCost = 160, tenCost = 1600,
-                featuredCharacterId = "char_ur_zhulong",
-                entries = characters.filter { it.element == "Flame" || it.baseRarity >= 3 }.map(::entryFor),
+                featuredCharacterId = if (hasFeatured) "char_ur_zhulong" else "",
+                // 与 data.json 逐条一致：全部 SSR/UR + 唯一的 SR 候选（饕餮）
+                entries = characters.filter {
+                    it.baseRarity >= 3 || (hasTaotie && it.characterId == "char_sr_taotie")
+                }.map(::entryFor),
             ),
         )
     }
@@ -403,45 +420,45 @@ internal object GameContent {
      */
     fun enrich(characters: List<CharacterDataEntry>) {
         val stories: Map<String, String> = mapOf(
-            "char_ur_zhulong" to "烛龙是 Shinwa 的最高图腾之一，被视为昼夜的化身。金乌视其为兄长与竞争对手——前者代表光明的节律，后者代表光明的强度。当虚无逼近时，烛龙主动睁眼超过七日，以白昼之力压制裂隙扩张，却也导致神話世界河流干涸、草木焦枯。",
-            "char_ur_wuxu" to "虚无并非传统意义上的邪恶，它只是在执行一种宇宙规律：一切存在终将归于无。以太议会曾试图封印它，却反而让它学会了人类的恐惧与野心。",
-            "char_ur_xingtian" to "刑天是铁帷兵主军团的第一代实验体，也是最稳定的一个。他与蚩尤并称双璧，但刑天更忠诚于保护普通民众，而非铁帷高层。他胸口的能量核心会随情绪变亮，愤怒时如烈日。",
-            "char_ur_kikyo" to "裂隙纪元中，桔梗从神話残片的幽冥边界苏醒，发现四魂之玉的力量与裂隙能量同源。她开始猎杀被裂隙污染的亡灵，也逐渐理解：自己的复活本身可能就是一次裂隙实验。她与女娲有某种精神共鸣——两者都与泥土/陶土重生有关。",
-            "char_ur_keqing" to "裂隙纪元中，刻晴是被 Aether 议会召唤的异界行者。她的到来让以太学者首次确信：裂隙连接的不仅是世界，还有不同的可能性。她与烛龙有过激烈争论：神明是否还应被敬畏？刻晴的答案是被研究，被超越。",
-            "char_ssr_fenghuang" to "凤凰是 Shinwa 的祥瑞象征，也是金乌的眷属。当虚无吞噬九日，凤凰主动承担守护剩余光明种子的使命。她的每一次涅槃都会在空中留下新的星座，被 Aether 学者称为凤凰座。",
-            "char_ssr_xiangliu" to "相柳是虚无的先驱者之一，却并非其仆从。它享受毁灭本身，与饕餮形成毒与焰的毁灭同盟。",
-            "char_ssr_leishen" to "雷神是铁帷城邦的能量核心守护者，负责维持城市运转。他的机械躯体不断吸收裂隙中的电能，变得越来越强大，也越来越不稳定。他尊敬刑天，却嫉妒蚩尤——因为后者被允许释放全力，而他必须时刻控制功率。",
-            "char_ssr_feilian" to "飞廉是神話的信使与斥候，速度让他能穿越未稳定的裂隙。他与花妖在 Aether 浮岛相识，一个是疾风，一个是轻风。",
-            "char_ssr_shangyang" to "商羊是 Aether 议会首席预言者，它预见了虚无与女娲的最终对决，却无法确定结局。这让它既痛苦又着迷。",
-            "char_sr_suanni" to "狻猊是 Shinwa 的守护者，也是白虎的远亲后辈。它梦想有一天能像白虎一样独当一面。",
-            "char_sr_jingwei" to "精卫对裂隙造成的海洋污染深恶痛绝，她相信哪怕世界破碎，也能一粒一粒补回来。她与女娲因修补的理念而成为忘年之交。",
-            "char_sr_qiongqi" to "穷奇是铁帷雇佣兵，只接惩恶的任务。它认为自己的残暴是正义的必需品。",
-            "char_sr_xuanwu" to "旋龟是女娲浮岛的守护者，它的背上驮着一座微型神庙。",
-            "char_sr_bifang" to "毕方崇拜凤凰，梦想成为下一位涅槃者。",
-            "char_r_lili" to "狸力是神話阵营最好的地下情报员，能钻进任何缝隙。",
-            "char_r_qinyuan" to "钦原是铁帷的小型无人机原型机，后来产生了自我意识。",
-            "char_r_sishu" to "跂踵是 Ironveil 贫民窟的义警，只在夜间行动。",
-            "char_r_luoyu" to "蠃鱼守护着被裂隙污染的海洋，与精卫一起清理废墟。",
-            "char_r_dangang" to "当康是神話农民的守护神，战争爆发后才拿起武器。",
-            "char_ur_jinwu" to "金乌与烛龙既是盟友也是镜像：烛龙司昼夜轮转，金乌司光明本身。当虚无逼近，金乌化作第二轮烈日，与烛龙并肩对抗终焉。",
-            "char_ur_nuwa" to "她是虚无的反面：虚无吞噬存在，女娲创造存在。她与桔梗因泥土/陶土重生而精神共鸣，与精卫因修补理念成为忘年之交。",
-            "char_ssr_chiyou" to "蚩尤与刑天并称铁帷双璧：刑天是不死的盾牌，蚩尤是毁灭的长矛。他的复活并不完美，时常在战斗中听见远古战鼓，分不清自己是被唤醒的神明，还是被操控的武器。",
-            "char_ssr_baihu" to "白虎与狻猊有同族之谊：狻猊司震慑，白虎司裁决。它孤傲寡言，对邪恶绝不姑息，对伙伴却有隐秘的温柔。",
-            "char_sr_huayao" to "花妖性格天真，却对生死有超越人类的理解。她认为花开花落与战争胜负一样，都是自然的呼吸。与飞廉相识于浮岛，一个是疾风，一个是轻风。",
-            "char_sr_taotie" to "它与相柳并称两害：相柳以毒泽腐蚀大地，饕餮以贪焰吞噬一切。贪婪而直率，只要喂饱它，它会意外地忠诚。",
-            "char_r_shanxiao" to "山魈喜欢用废旧零件布置陷阱，对体型巨大的敌人尤其兴奋。调皮、话痨、记仇，但关键时刻会为了保护同伴拼命。",
-            "char_r_yecha" to "它们数量庞大、单体不强，但成群出现时能让整支军队陷入恐惧。阴郁、顺从、群体意识强，单独时怯懦，成群时残忍。",
-            "char_ur_ironman" to "裂隙纪元中，钢铁侠的战甲成了铁帷平民头顶的保护伞。他与刑天理念相近而路线不同：刑天在战场上守护民众，托尼则重建工坊，让每个普通人都有机会穿上自己的铠甲。夜晚，胸口的方舟反应堆映亮整片工坊区，孩子们叫它「不灭的小太阳」。",
-            "char_ur_thor" to "托尔与烛龙、金乌并立为神話三柱：一位司昼夜、一位司光明、而他司震怒。当裂隙再度撕开天幕，他第一个跃入云海，以雷霆立誓——阿斯加德或许已逝，但守护的誓言与锤同在。",
-            "char_ur_strange" to "奇异博士在以太议会的档案库里找到了关于裂隙的第一份记录，比虚无现世还早千年。他与女娲有过一次沉默的对谈——关于修补与代价：她炼石补天，他窥时换命。「我们都是拿自己的一部分去填裂缝的人。」这是他对补天者唯一的评价。",
+            "char_ur_zhulong" to "本源：烛龙是神話世界最古老的神祇之一，身缠千里，人面蛇身而赤，被视为昼夜的化身。它睁眼则白昼降临，闭眼则长夜笼罩，吐息之间天火燎原。\n\n执念：当虚无自裂隙逼近，烛龙主动睁眼超过七日，以无尽白昼之力压制裂隙扩张——即便代价是神話世界河流干涸、草木焦枯。它宁背负苍生的怨，也不愿见长夜永驻。\n\n羁绊：金乌视其为兄长与对手——烛龙司光明之节律，金乌司光明之强度。两者并立，是神話世界最后的光。",
+            "char_ur_wuxu" to "本源：虚无并非传统意义上的邪恶，它只是在执行一种宇宙规律——一切存在终将归于无。它自裂隙深处浮出，是终焉的具象。\n\n执念：以太议会曾试图封印它，却反而让它学会了人类的恐惧与野心。从此它的吞噬不再只是规律，而带上了某种冰冷的嘲弄。\n\n羁绊：它与女娲互为反面——虚无吞噬存在，女娲创造存在。二者的对决，是这个纪元的终极命题。",
+            "char_ur_xingtian" to "本源：刑天是上古战神，与天帝争神而断首，仍以乳为目、以脐为口，执干戚而不息。这份「断首犹战」的意志，让他成为铁帷兵主军团最稳定的第一代实验体。\n\n执念：他以不灭的躯体守护普通民众，而非效忠铁帷高层。愤怒时，胸口的能量核心如烈日般发亮。\n\n羁绊：他与蚩尤并称铁帷双璧——刑天是不死的盾，蚩尤是毁灭的矛。两人理念相左，却在战场上一同赴死。",
+            "char_ur_kikyo" to "本源：青璃本是异界神庭的净世巫女，以灵力守护一方、净化邪祟。她曾封印异界最凶之物，却因一场阴谋含恨而终。\n\n执念：她以陶土复生，带着前世的记忆与执念独行于乱世。她行走于生死之间，以悲悯之心超度亡魂，也以破魔之箭封印裂隙带来的邪祟。\n\n羁绊：她与女娲有某种精神共鸣——两者都与泥土/陶土重生有关。她逐渐理解，自己的复活本身可能就是一次裂隙的意志。",
+            "char_ur_keqing" to "本源：曜来自异界的雷部，是一名以凡人之躯修习雷霆剑法的剑士。她不信天命，只信手中的剑。\n\n执念：她坚信人类的命运应由自己掌握，而非托付于神力。她以雷霆之势，将「人可胜天」的信念贯彻到底。\n\n羁绊：她与烛龙有过激烈争论——神明是否还应被敬畏？曜的答案是被研究、被超越。她的到来，让以太学者首次确信：裂隙连接的不仅是世界，还有不同的可能性。",
+            "char_ssr_fenghuang" to "本源：凤凰是神話世界的祥瑞，五色而文，德义礼仁信。它是金乌的眷属，也是最接近「不死」的圣禽。\n\n执念：当虚无吞噬九日，凤凰主动承担守护剩余光明种子的使命。它一次次坠入灰烬，又一次次在火中重生。\n\n羁绊：它的每一次涅槃都会在空中留下新的星座，被以太学者命名为「凤凰座」。",
+            "char_ssr_xiangliu" to "本源：相柳九首蛇身，是上古凶神。它不臣服于虚无，却享受毁灭本身。\n\n执念：它以大地的毒泽为乐，将瘟疫视作自己的艺术。\n\n羁绊：它与饕餮并称两害——相柳以毒泽腐蚀大地，饕餮以贪焰吞噬一切。二者形成毒与焰的毁灭同盟。",
+            "char_ssr_leishen" to "本源：雷兽龙身人头，腹中自生雷鸣，是上古雷神。铁帷以机械躯体重塑其身，令其成为城邦的能量核心。\n\n执念：他不断吸收裂隙中的电能，愈发强大也愈发不稳定。他必须时刻控制功率，压抑着体内翻涌的雷霆。\n\n羁绊：他尊敬刑天的克制，却嫉妒蚩尤——后者被允许释放全力，而他却要永远收敛锋芒。",
+            "char_ssr_feilian" to "本源：飞廉鹿身雀首，是上古风伯，司掌风之神速。\n\n执念：它的速度让它能穿越未稳定的裂隙，成为神話世界最可靠的信使与斥候。\n\n羁绊：它与花妖在以太浮岛相识——一个是疾风，一个是轻风，同族却不同命。",
+            "char_ssr_shangyang" to "本源：商羊一足鸟身，是天生的预言者，能预知风雨、窥见星轨。\n\n执念：它预见了虚无与女娲的最终对决，却无法确定结局。这让它既痛苦又着迷。\n\n羁绊：它以星象为刃、以卜辞为灵，守护着「未来尚可改变」的微弱希望。",
+            "char_sr_suanni" to "本源：狻猊是龙之九子之一，好烟好坐，狮形豹步。\n\n执念：它是神話世界的守护者，梦想有一天能像白虎那样独当一面。\n\n羁绊：它是白虎的远亲后辈，视白虎为追赶的目标。",
+            "char_sr_jingwei" to "本源：精卫是炎帝之女，溺于东海，化为神鸟，衔木石以填海。\n\n执念：她对裂隙造成的污染深恶痛绝，相信哪怕世界破碎，也能一粒一粒补回来。\n\n羁绊：她与女娲因「修补」的理念而成为忘年之交。",
+            "char_sr_qiongqi" to "本源：穷奇是上古凶兽，状如牛而有蝟毛，专噬恶人。\n\n执念：它是铁帷的雇佣兵，只接惩恶的任务，认为自己的残暴是正义的必需品。\n\n羁绊：它信奉「正义需要牙齿」，独来独往。",
+            "char_sr_xuanwu" to "本源：旋龟鸟首虺尾，其音如判木，是上古灵龟。\n\n执念：它是女娲浮岛的守护者，背上驮着一座微型神庙。\n\n羁绊：它以玄甲护佑浮岛上的流民，是沉默的壁垒。",
+            "char_sr_bifang" to "本源：毕方一足鹤身，见则讹火，是上古火鸟。\n\n执念：它崇拜凤凰，梦想成为下一位涅槃者。\n\n羁绊：它以雷火为羽，追随着凤凰的轨迹。",
+            "char_r_lili" to "本源：狸力状如豚而有距，其音如狗吠，是善于掘地的灵兽。\n\n执念：它是神話阵营最好的地下情报员，能钻进任何缝隙。\n\n羁绊：身形虽小，却是最可靠的耳目。",
+            "char_r_qinyuan" to "本源：钦原蛰鸟兽则死、蛰木则枯，是剧毒之禽。\n\n执念：它是铁帷的小型无人机原型机，后来产生了自我意识。\n\n羁绊：它以一簇剧毒蜂针离手追魂，独立而沉默。",
+            "char_r_sishu" to "本源：跂踵状如鹊而九尾，是招死之鸟。\n\n执念：它是铁帷贫民窟的义警，只在夜间行动，守护被遗忘的人。\n\n羁绊：它以暗影为衣，夜行无声。",
+            "char_r_luoyu" to "本源：蠃鱼鱼身鸟翼，音如鸳鸯，是水中灵兽。\n\n执念：它守护着被裂隙污染的海洋，与精卫一起清理废墟。\n\n羁绊：它以水波为兵，是深海的守望者。",
+            "char_r_dangang" to "本源：当康状如豚而有牙，其鸣自叫，见则天下大穰，是丰收的瑞兽。\n\n执念：它是神話农民的守护神，战争爆发后才拿起武器。\n\n羁绊：它相信吃饱了才有力气，也相信丰收终会回来。",
+            "char_ur_jinwu" to "本源：金乌是太阳的化身，载日而行，是光明本身的具象。\n\n执念：裂隙纪元中，十日中的九日被虚无吞噬，仅剩金乌独自照耀神話残片。它以羽翼为弦、以烈日为箭，成为唯一永不西沉的天。\n\n羁绊：它与烛龙既为盟友又为镜像——烛龙司昼夜轮转，金乌司光明本身。虚无逼近时，金乌化作第二轮烈日并肩对抗终焉。",
+            "char_ur_nuwa" to "本源：女娲是创造人类的古神，以五色石补天。\n\n执念：裂隙纪元中，原初之环的碎片不断崩落，女娲以最后一块补天石为锚，在以太星空托起一座浮岛，庇护流离的凡人。点泥成生、化墟为壁。\n\n羁绊：她与青璃因泥土/陶土重生而精神共鸣，与精卫因修补理念成为忘年之交。她是虚无的反面——虚无吞噬存在，她创造存在。",
+            "char_ssr_chiyou" to "本源：蚩尤是上古兵主，铜头铁额，八肱八趾，战意永不熄灭。\n\n执念：铁帷在大崩解后挖掘出蚩尤残躯，以合金与能量核心将其复活。他的复活并不完美，时常在战斗中听见远古战鼓，分不清自己是苏醒的神明，还是被操控的武器。\n\n羁绊：他与刑天并称铁帷双璧，是毁灭的长矛。",
+            "char_ssr_baihu" to "本源：白虎是四象之一，主杀伐，镇守西方。它在神話世界沉睡了千年。\n\n执念：当裂隙中的金属风暴撕裂山林，白虎睁开金色的兽瞳。它孤傲寡言，对邪恶绝不姑息。\n\n羁绊：它与狻猊有同族之谊——狻猊司震慑，白虎司裁决。对伙伴，它有隐秘的温柔。",
+            "char_sr_huayao" to "本源：花妖原是浮空花园中一株千年灵植，因裂隙能量涌入而化形。\n\n执念：她性格天真，却对生死有超越人类的理解——花开花落与战争胜负一样，都是自然的呼吸。\n\n羁绊：她与飞廉相识于浮岛，一个是疾风，一个是轻风。",
+            "char_sr_taotie" to "本源：饕餮是上古贪食凶兽，有首无身，永不餍足。\n\n执念：它被神話阵营封印于青铜巨鼎内，只在最危急的战局中被放出。贪婪而直率，只要喂饱它，它会意外地忠诚。\n\n羁绊：它与相柳并称两害，形成毒与焰的同盟。",
+            "char_r_shanxiao" to "本源：山魈本是山林小鬼，大崩解时被铁帷的机械风暴卷入工厂废墟，身体与废弃机械融合。\n\n执念：它喜欢用废旧零件布置陷阱，对体型巨大的敌人尤其兴奋。\n\n羁绊：调皮、话痨、记仇，但关键时刻会为了保护同伴拼命。",
+            "char_r_yecha" to "本源：夜叉是以太裂隙中最常见的低等虚空生物，由迷失者的影子凝聚而成。\n\n执念：它们数量庞大、单体不强，但成群出现时能让整支军队陷入恐惧。\n\n羁绊：阴郁、顺从、群体意识强——单独时怯懦，成群时残忍。",
+            "char_ur_ironman" to "本源：公输玄出身异界机巧文明的偃师世家，是百年一遇的天才匠人。一场跨维度实验将他吞入裂隙，坠入铁帷纪元。\n\n执念：他相信「凡人之躯，比肩神明」——没有天赐的神力，就用巧手造一个。他以废墟残骸重铸偃甲，每一道合金纹路都是拒绝认输的宣言。\n\n羁绊：他与刑天理念相近而路线不同——刑天在战场守护民众，公输玄则重建工坊，让每个普通人都能穿上自己的铠甲。夜晚，他的偃甲核心映亮整片工坊区，孩子们叫它「不灭的小太阳」。",
+            "char_ur_thor" to "本源：苍霆是异界神庭的雷霆之子，追猎撕裂诸界的裂隙之兽时被放逐至神話天空。\n\n执念：此界雷法只认其心、不认其血。他举起雷锤的那一刻便懂了——真正的王座不是血脉赐予的，而是配得上雷霆的那颗心。\n\n羁绊：他与烛龙、金乌并立为神話三柱——一位司昼夜、一位司光明，而他司震怒。当裂隙再度撕开天幕，他第一个跃入云海，以雷霆立誓守护。",
+            "char_ur_strange" to "本源：玄微是异界秘术殿的观星者，双手曾毁于一场意外，却因此窥见了星辰背后的秘仪。\n\n执念：他看穿裂隙与多元宇宙裂缝同源——在亿万种结局中，只有一线生机。他以结界守护此界，以秘仪缚住终焉。\n\n羁绊：他与女娲有过一次沉默的对谈，关于修补与代价——她炼石补天，他窥时换命。「我们都是拿自己的一部分去填裂缝的人。」",
         )
 
         val voices: Map<String, List<String>> = mapOf(
             "char_ur_zhulong" to listOf("睁眼为昼，闭眼为夜——汝所见之光，皆由我裁断。", "天火燎原，不过是吐息之间。", "星辰会记得，是谁燃尽了它们。"),
             "char_ur_wuxu" to listOf("万物终将归零，包括你的挣扎。", "存在本身，就是需要被修正的错误。", "听，维度在哭泣。"),
             "char_ur_xingtian" to listOf("头颅可断，战意不灭。", "干戚在手，何惧神魔？", "每一次倒下，都只是进化的前奏。"),
-            "char_ur_kikyo" to listOf("四魂之玉的光芒，我守过一次，不会再让它熄灭。", "亡者的执念，也能成为破魔的箭。", "这世间，从不缺需要超度的灵魂。"),
-            "char_ur_keqing" to listOf("人类的命运，当由人类自己书写。", "雷霆不快，只是你跟不上我的剑。", "玉衡星的位置，我自己来争。"),
+            "char_ur_kikyo" to listOf("净世的光芒，我守过一次，不会再让它熄灭。", "亡者的执念，也能成为破魔的箭。", "这世间，从不缺需要超度的灵魂。"),
+            "char_ur_keqing" to listOf("人类的命运，当由人类自己书写。", "雷霆不快，只是你跟不上我的剑。", "剑锋所向，我自己来争。"),
             "char_ssr_fenghuang" to listOf("灰烬不是终点，是新生的温床。", "每一次坠落，都是为了更炽烈地燃烧。", "听，凤凰座在为我歌唱。"),
             "char_ssr_xiangliu" to listOf("毒泽之上，连神明都不敢涉足。", "九个脑袋，九种杀你的方式。", "来，尝尝这杯瘟疫。"),
             "char_ssr_leishen" to listOf("功率满格，审判开始。", "雷霆不会审判，它只是执行。", "我的核心在发烫——你最好躲远点。"),
@@ -466,23 +483,23 @@ internal object GameContent {
             "char_r_shanxiao" to listOf("嘿，大个子，脚下有东西哦。", "送你个小礼物——boom！", "捡破烂也能赢，气不气？"),
             "char_r_yecha" to listOf("……影子来了。", "嘘，别回头。", "黑暗记得你。"),
             "char_ur_ironman" to listOf("机甲会坠落，但造机甲的人会再站起来。", "没有天赐的神力？那就自己动手造一个。", "我不是英雄，我只是先想到了办法。"),
-            "char_ur_thor" to listOf("妙尔尼尔认可的不是血统，是握锤的手为何而握。", "雷霆落下之前我有时间后悔——可惜我从不后悔。", "另一个宇宙的我怎么选的？我只走眼前这条路。"),
-            "char_ur_strange" to listOf("我看过一千四百万种结局，我们把赢的那一种走完。", "这双手治不好了，但世界还缝得上。", "结界之内，终焉也要排队。"),
+            "char_ur_thor" to listOf("雷锤认可的不是血统，是握锤的手为何而握。", "雷霆落下之前我有时间后悔——可惜我从不后悔。", "另一个宇宙的我怎么选的？我只走眼前这条路。"),
+            "char_ur_strange" to listOf("我看过亿万种结局，我们把赢的那一种走完。", "这双手治不好了，但世界还缝得上。", "结界之内，终焉也要排队。"),
         )
 
         val weaponVfx: Map<String, String> = mapOf(
             "char_ur_zhulong" to "sun_orb_flame", "char_ur_wuxu" to "void_rift_blade", "char_ur_xingtian" to "gear_axe_storm",
             "char_ur_kikyo" to "shadow_bow_arrow", "char_ur_keqing" to "lightning_dual_swords", "char_ssr_fenghuang" to "phoenix_wing_flame",
-            "char_ssr_xiangliu" to "venom_fang_whip", "char_ssr_leishen" to "mjolnir_hammer_arc", "char_ssr_feilian" to "wind_blade_dash",
+            "char_ssr_xiangliu" to "venom_fang_whip", "char_ssr_leishen" to "thunder_wedge_hammer", "char_ssr_feilian" to "wind_blade_dash",
             "char_ssr_shangyang" to "star_oracle_sigil", "char_sr_suanni" to "roar_shock_claw", "char_sr_jingwei" to "wind_stone_projectile",
             "char_sr_qiongqi" to "regen_blast_cannon", "char_sr_xuanwu" to "shell_barrier_earth", "char_sr_bifang" to "thunder_feather_dive",
             "char_r_lili" to "earth_burrow_strike", "char_r_qinyuan" to "poison_stinger_swarm", "char_r_sishu" to "shadow_wire_tangle",
             "char_r_luoyu" to "water_trident_surge", "char_r_dangang" to "tusk_charge_wind", "char_ur_jinwu" to "solar_orb_bow",
-            "char_ur_nuwa" to "five_color_stone_staff", "char_ssr_chiyou" to "tiger_soul_cleaver", "char_ssr_baihu" to "vibranium_tiger_claw",
+            "char_ur_nuwa" to "five_color_stone_staff", "char_ssr_chiyou" to "tiger_soul_cleaver", "char_ssr_baihu" to "white_tiger_metal_claw",
             "char_sr_huayao" to "petal_ribbon_blade", "char_sr_taotie" to "bronze_greed_flame", "char_r_shanxiao" to "scrap_claw_mine",
             "char_r_yecha" to "shadow_dagger_whisper",
-            "char_ur_ironman" to "arc_reactor_repulsor", "char_ur_thor" to "mjolnir_stormcall",
-            "char_ur_strange" to "agamotto_eye_gaze",
+            "char_ur_ironman" to "mechanist_fusion_palm", "char_ur_thor" to "thunder_crown_hammer",
+            "char_ur_strange" to "oracle_eye_orbit",
         )
 
         val ambientVfx: Map<String, String> = mapOf(
@@ -496,7 +513,7 @@ internal object GameContent {
             "char_ur_nuwa" to "floating_island_aurora", "char_ssr_chiyou" to "ruin_battlefield_banners", "char_ssr_baihu" to "metal_storm_wasteland",
             "char_sr_huayao" to "floating_garden_petals", "char_sr_taotie" to "broken_bronze_ash", "char_r_shanxiao" to "ruin_jungle_parts",
             "char_r_yecha" to "rift_shadow_motes",
-            "char_ur_ironman" to "nanite_assembly_glint", "char_ur_thor" to "storm_crown_arcs",
+            "char_ur_ironman" to "mechanist_assembly_glint", "char_ur_thor" to "storm_crown_arcs",
             "char_ur_strange" to "mandala_glyph_orbit",
         )
 
@@ -506,7 +523,7 @@ internal object GameContent {
             "char_ur_wuxu" to "归墟之噬·无相刃",
             "char_ur_xingtian" to "干戚·不灭齿轮",
             "char_ur_kikyo" to "破魔灵弓·封魂",
-            "char_ur_keqing" to "雷楔双剑·云来",
+            "char_ur_keqing" to "惊雷双剑",
             "char_ur_jinwu" to "曜日神弓·金乌",
             "char_ur_nuwa" to "五色补天杖",
             // SSR 专属特色武器（与 UR 平行，依据背景故事设计）
@@ -533,18 +550,18 @@ internal object GameContent {
             "char_r_dangang" to "獠突·冲岳牙",
             "char_r_shanxiao" to "拾荒·碎铁爪",
             "char_r_yecha" to "喑杀·影刃",
-            // 漫威联动 UR 专属武器（与 data.json 同步）
-            "char_ur_ironman" to "方舟核心·聚变掌炮",
-            "char_ur_thor" to "妙尔尼尔·九界雷锤",
-            "char_ur_strange" to "阿戈摩托之眼·时序轮",
+            // 域外来客 UR 专属武器（与 data.json 同步）
+            "char_ur_ironman" to "偃甲核心·聚变掌炮",
+            "char_ur_thor" to "苍雷·九界雷锤",
+            "char_ur_strange" to "观星之眼·时序轮",
         )
 
         val weaponDesc: Map<String, String> = mapOf(
             "char_ur_zhulong" to "由烛龙本瞳炼化的神环，半面熔金烈焰为昼、半面吞噬星辰的幽暗为夜。阖则白昼降临，睁则天火倾泻；环心藏有一只永不闭合的竖瞳，凝视之处，昼夜颠倒。",
             "char_ur_wuxu" to "以维度裂隙坍缩而成的无相之刃，无柄无锷，刃身即是被吞噬的星空。所触之物先从概念上归于「无」，再于现实里湮灭；连光也在刃前折返，寻不到落点。",
             "char_ur_xingtian" to "干为盾、戚为斧，铁帷齿轮驱动的复合兵装。虽无首，胸口的能量之眼代行目视，巨斧横扫如折麦秆；齿轮咬合间，每一次挥落都更接近「不死」的极致。",
-            "char_ur_kikyo" to "守玉巫女的灵力凝成的破魔之弓，箭无虚发，穿邪祟、封怨念。每支箭都是一段未竟的祈祷，离弦时带着幽冥回响；弓身缠着四魂之玉的碎片，净化之同时封印着她的执念。",
-            "char_ur_keqing" to "一对以雷楔为锷的双剑，剑身流转璃月雷纹。她掷出雷楔标记敌身，便化雷瞬至，于目标身后落下必中雷击——这套脱胎于「云来剑法」的打法，是她以凡人之躯比肩神明的证明。",
+            "char_ur_kikyo" to "净世巫女的灵力凝成的破魔之弓，箭无虚发，穿邪祟、封怨念。每支箭都是一段未竟的祈祷，离弦时带着幽冥回响；弓身缠着前世的执念，净化之同时封印着她的过往。",
+            "char_ur_keqing" to "一对以雷钉为锷的双剑，剑身流转雷霆纹路。她掷出雷钉标记敌身，便化雷瞬至，于目标身后落下必中雷击——这套脱胎于雷部剑法，是她以凡人之躯比肩神明的证明。",
             "char_ur_jinwu" to "金乌以羽翼为弦、以烈日为箭的神弓。拉弦时大气中的氧被点燃，射出的并非凡箭，而是凝缩的恒星之火；九日已陨，此弓是唯一永不西沉的天。",
             "char_ur_nuwa" to "杖首嵌着最后一块五色补天石，流转青赤白黑黄五光。女娲以此杖为锚，于以太星空托起浮岛，点泥成生、化墟为壁；杖落处，破碎的世界重新有了形状。",
             // SSR 专属特色武器描述
@@ -571,10 +588,10 @@ internal object GameContent {
             "char_r_dangang" to "当康瑞兽野猪，以獠牙为冲撞兵装，突进如山岳之倾。",
             "char_r_shanxiao" to "山魈山鬼，拾荒废铁拼成利爪，杂乱中藏凶性。",
             "char_r_yecha" to "夜叉捷鬼，无声影刃出鞘无音，一闪取命。",
-            // 漫威联动 UR 专属武器描述（与 data.json 同步）
-            "char_ur_ironman" to "以方舟反应堆为心的掌心聚变装置。反应堆每一次搏动都为战甲注入恒星级的能量；双掌张开时，高热粒子束足以熔穿合金帷幕——那是凡人向神明递出的名片。",
-            "char_ur_thor" to "由垂死之星锻造的短柄战锤，镌刻着「配得上者方可执之」的古神文。掷出时牵引九界风云，回旋必中；落点处雷霆如瀑，诸界为之侧耳。",
-            "char_ur_strange" to "至尊法师的圣物，瞳状宝石内封存时间的支流。开启时绿焰环绕，可回溯伤势、窥视分支结局；凝视之处，因果暂时让路——代价由持有者的岁月支付。",
+            // 域外来客 UR 专属武器描述（与 data.json 同步）
+            "char_ur_ironman" to "以偃甲核心为心的掌心聚变装置。核心每一次搏动都为偃甲注入恒星级的能量；双掌张开时，高热粒子束足以熔穿合金帷幕——那是凡人向神明递出的名片。",
+            "char_ur_thor" to "由垂死之星锻造的短柄战锤，镌刻着「心正者方可执之」的古神文。掷出时牵引九界风云，回旋必中；落点处雷霆如瀑，诸界为之侧耳。",
+            "char_ur_strange" to "观星秘术的圣物，瞳状宝石内封存时间的支流。开启时星辉环绕，可回溯伤势、窥视分支结局；凝视之处，因果暂时让路——代价由持有者的岁月支付。",
         )
 
         for (c in characters) {

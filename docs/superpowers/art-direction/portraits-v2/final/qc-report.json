@@ -1,21 +1,21 @@
 {
-  "dir": "docs/superpowers/art-direction/portraits-v2/final",
-  "count": 28,
+  "dir": "./final",
+  "count": 31,
   "summary": {
-    "PASS": 23,
-    "WARN": 5,
+    "PASS": 15,
+    "WARN": 16,
     "FAIL": 0
   },
   "items": [
     {
       "id": "char_r_dangang",
       "rarity": "R",
-      "size": 538942,
+      "size": 1023282,
       "alpha": true,
       "geometry": {
-        "opacity_ratio": 0.358,
-        "height_frac": 0.761,
-        "center_dx": 0.007,
+        "opacity_ratio": 0.531,
+        "height_frac": 0.881,
+        "center_dx": -0.005,
         "foot_present": true,
         "w": 832,
         "h": 1248
@@ -36,12 +36,12 @@
     {
       "id": "char_r_lili",
       "rarity": "R",
-      "size": 600778,
+      "size": 778284,
       "alpha": true,
       "geometry": {
-        "opacity_ratio": 0.372,
-        "height_frac": 0.736,
-        "center_dx": -0.002,
+        "opacity_ratio": 0.438,
+        "height_frac": 0.819,
+        "center_dx": 0.041,
         "foot_present": true,
         "w": 832,
         "h": 1248
@@ -62,18 +62,20 @@
     {
       "id": "char_r_luoyu",
       "rarity": "R",
-      "size": 671794,
+      "size": 1253552,
       "alpha": true,
       "geometry": {
-        "opacity_ratio": 0.32,
-        "height_frac": 0.795,
-        "center_dx": 0.006,
+        "opacity_ratio": 0.448,
+        "height_frac": 0.884,
+        "center_dx": -0.011,
         "foot_present": true,
         "w": 832,
         "h": 1248
       },
-      "issues": [],
-      "level": "PASS",
+      "issues": [
+        "WARN:size-too-large(1253552>1200000)"
+      ],
+      "level": "WARN",
       "anchors_human_check": {
         "A": "神话原型: 鱼身鸟翼（**半人半鱼 + 鸟翼**）",
         "B": "道具指纹: 三叉戟（或水球）（**亚特兰蒂斯风格三叉戟**）",
@@ -88,20 +90,18 @@
     {
       "id": "char_r_qinyuan",
       "rarity": "R",
-      "size": 256238,
+      "size": 702606,
       "alpha": true,
       "geometry": {
-        "opacity_ratio": 0.131,
-        "height_frac": 0.755,
-        "center_dx": 0.012,
-        "foot_present": false,
+        "opacity_ratio": 0.27,
+        "height_frac": 0.937,
+        "center_dx": -0.008,
+        "foot_present": true,
         "w": 832,
         "h": 1248
       },
-      "issues": [
-        "WARN:no-foot(可能半身)"
-      ],
-      "level": "WARN",
+      "issues": [],
+      "level": "PASS",
       "anchors_human_check": {
         "A": "神话原型: 鸟兽毒性（**蜂形人 + 触角头饰 + 蜂翼**）",
         "B": "道具指纹: 毒针手指（**双手指尖为金色毒针**）",
@@ -116,12 +116,12 @@
     {
       "id": "char_r_shanxiao",
       "rarity": "R",
-      "size": 756176,
+      "size": 1089938,
       "alpha": true,
       "geometry": {
-        "opacity_ratio": 0.429,
-        "height_frac": 0.701,
-        "center_dx": -0.005,
+        "opacity_ratio": 0.541,
+        "height_frac": 0.819,
+        "center_dx": 0.011,
         "foot_present": true,
         "w": 832,
         "h": 1248
@@ -143,12 +143,12 @@
     {
       "id": "char_r_sishu",
       "rarity": "R",
-      "size": 513756,
+      "size": 750542,
       "alpha": true,
       "geometry": {
-        "opacity_ratio": 0.271,
-        "height_frac": 0.84,
-        "center_dx": 0.014,
+        "opacity_ratio": 0.383,
+        "height_frac": 0.943,
+        "center_dx": -0.004,
         "foot_present": true,
         "w": 832,
         "h": 1248
@@ -169,18 +169,17 @@
     {
       "id": "char_r_yecha",
       "rarity": "R",
-      "size": 378066,
+      "size": 593372,
       "alpha": true,
       "geometry": {
-        "opacity_ratio": 0.26,
-        "height_frac": 0.61,
-        "center_dx": -0.002,
+        "opacity_ratio": 0.324,
+        "height_frac": 0.713,
+        "center_dx": 0.004,
         "foot_present": false,
         "w": 832,
         "h": 1248
       },
       "issues": [
-        "WARN:half-body?(0.61)",
         "WARN:no-foot(可能半身)"
       ],
       "level": "WARN",
@@ -199,18 +198,20 @@
     {
       "id": "char_sr_bifang",
       "rarity": "SR",
-      "size": 771646,
+      "size": 904924,
       "alpha": true,
       "geometry": {
-        "opacity_ratio": 0.314,
-        "height_frac": 0.778,
-        "center_dx": 0.0,
-        "foot_present": true,
+        "opacity_ratio": 0.23,
+        "height_frac": 0.818,
+        "center_dx": 0.009,
+        "foot_present": false,
         "w": 1024,
         "h": 1536
       },
-      "issues": [],
-      "level": "PASS",
+      "issues": [
+        "WARN:no-foot(可能半身)"
+      ],
+      "level": "WARN",
       "anchors_human_check": {
         "A": "神话原型: 一足鹤身（**单足站立，另一足收拢**）",
         "B": "道具指纹: N 金属羽翼（**金属质感羽翼 + 雷电缠绕**）",
@@ -225,18 +226,21 @@
     {
       "id": "char_sr_huayao",
       "rarity": "SR",
-      "size": 964822,
+      "size": 1901842,
       "alpha": true,
       "geometry": {
-        "opacity_ratio": 0.429,
-        "height_frac": 0.903,
-        "center_dx": -0.001,
+        "opacity_ratio": 0.618,
+        "height_frac": 0.988,
+        "center_dx": 0.004,
         "foot_present": true,
         "w": 1024,
         "h": 1536
       },
-      "issues": [],
-      "level": "PASS",
+      "issues": [
+        "WARN:size-too-large(1901842>1500000)",
+        "WARN:opacity-high-bg?(0.618)"
+      ],
+      "level": "WARN",
       "anchors_human_check": {
         "A": "神话原型: 千年灵植化形（**头顶/发间有花瓣与藤蔓生长**）",
         "B": "道具指纹: 千瓣飘带（**花瓣凝聚的飘带，可作治愈光带或毒刺飞刃**）",
@@ -252,12 +256,12 @@
     {
       "id": "char_sr_jingwei",
       "rarity": "SR",
-      "size": 552066,
+      "size": 651480,
       "alpha": true,
       "geometry": {
-        "opacity_ratio": 0.24,
-        "height_frac": 0.903,
-        "center_dx": 0.023,
+        "opacity_ratio": 0.256,
+        "height_frac": 0.896,
+        "center_dx": 0.031,
         "foot_present": true,
         "w": 1024,
         "h": 1536
@@ -278,21 +282,18 @@
     {
       "id": "char_sr_qiongqi",
       "rarity": "SR",
-      "size": 795132,
+      "size": 1367502,
       "alpha": true,
       "geometry": {
-        "opacity_ratio": 0.294,
-        "height_frac": 0.668,
+        "opacity_ratio": 0.466,
+        "height_frac": 0.876,
         "center_dx": 0.006,
-        "foot_present": false,
+        "foot_present": true,
         "w": 1024,
         "h": 1536
       },
-      "issues": [
-        "WARN:half-body?(0.668)",
-        "WARN:no-foot(可能半身)"
-      ],
-      "level": "WARN",
+      "issues": [],
+      "level": "PASS",
       "anchors_human_check": {
         "A": "神话原型: 牛身蝟毛（**牛角 + 全身金属尖刺蝟毛**）",
         "B": "道具指纹: 武器架（**背部武器架多把枪械**）",
@@ -308,12 +309,12 @@
     {
       "id": "char_sr_suanni",
       "rarity": "SR",
-      "size": 802968,
+      "size": 1305512,
       "alpha": true,
       "geometry": {
-        "opacity_ratio": 0.376,
-        "height_frac": 0.882,
-        "center_dx": -0.024,
+        "opacity_ratio": 0.471,
+        "height_frac": 0.932,
+        "center_dx": 0.004,
         "foot_present": true,
         "w": 1024,
         "h": 1536
@@ -335,18 +336,21 @@
     {
       "id": "char_sr_taotie",
       "rarity": "SR",
-      "size": 1186010,
+      "size": 890282,
       "alpha": true,
       "geometry": {
-        "opacity_ratio": 0.469,
-        "height_frac": 0.888,
-        "center_dx": 0.015,
-        "foot_present": true,
+        "opacity_ratio": 0.291,
+        "height_frac": 0.668,
+        "center_dx": 0.021,
+        "foot_present": false,
         "w": 1024,
         "h": 1536
       },
-      "issues": [],
-      "level": "PASS",
+      "issues": [
+        "WARN:half-body?(0.668)",
+        "WARN:no-foot(可能半身)"
+      ],
+      "level": "WARN",
       "anchors_human_check": {
         "A": "神话原型: 有首无身（**只有巨大兽头，没有身体**——以青铜巨口为视觉中心）",
         "B": "道具指纹: 青铜巨口（**巨口含青铜齿与青铜色火焰**）",
@@ -361,18 +365,21 @@
     {
       "id": "char_sr_xuanwu",
       "rarity": "SR",
-      "size": 847036,
+      "size": 1516038,
       "alpha": true,
       "geometry": {
-        "opacity_ratio": 0.374,
-        "height_frac": 0.854,
-        "center_dx": -0.022,
+        "opacity_ratio": 0.561,
+        "height_frac": 0.92,
+        "center_dx": 0.001,
         "foot_present": true,
         "w": 1024,
         "h": 1536
       },
-      "issues": [],
-      "level": "PASS",
+      "issues": [
+        "WARN:size-too-large(1516038>1500000)",
+        "WARN:opacity-high-bg?(0.561)"
+      ],
+      "level": "WARN",
       "anchors_human_check": {
         "A": "神话原型: 龟身鸟首虺尾（**鸟首 + 龟壳 + 蛇尾三位一体**）",
         "B": "道具指纹: 玄甲龟壳（**龟壳形状的巨型盾牌/背包，钢力士风格**）",
@@ -387,21 +394,18 @@
     {
       "id": "char_ssr_baihu",
       "rarity": "SSR",
-      "size": 1317330,
+      "size": 1880686,
       "alpha": true,
       "geometry": {
-        "opacity_ratio": 0.374,
-        "height_frac": 0.638,
-        "center_dx": -0.016,
-        "foot_present": false,
+        "opacity_ratio": 0.436,
+        "height_frac": 0.965,
+        "center_dx": 0.025,
+        "foot_present": true,
         "w": 1280,
         "h": 1920
       },
-      "issues": [
-        "WARN:half-body?(0.638)",
-        "WARN:no-foot(可能半身)"
-      ],
-      "level": "WARN",
+      "issues": [],
+      "level": "PASS",
       "anchors_human_check": {
         "A": "神话原型: 白虎形态（**白色虎身 + 黑色条纹 + 金色兽瞳**）",
         "B": "道具指纹: 庚金·虎啸爪（**双前爪延伸出振金振动的利刃**）",
@@ -417,18 +421,21 @@
     {
       "id": "char_ssr_chiyou",
       "rarity": "SSR",
-      "size": 1765702,
+      "size": 2657628,
       "alpha": true,
       "geometry": {
-        "opacity_ratio": 0.501,
-        "height_frac": 0.893,
-        "center_dx": 0.003,
+        "opacity_ratio": 0.61,
+        "height_frac": 0.996,
+        "center_dx": -0.005,
         "foot_present": true,
         "w": 1280,
         "h": 1920
       },
-      "issues": [],
-      "level": "PASS",
+      "issues": [
+        "WARN:size-too-large(2657628>2000000)",
+        "WARN:opacity-high-bg?(0.61)"
+      ],
+      "level": "WARN",
       "anchors_human_check": {
         "A": "神话原型: 铜头铁额八肱八趾（**头部金属覆盖（铜色）+ 四臂四腿兽形**）",
         "B": "道具指纹: 虎魄·裂魂斧（**合金重刃，斩击附带金属碎片风暴**）",
@@ -444,12 +451,12 @@
     {
       "id": "char_ssr_feilian",
       "rarity": "SSR",
-      "size": 1674382,
+      "size": 1727048,
       "alpha": true,
       "geometry": {
-        "opacity_ratio": 0.447,
-        "height_frac": 0.935,
-        "center_dx": 0.021,
+        "opacity_ratio": 0.346,
+        "height_frac": 0.968,
+        "center_dx": -0.012,
         "foot_present": true,
         "w": 1280,
         "h": 1920
@@ -470,18 +477,21 @@
     {
       "id": "char_ssr_fenghuang",
       "rarity": "SSR",
-      "size": 1877416,
+      "size": 3179162,
       "alpha": true,
       "geometry": {
-        "opacity_ratio": 0.508,
-        "height_frac": 0.832,
-        "center_dx": 0.004,
+        "opacity_ratio": 0.608,
+        "height_frac": 0.983,
+        "center_dx": -0.006,
         "foot_present": true,
         "w": 1280,
         "h": 1920
       },
-      "issues": [],
-      "level": "PASS",
+      "issues": [
+        "WARN:size-too-large(3179162>2000000)",
+        "WARN:opacity-high-bg?(0.608)"
+      ],
+      "level": "WARN",
       "anchors_human_check": {
         "A": "神话原型: 五色羽（**赤/橙/黄/绿/蓝五色凤凰羽翼**，每根羽毛末端不同色火焰）",
         "B": "道具指纹: 焚羽·涅槃翼（**羽翼融合双刃，可作翅可作刃**）",
@@ -497,12 +507,12 @@
     {
       "id": "char_ssr_leishen",
       "rarity": "SSR",
-      "size": 1470996,
+      "size": 1320092,
       "alpha": true,
       "geometry": {
-        "opacity_ratio": 0.384,
-        "height_frac": 0.89,
-        "center_dx": 0.027,
+        "opacity_ratio": 0.223,
+        "height_frac": 0.798,
+        "center_dx": 0.004,
         "foot_present": true,
         "w": 1280,
         "h": 1920
@@ -524,18 +534,19 @@
     {
       "id": "char_ssr_shangyang",
       "rarity": "SSR",
-      "size": 1674328,
+      "size": 2555020,
       "alpha": true,
       "geometry": {
-        "opacity_ratio": 0.575,
-        "height_frac": 0.885,
-        "center_dx": 0.006,
+        "opacity_ratio": 0.588,
+        "height_frac": 0.972,
+        "center_dx": -0.009,
         "foot_present": true,
         "w": 1280,
         "h": 1920
       },
       "issues": [
-        "WARN:opacity-high-bg?(0.575)"
+        "WARN:size-too-large(2555020>2000000)",
+        "WARN:opacity-high-bg?(0.588)"
       ],
       "level": "WARN",
       "anchors_human_check": {
@@ -552,18 +563,21 @@
     {
       "id": "char_ssr_xiangliu",
       "rarity": "SSR",
-      "size": 1563128,
+      "size": 2299040,
       "alpha": true,
       "geometry": {
-        "opacity_ratio": 0.443,
-        "height_frac": 0.886,
-        "center_dx": -0.007,
+        "opacity_ratio": 0.589,
+        "height_frac": 0.967,
+        "center_dx": 0.006,
         "foot_present": true,
         "w": 1280,
         "h": 1920
       },
-      "issues": [],
-      "level": "PASS",
+      "issues": [
+        "WARN:size-too-large(2299040>2000000)",
+        "WARN:opacity-high-bg?(0.589)"
+      ],
+      "level": "WARN",
       "anchors_human_check": {
         "A": "神话原型: 九首蛇身（**九蛇颈呈扇形展开，每个蛇首表情不同**）",
         "B": "道具指纹: 毒液共生体覆盖（**湿润光泽的暗紫黑色 + 绿色荧光血管**）",
@@ -576,20 +590,50 @@
       ]
     },
     {
-      "id": "char_ur_jinwu",
+      "id": "char_ur_ironman",
       "rarity": "UR",
-      "size": 2094128,
+      "size": 1715974,
       "alpha": true,
       "geometry": {
-        "opacity_ratio": 0.395,
-        "height_frac": 0.927,
-        "center_dx": -0.0,
-        "foot_present": true,
+        "opacity_ratio": 0.28,
+        "height_frac": 0.816,
+        "center_dx": -0.02,
+        "foot_present": false,
         "w": 1536,
         "h": 2304
       },
-      "issues": [],
-      "level": "PASS",
+      "issues": [
+        "WARN:no-foot(可能半身)"
+      ],
+      "level": "WARN",
+      "anchors_human_check": {
+        "A": "原型指纹: 方舟反应堆胸灯（**胸口圆形冷白蓝发光核心，全图最亮点**）",
+        "B": "道具指纹: 掌心聚变炮（**右手掌心环形喷口，蓝白等离子环高速旋转充能**）",
+        "C": "解剖签名: 战甲下的凡人面孔（**托尼式山羊胡 + 傲然浅笑，面甲收拢于颈后**）"
+      },
+      "key_elements_human_check": [
+        "arc_reactor_chest_light_cold_blue_white",
+        "palm_repulsor_plasma_ring_charging",
+        "human_face_with_goatee_faceplate_retracted"
+      ]
+    },
+    {
+      "id": "char_ur_jinwu",
+      "rarity": "UR",
+      "size": 1754138,
+      "alpha": true,
+      "geometry": {
+        "opacity_ratio": 0.211,
+        "height_frac": 0.865,
+        "center_dx": 0.005,
+        "foot_present": false,
+        "w": 1536,
+        "h": 2304
+      },
+      "issues": [
+        "WARN:no-foot(可能半身)"
+      ],
+      "level": "WARN",
       "anchors_human_check": {
         "A": "神话原型: 三足金乌（三足乌鸦/三足太阳鸟，**足部必须为三趾**）",
         "B": "道具指纹: 曜日神弓（**长弓 + 太阳耀斑形弓梢 + 浓缩等离子箭**）",
@@ -604,18 +648,20 @@
     {
       "id": "char_ur_keqing",
       "rarity": "UR",
-      "size": 1792464,
+      "size": 2794524,
       "alpha": true,
       "geometry": {
-        "opacity_ratio": 0.401,
-        "height_frac": 0.891,
-        "center_dx": -0.0,
+        "opacity_ratio": 0.399,
+        "height_frac": 0.968,
+        "center_dx": 0.006,
         "foot_present": true,
         "w": 1536,
         "h": 2304
       },
-      "issues": [],
-      "level": "PASS",
+      "issues": [
+        "WARN:size-too-large(2794524>2500000)"
+      ],
+      "level": "WARN",
       "anchors_human_check": {
         "A": "联动原型: 双马尾发型（**深紫色长发双马尾，发尾有雷电尖**）",
         "B": "道具指纹: 雷楔双剑（**双剑交叉背持或双持，紫色雷电缠绕剑身**）",
@@ -631,12 +677,12 @@
     {
       "id": "char_ur_kikyo",
       "rarity": "UR",
-      "size": 1220002,
+      "size": 2092790,
       "alpha": true,
       "geometry": {
-        "opacity_ratio": 0.31,
-        "height_frac": 0.787,
-        "center_dx": -0.059,
+        "opacity_ratio": 0.331,
+        "height_frac": 0.832,
+        "center_dx": 0.006,
         "foot_present": true,
         "w": 1536,
         "h": 2304
@@ -658,12 +704,12 @@
     {
       "id": "char_ur_nuwa",
       "rarity": "UR",
-      "size": 1517822,
+      "size": 2484188,
       "alpha": true,
       "geometry": {
-        "opacity_ratio": 0.353,
-        "height_frac": 0.872,
-        "center_dx": 0.004,
+        "opacity_ratio": 0.443,
+        "height_frac": 0.956,
+        "center_dx": -0.007,
         "foot_present": true,
         "w": 1536,
         "h": 2304
@@ -683,20 +729,76 @@
       ]
     },
     {
-      "id": "char_ur_wuxu",
+      "id": "char_ur_strange",
       "rarity": "UR",
-      "size": 1328824,
+      "size": 2642140,
       "alpha": true,
       "geometry": {
-        "opacity_ratio": 0.314,
-        "height_frac": 0.941,
-        "center_dx": 0.004,
+        "opacity_ratio": 0.472,
+        "height_frac": 0.929,
+        "center_dx": 0.026,
+        "foot_present": true,
+        "w": 1536,
+        "h": 2304
+      },
+      "issues": [
+        "WARN:size-too-large(2642140>2500000)"
+      ],
+      "level": "WARN",
+      "anchors_human_check": {
+        "A": "原型指纹: 悬浮红斗篷（**猩红斗篷自主扬起如活物，金色立领高耸**）",
+        "B": "道具指纹: 阿戈摩托之眼（**胸前绿焰瞳状宝石，开启时瞳内时间支流流转**）",
+        "C": "解剖签名: 双手恒定结印的施法手势（**指缝迸出金色火花曼陀罗**）"
+      },
+      "key_elements_human_check": [
+        "crimson_cloak_of_levitation_alive_billowing",
+        "eye_of_agamotto_green_flame_iris_gem_open",
+        "dual_hands_sigil_golden_spark_mandalas"
+      ]
+    },
+    {
+      "id": "char_ur_thor",
+      "rarity": "UR",
+      "size": 2047266,
+      "alpha": true,
+      "geometry": {
+        "opacity_ratio": 0.344,
+        "height_frac": 0.888,
+        "center_dx": 0.018,
         "foot_present": true,
         "w": 1536,
         "h": 2304
       },
       "issues": [],
       "level": "PASS",
+      "anchors_human_check": {
+        "A": "原型指纹: 风暴冠弧（**头顶盘旋的乌云冠，发丝间跳银紫电弧**）",
+        "B": "道具指纹: 妙尔尼尔（**方头短柄战锤，锤面古神文亮起，皮革缠柄连护腕链环**）",
+        "C": "解剖签名: 斗士体格的红络腮胡与**右眼尾闪电状旧疤**"
+      },
+      "key_elements_human_check": [
+        "storm_cloud_crown_with_lightning_arcs",
+        "mjolnir_runic_short_hammer_leather_grip",
+        "red_braided_beard_lightning_scar_right_eye"
+      ]
+    },
+    {
+      "id": "char_ur_wuxu",
+      "rarity": "UR",
+      "size": 1440708,
+      "alpha": true,
+      "geometry": {
+        "opacity_ratio": 0.238,
+        "height_frac": 0.848,
+        "center_dx": -0.008,
+        "foot_present": false,
+        "w": 1536,
+        "h": 2304
+      },
+      "issues": [
+        "WARN:no-foot(可能半身)"
+      ],
+      "level": "WARN",
       "anchors_human_check": {
         "A": "神话原型: 无面无相（**面部为光滑暗色镜面，映照星空**）",
         "B": "道具指纹: 胸口微型黑洞（**缓慢旋转，吞食周围光线**）",
@@ -711,12 +813,12 @@
     {
       "id": "char_ur_xingtian",
       "rarity": "UR",
-      "size": 1840556,
+      "size": 2351838,
       "alpha": true,
       "geometry": {
-        "opacity_ratio": 0.39,
-        "height_frac": 0.926,
-        "center_dx": -0.013,
+        "opacity_ratio": 0.433,
+        "height_frac": 0.935,
+        "center_dx": -0.005,
         "foot_present": true,
         "w": 1536,
         "h": 2304
@@ -735,18 +837,20 @@
     {
       "id": "char_ur_zhulong",
       "rarity": "UR",
-      "size": 1783352,
+      "size": 3583690,
       "alpha": true,
       "geometry": {
-        "opacity_ratio": 0.352,
-        "height_frac": 0.882,
-        "center_dx": 0.004,
+        "opacity_ratio": 0.513,
+        "height_frac": 1.0,
+        "center_dx": 0.006,
         "foot_present": true,
         "w": 1536,
         "h": 2304
       },
-      "issues": [],
-      "level": "PASS",
+      "issues": [
+        "WARN:size-too-large(3583690>2500000)"
+      ],
+      "level": "WARN",
       "anchors_human_check": {
         "A": "神话原型: 人面蛇身（**蛇尾必须从腰部延伸，鳞片为赤金渐变**）",
         "B": "道具指纹: 阖辟神瞳·昼夜轮（**半面熔金半面虚空的圆轮**，环心有永不闭合的竖瞳）",
