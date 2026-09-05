@@ -81,19 +81,33 @@ fun CharacterCard(
     val scale = remember { Animatable(1f) }
     val scope = rememberCoroutineScope()
 
+    // ── 双层描边（装裱册页：外层稀有度色 + 内层金箔隔水线）──
+    // 外框粗细按稀有度分级：UR 2dp / SSR 1.5dp / SR 1dp / R 0.75dp
+    val outerBorder = when {
+        rarity >= 4 -> 2.dp
+        rarity == 3 -> 1.5.dp
+        rarity == 2 -> 1.dp
+        else -> 0.75.dp
+    }
+    val outerBorderAlpha = when {
+        rarity >= 4 -> 0.85f
+        rarity == 3 -> 0.75f
+        else -> 0.6f
+    }
+
     Column(
         modifier = modifier
             .graphicsLayer {
                 scaleX = scale.value
                 scaleY = scale.value
             }
-            .padding(5.dp)
+            .padding(outerBorder / 2)
             .clip(MaterialTheme.shapes.large)
-            .background(AppTheme.Surface, MaterialTheme.shapes.large)
-            .border(1.5.dp, rarityCol.copy(alpha = 0.6f), MaterialTheme.shapes.large)
-            // I2 修复：key 从常量 Unit 改为 characterId。
-            // 原写法 pointerInput 协程永不重启，闭包始终持有首次组合时捕获的 onClick；
-            // 列表因筛选/排序在同一槽位换绑不同角色后，点击会打开「切换前的那个角色」。
+            .background(rarityCol.copy(alpha = outerBorderAlpha), MaterialTheme.shapes.large)
+            .border(outerBorder, rarityCol.copy(alpha = outerBorderAlpha), MaterialTheme.shapes.large)
+            .padding(2.5.dp)
+            .clip(MaterialTheme.shapes.large)
+            .border(1.dp, AppTheme.Gold.copy(alpha = 0.30f), MaterialTheme.shapes.large)
             .pointerInput(characterId) {
                 detectTapGestures(
                     onPress = {
@@ -213,13 +227,6 @@ fun CharacterCard(
                     Text(text = "🔒", fontSize = 18.sp)
                 }
             }
-
-            // 隔水金线（画心与装裱边分隔，末层叠加保证覆盖立绘边缘）
-            Box(
-                Modifier
-                    .fillMaxSize()
-                    .border(1.dp, AppTheme.Gold.copy(alpha = 0.20f)),
-            )
         }
 
         // ── 铭牌区：名字 / 称号 / rarity 标签 / footer ──

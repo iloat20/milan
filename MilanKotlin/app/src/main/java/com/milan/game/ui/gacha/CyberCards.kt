@@ -136,21 +136,24 @@ internal fun SingleCard(
             .clickable { def?.let { onOpenCharacter(it.characterId) } },
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
+        // 双层描边：外层稀有度色 + 内层金箔隔水线
         Box(
             Modifier
                 .width(232.dp)
                 .height(300.dp)
                 .clip(RoundedCornerShape(14.dp))
-                .background(AppTheme.Surface)
-                .border(1.5.dp, frame, RoundedCornerShape(14.dp)),
+                .background(frame, RoundedCornerShape(14.dp))
+                .border(1.5.dp, frame, RoundedCornerShape(14.dp))
+                .padding(2.5.dp)
+                .clip(RoundedCornerShape(11.dp))
+                .border(1.dp, AppTheme.Gold.copy(alpha = 0.30f), RoundedCornerShape(11.dp)),
         ) {
-            // 画心：立绘 + 隔水金线内框（装裱册页结构）
+            // 画心：立绘
             Box(
                 Modifier
                     .fillMaxSize()
-                    .padding(5.dp)
-                    .clip(RoundedCornerShape(10.dp))
-                    .border(1.dp, AppTheme.Gold.copy(alpha = 0.32f), RoundedCornerShape(10.dp)),
+                    .padding(3.dp)
+                    .clip(RoundedCornerShape(9.dp)),
             ) {
                 PortraitImage(
                     characterId = def?.characterId.orEmpty(),
@@ -285,19 +288,23 @@ internal fun TenCard(
         contentAlignment = Alignment.Center,
     ) {
         if (faceUp) {
+            // 双层描边：外层稀有度色 + 内层金箔隔水线
             Box(
                 Modifier
                     .fillMaxSize()
-                    .background(AppTheme.Surface)
-                    .border(1.dp, frame, RoundedCornerShape(8.dp)),
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(frame, RoundedCornerShape(8.dp))
+                    .border(1.dp, frame, RoundedCornerShape(8.dp))
+                    .padding(2.dp)
+                    .clip(RoundedCornerShape(6.dp))
+                    .border(0.75.dp, AppTheme.Gold.copy(alpha = 0.28f), RoundedCornerShape(6.dp)),
             ) {
-                // 画心 + 隔水金线内框（装裱册页结构）
+                // 画心
                 Box(
                     Modifier
                         .fillMaxSize()
-                        .padding(3.dp)
-                        .clip(RoundedCornerShape(6.dp))
-                        .border(1.dp, AppTheme.Gold.copy(alpha = 0.28f), RoundedCornerShape(6.dp)),
+                        .padding(2.dp)
+                        .clip(RoundedCornerShape(4.dp)),
                 ) {
                     PortraitImage(
                         characterId = result.characterId.orEmpty(),
