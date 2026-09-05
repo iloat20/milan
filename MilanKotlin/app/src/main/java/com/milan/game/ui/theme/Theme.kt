@@ -20,47 +20,47 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.milan.game.R
 
-// 水墨国风 · Material 3 Expressive 配色
+// 云海仙气 · Material 3 Expressive 配色
 //
-// 保留 MaterialExpressiveTheme + GameShapes 体系，色调从暗紫+熔金切换到墨色+金箔+朱砂：
-//  - primary = 石青（淡蓝绿，水墨山水中常见的矿物色）
-//  - secondary = 金箔（温暖的古金色，延续强调功能）
+// 保留 MaterialExpressiveTheme + GameShapes 体系，色调从墨色+金箔+朱砂切换到云海蓝+冰蓝+金箔：
+//  - primary = 石青（冰蓝绿，仙境矿物色）
+//  - secondary = 金箔（温暖的仙宫金色，延续强调功能）
 //  - tertiary = 朱砂（印章红，点缀）
-//  - background / surface = 墨色层次
+//  - background / surface = 云海蓝层次
 
 private val InkColors = darkColorScheme(
-    primary = Color(0xFF5A9A90),              // 石青
+    primary = Color(0xFF68B0A8),              // 石青（仙气提亮）
     onPrimary = Color(0xFF0A1A18),
-    primaryContainer = Color(0xFF2A4A44),
+    primaryContainer = Color(0xFF1E3838),
     onPrimaryContainer = Color(0xFFD0EDE8),
-    inversePrimary = Color(0xFF8AD0C8),
+    inversePrimary = Color(0xFF90D8D0),
 
     secondary = AppTheme.Gold,                // 金箔（单一事实来源）
-    onSecondary = Color(0xFF3A2800),
-    secondaryContainer = Color(0xFF4A3A1E),
+    onSecondary = Color(0xFF2A1800),
+    secondaryContainer = Color(0xFF3A3020),
     onSecondaryContainer = Color(0xFFF3E8CF),
 
-    tertiary = Color(0xFFC85050),            // 朱砂
+    tertiary = Color(0xFFD86060),            // 朱砂
     onTertiary = Color(0xFF2A0A0A),
     tertiaryContainer = Color(0xFF4A1A1A),
     onTertiaryContainer = Color(0xFFFFD9D9),
 
-    background = Color(0xFF0A0A0F),
-    onBackground = Color(0xFFF0E8D8),
+    background = Color(0xFF0F1428),          // 云海底
+    onBackground = Color(0xFFF0ECF0),
 
-    surface = Color(0xFF141620),
-    onSurface = Color(0xFFF0E8D8),
-    surfaceVariant = Color(0xFF1E1C28),
-    onSurfaceVariant = Color(0xFFB0A898),
-    surfaceTint = Color(0xFF5A9A90),
+    surface = Color(0xFF1A2040),             // 云海中层
+    onSurface = Color(0xFFF0ECF0),
+    surfaceVariant = Color(0xFF1E2848),      // 冰蓝面板
+    onSurfaceVariant = Color(0xFFB8C0D0),
+    surfaceTint = Color(0xFF68B0A8),
 
-    outline = Color(0xFF3A3840),
-    outlineVariant = Color(0xFF1E1C28),
+    outline = Color(0xFF2A3050),
+    outlineVariant = Color(0xFF1E2848),
 
     scrim = Color(0xFF000000),
 
-    error = Color(0xFFC84040),
-    onError = Color(0xFF3A0808),
+    error = Color(0xFFD05050),
+    onError = Color(0xFF2A0808),
     errorContainer = Color(0xFF4A1414),
     onErrorContainer = Color(0xFFFFD9D9),
 )

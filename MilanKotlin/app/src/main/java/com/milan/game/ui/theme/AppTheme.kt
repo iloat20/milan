@@ -4,130 +4,134 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 
 /**
- * 水墨国风·丹青录 (Ink Chronicle) — **UI 权威调色板**。
- * 素雅宣纸底 / 朱砂点缀 / 金箔高光 / 翠玉次级 / 墨色层次。
+ * 云海仙气·丹青录 (Celestial Cloud Chronicle) — **UI 权威调色板**。
+ * 云海蓝底 / 冰蓝面板 / 金箔高光 / 石青次级 / 仙气留白。
+ *
+ * v2（2026-09-05）：从「水墨国风·浓墨底」切换到「云海仙气·蓝底渐变」——
+ * 背景从近纯黑 (#0A0A0F) 提升到深靛蓝 (#0F1428)，面板从暗紫切换到冰蓝半透明，
+ * 整体色调明亮通透，营造仙境云海的空灵感。
  */
 object AppTheme {
 
     // ============================================================
-    // 一、水墨色板（当前权威 · 31 个 UI 文件正在使用）
+    // 一、云海色板（当前权威 · 全站 UI 使用）
     // ============================================================
 
-    // ── 墨色层次（背景 / 面板 / 分区）──
+    // ── 云海层次（背景 / 面板 / 分区）──
 
-    /** 全局最底背景（浓墨·最深）。 */
-    val BgDeepest = Color(0xFF0A0A0F)
+    /** 全局最底背景（深靛·云海底）。 */
+    val BgDeepest = Color(0xFF0F1428)
 
-    /** 次级背景 / 分区（淡墨·灰蓝）。 */
-    val BgMid = Color(0xFF141620)
+    /** 次级背景 / 分区（中靛·云海中层）。 */
+    val BgMid = Color(0xFF1A2040)
 
-    /** 玻璃面底色（宣纸半透明）。 */
-    val Surface = Color(0x8C1A1828)
+    /** 玻璃面底色（冰蓝半透明）。 */
+    val Surface = Color(0x8C1E2848)
 
-    /** 嵌套玻璃面板底色（更深墨色 α≈0.59）。 */
-    val SurfaceNested = Color(0x96161220)
+    /** 嵌套玻璃面板底色（更深冰蓝 α≈0.59）。 */
+    val SurfaceNested = Color(0x96182038)
 
     // ── 金箔系（主色 / 高光 / 收尾）──
 
-    /** 金箔主色。 */
-    val Gold = Color(0xFFD4A853)
+    /** 金箔主色（仙气提亮）。 */
+    val Gold = Color(0xFFE0B860)
 
     /** 金箔高光（渐变起笔 / 高光点）。 */
-    val GoldHi = Color(0xFFF0C864)
+    val GoldHi = Color(0xFFF8D878)
 
     /** 金箔收尾 / 按钮底边。 */
-    val GoldDeep = Color(0xFFB08930)
+    val GoldDeep = Color(0xFFC09838)
 
     /** 金底上的深色文字。 */
-    val GoldTextOn = Color(0xFF3A2800)
+    val GoldTextOn = Color(0xFF2A1800)
 
     // ── 石青系（次级操作 / 信息 / 导航图标）──
 
-    /** 石青。 */
-    val Frost = Color(0xFF7EBAB1)
+    /** 石青（仙气提亮）。 */
+    val Frost = Color(0xFF8EC8C0)
 
     /** 石青深。 */
-    val FrostDeep = Color(0xFF5A9A90)
+    val FrostDeep = Color(0xFF68B0A8)
 
     // ── 紫砚系（点缀 / 分隔 / 天赋节点）──
 
     /** 紫砚。 */
-    val Violet = Color(0xFF8A6BBD)
+    val Violet = Color(0xFF9A7BD0)
 
     // ── 文字层次 ──
 
-    /** 主文字（宣纸白）。 */
-    val Text1 = Color(0xFFF0E8D8)
+    /** 主文字（云间白）。 */
+    val Text1 = Color(0xFFF0ECF0)
 
-    /** 次文字（淡墨灰）。 */
-    val Text2 = Color(0xFFB0A898)
+    /** 次文字（淡蓝灰）。 */
+    val Text2 = Color(0xFFB8C0D0)
 
     /** 弱化 / 占位（WCAG AA 达标）。 */
-    val Text3 = Color(0xFF787068)
+    val Text3 = Color(0xFF7880A0)
 
     // ── 语义色 ──
 
     /** 危险 / 失败（朱砂）。 */
-    val Danger = Color(0xFFC84040)
+    val Danger = Color(0xFFD05050)
 
     /** 成功 / 正向（翠玉）。⚠️ 3 处调用点（WoWStatsPanel ×2 / InfoPanels ×1）依赖此口径。 */
-    val Success = Color(0xFF5CB87A)
+    val Success = Color(0xFF60C888)
 
     /** 警告 / 注意（琥珀金）。⚠️ 同上。 */
-    val Warning = Color(0xFFD4A020)
+    val Warning = Color(0xFFE0B030)
 
     // ── 装饰线 / 填充 ──
 
     /** 分隔发丝线。 */
-    val Stroke = Color(0x14FFFFFF)
+    val Stroke = Color(0x20FFFFFF)
 
     /** 印章点缀红（国风母题）。 */
-    val SealRed = Color(0xFFBF3A3A)
+    val SealRed = Color(0xFFD04848)
 
-    /** 浮层底部铭牌渐变起笔（透明 → 墨色）。 */
-    val ScrimTop = Color(0x000A0A0F)
+    /** 浮层底部铭牌渐变起笔（透明 → 云海蓝）。 */
+    val ScrimTop = Color(0x000F1428)
 
-    /** 浮层底部铭牌渐变收尾（墨色 α≈0.75）。 */
-    val ScrimBottom = Color(0xBE080810)
+    /** 浮层底部铭牌渐变收尾（云海蓝 α≈0.75）。 */
+    val ScrimBottom = Color(0xBE101830)
 
     /** 武器加成绿。 */
-    val WoWGreen = Color(0xFF5CBE80)
+    val WoWGreen = Color(0xFF60D090)
 
     /** 武器舞台圆角暗底。 */
-    val WeaponStageBg = Color(0xFF0C0C14)
+    val WeaponStageBg = Color(0xFF121830)
 
     /** 魔兽属性面板渐变起笔。 */
-    val WoWPanelTop = Color(0xFF12101A)
+    val WoWPanelTop = Color(0xFF161C38)
 
     /** 魔兽属性面板渐变收尾。 */
-    val WoWPanelBottom = Color(0xFF0A0810)
+    val WoWPanelBottom = Color(0xFF0E1428)
 
-    /** 稀有度色板 — 丹青录调性（UR 金箔 / SSR 朱砂 / SR 石青 / R 素白）。
+    /** 稀有度色板 — 云海仙气调性（UR 金箔 / SSR 朱砂 / SR 石青 / R 月白）。
      *  ⚠️ 19 处调用点（抽卡/图鉴/卡组/详情/编队/首页/分享卡）依赖此口径，勿改调性。 */
     fun rarityColor(rarity: Int): Color = when (rarity) {
-        1 -> Color(0xFFD8D0C0)   // R   - 素白
-        2 -> Color(0xFF7EBAB1)   // SR  - 石青
-        3 -> Color(0xFFC85050)   // SSR - 朱砂
-        4 -> Color(0xFFF0C864)   // UR  - 金箔
+        1 -> Color(0xFFD0D8E8)   // R   - 月白
+        2 -> Color(0xFF8EC8C0)   // SR  - 石青
+        3 -> Color(0xFFD86060)   // SSR - 朱砂
+        4 -> Color(0xFFF0D060)   // UR  - 金箔
         else -> Text3
     }
 
-    /** 稀有度发光色（与 [rarityColor] 同源，保证水墨口径一致）。 */
+    /** 稀有度发光色（与 [rarityColor] 同源，保证仙气口径一致）。 */
     fun rarityGlow(rarity: Int): Color = when (rarity) {
-        1 -> Color(0x44D8D0C0)
-        2 -> Color(0x667EBAB1)
-        3 -> Color(0x88C85050)
-        4 -> Color(0xAAF0C864)
-        else -> Color(0x44787068)
+        1 -> Color(0x55D0D8E8)
+        2 -> Color(0x778EC8C0)
+        3 -> Color(0x99D86060)
+        4 -> Color(0xBBF0D060)
+        else -> Color(0x557880A0)
     }
 
     /** 稀有度渐变（与 [rarityColor] 同源）。 */
     fun rarityGradient(rarity: Int): List<Color> = when (rarity) {
-        1 -> listOf(Color(0xFFA8A090), Color(0xFFD8D0C0))
-        2 -> listOf(Color(0xFF5A9A90), Color(0xFF7EBAB1))
-        3 -> listOf(Color(0xFF8A3030), Color(0xFFC85050))
-        4 -> listOf(Color(0xFFD4A853), Color(0xFFF0C864))
-        else -> listOf(Color(0xFFA8A090), Color(0xFFD8D0C0))
+        1 -> listOf(Color(0xFFB0B8D0), Color(0xFFD0D8E8))
+        2 -> listOf(Color(0xFF68B0A8), Color(0xFF8EC8C0))
+        3 -> listOf(Color(0xFFA84040), Color(0xFFD86060))
+        4 -> listOf(Color(0xFFE0B860), Color(0xFFF0D060))
+        else -> listOf(Color(0xFFB0B8D0), Color(0xFFD0D8E8))
     }
 
     fun rarityName(rarity: Int): String = when (rarity) {
@@ -160,48 +164,48 @@ object AppTheme {
         val xxl = 24.dp  // GlassDialog
     }
 
-    // ── 三世界调色板（水墨体系，[WorldTheme.forWorld] 返回这些）──
+    // ── 三世界调色板（云海仙气体系，[WorldTheme.forWorld] 返回这些）──
 
-    /** 神话界：水墨丹青。 */
+    /** 神话界：云海仙宫。 */
     val Shinwa = WorldPalette(
-        primary = Color(0xFFBF3A3A),      // 朱砂红
-        secondary = Color(0xFFD4A853),    // 金箔
-        accent = Color(0xFF5A9A90),       // 石青
-        background = Color(0xFF0D0D14),
-        surface = Color(0xFF1A1820),
-        textPrimary = Color(0xFFF0E8D8),  // 宣纸白
-        textSecondary = Color(0xFFB0A080),
-        glow = Color(0xFFD4A853),
-        particleColor = Color(0xFFD4A853),
-        stroke = Color(0xFF3A2A1A),
+        primary = Color(0xFFD04848),      // 朱砂红
+        secondary = Color(0xFFE0B860),    // 金箔
+        accent = Color(0xFF68B0A8),       // 石青
+        background = Color(0xFF121830),
+        surface = Color(0xFF1E2440),
+        textPrimary = Color(0xFFF0ECF0),  // 云间白
+        textSecondary = Color(0xFFB8C0D0),
+        glow = Color(0xFFE0B860),
+        particleColor = Color(0xFFE0B860),
+        stroke = Color(0xFF2A3050),
     )
 
-    /** 虚空界：星辰虚空。 */
+    /** 虚空界：星辰深渊。 */
     val Aether = WorldPalette(
-        primary = Color(0xFF2D1B50),      // 虚空紫
-        secondary = Color(0xFF5A9A90),    // 星云青
-        accent = Color(0xFF8A3030),       // 暗红
-        background = Color(0xFF0A0A12),
-        surface = Color(0xFF121228),
-        textPrimary = Color(0xFFE8E0F0),  // 幽灵白
-        textSecondary = Color(0xFF9090C0),
-        glow = Color(0xFF6A3DAD),
-        particleColor = Color(0xFF5A9A90),
-        stroke = Color(0xFF2D1B50),
+        primary = Color(0xFF3A2868),      // 深空紫
+        secondary = Color(0xFF68B0A8),    // 星云青
+        accent = Color(0xFFB04848),       // 暗红
+        background = Color(0xFF101428),
+        surface = Color(0xFF1A2040),
+        textPrimary = Color(0xFFE8E0F8),  // 幽灵白
+        textSecondary = Color(0xFFA0A8D0),
+        glow = Color(0xFF7A4DC0),
+        particleColor = Color(0xFF68B0A8),
+        stroke = Color(0xFF2A2050),
     )
 
     /** 铁幕界：钢铁机关。 */
     val Ironveil = WorldPalette(
-        primary = Color(0xFF4A4A58),      // 钢铁灰
-        secondary = Color(0xFFB87333),    // 铜
-        accent = Color(0xFF7EBAB1),       // 电光青
-        background = Color(0xFF1A1A20),
-        surface = Color(0xFF252530),
-        textPrimary = Color(0xFFE0E0E0),
-        textSecondary = Color(0xFF8888A0),
-        glow = Color(0xFFFF6B00),
-        particleColor = Color(0xFFFF6B00),
-        stroke = Color(0xFF4A4A5A),
+        primary = Color(0xFF5A5A68),      // 钢铁灰
+        secondary = Color(0xFFC88040),    // 铜
+        accent = Color(0xFF8EC8C0),       // 电光青
+        background = Color(0xFF181C28),
+        surface = Color(0xFF222838),
+        textPrimary = Color(0xFFE8E8F0),
+        textSecondary = Color(0xFF9098B0),
+        glow = Color(0xFFFF7800),
+        particleColor = Color(0xFFFF7800),
+        stroke = Color(0xFF505868),
     )
 
 }
