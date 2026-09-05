@@ -17,6 +17,9 @@ import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
@@ -25,6 +28,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.milan.game.ui.theme.AppTheme
 
@@ -126,7 +130,12 @@ private fun PortraitImageContent(
     }
 }
 
-/** 缺图占位：水墨晕染底 + 墨迹圆环 + 首字（水墨画风格兜底）。 */
+/**
+ * 缺图占位（水墨画升级版）：多层墨迹溅射 + 书法首字 + 稀有度光晕 + 隔水金线。
+ *
+ * 设计意图：缺图不是「错误」，是「水墨留白」——用墨迹的浓淡层次暗示角色存在，
+ * 书法首字点名身份，金线隔水框住画面，整体保持装裱册页的一致语言。
+ */
 @Composable
 private fun PortraitFallback(
     characterId: String,
@@ -140,47 +149,94 @@ private fun PortraitFallback(
         modifier = modifier.background(AppTheme.BgDeepest),
         contentAlignment = Alignment.Center,
     ) {
-        // 水墨晕染底：径向渐变模拟墨汁在宣纸上晕开
+        // 多层墨迹溅射（模拟毛笔落纸的自然扩散）
         Canvas(Modifier.fillMaxSize()) {
             val cx = size.width / 2f
             val cy = size.height / 2f
-            val r = minOf(cx, cy).coerceAtLeast(1f) * 0.9f
-            // 外圈：极淡水痕
+            val maxR = minOf(cx, cy).coerceAtLeast(1f)
+
+            // 第 1 层：极淡外围水痕（墨汁扩散最远处）
             drawCircle(
                 brush = Brush.radialGradient(
-                    listOf(c.copy(alpha = 0.08f), c.copy(alpha = 0.22f), Color.Transparent),
+                    listOf(c.copy(alpha = 0.04f), c.copy(alpha = 0.12f), Color.Transparent),
                     center = androidx.compose.ui.geometry.Offset(cx, cy),
-                    radius = r,
+                    radius = maxR,
                 ),
-                radius = r,
+                radius = maxR,
             )
-            // 内圈：浓墨核心
+            // 第 2 层：中浓度墨晕（笔腹含墨处）
             drawCircle(
                 brush = Brush.radialGradient(
-                    listOf(c.copy(alpha = 0.35f), c.copy(alpha = 0.08f)),
-                    center = androidx.compose.ui.geometry.Offset(cx, cy),
-                    radius = (r * 0.45f).coerceAtLeast(1f),
+                    listOf(c.copy(alpha = 0.10f), c.copy(alpha = 0.25f), Color.Transparent),
+                    center = androidx.compose.ui.geometry.Offset(cx * 0.95f, cy * 1.02f),
+                    radius = maxR * 0.68f,
                 ),
-                radius = (r * 0.45f).coerceAtLeast(1f),
+                radius = maxR * 0.68f,
+            )
+            // 第 3 层：浓墨核心（笔尖着纸处）
+            drawCircle(
+                brush = Brush.radialGradient(
+                    listOf(c.copy(alpha = 0.32f), c.copy(alpha = 0.06f)),
+                    center = androidx.compose.ui.geometry.Offset(cx, cy),
+                    radius = (maxR * 0.36f).coerceAtLeast(1f),
+                ),
+                radius = (maxR * 0.36f).coerceAtLeast(1f),
             )
         }
-        // 首字：金色楷书风格
+
+        // 稀有度光晕（脚下椭圆光环，与 AuraHalo 同语言）
+        Canvas(Modifier.fillMaxSize()) {
+            val cx = size.width / 2f
+            val cy = size.height * 0.78f
+            val rx = size.width * 0.38f
+            val ry = size.height * 0.12f
+            drawOval(
+                brush = Brush.radialGradient(
+                    listOf(c.copy(alpha = 0.18f), Color.Transparent),
+                    center = Offset(cx, cy),
+                    radius = rx.coerceAtLeast(1f),
+                ),
+                topLeft = Offset(cx - rx, cy - ry),
+                size = Size(rx * 2f, ry * 2f),
+            )
+        }
+
+        // 书法首字
         Text(
             text = initial,
             fontSize = 48.sp,
             fontWeight = FontWeight.Bold,
             color = c.copy(alpha = 0.85f),
         )
+
+        // 隔水金线（画心与装裱边分隔，与 CharacterCard 同语言）
+        Box(
+            Modifier
+                .fillMaxSize()
+                .background(Color.Transparent)
+                .then(
+                    Modifier.drawBehind {
+                        drawRect(
+                            color = AppTheme.Gold.copy(alpha = 0.18f),
+                            topLeft = Offset(1.dp.toPx(), 1.dp.toPx()),
+                            size = Size(
+                                size.width - 2.dp.toPx(),
+                                size.height - 2.dp.toPx(),
+                            ),
+                        )
+                    }
+                ),
+        )
     }
 }
 
 /**
- * 水墨画滤镜立绘 v2：选择性暖色保留 + 墨迹晕染暗角 + 宣纸肌理叠加。
+ * 水墨画滤镜立绘 v3：选择性暖色保留 + 平滑墨迹暗角 + 宣纸肌理叠加。
  *
  * 通过 Android 原生 Canvas + ColorMatrix 在绘制时实时应用滤镜，不修改原始 Bitmap。
  * 滤镜分三层叠加：
  *   1. ColorMatrix：降饱和但保留朱砂/金箔暖色（水墨画中红色/金色是视觉焦点）
- *   2. RadialGradient 暗角：模拟墨汁从边缘向内渗透的晕染效果
+ *   2. RadialGradient 暗角：单次径向渐变，从中心透明到边缘浓墨，模拟墨汁自然晕染
  *   3. 宣纸噪点纹理：细微颗粒感模拟生宣纸面
  */
 @Composable
@@ -206,8 +262,8 @@ private fun InkWashPortrait(
         )
     }
     val portraitPaint = remember { Paint().apply { colorFilter = inkWashFilter } }
-    // 暗角Paint：多层半透明浓墨圆环模拟墨迹渗透（API 29 兼容，不用 reset()）
-    val ringPaint = remember { Paint(Paint.ANTI_ALIAS_FLAG) }
+    // 暗角Paint：径向渐变模拟墨汁从边缘向内渗透
+    val vignettePaint = remember { Paint(Paint.ANTI_ALIAS_FLAG) }
     // 宣纸噪点Paint
     val grainPaint = remember { Paint(Paint.ANTI_ALIAS_FLAG) }
 
@@ -223,27 +279,22 @@ private fun InkWashPortrait(
                 val dx = (w - bitmap.width * scale) / 2f
                 val dy = (h - bitmap.height * scale) / 2f
                 translate(dx, dy)
-                // R4-02（2026-08-30 审查修复）：此前只 translate 不 scale，
-                // 「按缩放后尺寸算出的 dx/dy」+「1:1 原图绘制」两个错误叠加，
-                // 立绘既缩水又被上移出容器（Thumb 档仅占 35% 宽、上移 198px）。
                 scale(scale, scale)
                 drawBitmap(bitmap, 0f, 0f, portraitPaint)
                 restore()
 
-                // ── 第 2 层：墨迹暗角晕染 ──
-                // 从外向内逐层绘制半透明浓墨圆环，模拟墨汁从边缘渗透的效果
+                // ── 第 2 层：平滑墨迹暗角（单次径向渐变）──
+                // 从画布中心透明到边缘浓墨，一笔完成，无逐层圆环的带状伪影
                 val cx = w / 2f
                 val cy = h / 2f
                 val radius = maxOf(w, h) * 0.72f
-                val rings = 8
-                for (i in rings downTo 0) {
-                    val fraction = i.toFloat() / rings
-                    val ringRadius = radius * (0.55f + 0.45f * fraction)
-                    val alpha = ((1f - fraction) * 0.30f * 255).toInt().coerceIn(0, 76)
-                    ringPaint.color = (alpha shl 24) or 0x0A0A0F.toInt()
-                    ringPaint.style = Paint.Style.FILL
-                    drawCircle(cx, cy, ringRadius, ringPaint)
-                }
+                vignettePaint.shader = android.graphics.RadialGradient(
+                    cx, cy, radius,
+                    intArrayOf(0x000A0A0F.toInt(), 0x000A0A0F.toInt(), 0x300A0A0F.toInt(), 0x600A0A0F.toInt()),
+                    floatArrayOf(0f, 0.45f, 0.75f, 1f),
+                    android.graphics.Shader.TileMode.CLAMP,
+                )
+                drawCircle(cx, cy, radius, vignettePaint)
 
                 // ── 第 3 层：宣纸纤维噪点 ──
                 // 确定性散列生成稀疏白点，模拟生宣纸面的纤维纹理
