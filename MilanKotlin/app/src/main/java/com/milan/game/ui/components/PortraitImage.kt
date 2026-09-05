@@ -144,7 +144,7 @@ private fun PortraitFallback(
         Canvas(Modifier.fillMaxSize()) {
             val cx = size.width / 2f
             val cy = size.height / 2f
-            val r = minOf(cx, cy) * 0.9f
+            val r = minOf(cx, cy).coerceAtLeast(1f) * 0.9f
             // 外圈：极淡水痕
             drawCircle(
                 brush = Brush.radialGradient(
@@ -159,9 +159,9 @@ private fun PortraitFallback(
                 brush = Brush.radialGradient(
                     listOf(c.copy(alpha = 0.35f), c.copy(alpha = 0.08f)),
                     center = androidx.compose.ui.geometry.Offset(cx, cy),
-                    radius = r * 0.45f,
+                    radius = (r * 0.45f).coerceAtLeast(1f),
                 ),
-                radius = r * 0.45f,
+                radius = (r * 0.45f).coerceAtLeast(1f),
             )
         }
         // 首字：金色楷书风格

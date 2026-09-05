@@ -252,7 +252,7 @@ fun CyberHerald(modifier: Modifier = Modifier, testMode: Boolean = false) {
             Modifier
                 .fillMaxSize()
                 .drawWithCache {
-                    val d = size.minDimension
+                    val d = size.minDimension.coerceAtLeast(1f)
                     val c = Offset(d / 2f, d / 2f)
                     val glowBrush = Brush.radialGradient(HeraldGlowColors, center = c, radius = d * 2f)
                     onDrawBehind {

@@ -176,13 +176,14 @@ private fun DrawScope.drawParticle(p: Particle) {
     val color = p.color.copy(alpha = alpha / 255f)
 
     // 发光效果：外圈模糊 + 内圈实心
+    val glowRadius = (p.size * 2f).coerceAtLeast(1f)
     drawCircle(
         brush = Brush.radialGradient(
             colors = listOf(color, Color.Transparent),
             center = Offset(p.x, p.y),
-            radius = p.size * 2f
+            radius = glowRadius
         ),
-        radius = p.size * 2f,
+        radius = glowRadius,
         center = Offset(p.x, p.y)
     )
     drawCircle(
