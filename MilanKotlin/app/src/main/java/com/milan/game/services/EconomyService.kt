@@ -28,7 +28,7 @@ internal class EconomyService(private val core: ServiceCore) {
         if (amount <= 0) WriteOutcome.Rejected else applyCurrencyDelta(-amount, 0)
 
     /** 增加星尘。amount<=0 或落盘失败时不做任何变更并返回非 Success。 */
-    suspend fun addSoft(amount: Int): WriteOutcome =
+    suspend fun grantSoft(amount: Int): WriteOutcome =
         if (amount <= 0) WriteOutcome.Rejected else applyCurrencyDelta(amount, 0)
 
     /** 扣除钻石。amount<=0 或余额不足或落盘失败时不做任何变更并返回非 Success。 */
@@ -36,21 +36,21 @@ internal class EconomyService(private val core: ServiceCore) {
         if (amount <= 0) WriteOutcome.Rejected else applyCurrencyDelta(0, -amount)
 
     /** 增加钻石。amount<=0 或落盘失败时不做任何变更并返回非 Success。 */
-    suspend fun addHard(amount: Int): WriteOutcome =
+    suspend fun grantHard(amount: Int): WriteOutcome =
         if (amount <= 0) WriteOutcome.Rejected else applyCurrencyDelta(0, amount)
 
     private suspend fun applyCurrencyDelta(softDelta: Int, hardDelta: Int): WriteOutcome =
-        core.writeMutex.withLock {
-            if (softDelta == 0 && hardDelta == 0) return@withLock WriteOutcome.Rejected
+        core.withWriteLock {
+            if (softDelta == 0 && hardDelta == 0) return@withWriteLock WriteOutcome.Rejected
             // 用 Long 预算校验：既拦截负余额，也拦截 Int 溢出（P2-5）——
             // 溢出为负会被当「不足」静默拒绝，溢出为正则会通过校验后破坏性改写余额并落盘。
             if (softDelta != 0) {
                 val after = saveData.softCurrency.toLong() + softDelta
-                if (after < 0 || after > Int.MAX_VALUE) return@withLock WriteOutcome.Rejected
+                if (after < 0 || after > Int.MAX_VALUE) return@withWriteLock WriteOutcome.Rejected
             }
             if (hardDelta != 0) {
                 val after = saveData.hardCurrency.toLong() + hardDelta
-                if (after < 0 || after > Int.MAX_VALUE) return@withLock WriteOutcome.Rejected
+                if (after < 0 || after > Int.MAX_VALUE) return@withWriteLock WriteOutcome.Rejected
             }
 
             val origSoft = saveData.softCurrency
@@ -77,11 +77,11 @@ internal class EconomyService(private val core: ServiceCore) {
      * 校验在锁外、扣减在锁内的写法存在竞态窗口（落盘挂起点让出线程期间，
      * 另一入口可插入并通过过期校验 → 负余额）。
      */
-    suspend fun buyFragmentPack(pack: Int): WriteOutcome = core.writeMutex.withLock {
+    suspend fun buyFragmentPack(pack: Int): WriteOutcome = core.withWriteLock {
         val frags = EconomyFormulas.fragmentPackSize(pack)
         val cost = EconomyFormulas.fragmentPackCost(pack)
-        if (frags <= 0 || cost <= 0) return@withLock WriteOutcome.Rejected
-        if (saveData.softCurrency < cost) return@withLock WriteOutcome.Rejected
+        if (frags <= 0 || cost <= 0) return@withWriteLock WriteOutcome.Rejected
+        if (saveData.softCurrency < cost) return@withWriteLock WriteOutcome.Rejected
 
         val origSoft = saveData.softCurrency
         val itemExisted = saveData.items.any { it?.itemId == ServiceCore.StarFragmentItemId }
@@ -106,11 +106,11 @@ internal class EconomyService(private val core: ServiceCore) {
      * 整体持锁（同 buyFragmentPack 的并发契约）；星尘收入带 Int 溢出拦截
      * （对齐 applyCurrencyDelta 的 P2-5：接近上限时兑换会翻负，拒绝优于破坏性改写）。
      */
-    suspend fun buyDiamondExchange(): WriteOutcome = core.writeMutex.withLock {
+    suspend fun buyDiamondExchange(): WriteOutcome = core.withWriteLock {
         val cost = EconomyFormulas.diamondExchangeCost()
         val yield = EconomyFormulas.diamondExchangeYield()
-        if (saveData.hardCurrency < cost) return@withLock WriteOutcome.Rejected
-        if (saveData.softCurrency.toLong() + yield > Int.MAX_VALUE) return@withLock WriteOutcome.Rejected
+        if (saveData.hardCurrency < cost) return@withWriteLock WriteOutcome.Rejected
+        if (saveData.softCurrency.toLong() + yield > Int.MAX_VALUE) return@withWriteLock WriteOutcome.Rejected
 
         val origHard = saveData.hardCurrency
         val origSoft = saveData.softCurrency
@@ -134,12 +134,12 @@ internal class EconomyService(private val core: ServiceCore) {
      * 汇率单一事实来源在 [EconomyFormulas.fragmentExchangeBatch]/[fragmentExchangeYield]
      * （回收单价 80 ✦/片 < 商店购入价 100 ✦/片，双向流通必有损耗防套利）。
      */
-    suspend fun exchangeFragmentsForSoft(): WriteOutcome = core.writeMutex.withLock {
+    suspend fun exchangeFragmentsForSoft(): WriteOutcome = core.withWriteLock {
         val batch = EconomyFormulas.fragmentExchangeBatch()
         val yield = EconomyFormulas.fragmentExchangeYield()
-        if (batch <= 0 || yield <= 0) return@withLock WriteOutcome.Rejected
-        if (core.itemCount(ServiceCore.StarFragmentItemId) < batch) return@withLock WriteOutcome.Rejected
-        if (saveData.softCurrency.toLong() + yield > Int.MAX_VALUE) return@withLock WriteOutcome.Rejected
+        if (batch <= 0 || yield <= 0) return@withWriteLock WriteOutcome.Rejected
+        if (core.itemCount(ServiceCore.StarFragmentItemId) < batch) return@withWriteLock WriteOutcome.Rejected
+        if (saveData.softCurrency.toLong() + yield > Int.MAX_VALUE) return@withWriteLock WriteOutcome.Rejected
 
         val origSoft = saveData.softCurrency
         // 预检已保证碎片条目存在且数量 ≥ batch：直接原地减，不产生新条目、不会出现幽灵零道具

@@ -38,11 +38,11 @@ internal class TowerService(private val core: ServiceCore) {
      * [SaveData.MAX_FORMATION_SIZE]、全部角色已拥有；允许空列表 = 清空编队。
      * 事务范式：落盘失败回滚本次改动、不广播事件。
      */
-    suspend fun setFormation(characterIds: List<String>): WriteOutcome = core.writeMutex.withLock {
+    suspend fun setFormation(characterIds: List<String>): WriteOutcome = core.withWriteLock {
         val ids = characterIds.distinct()
-        if (ids.size > SaveData.MAX_FORMATION_SIZE) return@withLock WriteOutcome.Rejected
+        if (ids.size > SaveData.MAX_FORMATION_SIZE) return@withWriteLock WriteOutcome.Rejected
         val ownedIds = saveData.ownedCharacters.filterNotNull().mapTo(HashSet()) { it.characterId }
-        if (ids.any { it !in ownedIds }) return@withLock WriteOutcome.Rejected
+        if (ids.any { it !in ownedIds }) return@withWriteLock WriteOutcome.Rejected
 
         val original = saveData.formation
         core.transactionLocked(
@@ -62,18 +62,18 @@ internal class TowerService(private val core: ServiceCore) {
      *
      * @return Rejected = 角色未拥有 / 编队已满 / 无变化；SaveFailed = 落盘失败（已回滚）。
      */
-    suspend fun toggleFormation(characterId: String): WriteOutcome = core.writeMutex.withLock {
-        if (characterId.isEmpty()) return@withLock WriteOutcome.Rejected
-        if (saveData.ownedCharacters.none { it?.characterId == characterId }) return@withLock WriteOutcome.Rejected
+    suspend fun toggleFormation(characterId: String): WriteOutcome = core.withWriteLock {
+        if (characterId.isEmpty()) return@withWriteLock WriteOutcome.Rejected
+        if (saveData.ownedCharacters.none { it?.characterId == characterId }) return@withWriteLock WriteOutcome.Rejected
 
         val current = saveData.getFormationIds()
         val next = if (characterId in current) {
             current - characterId
         } else {
-            if (current.size >= SaveData.MAX_FORMATION_SIZE) return@withLock WriteOutcome.Rejected
+            if (current.size >= SaveData.MAX_FORMATION_SIZE) return@withWriteLock WriteOutcome.Rejected
             current + characterId
         }
-        if (next == current) return@withLock WriteOutcome.Rejected
+        if (next == current) return@withWriteLock WriteOutcome.Rejected
 
         val original = saveData.formation
         core.transactionLocked(
@@ -102,18 +102,18 @@ internal class TowerService(private val core: ServiceCore) {
      * 复刷已通层不再产出星尘。此前星尘按 result.victory 无条件发放，与「胜利返票（净耗 0）」
      * 及「敌队 seed 由 floor 派生、已通层必胜」构成闭环，玩家可无限复刷同一层刷星尘。
      */
-    suspend fun runTowerFloor(floor: Int): TowerOutcome = core.writeMutex.withLock {
+    suspend fun runTowerFloor(floor: Int): TowerOutcome = core.withWriteLock {
         // M6（2026-08-28 审查修复）：补层数上下界。此前层号只校验 >=1，超大 floor 会让
         // towerRewardSoft / towerEnemyStatScale 脱离设计区间（并存在 Int 溢出敞口）。
-        if (floor < 1 || floor > EconomyFormulas.towerMaxFloor()) return@withLock TowerOutcome.Rejected
+        if (floor < 1 || floor > EconomyFormulas.towerMaxFloor()) return@withWriteLock TowerOutcome.Rejected
         val ticketCost = EconomyFormulas.towerTicketCost()
         val ticketsExisted = saveData.items.any { it?.itemId == ServiceCore.BattleTicketItemId }
         val origTickets = core.itemCount(ServiceCore.BattleTicketItemId)
-        if (origTickets < ticketCost) return@withLock TowerOutcome.Rejected
+        if (origTickets < ticketCost) return@withWriteLock TowerOutcome.Rejected
         val teamIds = saveData.getFormationIds()
-        if (teamIds.isEmpty()) return@withLock TowerOutcome.Rejected
+        if (teamIds.isEmpty()) return@withWriteLock TowerOutcome.Rejected
         val myUnits = teamIds.mapNotNull { core.unitStatsFor(it) }
-        if (myUnits.isEmpty()) return@withLock TowerOutcome.Rejected
+        if (myUnits.isEmpty()) return@withWriteLock TowerOutcome.Rejected
         val team = TeamResonance.apply(myUnits).toTypedArray()
         val enemyTeam = buildTowerEnemies(floor)
 
@@ -159,15 +159,15 @@ internal class TowerService(private val core: ServiceCore) {
                 rollback = { saveData.battleRecords = drawRecords },
                 onCommit = { /* 战绩非经济，无事件广播 */ },
             )
-            return@withLock TowerOutcome.Draw(turns = result.turns, log = result.log)
+            return@withWriteLock TowerOutcome.Draw(turns = result.turns, log = result.log)
         }
 
         // 防溢出（对齐 dailyOffers 的 P2-5 保护）：接近 Int 上限时 +reward 翻负 → 闪退/负数货币
         if (reward > 0 && saveData.softCurrency.toLong() + reward > Int.MAX_VALUE) {
-            return@withLock TowerOutcome.Rejected
+            return@withWriteLock TowerOutcome.Rejected
         }
         if (rewardHard > 0 && saveData.hardCurrency.toLong() + rewardHard > Int.MAX_VALUE) {
-            return@withLock TowerOutcome.Rejected
+            return@withWriteLock TowerOutcome.Rejected
         }
 
         val originalSoft = saveData.softCurrency
@@ -392,20 +392,20 @@ internal class TowerService(private val core: ServiceCore) {
         floor: Int,
         victory: Boolean,
         turns: Int,
-    ): TowerOutcome = core.writeMutex.withLock {
+    ): TowerOutcome = core.withWriteLock {
         // R5-I1：补层数上下界（复用 runTowerFloor 的 M6 校验口径）
-        if (floor < 1 || floor > EconomyFormulas.towerMaxFloor()) return@withLock TowerOutcome.Rejected
+        if (floor < 1 || floor > EconomyFormulas.towerMaxFloor()) return@withWriteLock TowerOutcome.Rejected
         
         // 复用原有runTowerFloor的结算逻辑
         val ticketCost = EconomyFormulas.towerTicketCost()
         val ticketsExisted = saveData.items.any { it?.itemId == ServiceCore.BattleTicketItemId }
         val origTickets = core.itemCount(ServiceCore.BattleTicketItemId)
-        if (origTickets < ticketCost) return@withLock TowerOutcome.Rejected
+        if (origTickets < ticketCost) return@withWriteLock TowerOutcome.Rejected
         
         val teamIds = saveData.getFormationIds()
-        if (teamIds.isEmpty()) return@withLock TowerOutcome.Rejected
+        if (teamIds.isEmpty()) return@withWriteLock TowerOutcome.Rejected
         val team = teamIds.mapNotNull { core.unitStatsFor(it) }
-        if (team.isEmpty()) return@withLock TowerOutcome.Rejected
+        if (team.isEmpty()) return@withWriteLock TowerOutcome.Rejected
         
         val oldBest = saveData.towerBestFloor
         val newBest = if (victory && floor > oldBest) floor else null
@@ -417,10 +417,10 @@ internal class TowerService(private val core: ServiceCore) {
         
         // 防溢出
         if (reward > 0 && saveData.softCurrency.toLong() + reward > Int.MAX_VALUE) {
-            return@withLock TowerOutcome.Rejected
+            return@withWriteLock TowerOutcome.Rejected
         }
         if (rewardHard > 0 && saveData.hardCurrency.toLong() + rewardHard > Int.MAX_VALUE) {
-            return@withLock TowerOutcome.Rejected
+            return@withWriteLock TowerOutcome.Rejected
         }
         
         val originalSoft = saveData.softCurrency

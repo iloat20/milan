@@ -143,6 +143,7 @@ internal class ArenaService(
         val originalWinCount = arenaData.winCount
         val originalLoseCount = arenaData.loseCount
         val originalLastRefresh = arenaData.lastRefreshTime
+        val originalBattleRecords = core.saveData.arenaBattleRecords
         
         return core.transaction(
             tag = "arena.attack",
@@ -163,17 +164,8 @@ internal class ArenaService(
                     arenaData.arenaPoints = (arenaData.arenaPoints - ArenaSaveData.LOSE_POINTS)
                         .coerceAtLeast(ArenaSaveData.MIN_POINTS)
                 }
-            },
-            rollback = {
-                arenaData.arenaPoints = originalPoints
-                arenaData.attackCount = originalAttackCount
-                arenaData.winCount = originalWinCount
-                arenaData.loseCount = originalLoseCount
-                arenaData.lastRefreshTime = originalLastRefresh
-            },
-            onCommit = {
-                core.publishProgressionChanged()
-                // 保存战斗记录
+                // 战斗记录随事务原子落盘（此前在 onCommit 中写入，落盘已完成，
+                // 新记录仅存内存——崩溃后丢失；现移入 mutate 保证原子性）
                 core.saveData.arenaBattleRecords = core.saveData.arenaBattleRecords + PvPBattleRecord(
                     recordId = "pvp_${System.currentTimeMillis()}",
                     attackerId = "player",
@@ -189,6 +181,17 @@ internal class ArenaService(
                     timestamp = System.currentTimeMillis(),
                     pointsChanged = if (result.victory) ArenaSaveData.WIN_POINTS else -ArenaSaveData.LOSE_POINTS,
                 )
+            },
+            rollback = {
+                arenaData.arenaPoints = originalPoints
+                arenaData.attackCount = originalAttackCount
+                arenaData.winCount = originalWinCount
+                arenaData.loseCount = originalLoseCount
+                arenaData.lastRefreshTime = originalLastRefresh
+                core.saveData.arenaBattleRecords = originalBattleRecords
+            },
+            onCommit = {
+                core.publishProgressionChanged()
             },
         )
     }

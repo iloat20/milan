@@ -26,7 +26,7 @@ internal class MetaService(private val core: ServiceCore) {
      * 整体持锁：old 快照读取移入临界区，防「读到过期值后回滚覆盖他人改动」。
      */
     private suspend fun <T> persistSetting(read: () -> T, write: (T) -> Unit, newValue: T): WriteOutcome =
-        core.writeMutex.withLock {
+        core.withWriteLock {
             val old = read()
             core.transactionLocked(
                 tag = "setting",
@@ -64,8 +64,8 @@ internal class MetaService(private val core: ServiceCore) {
      * 成功后广播货币/养成变更（各页面据此刷新）。
      * 删除失败返回 false 且不动内存（对齐事务范式：失败不产生任何变更）。
      */
-    suspend fun resetSave(): Boolean = core.writeMutex.withLock {
-        val fresh = withContext(Dispatchers.IO) { core.saveManager.reset() } ?: return@withLock false
+    suspend fun resetSave(): Boolean = core.withWriteLock {
+        val fresh = withContext(Dispatchers.IO) { core.saveManager.reset() } ?: return@withWriteLock false
         core.saveData = fresh
         core.publishCurrencyChanged()
         core.publishProgressionChanged()
@@ -83,7 +83,7 @@ internal class MetaService(private val core: ServiceCore) {
      */
     suspend fun recordBattle(rec: BattleRecord?) {
         if (rec == null) return
-        core.writeMutex.withLock {
+        core.withWriteLock {
             // 快照追加前列表：回滚时整体恢复。注意不能 dropLast——若「追加→超上限丢最旧→落盘失败」，
             // dropLast(1) 会把列表缩到 49 条，而存档仍是 50 条，内存与存档不一致（下次保存永久丢一条战绩）。
             // original 读取在临界区内：防「读到过期快照后回滚抹掉并发已落盘的记录」。
@@ -141,13 +141,13 @@ internal class MetaService(private val core: ServiceCore) {
      * 购买每日特惠槽位 [index]：每槽每日限一次（跨日整体重置）；星尘不足 / 槽位非法 /
      * 已购过 → [WriteOutcome.Rejected]。效果与限购记录同一事务，落盘失败整体回滚。
      */
-    suspend fun buyDailyOffer(index: Int): WriteOutcome = core.writeMutex.withLock {
+    suspend fun buyDailyOffer(index: Int): WriteOutcome = core.withWriteLock {
         val offer = dailyOffers().firstOrNull { it.index == index }
-            ?: return@withLock WriteOutcome.Rejected
+            ?: return@withWriteLock WriteOutcome.Rejected
         val key = core.dayKey()
         val rolledOver = saveData.dailyShopDate != key
         val bought = if (rolledOver) emptyList() else saveData.dailyShopBought.filterNotNull()
-        if (index in bought) return@withLock WriteOutcome.Rejected
+        if (index in bought) return@withWriteLock WriteOutcome.Rejected
 
         // 效果参数（免费补给为正收入；付费档先扣星尘）
         var softDelta = -offer.costSoft
@@ -164,11 +164,11 @@ internal class MetaService(private val core: ServiceCore) {
             DailyOfferKind.TICKET_BUNDLE -> ticketDelta = EconomyFormulas.dailyTicketBundleSize()
         }
         if (offer.costSoft > 0 && saveData.softCurrency < offer.costSoft) {
-            return@withLock WriteOutcome.Rejected
+            return@withWriteLock WriteOutcome.Rejected
         }
         // 免费补给的正收入同样防 Int 溢出（对齐 applyCurrencyDelta 的 P2-5：接近上限时 +2000 会翻负）
         if (softDelta > 0 && saveData.softCurrency.toLong() + softDelta > Int.MAX_VALUE) {
-            return@withLock WriteOutcome.Rejected
+            return@withWriteLock WriteOutcome.Rejected
         }
 
         val origSoft = saveData.softCurrency
@@ -227,10 +227,10 @@ internal class MetaService(private val core: ServiceCore) {
      * 领取成就奖励：未知 id / 已领取 / 未解锁 → Rejected；
      * 奖励发放与领取标记同一事务（失败整体回滚、成功经 publishCurrencyChanged 刷快照）。
      */
-    suspend fun claimAchievement(id: String): WriteOutcome = core.writeMutex.withLock {
-        val def = Achievements.byId[id] ?: return@withLock WriteOutcome.Rejected
-        if (id in saveData.claimedAchievementIds()) return@withLock WriteOutcome.Rejected
-        if (!def.unlocked(achievementProgressSnapshot())) return@withLock WriteOutcome.Rejected
+    suspend fun claimAchievement(id: String): WriteOutcome = core.withWriteLock {
+        val def = Achievements.byId[id] ?: return@withWriteLock WriteOutcome.Rejected
+        if (id in saveData.claimedAchievementIds()) return@withWriteLock WriteOutcome.Rejected
+        if (!def.unlocked(achievementProgressSnapshot())) return@withWriteLock WriteOutcome.Rejected
 
         val origSoft = saveData.softCurrency
         val origHard = saveData.hardCurrency

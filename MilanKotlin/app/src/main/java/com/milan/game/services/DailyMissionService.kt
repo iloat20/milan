@@ -1,6 +1,7 @@
 package com.milan.game.services
 
 import com.milan.game.data.*
+import com.milan.game.domain.mission.DailyMissionFormulas
 import kotlin.random.Random
 
 /**
@@ -145,7 +146,7 @@ internal class DailyMissionService(
                     data.missionProgress = data.missionProgress + (id to newProgress)
                     if (newProgress >= def.targetCount) {
                         data.completedMissions = data.completedMissions + id
-                        data.activityPoints = (data.activityPoints + def.activityReward).coerceAtMost(100)
+                        data.activityPoints = DailyMissionFormulas.activityAfterReward(data.activityPoints, def.activityReward)
                         data.totalMissionsCompleted += 1
                         data.totalActivityPoints += def.activityReward
                     }

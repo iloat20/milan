@@ -1,6 +1,7 @@
 package com.milan.game.services
 
 import com.milan.game.data.CharacterSaveState
+import com.milan.game.domain.progression.TalentEffect
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -97,6 +98,8 @@ data class TalentNodeData(
     @SerialName("Cost") var cost: Int = 1,
     @SerialName("PrerequisiteNodeIds") var prerequisiteNodeIds: List<String> = emptyList(),
     @SerialName("VisualLayerId") var visualLayerId: String = "",
+    /** 节点效果列表（22种类型：属性加成/战斗机制/状态施加/必杀强化）。 */
+    @SerialName("Effects") var effects: List<TalentEffect> = emptyList(),
 )
 
 /** 角色天赋树（C# TalentTreeData）。 */

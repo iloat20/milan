@@ -84,17 +84,24 @@ data class AchievementStatus(
 )
 
 /**
- * 游戏服务**门面**（2026-08-28 P1 重构）。
+ * 游戏服务**门面**（2026-08-28 P1 重构；2026-09-06 S2/S4 重组）。
  *
- * 原实现是 1385 行 / 46 个公开方法的上帝类，聚合了五个业务域。现按**业务聚合**拆分为：
+ * 原实现是 1385 行 / 46 个公开方法的上帝类，聚合了五个业务域。现已按**业务聚合**拆分为
+ * **十一个聚合服务**（2026-09-06 S2 删除 PvE/Social/Equipment 三死功能层）：
  *
  * | 服务 | 职责 |
  * |---|---|
  * | [GachaService] | 抽卡、保底与 UP 定轨、抽卡历史 |
- * | [ProgressionService] | 升级/经验/突破/升星、天赋加点 |
+ * | [ProgressionService] | 升级/经验/突破/升星、天赋加点、角色好感度（S4 下沉） |
  * | [TowerService] | 出战编队、无尽之塔结算 |
  * | [EconomyService] | 货币增减、商店购买 |
  * | [MetaService] | 设置、存档重置、战绩、每日商店、成就 |
+ * | [ArenaService] | PVP 竞技场结算 |
+ * | [InspectionService] | 角色检视、拍照记录 |
+ * | [MonetizationService] | 月卡、通行证、充值档位 |
+ * | [EventRhythmService] | 活动运营（签到/任务/商店/代币） |
+ * | [StoryService] | 剧情章节与关卡 |
+ * | [DailyMissionService] | 每日任务进度上报 |
  *
  * 本类**不含任何领域业务规则**，只做四件事：
  * 1. 构造 [ServiceCore]（共享状态：存档、写锁、快照、领域引擎）与聚合服务；
@@ -103,11 +110,11 @@ data class AchievementStatus(
  * 4. 跨系统进度联动编排（[onProgress]）：领域操作成功后统一上报每日任务进度 + 通行证经验
  *    ——这是门面唯一的「编排」职责，领域规则仍在聚合服务/领域层。
  *
- * 五个聚合服务之间**互不调用**（已验证：所有方法只依赖 [ServiceCore]），
- * 因此不存在 `writeMutex` 重入问题——Mutex 不可重入，跨服务加锁会直接死锁。
+ * 十一个聚合服务之间**互不调用**（已验证：所有方法只依赖 [ServiceCore]），
+ * 因此不存在 [writeMutex] 重入问题——Mutex 不可重入，跨服务加锁会直接死锁。
  *
  * 约束（AGENTS.md 红线，拆分后保持不变）：
- * - 领域计算一律委托 `EconomyFormulas` / `PityCounter` / `TalentEngine`，禁止就地写数字；
+ * - 领域计算一律委托 `EconomyFormulas` / `AffinityFormulas` / `PityCounter` / `TalentEngine`，禁止就地写数字；
  * - 写操作事务范式：预算校验 → 改内存 → 落盘 → 失败回滚 → 仅成功广播；
  * - 内容数据 data.json 优先，失败回退 [GameContent] 兜底，两条路径都经 `GameContent.enrich`。
  */
@@ -134,11 +141,8 @@ class GameService(
     private val towerService = TowerService(core)
     private val economyService = EconomyService(core)
     private val metaService = MetaService(core)
-    private val equipmentService = EquipmentService(core, rng)
     private val arenaService = ArenaService(core, rng)
-    private val pveService = PvEService(core, rng)
     private val inspectionService = InspectionService(core, rng)
-    private val socialService = SocialService(core, rng)
     private val monetizationService = MonetizationService(core, rng)
     private val eventRhythmService = EventRhythmService(core, rng)
     private val storyService = StoryService(core, rng)
@@ -169,7 +173,7 @@ class GameService(
     ) {
         dailyMissionService.reportProgress(type, amount)
         if (battlePassExp > 0) {
-            monetizationService.addBattlePassExp(battlePassExp, broadcast = false)
+            monetizationService.grantBattlePassExp(battlePassExp, broadcast = false)
         }
     }
 
@@ -251,13 +255,21 @@ class GameService(
     suspend fun spendSoft(amount: Int): WriteOutcome = economyService.spendSoft(amount)
 
     /** 增加星尘（amount<=0 拒绝）。 */
-    suspend fun addSoft(amount: Int): WriteOutcome = economyService.addSoft(amount)
+    suspend fun grantSoft(amount: Int): WriteOutcome = economyService.grantSoft(amount)
+
+    /** [grantSoft] 旧名兼容（2026-09-06 S6 渐进式收口，下次大版本删除）。 */
+    @Deprecated("使用 grantSoft 代替", ReplaceWith("grantSoft(amount)"))
+    suspend fun addSoft(amount: Int): WriteOutcome = grantSoft(amount)
 
     /** 扣除钻石（amount<=0 或余额不足拒绝）。 */
     suspend fun spendHard(amount: Int): WriteOutcome = economyService.spendHard(amount)
 
     /** 增加钻石（amount<=0 拒绝）。 */
-    suspend fun addHard(amount: Int): WriteOutcome = economyService.addHard(amount)
+    suspend fun grantHard(amount: Int): WriteOutcome = economyService.grantHard(amount)
+
+    /** [grantHard] 旧名兼容（2026-09-06 S6 渐进式收口，下次大版本删除）。 */
+    @Deprecated("使用 grantHard 代替", ReplaceWith("grantHard(amount)"))
+    suspend fun addHard(amount: Int): WriteOutcome = grantHard(amount)
 
     /** 当前战票数。 */
     fun battleTickets(): Int = economyService.battleTickets()
@@ -289,7 +301,11 @@ class GameService(
      * 增加经验。⚠️ 本方法自身持写锁——已在临界区内的调用方不可调用（Mutex 不可重入）。
      * @return 实际升的级数。
      */
-    suspend fun addExp(charId: String, amount: Int): Int = progressionService.addExp(charId, amount)
+    suspend fun grantExp(charId: String, amount: Int): Int = progressionService.grantExp(charId, amount)
+
+    /** [grantExp] 旧名兼容（2026-09-06 S6 渐进式收口，下次大版本删除）。 */
+    @Deprecated("使用 grantExp 代替", ReplaceWith("grantExp(charId, amount)"))
+    suspend fun addExp(charId: String, amount: Int): Int = grantExp(charId, amount)
 
     /** 突破（Stage+1）。 */
     suspend fun ascend(charId: String): WriteOutcome = progressionService.ascend(charId)
@@ -362,70 +378,13 @@ class GameService(
 
     /** 领取成就奖励。 */
     suspend fun claimAchievement(id: String): WriteOutcome = metaService.claimAchievement(id)
-    
-    // ─────────────────────────── 装备系统 ───────────────────────────
-    
-    /** 装备内容列表。 */
-    val equipmentTemplates: List<EquipmentData> get() = core.equipmentTemplates
-    
-    /** 装备套装列表。 */
-    val equipmentSets: List<EquipmentSetData> get() = core.equipmentSets
-    
-    /** 生成一个随机装备。 */
-    fun generateEquipment(templateId: String, level: Int = 1): EquipmentSaveState = 
-        equipmentService.generateEquipment(templateId, level)
-    
-    /** 获取角色装备的总属性加成。 */
-    fun getCharacterEquipmentStats(characterId: String): List<StatValue> = 
-        equipmentService.getCharacterEquipmentStats(characterId)
-    
-    /** 强化装备。成功后上报每日任务进度。 */
-    suspend fun enhanceEquipment(equipmentId: String, expPoints: Int): WriteOutcome {
-        val result = equipmentService.enhanceEquipment(equipmentId, expPoints)
-        if (result == WriteOutcome.Success) {
-            onProgress(com.milan.game.data.DailyMissionType.ENHANCE_EQUIPMENT)
-        }
-        return result
-    }
-    
-    /** 装备到角色。 */
-    suspend fun equipToCharacter(characterId: String, equipmentId: String, slot: String): WriteOutcome = 
-        equipmentService.equipToCharacter(characterId, equipmentId, slot)
-    
-    /** 卸下装备。 */
-    suspend fun unequipFromCharacter(characterId: String, slot: String): WriteOutcome = 
-        equipmentService.unequipFromCharacter(characterId, slot)
-    
-    /** 分解装备。 */
-    suspend fun disassembleEquipment(equipmentId: String): WriteOutcome = 
-        equipmentService.disassembleEquipment(equipmentId)
-    
-    /**
-     * 发放装备入库（R5-C3）。
-     *
-     * 装备系统此前没有任何获取途径（[generateEquipment] 只返回对象、不入库），
-     * 背包恒空导致 [enhanceEquipment] / [equipToCharacter] / [unequipFromCharacter]
-     * 恒返回 Rejected。这是唯一的事务化发放入口——爬塔 / 深渊 / 活动商店 / 日常本
-     * 的装备产出都应经由此处（具体挂接哪些产出点仍待产品裁定）。
-     */
-    suspend fun grantEquipment(templateId: String, level: Int = 1): WriteOutcome =
-        equipmentService.grantEquipment(templateId, level)
 
-    /** 获取角色拥有的装备列表。 */
-    fun getOwnedEquipments(characterId: String): List<EquipmentSaveState> {
-        val saveData = core.saveData
-        val character = saveData.ownedCharacters.firstOrNull { it?.characterId == characterId }
-            ?: return emptyList()
-        
-        return saveData.ownedEquipments.filterNotNull()
-            .filter { equipment -> character.getEquippedIds().contains(equipment.equipmentId) }
-    }
-    
-    /** 获取所有拥有的装备列表。 */
-    fun getAllOwnedEquipments(): List<EquipmentSaveState> {
-        return core.saveData.ownedEquipments.filterNotNull()
-    }
-    
+    // ─────────────────────────── 装备系统（已删除 2026-09-06 S2）───────────────────────────
+    // EquipmentService 已随死功能裁撤一并删除。ServiceCore 的 calculateEquipmentStats /
+    // calculateSetBonuses / unitStatsFor 保留——Arena/Tower 战斗系统依赖装备属性计算。
+    // SaveData.ownedEquipments 字段保留（序列化兼容）。如需重新接线装备系统见
+    // docs/plans/2026-09-04-dead-feature-wiring-design.md。
+
     // ─────────────────────────── 策略战斗系统 ───────────────────────────
     
     /** 初始化策略战斗状态。 */
@@ -497,35 +456,12 @@ class GameService(
     
     /** 获取赛季奖励。 */
     fun getSeasonRewards(): List<com.milan.game.data.SeasonReward> = arenaService.getSeasonRewards()
-    
-    // ─────────────────────────── PVE内容系统 ───────────────────────────
-    
-    /** 获取深渊数据。 */
-    fun getAbyssData(): com.milan.game.data.AbyssSaveData = pveService.getAbyssData()
-    
-    /** 挑战深渊关卡。 */
-    suspend fun challengeAbyssStage(floor: Int, stage: Int): WriteOutcome = 
-        pveService.challengeAbyssStage(floor, stage)
-    
-    /** 获取深渊关卡信息。 */
-    fun getAbyssStageInfo(floor: Int, stage: Int): com.milan.game.data.DungeonReward = 
-        pveService.getAbyssStageInfo(floor, stage)
-    
-    /** 获取深渊层数奖励。 */
-    fun getAbyssFloorRewards(): List<com.milan.game.data.AbyssFloorReward> = 
-        pveService.getAbyssFloorRewards()
-    
-    /** 获取日常副本数据。 */
-    fun getDailyDungeonData(): com.milan.game.data.DailyDungeonSaveData = pveService.getDailyDungeonData()
-    
-    /** 挑战日常副本。 */
-    suspend fun challengeDailyDungeon(type: com.milan.game.data.DailyDungeonType, level: Int): WriteOutcome = 
-        pveService.challengeDailyDungeon(type, level)
-    
-    /** 获取日常副本剩余挑战次数。 */
-    fun getRemainingChallenges(type: com.milan.game.data.DailyDungeonType): Int = 
-        pveService.getRemainingChallenges(type)
-    
+
+    // ─────────────────────────── PVE 内容系统（已删除 2026-09-06 S2）───────────────────────────
+    // PvEService（深渊 + 日常副本）已随死功能裁撤一并删除。SaveData.abyssData /
+    // dailyDungeonData 字段保留（序列化兼容）。如需重新接线见
+    // docs/plans/2026-09-04-dead-feature-wiring-design.md。
+
     // ─────────────────────────── 360°检视系统增强 ───────────────────────────
     
     /** 获取检视数据。 */
@@ -560,60 +496,13 @@ class GameService(
         inspectionService.checkHiddenInteraction(characterId)
     
     /** 解锁特殊动作。 */
-    suspend fun unlockAction(actionId: String): WriteOutcome = 
+    suspend fun unlockAction(actionId: String): WriteOutcome =
         inspectionService.unlockAction(actionId)
-    
-    // ─────────────────────────── 社交系统 ───────────────────────────
-    
-    /** 获取社交数据。 */
-    fun getSocialData(): com.milan.game.data.SocialSaveData = socialService.getSocialData()
-    
-    /** 获取好友列表。 */
-    fun getFriends(): List<com.milan.game.data.FriendData> = socialService.getFriends()
-    
-    /** 添加好友。 */
-    suspend fun addFriend(friendId: String, friendName: String): WriteOutcome = 
-        socialService.addFriend(friendId, friendName)
-    
-    /** 删除好友。 */
-    suspend fun removeFriend(friendId: String): WriteOutcome = 
-        socialService.removeFriend(friendId)
-    
-    /** 赠送体力给好友。 */
-    suspend fun giftStamina(friendId: String): WriteOutcome = 
-        socialService.giftStamina(friendId)
-    
-    /** 领取好友赠送的体力。 */
-    suspend fun claimGiftedStamina(): WriteOutcome = 
-        socialService.claimGiftedStamina()
-    
-    /** 获取好友申请列表。 */
-    fun getFriendRequests(): List<com.milan.game.data.FriendRequest> = 
-        socialService.getFriendRequests()
-    
-    /** 处理好友申请。 */
-    suspend fun handleFriendRequest(requestId: String, accept: Boolean): WriteOutcome = 
-        socialService.handleFriendRequest(requestId, accept)
-    
-    /** 获取公会信息。 */
-    fun getGuildData(): com.milan.game.data.GuildData? = socialService.getGuildData()
-    
-    /** 创建公会。 */
-    suspend fun createGuild(name: String, description: String): WriteOutcome = 
-        socialService.createGuild(name, description)
-    
-    /** 捐献给公会。 */
-    suspend fun donateToGuild(amount: Int): WriteOutcome = 
-        socialService.donateToGuild(amount)
-    
-    /** 获取公会任务列表。 */
-    fun getGuildTasks(): List<com.milan.game.data.GuildTaskState> = 
-        socialService.getGuildTasks()
-    
-    /** 领取公会任务奖励。 */
-    suspend fun claimGuildTaskReward(taskType: com.milan.game.data.GuildTaskType): WriteOutcome = 
-        socialService.claimGuildTaskReward(taskType)
-    
+
+    // ─────────────────────────── 社交系统（已删除 2026-09-06 S2）───────────────────────────
+    // SocialService（好友 + 公会）已随死功能裁撤一并删除。SaveData.socialData 字段保留
+    // （序列化兼容）。如需重新接线见 docs/plans/2026-09-04-dead-feature-wiring-design.md。
+
     // ─────────────────────────── 变现模型 ───────────────────────────
     
     /** 获取变现数据。 */
@@ -635,8 +524,12 @@ class GameService(
         monetizationService.purchaseBattlePass(cost)
     
     /** 增加通行证经验。 */
-    suspend fun addBattlePassExp(amount: Int): WriteOutcome = 
-        monetizationService.addBattlePassExp(amount, broadcast = true)
+    suspend fun grantBattlePassExp(amount: Int): WriteOutcome =
+        monetizationService.grantBattlePassExp(amount, broadcast = true)
+
+    /** [grantBattlePassExp] 旧名兼容（2026-09-06 S6 渐进式收口，下次大版本删除）。 */
+    @Deprecated("使用 grantBattlePassExp 代替", ReplaceWith("grantBattlePassExp(amount)"))
+    suspend fun addBattlePassExp(amount: Int): WriteOutcome = grantBattlePassExp(amount)
     
     /** 领取通行证等级奖励。 */
     suspend fun claimBattlePassReward(level: Int): WriteOutcome = 
@@ -775,75 +668,29 @@ class GameService(
     suspend fun reportDailyMissionProgress(type: com.milan.game.data.DailyMissionType, amount: Int = 1) =
         dailyMissionService.reportProgress(type, amount)
 
-    // ─────────────────────────── 角色好感度 ───────────────────────────
+    // ─────────────────────────── 角色好感度（2026-09-06 S4 自门面下沉到 ProgressionService）───────────────────────────
+    // 原 addCharacterAffinity / giftAffinity / getCharacterAffinityData 内联实现违反
+    // "门面不含领域规则"自述，已整体下沉到 [progressionService]（养成语义相关）。
+    // 业务口径不变：满级 Rejected + 钳位兜底、星尘不足 Rejected、事务原子扣减+加好感。
 
     /** 获取角色好感度数据。 */
-    fun getCharacterAffinityData(): Map<String, Int> {
-        val data = core.saveData.characterAffinityData ?: return emptyMap()
-        return data.mapValues { it.value ?: 0 }
-    }
+    fun getCharacterAffinityData(): Map<String, Int> = progressionService.getCharacterAffinityData()
 
-    /**
-     * 增加角色好感度（剧情选择 / 其它无消耗产出用）。
-     *
-     * 2026-09-02 改造：加 [AffinityFormulas.MAX_AFFINITY] 封顶——原实现无上限，
-     * 超 10 级后 UI 等级列恒显示 Lv.10 但经验继续涨（数据失真）。
-     * 满级时明确返回 Rejected（不产生无意义落盘）；内部经 [core.addAffinityDelta]
-     * 钳位兜底（数值安全单一事实来源，勿在此就地写数字）。
-     */
+    /** 增加角色好感度（剧情选择 / 其它无消耗产出用）。 */
+    suspend fun grantAffinity(characterId: String, amount: Int): WriteOutcome =
+        progressionService.grantAffinity(characterId, amount)
+
+    /** [grantAffinity] 旧名兼容（2026-09-06 S6 渐进式收口，下次大版本删除）。 */
+    @Deprecated("使用 grantAffinity 代替", ReplaceWith("grantAffinity(characterId, amount)"))
     suspend fun addCharacterAffinity(characterId: String, amount: Int): WriteOutcome =
-        core.writeMutex.withLock {
-            if (amount <= 0) return@withLock WriteOutcome.Rejected
-            val origData = core.saveData.characterAffinityData
-            if ((origData?.get(characterId) ?: 0) >= AffinityFormulas.MAX_AFFINITY) {
-                return@withLock WriteOutcome.Rejected // 已满级
-            }
-            core.transactionLocked(
-                tag = "affinity.add",
-                mutate = {
-                    core.addAffinityDelta(characterId, amount)
-                },
-                rollback = {
-                    core.saveData.characterAffinityData = origData
-                },
-                onCommit = {
-                    core.publishProgressionChanged()
-                },
-            )
-        }
+        grantAffinity(characterId, amount)
 
     /**
-     * 赠送礼物（好感度主动培养入口，2026-09-02 产品拍板：100 星尘 → +200 好感）。
-     *
-     * 事务内原子完成「扣星尘 + 加好感」（单一 transactionLocked，非两次独立写）；
-     * 预算在锁内做（Mutex 临界区），避免并发下余额被先到事务扣走造成负数。
-     * Rejected 语义：星尘不足 或 已满级（调用方据此给 UI 提示，勿当异常）。
+     * 赠送礼物（好感度主动培养入口，100 星尘 → +200 好感）。
+     * 事务内原子完成「扣星尘 + 加好感」；Rejected 语义：星尘不足 或 已满级。
      */
     suspend fun giftAffinity(characterId: String): WriteOutcome =
-        core.writeMutex.withLock {
-            val origSoft = core.saveData.softCurrency
-            val origData = core.saveData.characterAffinityData
-            if (origSoft < AffinityFormulas.GIFT_COST_SOFT) {
-                return@withLock WriteOutcome.Rejected // 星尘不足
-            }
-            if ((origData?.get(characterId) ?: 0) >= AffinityFormulas.MAX_AFFINITY) {
-                return@withLock WriteOutcome.Rejected // 已满级
-            }
-            core.transactionLocked(
-                tag = "affinity.gift",
-                mutate = {
-                    core.saveData.softCurrency -= AffinityFormulas.GIFT_COST_SOFT
-                    core.addAffinityDelta(characterId, AffinityFormulas.GIFT_AFFINITY_AMOUNT)
-                },
-                rollback = {
-                    core.saveData.softCurrency = origSoft
-                    core.saveData.characterAffinityData = origData
-                },
-                onCommit = {
-                    core.publishCurrencyChanged()
-                },
-            )
-        }
+        progressionService.giftAffinity(characterId)
 
     companion object {
         const val StarFragmentItemId = ServiceCore.StarFragmentItemId

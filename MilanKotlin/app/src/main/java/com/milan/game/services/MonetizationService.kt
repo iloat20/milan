@@ -1,6 +1,7 @@
 package com.milan.game.services
 
 import com.milan.game.data.*
+import com.milan.game.domain.monetization.MonetizationFormulas
 import kotlin.random.Random
 
 /**
@@ -137,10 +138,10 @@ internal class MonetizationService(
      * @param broadcast 是否独立广播 [ProgressionChanged]。作为抽卡/升级等父操作的
      *   副作用调用时应传 `false`——父操作自身已广播事件并刷新快照，通行证经验作为
      *   子计数器随之刷新；再广播一次会破坏「父操作只发一个事件」的精确计数契约，
-     *   并造成冗余的 UI 刷新。仅当直接由门面 [GameService.addBattlePassExp] 暴露、
+     *   并造成冗余的 UI 刷新。仅当直接由门面 [GameService.grantBattlePassExp] 暴露、
      *   作为独立操作调用时才传 `true`。
      */
-    suspend fun addBattlePassExp(amount: Int, broadcast: Boolean): WriteOutcome {
+    suspend fun grantBattlePassExp(amount: Int, broadcast: Boolean): WriteOutcome {
         val data = getData()
         val origLevel = data.battlePassLevel
         val origExp = data.battlePassExp
@@ -188,11 +189,11 @@ internal class MonetizationService(
             tag = "monetization.bpClaim",
             mutate = {
                 data.claimedBPRewards = data.claimedBPRewards + level
-                // 基础奖励（免费轨）
-                core.addCurrencyDelta(level * 2000, 0)
+                // 基础奖励（免费轨）—— 数值单一事实来源：[MonetizationFormulas.bpFreeRewardSoft]
+                core.addCurrencyDelta(MonetizationFormulas.bpFreeRewardSoft(level), 0)
                 // 豪华轨额外奖励
                 if (data.battlePassPremium) {
-                    core.addCurrencyDelta(0, level * 5)
+                    core.addCurrencyDelta(0, MonetizationFormulas.bpPremiumRewardHard(level))
                 }
             },
             rollback = {
@@ -212,11 +213,11 @@ internal class MonetizationService(
         return (1..MonetizationSaveData.BP_MAX_LEVEL).map { level ->
             BattlePassReward(
                 level = level,
-                freeReward = BPReward(BPRewardType.SOFT_CURRENCY, "soft", level * 2000),
+                freeReward = BPReward(BPRewardType.SOFT_CURRENCY, "soft", MonetizationFormulas.bpFreeRewardSoft(level)),
                 premiumReward = if (level % 10 == 0) {
-                    BPReward(BPRewardType.HARD_CURRENCY, "hard", level * 5)
+                    BPReward(BPRewardType.HARD_CURRENCY, "hard", MonetizationFormulas.bpPremiumRewardHard(level))
                 } else {
-                    BPReward(BPRewardType.MATERIAL, "mat通用素材", level * 3)
+                    BPReward(BPRewardType.MATERIAL, "mat通用素材", MonetizationFormulas.bpPremiumRewardMaterial(level))
                 },
             )
         }

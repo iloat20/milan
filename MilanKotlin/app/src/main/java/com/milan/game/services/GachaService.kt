@@ -4,7 +4,6 @@ import com.milan.game.data.CharacterSaveState
 import com.milan.game.data.ItemSaveState
 import com.milan.game.data.PullLogEntry
 import com.milan.game.data.Rarity
-import com.milan.game.domain.gacha.GachaEngine
 import com.milan.game.domain.gacha.PityCounter
 import com.milan.game.domain.progression.EconomyFormulas
 import kotlinx.coroutines.sync.withLock
@@ -37,16 +36,16 @@ internal class GachaService(private val core: ServiceCore) {
      * 2026-08：suspend + 串行写锁——落盘在 IO 线程执行，主线程不阻塞；
      * 回滚与落盘判定在同一临界区内同步完成，事务语义不变。
      */
-    suspend fun pull(poolId: String, tenPull: Boolean): PullOutcome = core.writeMutex.withLock {
+    suspend fun pull(poolId: String, tenPull: Boolean): PullOutcome = core.withWriteLock {
         val results = mutableListOf<PullResult>()
-        val pool = core.pools.firstOrNull { it.poolId == poolId } ?: return@withLock PullOutcome.Rejected
+        val pool = core.pools.firstOrNull { it.poolId == poolId } ?: return@withWriteLock PullOutcome.Rejected
 
         // 空卡池一张牌也抽不出来。必须在扣款【之前】拦截，否则玩家的星尘会被静默吞掉。
-        if (pool.entries.isEmpty()) return@withLock PullOutcome.Rejected
+        if (pool.entries.isEmpty()) return@withWriteLock PullOutcome.Rejected
 
         val count = if (tenPull) 10 else 1
         val cost = if (tenPull) pool.tenCost else pool.singleCost
-        if (saveData.softCurrency < cost) return@withLock PullOutcome.Rejected
+        if (saveData.softCurrency < cost) return@withWriteLock PullOutcome.Rejected
 
         // 先算产出（不扣款）：展示稀有度与补偿碎片统一用抽中角色的真实稀有度（#11）。
         val pity = PityCounter(pool.hardPity, core.gacha).apply { counter = saveData.getGachaCounter(poolId) }
@@ -74,7 +73,7 @@ internal class GachaService(private val core: ServiceCore) {
             var pickedId: String? = pickFromEntries(entries)
             if (effectiveRarity == topRarity && featuredId != null && entries.isNotEmpty()) {
                 // 定轨掷选：命中 UP 或歪出其他候选；pickedId=null 表示池无有效 UP，回退普通加权抽取
-                val pick = GachaEngine(core.rng).pickFeatured(entries.map { it.characterId }, featuredId, guaranteedNext)
+                val pick = core.gacha.pickFeatured(entries.map { it.characterId }, featuredId, guaranteedNext)
                 if (pick.pickedId != null) {
                     pickedId = pick.pickedId
                     guaranteedNext = pick.guaranteedNext
@@ -91,7 +90,7 @@ internal class GachaService(private val core: ServiceCore) {
             val fragments = if (isNew) 0 else fragmentsForRarity(rarity)
             plan += PlanItem(id, def, isNew, fragments, rarity)
         }
-        if (plan.isEmpty()) return@withLock PullOutcome.Rejected // 没抽到任何东西，绝不扣款
+        if (plan.isEmpty()) return@withWriteLock PullOutcome.Rejected // 没抽到任何东西，绝不扣款
 
         // 确认有产出后再扣款 + 落盘；落盘失败回滚本次扣款与发货（#5）。
         val originalCurrency = saveData.softCurrency
@@ -178,7 +177,7 @@ internal class GachaService(private val core: ServiceCore) {
             onCommit = { core.publishCurrencyChanged() },
         )
         // 扣费 + 落盘都成功才返回产出；回滚分支不会跑到这里（rollback 不广播）。
-        return@withLock when (outcome) {
+        return@withWriteLock when (outcome) {
             WriteOutcome.Success -> PullOutcome.Success(results)
             WriteOutcome.Rejected -> PullOutcome.Rejected // 防御：前面已拦截全部拒绝路径
             WriteOutcome.SaveFailed -> PullOutcome.SaveFailed

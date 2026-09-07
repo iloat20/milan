@@ -191,22 +191,56 @@ internal class ServiceCore(
         mutate: () -> Unit,
         rollback: () -> Unit,
         onCommit: () -> Unit,
-    ): WriteOutcome = writeMutex.withLock { transactionLocked(tag, mutate, rollback, onCommit) }
+    ): WriteOutcome {
+        // R5/M2 根治（2026-09-06 S1）：dispatch 出 writeMutex 临界区。
+        // 原实现：onCommit 闭包内调 [publishCurrencyChanged]/[publishProgressionChanged]，
+        // 后者直接 EventBus.dispatch()，在 writeMutex 持锁上下文执行订阅者 handler。
+        // 若订阅者 handler 内调用任意 service 写（再 transaction → writeMutex.withLock），
+        // 即 Mutex 不可重入死锁。当前零订阅者故未爆雷，接线即激活。
+        // 现约定：[publishCurrencyChanged]/[publishProgressionChanged] 只入队 + 刷新快照，
+        // dispatch 由本模板在出锁后统一执行（[withWriteLock] 同范式）。
+        val outcome = writeMutex.withLock { transactionLocked(tag, mutate, rollback, onCommit) }
+        EventBus.dispatch()
+        return outcome
+    }
+
+    /**
+     * 持锁执行写操作并在出锁后派发积压事件。统一收口 [writeMutex] 临界区模式：
+     * - 替代原手动范式 `core.writeMutex.withLock { ... transactionLocked(...) }`，
+     *   所有聚合服务的写入口现已全量迁移到本模板（21 处调用点，2026-09-06 S1），
+     *   确保 dispatch 永远在锁外（防订阅者 handler 重入死锁）；
+     * - 单独的 `transaction` 模板（自动范式）内部也走本模板范式。
+     */
+    suspend inline fun <T> withWriteLock(action: () -> T): T {
+        val result = writeMutex.withLock { action() }
+        EventBus.dispatch()
+        return result
+    }
 
     // ─────────────────────────── 事件发布 ───────────────────────────
 
-    /** 经济变动统一出口：状态快照先行，再广播事件。 */
+    /**
+     * 经济变动统一出口：刷新快照 + 入队事件。
+     *
+     * **不在此 dispatch**（2026-09-06 S1 改造）：原实现 `EventBus.dispatch()` 在
+     * [writeMutex] 持锁上下文执行订阅者 handler，订阅者内再调 service 写即死锁
+     * （Mutex 不可重入）。现约定 dispatch 由 [transaction]/[withWriteLock] 在出锁后统一执行。
+     * 直接调用本函数的场景（非经 transaction 模板）需自行在临界区外调 [EventBus.dispatch]。
+     */
     fun publishCurrencyChanged() {
         refreshSnapshot()
         EventBus.publish(CurrencyChanged)
-        EventBus.dispatch()
     }
 
-    /** 养成变动统一出口（事件无载荷，订阅方自行重读当前角色）。 */
+    /**
+     * 养成变动统一出口（事件无载荷，订阅方自行重读当前角色）。
+     *
+     * **不在此 dispatch**：同 [publishCurrencyChanged] 注释。dispatch 由 [transaction]/[withWriteLock]
+     * 在出 [writeMutex] 临界区后统一执行，防订阅者 handler 重入死锁。
+     */
     fun publishProgressionChanged() {
         refreshSnapshot()
         EventBus.publish(ProgressionChanged)
-        EventBus.dispatch()
     }
 
     // ─────────────────────────── 共享原子辅助 ───────────────────────────
@@ -299,8 +333,12 @@ internal class ServiceCore(
     /**
      * 由存档 + 内容定义构建战斗单位属性（[StatsCalculator] 单一事实来源）。
      * 角色未拥有或内容定义缺失返回 null（调用方跳过，绝不让脏档炸战斗路径）。
-     * 
-     * 2026-08 装备系统更新：现在会考虑装备属性加成。
+     *
+     * **战斗系统核心依赖**（2026-09-06 S3 KDoc 更新）：
+     * [ArenaService] 与 [TowerService] 的战斗结算经此构建 [UnitStats] 喂给 [BattleSimulator]。
+     * 装备属性加成经 [calculateEquipmentStats] 合并到主属性——这是装备系统删除后
+     * 仍保留装备字段（[SaveData.ownedEquipments] + [equipmentSets]）的根本原因：
+     * 战斗单位属性计算依赖装备存档，与"装备业务规则"（已随 [EquipmentService] 删除）属不同关注点。
      */
     fun unitStatsFor(characterId: String): UnitStats? {
         val save = saveData.ownedCharacters.firstOrNull { it?.characterId == characterId } ?: return null
@@ -308,7 +346,16 @@ internal class ServiceCore(
         val branchIds = def.talentTreeId.let { talentTreesById[it] }
             ?.nodes?.filter { node -> save.talentPoints.contains(node.nodeId) }
             ?.map { it.branchId }.orEmpty()
-        
+
+        // 构建节点 Effects 映射（新天赋效果系统）
+        val tree = def.talentTreeId.let { talentTreesById[it] }
+        val allocatedNodes = tree?.nodes
+            ?.filter { node -> save.talentPoints.contains(node.nodeId) }
+            ?.map { it.nodeId }.orEmpty()
+        val nodeEffectsMap = tree?.nodes
+            ?.filter { it.effects.isNotEmpty() }
+            ?.associate { it.nodeId to it.effects }.orEmpty()
+
         // 计算基础属性
         val baseUnitStats = StatsCalculator.compute(
             baseStats = def.baseStats,
@@ -319,6 +366,8 @@ internal class ServiceCore(
             characterId = characterId,
             progression = progression,
             talent = talent,
+            nodeEffectsMap = nodeEffectsMap.ifEmpty { null },
+            allocatedNodes = allocatedNodes,
         ).copy(element = def.element)
         
         // 计算装备属性加成
@@ -336,7 +385,15 @@ internal class ServiceCore(
     }
     
     /**
-     * 计算角色装备的总属性加成。
+     * 计算角色装备的总属性加成（**战斗属性计算辅助**，非"装备业务规则"）。
+     *
+     * 2026-09-06 S3 KDoc 更新：原归类为"core 越界业务规则"不准确。本方法被
+     * [unitStatsFor] 调用，而 [unitStatsFor] 是 [ArenaService]/[TowerService]
+     * 战斗系统的核心依赖（构建 [UnitStats] 喂给 [BattleSimulator]）。
+     * 装备加成本质是「战斗单位属性计算的内部实现」，与"装备业务规则"
+     * （生成/强化/分解/穿脱，已随 [EquipmentService] 删除）属不同关注点。
+     * 保留在 ServiceCore 是因为它是 unitStatsFor 的私有辅助，不对外暴露。
+     *
      * 返回 [EquipmentStatBonus]（含暴击字段）；[unitStatsFor] 只取主属性合并到 [UnitStats]。
      */
     private fun calculateEquipmentStats(characterId: String): EquipmentStatBonus {
@@ -405,7 +462,8 @@ internal class ServiceCore(
     }
     
     /**
-     * 计算套装效果。
+     * 计算套装效果（**战斗属性计算辅助**，[calculateEquipmentStats] 的子计算）。
+     * 同 S3 KDoc 更新：非"装备业务规则"，是战斗单位属性计算的私有辅助。
      */
     private fun calculateSetBonuses(characterId: String): List<StatBonus> {
         val save = saveData.ownedCharacters.firstOrNull { it?.characterId == characterId }
