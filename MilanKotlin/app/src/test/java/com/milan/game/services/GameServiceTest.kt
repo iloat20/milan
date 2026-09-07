@@ -248,7 +248,7 @@ class GameServiceTest {
         val service = makeService()
         val events = EventCounter()
 
-        assertEquals(WriteOutcome.Success, service.addSoft(100))
+        assertEquals(WriteOutcome.Success, service.grantSoft(100))
         assertEquals(RICH_SOFT + 100, service.saveData.softCurrency)
         assertEquals(1, events.currency)
     }
@@ -258,7 +258,7 @@ class GameServiceTest {
         val service = makeService()
         val events = EventCounter()
 
-        assertEquals(WriteOutcome.Success, service.addHard(300))
+        assertEquals(WriteOutcome.Success, service.grantHard(300))
         assertEquals(300, service.saveData.hardCurrency)
         assertEquals(1, events.currency)
 
@@ -278,9 +278,9 @@ class GameServiceTest {
         val events = EventCounter()
 
         assertEquals(WriteOutcome.Rejected, service.spendSoft(-50))
-        assertEquals(WriteOutcome.Rejected, service.addSoft(-50))
+        assertEquals(WriteOutcome.Rejected, service.grantSoft(-50))
         assertEquals(WriteOutcome.Rejected, service.spendHard(-10))
-        assertEquals(WriteOutcome.Rejected, service.addHard(-10))
+        assertEquals(WriteOutcome.Rejected, service.grantHard(-10))
         assertEquals(WriteOutcome.Rejected, service.spendSoft(0))
         assertEquals(RICH_SOFT, service.saveData.softCurrency)
         assertEquals(0, service.saveData.hardCurrency)
@@ -293,7 +293,7 @@ class GameServiceTest {
         val service = makeService()
         service.saveData.softCurrency = Int.MAX_VALUE
 
-        assertEquals(WriteOutcome.Rejected, service.addSoft(1)) // MAX+1 溢出 → 拒绝
+        assertEquals(WriteOutcome.Rejected, service.grantSoft(1)) // MAX+1 溢出 → 拒绝
         assertEquals(Int.MAX_VALUE, service.saveData.softCurrency)
     }
 
@@ -415,7 +415,7 @@ class GameServiceTest {
         val events = EventCounter()
 
         // 未达升级的少量经验：等级不变，经验条应有进度（#1 经验条死掉的根因修复）
-        val gained = service.addExp("char_a", 50)
+        val gained = service.grantExp("char_a", 50)
         assertEquals(0, gained)
 
         val save = service.getSave("char_a")!!
@@ -434,7 +434,7 @@ class GameServiceTest {
         val events = EventCounter()
 
         // 一次性灌足够升到 3 级的经验：100(→L2) + 200(→L3) = 300
-        val gained = service.addExp("char_a", 300)
+        val gained = service.grantExp("char_a", 300)
         assertEquals(2, gained)
 
         val save = service.getSave("char_a")!!
@@ -452,7 +452,7 @@ class GameServiceTest {
         val events = EventCounter()
         service.saveData.ownedCharacters = listOf(CharacterSaveState(characterId = "char_a"))
 
-        val gained = service.addExp("char_a", 50)
+        val gained = service.grantExp("char_a", 50)
         assertEquals(0, gained)
         val save = service.getSave("char_a")!!
         assertEquals(0, save.totalExp)
@@ -738,7 +738,7 @@ class GameServiceTest {
         assertEquals(WriteOutcome.Rejected, service.buyDiamondExchange())
         assertEquals(0, events.currency)
 
-        assertEquals(WriteOutcome.Success, service.addHard(100))
+        assertEquals(WriteOutcome.Success, service.grantHard(100))
         assertEquals(WriteOutcome.Success, service.buyDiamondExchange())
         assertEquals(0, service.saveData.hardCurrency)
         assertEquals(RICH_SOFT + 20000, service.saveData.softCurrency)
@@ -750,7 +750,7 @@ class GameServiceTest {
     fun buyDiamondExchange_saveFailure_rollsBack() = runTest {
         val provider = FakeProvider()
         val service = makeService(provider)
-        assertEquals(WriteOutcome.Success, service.addHard(100))
+        assertEquals(WriteOutcome.Success, service.grantHard(100))
 
         provider.failSave = true
         assertEquals(WriteOutcome.SaveFailed, service.buyDiamondExchange())
@@ -795,7 +795,7 @@ class GameServiceTest {
     fun resetSave_clearsProgressAndRestoresDefaults() = runTest {
         val service = makeService()
         service.pull("pool_test", tenPull = true)
-        assertEquals(WriteOutcome.Success, service.addSoft(1000))
+        assertEquals(WriteOutcome.Success, service.grantSoft(1000))
         service.setSoundEnabled(false)
         assertFalse(service.saveData.ownedCharacters.isEmpty())
 
@@ -813,7 +813,7 @@ class GameServiceTest {
     fun resetSave_deleteFailure_keepsMemoryAndReturnsFalse() = runTest {
         val provider = FakeProvider()
         val service = makeService(provider)
-        assertEquals(WriteOutcome.Success, service.addSoft(1000))
+        assertEquals(WriteOutcome.Success, service.grantSoft(1000))
 
         provider.failDelete = true
         assertFalse(service.resetSave())
@@ -830,7 +830,7 @@ class GameServiceTest {
         assertTrue(service.saveData.ownedCharacters.isEmpty())
 
         // 重置后新档可正常落盘（FakeProvider.stored 已被 delete 清空，save 会重建）
-        assertEquals(WriteOutcome.Success, service.addSoft(500))
+        assertEquals(WriteOutcome.Success, service.grantSoft(500))
         // 基准是重置后的默认档起始值，不是 RICH_SOFT
         assertEquals(SaveData.DEFAULT_SOFT_CURRENCY + 500, service.saveData.softCurrency)
     }

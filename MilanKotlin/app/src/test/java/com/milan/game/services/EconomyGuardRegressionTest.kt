@@ -7,9 +7,6 @@ import com.milan.game.data.GameEvent
 import com.milan.game.data.EventTask
 import com.milan.game.data.SaveData
 import com.milan.game.data.SaveProvider
-import com.milan.game.data.SocialSaveData
-import com.milan.game.data.GuildData
-import com.milan.game.data.JoinType
 import kotlin.random.Random
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -58,26 +55,7 @@ class EconomyGuardRegressionTest {
     private fun makeService(provider: FakeProvider = FakeProvider(), soft: Int = 100_000): GameService =
         GameService(provider, testContent, { }, Random(42)).also { it.saveData.softCurrency = soft }
 
-    // ── C6：公会捐献负数金额必须拒绝（否则反向加钱） ──
-
-    @Test
-    fun `公会捐献负数金额拒绝且星尘不变`() = runTest {
-        val service = makeService()
-        // 预置公会
-        service.saveData.socialData = SocialSaveData().also {
-            it.guildData = GuildData(
-                guildId = "g1", guildName = "g", description = "", level = 1,
-                memberCount = 1, maxMembers = 30, totalPower = 0L, guildMaster = "p",
-                joinType = JoinType.AUTO, minLevel = 1, createdAt = 0,
-            )
-        }
-        val before = service.saveData.softCurrency
-
-        val outcome = service.donateToGuild(-1000)
-
-        assertTrue("负数捐献必须拒绝", outcome == WriteOutcome.Rejected)
-        assertEquals("星尘不得因负数捐献反向增加", before, service.saveData.softCurrency)
-    }
+    // ── C6 删除（2026-09-06 S2）：公会捐献属死功能 SocialService 已删 ──
 
     // ── C1：活动任务奖励不可重复领取 ──
 
@@ -175,21 +153,7 @@ class EconomyGuardRegressionTest {
         assertEquals("钻石必须回滚", beforeHard, service.saveData.hardCurrency)
     }
 
-    // ── C7：装备强化负数经验拒绝 ──
-
-    @Test
-    fun `装备强化负数经验拒绝且星尘不变`() = runTest {
-        val service = makeService()
-        // 预置一个装备
-        val equip = service.generateEquipment("eq_weapon_r_001")
-        service.saveData.ownedEquipments = service.saveData.ownedEquipments + equip
-        val before = service.saveData.softCurrency
-
-        val outcome = service.enhanceEquipment(equip.equipmentId, expPoints = -1)
-
-        assertTrue("负数经验必须拒绝", outcome == WriteOutcome.Rejected)
-        assertEquals("星尘不得因负数经验反向增加", before, service.saveData.softCurrency)
-    }
+    // ── C7 删除（2026-09-06 S2）：装备强化属死功能 EquipmentService 已删 ──
 
     // ── I9：通行证经验随核心行为增长 ──
 

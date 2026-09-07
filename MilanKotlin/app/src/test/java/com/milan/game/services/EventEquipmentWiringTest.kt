@@ -20,7 +20,8 @@ import org.junit.Test
  *
  * - C1 活动代币体系：奖励按 rewardType 入账、商店按 currencyType 扣款
  * - C2 活动激活：ensureActiveEvents 实例化模板并让四个写操作脱离恒 Rejected
- * - C3 装备发放：grantEquipment 打通「工厂 → 背包」入库路径
+ *
+ * C3 装备发放测试随 EquipmentService 一并删除（2026-09-06 S2，死功能层裁撤）。
  */
 class EventEquipmentWiringTest {
 
@@ -231,71 +232,7 @@ class EventEquipmentWiringTest {
         assertEquals("拒绝后代币不得再变", afterTen, service.getEventCurrencyBalance("EVENT_CURRENCY"))
     }
 
-    // ═══════════════════ C3：装备发放入库 ═══════════════════
-
-    @Test
-    fun `grantEquipment 入库且背包净增一件`() = runTest {
-        val service = makeService()
-        val before = service.getAllOwnedEquipments().size
-
-        val outcome = service.grantEquipment("eq_weapon_r_001")
-
-        assertTrue("发放应成功", outcome == WriteOutcome.Success)
-        assertEquals("背包应净增 1 件", before + 1, service.getAllOwnedEquipments().size)
-    }
-
-    @Test
-    fun `grantEquipment 未知模板返回拒绝而非抛异常`() = runTest {
-        val service = makeService()
-        val before = service.getAllOwnedEquipments().size
-
-        // generateEquipment 对缺失模板抛 IllegalArgumentException，异常会逃逸到 UI 造成崩溃；
-        // grantEquipment 必须先预检并收敛为 Rejected。
-        val outcome = service.grantEquipment("eq_does_not_exist")
-
-        assertTrue("未知模板必须拒绝而非抛异常", outcome == WriteOutcome.Rejected)
-        assertEquals("背包不得变化", before, service.getAllOwnedEquipments().size)
-    }
-
-    @Test
-    fun `grantEquipment 非法参数一律拒绝`() = runTest {
-        val service = makeService()
-        val before = service.getAllOwnedEquipments().size
-
-        assertTrue("空模板 ID 必须拒绝",
-            service.grantEquipment("") == WriteOutcome.Rejected)
-        assertTrue("等级 0 必须拒绝",
-            service.grantEquipment("eq_weapon_r_001", level = 0) == WriteOutcome.Rejected)
-        assertTrue("负等级必须拒绝",
-            service.grantEquipment("eq_weapon_r_001", level = -5) == WriteOutcome.Rejected)
-
-        assertEquals("非法参数不得污染背包", before, service.getAllOwnedEquipments().size)
-    }
-
-    @Test
-    fun `发放入库后的装备可以强化（打通背包恒空死结）`() = runTest {
-        val service = makeService()
-        service.grantEquipment("eq_weapon_r_001")
-        val granted = service.getAllOwnedEquipments().last()
-        val beforeSoft = service.saveData.softCurrency
-
-        // 此前 ownedEquipments 恒空 → enhanceEquipment 首行 firstOrNull 恒 null → 恒 Rejected
-        val outcome = service.enhanceEquipment(granted.equipmentId, expPoints = 100)
-
-        assertTrue("入库后的装备应可强化", outcome == WriteOutcome.Success)
-        assertEquals("强化应净扣 1000 星尘（100 × 10）", beforeSoft - 1000,
-            service.saveData.softCurrency)
-    }
-
-    @Test
-    fun `发放入库后的装备可以分解（出库路径仍通）`() = runTest {
-        val service = makeService()
-        service.grantEquipment("eq_weapon_r_001")
-        val granted = service.getAllOwnedEquipments().last()
-
-        val outcome = service.disassembleEquipment(granted.equipmentId)
-
-        assertTrue("入库后的装备应可分解", outcome == WriteOutcome.Success)
-        assertTrue("分解后背包应清空", service.getAllOwnedEquipments().isEmpty())
-    }
+    // ═══════════════════ C3 删除（2026-09-06 S2）═══════════════════
+    // 装备发放入库 5 个测试随 EquipmentService 一并删除（属死功能层）。
+    // C1（活动代币体系）+ C2（活动激活）共 10 个测试保留，覆盖 EventRhythmService 主路径。
 }

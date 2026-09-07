@@ -14,79 +14,118 @@ import kotlinx.serialization.json.Json
  *    - JSON 显式 null 字段 → 用默认值（C# 里 null 覆盖字段初始化器后再 Sanitize，语义一致）；
  *    - JSON 数组内 null 元素 → 保留给 sanitize() 过滤（C# RemoveAll(x => x == null)）。
  * 3. 模型用普通 class + var（可变），与 C# 公共字段语义一致，养成/抽卡写操作可原地修改。
+ *
+ * ## 字段分组（2026-09-06 S7 重组：按业务域而非"新增时间"分组）
+ *
+ * | 分组 | 字段 | 说明 |
+ * |---|---|---|
+ * | 元信息 | Version / UserId / ServerSyncStatus | 存档版本与跨端同步标记 |
+ * | 经济 | SoftCurrency / HardCurrency / Items | 星尘/钻石/道具 |
+ * | 抽卡 | GachaCounters / PullHistory / TotalPullCount / GachaFeaturedLost | 保底/历史/累计/UP定轨 |
+ * | 角色编队 | OwnedCharacters / OwnedSkins / Formation / TowerBestFloor / BattleRecords / CharacterAffinityData | 拥有/皮肤/出战/爬塔/战绩/好感 |
+ * | 设置 | SoundEnabled / VibrationEnabled / PushEnabled | 偏好开关 |
+ * | 商店 | DailyShopDate / DailyShopBought / ClaimedAchievements | 每日商店/成就领取 |
+ * | 装备 | OwnedEquipments | 已拥有装备（保留字段，EquipmentService 已删 S2） |
+ * | PVP | ArenaData / ArenaBattleRecords | 竞技场 |
+ * | PVE（死字段） | AbyssData / DailyDungeonData | 保留序列化兼容，PvEService 已删 S2 |
+ * | 检视 | InspectionData | 360° 检视系统 |
+ * | 社交（死字段） | SocialData | 保留序列化兼容，SocialService 已删 S2 |
+ * | 变现 | MonetizationData | 月卡/通行证/充值 |
+ * | 活动 | EventRhythmData | 活动运营 |
+ * | 剧情 | StoryData | 章节进度 |
+ * | 每日任务 | DailyMissionData | 每日6任务+活跃度 |
+ *
+ * 死字段（装备/PVE/社交）保留是为序列化兼容旧档；ServiceCore 的 calculateEquipmentStats
+ * 仍读 OwnedEquipments 喂战斗系统。重新接线见 docs/plans/2026-09-04-dead-feature-wiring-design.md。
  */
 @Serializable
 class SaveData(
+    // ─────────── 元信息 ───────────
     @SerialName("Version") var version: Int = 1,
-    @SerialName("SoftCurrency") var softCurrency: Int = DEFAULT_SOFT_CURRENCY,
-    @SerialName("HardCurrency") var hardCurrency: Int = 0,
-    @SerialName("OwnedCharacters") var ownedCharacters: List<CharacterSaveState?> = emptyList(),
-    @SerialName("OwnedSkins") var ownedSkins: List<String?> = emptyList(),
-    @SerialName("Items") var items: List<ItemSaveState?> = emptyList(),
-    @SerialName("GachaCounters") var gachaCounters: List<GachaCounterEntry?> = emptyList(),
-    @SerialName("BattleRecords") var battleRecords: List<BattleRecord?> = emptyList(),
     @SerialName("UserId") var userId: String = "",
     @SerialName("ServerSyncStatus") var serverSyncStatus: Int = 0,
-    // 设置项：开关类偏好持久化，避免重启即丢失。统一默认开启。
-    @SerialName("SoundEnabled") var soundEnabled: Boolean = true,
-    @SerialName("VibrationEnabled") var vibrationEnabled: Boolean = true,
-    @SerialName("PushEnabled") var pushEnabled: Boolean = true,
-    // ── 2026-08 优化新增（带默认值：旧档缺字段自动落默认，向后兼容）──
-    /** 出战编队（characterId 有序槽位，空槽为 null；上限 [Companion.MAX_FORMATION_SIZE]）。 */
-    @SerialName("Formation") var formation: List<String?> = emptyList(),
-    /** 无尽之塔历史最高层（0 = 尚未挑战）。 */
-    @SerialName("TowerBestFloor") var towerBestFloor: Int = 0,
-    /** 每日商店归属的 UTC 日序号字符串（与当日不一致 = 跨日，已购列表作废重置）。 */
-    @SerialName("DailyShopDate") var dailyShopDate: String = "",
-    /** 今日已购的每日特惠槽位下标（跨日后由购买流程整体重置）。 */
-    @SerialName("DailyShopBought") var dailyShopBought: List<Int?> = emptyList(),
-    /** 已领取奖励的成就 id（重复领取在服务层拒绝）。 */
-    @SerialName("ClaimedAchievements") var claimedAchievements: List<String?> = emptyList(),
-    // ── 2026-08 三期新增（带默认值：旧档缺字段自动落默认，向后兼容）──
+
+    // ─────────── 经济（星尘/钻石/道具）───────────
+    @SerialName("SoftCurrency") var softCurrency: Int = DEFAULT_SOFT_CURRENCY,
+    @SerialName("HardCurrency") var hardCurrency: Int = 0,
+    @SerialName("Items") var items: List<ItemSaveState?> = emptyList(),
+
+    // ─────────── 抽卡（保底/历史/累计/UP定轨）───────────
+    @SerialName("GachaCounters") var gachaCounters: List<GachaCounterEntry?> = emptyList(),
     /** 抽卡历史（追加式，上限 [Companion.MAX_PULL_HISTORY] 丢最旧；仅展示用途）。 */
     @SerialName("PullHistory") var pullHistory: List<PullLogEntry?> = emptyList(),
-    // ── 2026-08 装备系统新增 ──
-    /** 已拥有的装备列表。 */
-    @SerialName("OwnedEquipments") var ownedEquipments: List<EquipmentSaveState?> = emptyList(),
-    // ── 2026-08 PVP竞技场新增 ──
-    /** 竞技场数据。 */
-    @SerialName("ArenaData") var arenaData: ArenaSaveData? = null,
-    /** PVP战斗记录。 */
-    @SerialName("ArenaBattleRecords") var arenaBattleRecords: List<PvPBattleRecord?> = emptyList(),
-    // ── 2026-08 PVE内容新增 ──
-    /** 深渊数据。 */
-    @SerialName("AbyssData") var abyssData: AbyssSaveData? = null,
-    /** 日常副本数据。 */
-    @SerialName("DailyDungeonData") var dailyDungeonData: DailyDungeonSaveData? = null,
-    // ── 2026-08 检视系统增强新增 ──
-    /** 360°检视系统数据。 */
-    @SerialName("InspectionData") var inspectionData: InspectionSaveData? = null,
-    // ── 2026-08 社交系统新增 ──
-    /** 社交系统数据（好友、公会、赠礼）。 */
-    @SerialName("SocialData") var socialData: SocialSaveData? = null,
-    // ── 2026-08 变现模型新增 ──
-    /** 变现模型数据（月卡、通行证、充值）。 */
-    @SerialName("MonetizationData") var monetizationData: MonetizationSaveData? = null,
-    // ── 2026-08 活动运营新增 ──
-    /** 活动运营数据（活动、任务、商店、签到）。 */
-    @SerialName("EventRhythmData") var eventRhythmData: EventRhythmSaveData? = null,
-    // ── 2026-09 剧情系统新增 ──
-    /** 剧情系统数据（章节进度、关卡完成、奖励领取）。 */
-    @SerialName("StoryData") var storyData: StorySaveData? = null,
-    // ── 2026-09 每日任务新增 ──
-    /** 每日任务数据（每日6个任务、活跃度宝箱）。 */
-    @SerialName("DailyMissionData") var dailyMissionData: DailyMissionSaveData? = null,
-    // ── 2026-09 角色好感度新增 ──
-    /** 角色好感度数据（角色ID → 好感度等级/经验）。 */
-    @SerialName("CharacterAffinityData") var characterAffinityData: Map<String, Int?>? = null,
     /**
-     * 累计抽卡次数（2026-08 三期补；**永不清零**，与 [GachaCounters] 语义严格区分）。
+     * 累计抽卡次数（2026-08 三期补；**永不清零**，与 [gachaCounters] 语义严格区分）。
      * [gachaCounters] 是保底计数，出货即归零——用它当「累计抽数」会让累计型成就进度
      * 随出货倒退（F3）。本字段是成就「寻访百次」等累计判定的唯一口径。
      */
     @SerialName("TotalPullCount") var totalPullCount: Int = 0,
     /** UP 定轨「上次歪了」的池标记（true = 下次最高稀有度必中 UP 角色）。 */
     @SerialName("GachaFeaturedLost") var gachaFeaturedLost: List<PoolFlagEntry?> = emptyList(),
+
+    // ─────────── 角色与编队 ───────────
+    @SerialName("OwnedCharacters") var ownedCharacters: List<CharacterSaveState?> = emptyList(),
+    @SerialName("OwnedSkins") var ownedSkins: List<String?> = emptyList(),
+    /** 出战编队（characterId 有序槽位，空槽为 null；上限 [Companion.MAX_FORMATION_SIZE]）。 */
+    @SerialName("Formation") var formation: List<String?> = emptyList(),
+    /** 无尽之塔历史最高层（0 = 尚未挑战）。 */
+    @SerialName("TowerBestFloor") var towerBestFloor: Int = 0,
+    @SerialName("BattleRecords") var battleRecords: List<BattleRecord?> = emptyList(),
+    /** 角色好感度数据（角色ID → 好感度等级/经验）。 */
+    @SerialName("CharacterAffinityData") var characterAffinityData: Map<String, Int?>? = null,
+
+    // ─────────── 设置（开关类偏好持久化，避免重启即丢失；统一默认开启）───────────
+    @SerialName("SoundEnabled") var soundEnabled: Boolean = true,
+    @SerialName("VibrationEnabled") var vibrationEnabled: Boolean = true,
+    @SerialName("PushEnabled") var pushEnabled: Boolean = true,
+
+    // ─────────── 商店与成就领取 ───────────
+    /** 每日商店归属的 UTC 日序号字符串（与当日不一致 = 跨日，已购列表作废重置）。 */
+    @SerialName("DailyShopDate") var dailyShopDate: String = "",
+    /** 今日已购的每日特惠槽位下标（跨日后由购买流程整体重置）。 */
+    @SerialName("DailyShopBought") var dailyShopBought: List<Int?> = emptyList(),
+    /** 已领取奖励的成就 id（重复领取在服务层拒绝）。 */
+    @SerialName("ClaimedAchievements") var claimedAchievements: List<String?> = emptyList(),
+
+    // ─────────── 装备（死字段保留，EquipmentService 已删 S2）───────────
+    /** 已拥有的装备列表。ServiceCore.calculateEquipmentStats 仍读此喂战斗系统。 */
+    @SerialName("OwnedEquipments") var ownedEquipments: List<EquipmentSaveState?> = emptyList(),
+
+    // ─────────── PVP 竞技场 ───────────
+    /** 竞技场数据。 */
+    @SerialName("ArenaData") var arenaData: ArenaSaveData? = null,
+    /** PVP战斗记录。 */
+    @SerialName("ArenaBattleRecords") var arenaBattleRecords: List<PvPBattleRecord?> = emptyList(),
+
+    // ─────────── PVE 内容（死字段保留，PvEService 已删 S2）───────────
+    /** 深渊数据。 */
+    @SerialName("AbyssData") var abyssData: AbyssSaveData? = null,
+    /** 日常副本数据。 */
+    @SerialName("DailyDungeonData") var dailyDungeonData: DailyDungeonSaveData? = null,
+
+    // ─────────── 360° 检视系统 ───────────
+    /** 360°检视系统数据。 */
+    @SerialName("InspectionData") var inspectionData: InspectionSaveData? = null,
+
+    // ─────────── 社交（死字段保留，SocialService 已删 S2）───────────
+    /** 社交系统数据（好友、公会、赠礼）。 */
+    @SerialName("SocialData") var socialData: SocialSaveData? = null,
+
+    // ─────────── 变现模型 ───────────
+    /** 变现模型数据（月卡、通行证、充值）。 */
+    @SerialName("MonetizationData") var monetizationData: MonetizationSaveData? = null,
+
+    // ─────────── 活动运营 ───────────
+    /** 活动运营数据（活动、任务、商店、签到）。 */
+    @SerialName("EventRhythmData") var eventRhythmData: EventRhythmSaveData? = null,
+
+    // ─────────── 剧情系统 ───────────
+    /** 剧情系统数据（章节进度、关卡完成、奖励领取）。 */
+    @SerialName("StoryData") var storyData: StorySaveData? = null,
+
+    // ─────────── 每日任务 ───────────
+    /** 每日任务数据（每日6个任务、活跃度宝箱）。 */
+    @SerialName("DailyMissionData") var dailyMissionData: DailyMissionSaveData? = null,
 ) {
     /** 序列化为 JSON（prettyPrint 对齐 C# WriteIndented）。 */
     fun toJson(): String = json.encodeToString(serializer(), this)

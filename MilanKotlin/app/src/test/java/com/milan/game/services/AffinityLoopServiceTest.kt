@@ -163,19 +163,19 @@ class AffinityLoopServiceTest {
 
     @Test
     fun addCharacterAffinity_capsAtMax_thenRejects() = withService { svc ->
-        assertEquals(WriteOutcome.Rejected, svc.addCharacterAffinity("char_a", 0)) // 非正数拒绝
-        assertEquals(WriteOutcome.Rejected, svc.addCharacterAffinity("char_a", -10))
+        assertEquals(WriteOutcome.Rejected, svc.grantAffinity("char_a", 0)) // 非正数拒绝
+        assertEquals(WriteOutcome.Rejected, svc.grantAffinity("char_a", -10))
 
-        assertEquals(WriteOutcome.Success, svc.addCharacterAffinity("char_a", 200))
+        assertEquals(WriteOutcome.Success, svc.grantAffinity("char_a", 200))
         assertEquals(200, svc.affinity("char_a"))
 
         // 越过上限 → 钳位不超发（9900+200=10100 → 10000）
         svc.saveData.characterAffinityData = mapOf("char_a" to 9900)
-        assertEquals(WriteOutcome.Success, svc.addCharacterAffinity("char_a", 200))
+        assertEquals(WriteOutcome.Success, svc.grantAffinity("char_a", 200))
         assertEquals(AffinityFormulas.MAX_AFFINITY, svc.affinity("char_a"))
 
         // 已满级 → 明确 Rejected（无意义落盘不再发生）
-        assertEquals(WriteOutcome.Rejected, svc.addCharacterAffinity("char_a", 200))
+        assertEquals(WriteOutcome.Rejected, svc.grantAffinity("char_a", 200))
         assertEquals(AffinityFormulas.MAX_AFFINITY, svc.affinity("char_a"))
     }
 
@@ -184,7 +184,7 @@ class AffinityLoopServiceTest {
         val svc = makeService(failSave = true)
         svc.saveData.characterAffinityData = mapOf("char_a" to 500)
 
-        assertEquals(WriteOutcome.SaveFailed, svc.addCharacterAffinity("char_a", 200))
+        assertEquals(WriteOutcome.SaveFailed, svc.grantAffinity("char_a", 200))
         assertEquals(500, svc.affinity("char_a"))
     }
 
