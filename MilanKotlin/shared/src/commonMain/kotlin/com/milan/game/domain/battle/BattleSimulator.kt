@@ -44,8 +44,22 @@ class BattleSimulator(private val rng: Random) {
                 // 元素克制在结算点乘算（ElementChart 单一事实来源），暴击在 strikeDamage 内乘算，保底 1 点防 0 伤。
                 val base = strikeDamage(actor.stats, target.stats, rng)
                 val mul = ElementChart.damageMultiplier(actor.stats.element, target.stats.element)
-                val damage = (base * mul).toInt().coerceAtLeast(1)
+                // 闪避判定：守方 dodgeRate 掷骰，命中则伤害归零
+                val dodged = rng.nextDouble() < target.stats.dodgeRate.toDouble().coerceIn(0.0, 1.0)
+                val rawDamage = (base * mul).toInt().coerceAtLeast(1)
+                // 伤害减免：守方 damageReduction 在最终伤害上百分比削减
+                val damage = if (dodged) 0 else (rawDamage * (1f - target.stats.damageReduction)).toInt().coerceAtLeast(1)
                 target.hp -= damage
+                // 吸血：攻方按 lifesteal 比例回复生命（不超过最大 HP）
+                if (!dodged && damage > 0 && actor.stats.lifesteal > 0f) {
+                    val heal = (damage * actor.stats.lifesteal).toInt()
+                    actor.hp = (actor.hp + heal).coerceAtMost(actor.stats.hp)
+                }
+                // 反伤：守方 thorn 按比例对攻方造成伤害（吸血和反伤互不影响最终 HP）
+                if (!dodged && damage > 0 && target.stats.thorn > 0f) {
+                    val thornDmg = (damage * target.stats.thorn).toInt().coerceAtLeast(1)
+                    actor.hp -= thornDmg
+                }
                 log += StrikeEvent(
                     turn = turn,
                     attackerId = actor.stats.characterId,
@@ -88,13 +102,18 @@ class BattleSimulator(private val rng: Random) {
         /** 单体攻击结算的基础伤害（simulate 与手动出牌共用，单一事实来源）。
          * 攻方属性由 StatsCalculator 生成，已含等级/突破/天赋/升星的加成；
          * 元素克制倍率不在本函数内——由 [simulate] 结算点查 [ElementChart] 乘算。
-         * 
-         * 暴击判定：攻击方 critRate 随机 → 命中则伤害乘 critDmg。 */
+         *
+         * 暴击判定：攻击方 (critRate + talentCritRate) 随机 → 命中则伤害乘 (critDmg + talentCritDamage)。
+         * 无视防御：攻击方 ignoreDefense 在防御计算前降低守方有效防御。 */
         fun strikeDamage(attacker: UnitStats, defender: UnitStats, rng: Random? = null): Int {
-            val base = (attacker.atk - defender.def / 2).coerceAtLeast(1)
-            // 暴击判定：rng 不为 null 且 critRate > 0 时掷骰
-            val critMul = if (rng != null && attacker.critRate > 0.0) {
-                if (rng.nextDouble() < attacker.critRate.coerceIn(0.0, 1.0)) attacker.critDmg.coerceAtLeast(1.0) else 1.0
+            // 无视防御：有效防御 = 原防御 × (1 - ignoreDefense)
+            val effectiveDef = (defender.def * (1f - attacker.ignoreDefense)).toInt()
+            val base = (attacker.atk - effectiveDef / 2).coerceAtLeast(1)
+            // 暴击判定：天赋暴击率叠加到基础暴击率
+            val totalCritRate = attacker.critRate + attacker.talentCritRate.toDouble()
+            val totalCritDmg = attacker.critDmg + attacker.talentCritDamage
+            val critMul = if (rng != null && totalCritRate > 0.0) {
+                if (rng.nextDouble() < totalCritRate.coerceIn(0.0, 1.0)) totalCritDmg.coerceAtLeast(1.0) else 1.0
             } else {
                 1.0
             }

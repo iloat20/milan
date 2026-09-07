@@ -19,6 +19,43 @@ data class UnitStats(
     val critRate: Double = 0.0,
     /** 暴击伤害倍率（1.0 = 无暴击加成，2.0 = 暴击造成 200% 伤害）。 */
     val critDmg: Double = 1.0,
+    // ── 天赋效果扩展字段（2026-09 天赋树填充）──
+    /** 无视防御比例（0.0~1.0，天赋效果 IgnoreDefense 聚合值）。 */
+    val ignoreDefense: Float = 0f,
+    /** 伤害减免比例（0.0~1.0，天赋效果 DamageReduction 聚合值）。 */
+    val damageReduction: Float = 0f,
+    /** 闪避率（0.0~1.0，天赋效果 DodgeRate 聚合值）。 */
+    val dodgeRate: Float = 0f,
+    /** 暴击率天赋加成（0.0~1.0，叠加到 critRate）。 */
+    val talentCritRate: Float = 0f,
+    /** 暴击伤害天赋加成（倍率加算，如 0.3 = +30% 暴击伤害）。 */
+    val talentCritDamage: Float = 0f,
+    /** 吸血比例（0.0~1.0，天赋效果 Lifesteal 聚合值）。 */
+    val lifesteal: Float = 0f,
+    /** 反伤比例（0.0~1.0，天赋效果 Thorn 聚合值）。 */
+    val thorn: Float = 0f,
+    /** 必杀伤害加成（倍率加算，基 2.0）。 */
+    val ultimateDamage: Float = 0f,
+    /** 充能效率加成（0.0~1.0）。 */
+    val chargeGain: Float = 0f,
+    // ── 状态施加（天赋效果聚合，最大值取值）──
+    val poisonChance: Float = 0f,
+    val poisonDuration: Int = 0,
+    val burnChance: Float = 0f,
+    val burnDuration: Int = 0,
+    val bleedChance: Float = 0f,
+    val bleedDuration: Int = 0,
+    val disarmChance: Float = 0f,
+    val disarmDuration: Int = 0,
+    val stunChance: Float = 0f,
+    val stunDuration: Int = 0,
+    val chillChance: Float = 0f,
+    val chillDuration: Int = 0,
+    val stiffChance: Float = 0f,
+    val stiffDuration: Int = 0,
+    val tauntChance: Float = 0f,
+    val tauntDuration: Int = 0,
+    val unstoppable: Boolean = false,
 )
 
 /** 单次攻击事件（2026-08 战报：纯展示数据，不落盘，仅随本次 [BattleResult] 返回）。 */

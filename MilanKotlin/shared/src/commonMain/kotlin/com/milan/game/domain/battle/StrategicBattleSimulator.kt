@@ -155,13 +155,15 @@ class StrategicBattleSimulator(private val rng: Random) {
         when (skill.target) {
             SkillTarget.SINGLE_ENEMY -> {
                 val target = targetTeam.getOrNull(action.targetIndex) ?: return state
-                val damage = calculateDamage(actor, target, skill)
+                val rawDamage = calculateDamage(actor, target, skill)
+                val damage = applyTalentCombatEffects(actor, target, rawDamage)
                 target.hp -= damage
                 newLog.add(createStrikeEvent(state.turn, actor, target, damage))
             }
             SkillTarget.ALL_ENEMIES -> {
                 for (target in targetTeam) {
-                    val damage = calculateDamage(actor, target, skill)
+                    val rawDamage = calculateDamage(actor, target, skill)
+                    val damage = applyTalentCombatEffects(actor, target, rawDamage)
                     target.hp -= damage
                     newLog.add(createStrikeEvent(state.turn, actor, target, damage))
                 }
@@ -194,8 +196,9 @@ class StrategicBattleSimulator(private val rng: Random) {
      */
     private fun calculateDamage(attacker: BattleUnitState, defender: BattleUnitState, skill: BattleSkill): Int {
         val baseDamage = (attacker.stats.atk * skill.power / 100).coerceAtLeast(1)
-        val defense = defender.stats.def
-        val damage = (baseDamage - defense / 2).coerceAtLeast(1)
+        // 无视防御：天赋 ignoreDefense 在防御计算前降低守方有效防御
+        val effectiveDef = (defender.stats.def * (1f - attacker.stats.ignoreDefense)).toInt()
+        val damage = (baseDamage - effectiveDef / 2).coerceAtLeast(1)
         
         // 元素克制
         val elementMultiplier = ElementChart.damageMultiplier(
@@ -203,7 +206,14 @@ class StrategicBattleSimulator(private val rng: Random) {
             defender.stats.element
         )
         
-        return (damage * elementMultiplier).toInt().coerceAtLeast(1)
+        // 天赋暴击加成（简化判定：按总暴击率直接掷骰）
+        val totalCritRate = attacker.stats.critRate + attacker.stats.talentCritRate
+        val totalCritDmg = attacker.stats.critDmg + attacker.stats.talentCritDamage
+        val critMul = if (rng.nextDouble() < totalCritRate.coerceIn(0.0, 1.0)) {
+            totalCritDmg.coerceAtLeast(1.0)
+        } else 1.0
+
+        return (damage * elementMultiplier * critMul).toInt().coerceAtLeast(1)
     }
     
     /**
@@ -256,6 +266,33 @@ class StrategicBattleSimulator(private val rng: Random) {
     }
     
     /**
+     * 应用天赋防御/进攻效果到伤害结果，返回实际伤害值。
+     * 闪避判定 → 伤害减免 → 吸血回复 → 反伤。
+     */
+    private fun applyTalentCombatEffects(
+        attacker: BattleUnitState,
+        defender: BattleUnitState,
+        rawDamage: Int,
+    ): Int {
+        // 闪避判定
+        val dodged = rng.nextDouble() < defender.stats.dodgeRate.toDouble().coerceIn(0.0, 1.0)
+        if (dodged) return 0
+        // 伤害减免
+        val damage = (rawDamage * (1f - defender.stats.damageReduction)).toInt().coerceAtLeast(1)
+        // 吸血
+        if (damage > 0 && attacker.stats.lifesteal > 0f) {
+            val heal = (damage * attacker.stats.lifesteal).toInt()
+            attacker.hp = (attacker.hp + heal).coerceAtMost(attacker.stats.hp)
+        }
+        // 反伤
+        if (damage > 0 && defender.stats.thorn > 0f) {
+            val thornDmg = (damage * defender.stats.thorn).toInt().coerceAtLeast(1)
+            attacker.hp -= thornDmg
+        }
+        return damage
+    }
+
+    /**
      * 创建攻击事件。
      */
     private fun createStrikeEvent(
@@ -307,9 +344,10 @@ class StrategicBattleSimulator(private val rng: Random) {
             if (target == null) continue
             
             // 计算伤害
-            val damage = calculateDamage(enemy, target, skill)
+            val rawDamage = calculateDamage(enemy, target, skill)
+            val damage = applyTalentCombatEffects(enemy, target, rawDamage)
             target.hp -= damage
-            
+
             newLog.add(createStrikeEvent(state.turn, enemy, target, damage))
         }
         
