@@ -42,6 +42,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -211,6 +212,15 @@ fun BattleResultOverlay(
 
             Spacer(Modifier.height(32.dp))
 
+            // ── 战斗统计面板 ──
+            if (log.isNotEmpty()) {
+                BattleStatsPanel(
+                    log = log,
+                    modifier = Modifier.alpha(contentAlpha.value),
+                )
+                Spacer(Modifier.height(16.dp))
+            }
+
             // ── 操作提示 ──
             Text(
                 text = "点击任意位置继续",
@@ -315,6 +325,103 @@ private fun BattleParticles(victory: Boolean, modifier: Modifier = Modifier) {
         }
     }
 }
+
+// ── 战斗统计面板（2026-09 战斗视觉增强）──
+
+/**
+ * 战斗统计面板：展示总伤害、克制次数、击杀数、最高单次伤害。
+ * 从战斗日志 [StrikeEvent] 列表实时计算。
+ */
+@Composable
+private fun BattleStatsPanel(
+    log: List<StrikeEvent>,
+    modifier: Modifier = Modifier,
+) {
+    // 统计数据计算
+    val stats = remember(log) {
+        val totalDamage = log.sumOf { it.damage }
+        val counterHits = log.count {
+            com.milan.game.domain.battle.ElementChart.damageMultiplier(it.attackerElement, it.targetElement) > 1.05
+        }
+        val defeats = log.count { it.targetDefeated }
+        val maxHit = log.maxOfOrNull { it.damage } ?: 0
+        val avgDamage = if (log.isNotEmpty()) totalDamage / log.size else 0
+        BattleStats(totalDamage, counterHits, defeats, maxHit, avgDamage)
+    }
+
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .background(AppTheme.Surface.copy(alpha = 0.5f))
+            .border(1.dp, AppTheme.Stroke, RoundedCornerShape(12.dp))
+            .padding(12.dp),
+    ) {
+        Text(
+            text = "战 斗 统 计",
+            fontSize = 11.sp,
+            fontWeight = FontWeight.Bold,
+            color = AppTheme.Text3,
+            letterSpacing = 0.15.sp,
+        )
+        Spacer(Modifier.height(8.dp))
+
+        // 统计网格：2×3
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceEvenly,
+        ) {
+            StatItem(label = "总伤害", value = "${stats.totalDamage}", color = AppTheme.Text1)
+            StatItem(label = "克制", value = "${stats.counterHits}", color = AppTheme.Gold)
+            StatItem(label = "击杀", value = "${stats.defeats}", color = AppTheme.SealRed)
+        }
+        Spacer(Modifier.height(6.dp))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceEvenly,
+        ) {
+            StatItem(label = "最高伤害", value = "${stats.maxHit}", color = AppTheme.Warning)
+            StatItem(label = "平均伤害", value = "${stats.avgDamage}", color = AppTheme.Frost)
+            StatItem(label = "攻击次数", value = "${log.size}", color = AppTheme.Text2)
+        }
+    }
+}
+
+/** 单个统计项：标签 + 数值。 */
+@Composable
+private fun StatItem(
+    label: String,
+    value: String,
+    color: Color,
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier.padding(horizontal = 8.dp),
+    ) {
+        Text(
+            text = value,
+            fontSize = 16.sp,
+            fontWeight = FontWeight.Bold,
+            color = color,
+            style = TextStyle(fontFeatureSettings = "tnum"),
+        )
+        Text(
+            text = label,
+            fontSize = 9.sp,
+            color = AppTheme.Text3,
+        )
+    }
+}
+
+/** 战斗统计数据容器。 */
+private data class BattleStats(
+    val totalDamage: Int,
+    val counterHits: Int,
+    val defeats: Int,
+    val maxHit: Int,
+    val avgDamage: Int,
+)
 
 private data class ParticleData(
     val x: Float,

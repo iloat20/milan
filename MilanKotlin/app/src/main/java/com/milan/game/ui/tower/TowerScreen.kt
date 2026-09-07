@@ -13,8 +13,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -28,6 +31,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -35,6 +39,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.milan.game.domain.battle.ElementChart
 import com.milan.game.domain.battle.StrikeEvent
+import com.milan.game.domain.battle.UnitStats
 import com.milan.game.domain.progression.EconomyFormulas
 import com.milan.game.services.TowerOutcome
 import com.milan.game.ui.GameState
@@ -42,6 +47,7 @@ import com.milan.game.ui.components.EntranceItem
 import com.milan.game.ui.components.FormationBar
 import com.milan.game.ui.components.GlyphBadge
 import com.milan.game.ui.components.GoldButton
+import com.milan.game.ui.components.HealthBar
 import com.milan.game.ui.components.NeonButton
 import com.milan.game.ui.components.PageBackground
 import com.milan.game.ui.nav.AppTopBar
@@ -143,6 +149,17 @@ fun TowerScreen(
                     maxSlots = GameState.maxFormationSize,
                     onSlotClick = { onOpenDeck() },
                 )
+
+                // ── 战力对比预览（我方 vs 敌方）──
+                if (members.isNotEmpty()) {
+                    Spacer(Modifier.height(12.dp))
+                    BattlePreviewCard(
+                        myTeam = members.map { GameState.computeStats(it) },
+                        myElements = members.map { it.element },
+                        floor = nextFloor,
+                        myPower = teamPower,
+                    )
+                }
 
                 Spacer(Modifier.height(16.dp))
 
@@ -308,45 +325,143 @@ private fun BattleReportSection(log: List<StrikeEvent>) {
     }
 }
 
-/** 单条攻击流水行：「R回合 攻击者 → 目标 -伤害 [克制] †」。 */
+/** 单条攻击流水行：元素图标 + 攻击者 → 目标 + 伤害色阶 + 克制标记 + 击杀特效。 */
 @Composable
 private fun StrikeRow(e: StrikeEvent) {
     val counterMul = ElementChart.damageMultiplier(e.attackerElement, e.targetElement)
     val counter = counterMul > 1.05
+    val defeated = e.targetDefeated
+
+    // 元素身份
+    val attackerEi = remember(e.attackerElement) { ElementTheme.forElement(e.attackerElement) }
+    val targetEi = remember(e.targetElement) { ElementTheme.forElement(e.targetElement) }
+
+    // 伤害色阶：低=白 中=金 高=橙 暴击=红
+    val damageColor = when {
+        defeated -> AppTheme.SealRed
+        counter -> AppTheme.Gold
+        e.damage > 200 -> AppTheme.Warning
+        e.damage > 100 -> AppTheme.GoldHi
+        else -> AppTheme.Text1
+    }
+
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 3.dp)
+            .then(
+                if (defeated) Modifier
+                    .clip(RoundedCornerShape(4.dp))
+                    .background(AppTheme.Danger.copy(alpha = 0.08f))
+                    .padding(horizontal = 4.dp, vertical = 2.dp)
+                else Modifier
+            ),
     ) {
+        // 回合号
         Text(
             text = "R${e.turn}",
             style = MaterialTheme.typography.labelSmall,
             color = AppTheme.Text3,
-            modifier = Modifier.width(30.dp),
+            modifier = Modifier.width(28.dp),
         )
+
+        // 攻击者：元素图标 + 名称
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.width(72.dp),
+        ) {
+            Text(
+                text = attackerEi.glyph,
+                fontSize = 11.sp,
+                color = attackerEi.glow,
+                modifier = Modifier
+                    .size(16.dp)
+                    .clip(RoundedCornerShape(3.dp))
+                    .background(attackerEi.glow.copy(alpha = 0.15f))
+                    .padding(1.dp),
+            )
+            Spacer(Modifier.width(3.dp))
+            Text(
+                text = unitLabel(e.attackerId, e.attackerElement),
+                style = MaterialTheme.typography.labelSmall,
+                color = AppTheme.Text2,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f),
+            )
+        }
+
+        // 箭头
         Text(
-            text = "${unitLabel(e.attackerId, e.attackerElement)} → ${unitLabel(e.targetId, e.targetElement)}",
-            style = MaterialTheme.typography.labelMedium,
-            color = AppTheme.Text2,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.weight(1f),
+            text = "→",
+            fontSize = 10.sp,
+            color = AppTheme.Text3,
+            modifier = Modifier.padding(horizontal = 4.dp),
         )
-        Text(
-            text = buildString {
-                append("-${e.damage}")
-                if (counter) append(" 克制")
-                if (e.targetDefeated) append(" †")
-            },
-            // tnum 等宽数字：伤害列对齐（保持 token 排版 + 字形特性覆盖）
-            style = MaterialTheme.typography.labelMedium.copy(
-                fontFeatureSettings = "tnum",
-            ),
-            fontWeight = FontWeight.Bold,
-            color = when {
-                counter -> AppTheme.Gold
-                else -> AppTheme.Text1
-            },
-        )
+
+        // 目标：元素图标 + 名称
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.width(72.dp),
+        ) {
+            Text(
+                text = targetEi.glyph,
+                fontSize = 11.sp,
+                color = targetEi.glow,
+                modifier = Modifier
+                    .size(16.dp)
+                    .clip(RoundedCornerShape(3.dp))
+                    .background(targetEi.glow.copy(alpha = 0.15f))
+                    .padding(1.dp),
+            )
+            Spacer(Modifier.width(3.dp))
+            Text(
+                text = unitLabel(e.targetId, e.targetElement),
+                style = MaterialTheme.typography.labelSmall,
+                color = if (defeated) AppTheme.Danger else AppTheme.Text2,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f),
+            )
+        }
+
+        // 伤害值：色阶 + 克制/击杀标记
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.padding(start = 6.dp),
+        ) {
+            Text(
+                text = "-${e.damage}",
+                style = MaterialTheme.typography.labelMedium.copy(
+                    fontFeatureSettings = "tnum",
+                ),
+                fontWeight = FontWeight.Bold,
+                color = damageColor,
+            )
+            if (counter) {
+                Text(
+                    text = " 克",
+                    fontSize = 9.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = AppTheme.Gold,
+                    modifier = Modifier
+                        .padding(start = 3.dp)
+                        .clip(RoundedCornerShape(3.dp))
+                        .background(AppTheme.Gold.copy(alpha = 0.15f))
+                        .padding(horizontal = 3.dp, vertical = 1.dp),
+                )
+            }
+            if (defeated) {
+                Text(
+                    text = " †",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = AppTheme.SealRed,
+                    modifier = Modifier.padding(start = 2.dp),
+                )
+            }
+        }
     }
 }
 
@@ -410,6 +525,221 @@ internal fun TowerResultCard(done: TowerOutcome.Completed, modifier: Modifier = 
             style = MaterialTheme.typography.labelMedium,
             color = AppTheme.Text3,
         )
+    }
+}
+
+// ── 战力对比预览卡片（2026-09 战斗视觉增强）──
+
+/**
+ * 战力对比预览：展示我方 vs 敌方阵容、元素分布、战力对比条。
+ * 敌方数据按 EconomyFormulas 程序化生成，与 TowerService.buildTowerEnemies 同源。
+ */
+@Composable
+private fun BattlePreviewCard(
+    myTeam: List<UnitStats>,
+    myElements: List<String>,
+    floor: Int,
+    myPower: Int,
+) {
+    // 敌方数据（与 TowerService.buildTowerEnemies 同源）
+    val elements = listOf("Metal", "Wood", "Water", "Flame", "Earth", "Light", "Shadow", "Thunder")
+    val towerRng = remember(floor) { kotlin.random.Random(floor * 1_000_003L + 7L) }
+    val enemyCount = remember(floor) { EconomyFormulas.towerEnemyCount(floor) }
+    val enemyScale = remember(floor) { EconomyFormulas.towerEnemyStatScale(floor) }
+    val enemyBase = remember(floor) { EconomyFormulas.towerEnemyBaseStats() }
+    val enemyPower = remember(floor) {
+        (enemyBase[0] * enemyScale * enemyCount).toInt()
+    }
+    val enemyElements = remember(floor) {
+        List(enemyCount) { elements[towerRng.nextInt(elements.size)] }
+    }
+
+    // 元素分布统计
+    val myElementCounts = remember(myElements) {
+        myElements.filter { it.isNotEmpty() }.groupingBy { it }.eachCount()
+    }
+    val enemyElementCountMap = remember(enemyElements) {
+        enemyElements.groupingBy { it }.eachCount()
+    }
+
+    // 战力对比条比例
+    val totalPower = myPower + enemyPower
+    val myRatio = if (totalPower > 0) myPower.toFloat() / totalPower else 0.5f
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .background(AppTheme.Surface.copy(alpha = 0.5f))
+            .border(1.dp, AppTheme.Stroke, RoundedCornerShape(12.dp))
+            .padding(12.dp),
+    ) {
+        // VS 标题
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Text(
+                text = "我方",
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold,
+                color = AppTheme.Frost,
+            )
+            Spacer(Modifier.weight(1f))
+            Text(
+                text = "⚔ VS ⚔",
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Bold,
+                color = AppTheme.Gold,
+            )
+            Spacer(Modifier.weight(1f))
+            Text(
+                text = "敌方",
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold,
+                color = AppTheme.Danger,
+            )
+        }
+
+        Spacer(Modifier.height(8.dp))
+
+        // 战力对比条
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Text(
+                text = "$myPower",
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Bold,
+                color = AppTheme.Frost,
+                style = androidx.compose.ui.text.TextStyle(fontFeatureSettings = "tnum"),
+            )
+            Spacer(Modifier.width(8.dp))
+            // 对比条
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .height(8.dp)
+                    .clip(RoundedCornerShape(4.dp))
+                    .background(AppTheme.BgDeepest),
+            ) {
+                Row(Modifier.fillMaxSize()) {
+                    Box(
+                        Modifier
+                            .fillMaxWidth(myRatio)
+                            .height(8.dp)
+                            .clip(RoundedCornerShape(4.dp))
+                            .background(
+                                Brush.horizontalGradient(
+                                    listOf(AppTheme.Frost.copy(alpha = 0.7f), AppTheme.Frost)
+                                )
+                            ),
+                    )
+                    Box(
+                        Modifier
+                            .fillMaxWidth(1f - myRatio)
+                            .height(8.dp)
+                            .background(
+                                Brush.horizontalGradient(
+                                    listOf(AppTheme.Danger, AppTheme.Danger.copy(alpha = 0.7f))
+                                )
+                            ),
+                    )
+                }
+            }
+            Spacer(Modifier.width(8.dp))
+            Text(
+                text = "$enemyPower",
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Bold,
+                color = AppTheme.Danger,
+                style = androidx.compose.ui.text.TextStyle(fontFeatureSettings = "tnum"),
+            )
+        }
+
+        Spacer(Modifier.height(8.dp))
+
+        // 元素分布
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            // 我方元素
+            Column {
+                Text(
+                    text = "元素分布",
+                    fontSize = 10.sp,
+                    color = AppTheme.Text3,
+                )
+                Spacer(Modifier.height(4.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    myElementCounts.forEach { (element, count) ->
+                        val ei = ElementTheme.forElement(element)
+                        ElementBadge(glyph = ei.glyph, color = ei.glow, count = count)
+                    }
+                }
+            }
+            // 敌方元素
+            Column(horizontalAlignment = Alignment.End) {
+                Text(
+                    text = "敌方元素",
+                    fontSize = 10.sp,
+                    color = AppTheme.Text3,
+                )
+                Spacer(Modifier.height(4.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    for ((element, count) in enemyElementCountMap) {
+                        val ei = ElementTheme.forElement(element)
+                        ElementBadge(glyph = ei.glyph, color = ei.glow, count = count)
+                    }
+                }
+            }
+        }
+
+        Spacer(Modifier.height(6.dp))
+
+        // 克制提示
+        val counterElements = remember(myElements, enemyElements) {
+            myElements.filter { it.isNotEmpty() }.distinct().flatMap { myEl ->
+                enemyElements.filter { enemyEl ->
+                    ElementChart.damageMultiplier(myEl, enemyEl) > 1.05
+                }.map { myEl to it }
+            }.distinct()
+        }
+        if (counterElements.isNotEmpty()) {
+            val (myEl, _) = counterElements.first()
+            Text(
+                text = "✦ 你的${ElementTheme.forElement(myEl).glyph}元素对敌方有克制优势",
+                fontSize = 10.sp,
+                color = AppTheme.Gold,
+            )
+        }
+
+        // 层数信息
+        Spacer(Modifier.height(4.dp))
+        Text(
+            text = "第 $floor 层 · 敌方 ×$enemyCount · 属性倍率 ×${"%.1f".format(enemyScale)}",
+            fontSize = 10.sp,
+            color = AppTheme.Text3,
+        )
+    }
+}
+
+/** 元素徽章：小圆 + 元素字 + 数量。 */
+@Composable
+private fun ElementBadge(glyph: String, color: Color, count: Int) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .clip(RoundedCornerShape(4.dp))
+            .background(color.copy(alpha = 0.15f))
+            .padding(horizontal = 4.dp, vertical = 2.dp),
+    ) {
+        Text(text = glyph, fontSize = 10.sp, color = color)
+        if (count > 1) {
+            Text(text = "×$count", fontSize = 9.sp, color = color, modifier = Modifier.padding(start = 2.dp))
+        }
     }
 }
 
