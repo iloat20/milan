@@ -229,107 +229,157 @@ private fun Hero(
     // 水墨视差：Hero 立绘以 0.4x 速率滚动，与内容层产生宣纸深度感
     val parallaxOffset = scrollProgress * 0.4f
 
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(fixedH)
-            .clip(RoundedCornerShape(18.dp))
-            .border(1.dp, AppTheme.Stroke, RoundedCornerShape(18.dp))
-            .background(AppTheme.Surface),
-    ) {
-        // 稀有度光晕（脉动，位于立绘之后）
-        Halo(rarityColor, Modifier.fillMaxSize())
+    // 流光边框动画
+    val shimmerT = rememberInfiniteTransition(label = "shimmer")
+    val shimmerProgress by shimmerT.animateFloat(
+        initialValue = 0f, targetValue = 1f,
+        animationSpec = infiniteRepeatable(tween(4000, easing = androidx.compose.animation.core.LinearEasing)),
+        label = "shimmerProgress",
+    )
 
-        // 主视觉立绘：稀有度光晕之上叠真实立绘（缺图自动回退首字占位）
-        HeroPortrait(def, rarityColor, Modifier.fillMaxSize().graphicsLayer { translationY = parallaxOffset })
-
-        // 底部暗化渐变 + 铭牌
-        Column(
+    Box(modifier = Modifier.fillMaxWidth().height(fixedH)) {
+        // 内容卡片（裁剪到圆角）
+        Box(
             modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .fillMaxWidth()
-                .background(
-                    Brush.verticalGradient(
-                        listOf(
-                            AppTheme.BgDeepest.copy(alpha = 0f),
-                            AppTheme.BgDeepest.copy(alpha = 0.5f),
-                            AppTheme.BgDeepest.copy(alpha = 0.9f),
+                .matchParentSize()
+                .clip(RoundedCornerShape(18.dp))
+                .background(AppTheme.Surface),
+        ) {
+            // 稀有度光晕（脉动，位于立绘之后）
+            Halo(rarityColor, Modifier.fillMaxSize())
+            // 主视觉立绘
+            HeroPortrait(def, rarityColor, Modifier.fillMaxSize().graphicsLayer { translationY = parallaxOffset })
+            // 底部暗化渐变 + 铭牌
+            Column(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+                    .background(
+                        Brush.verticalGradient(
+                            listOf(
+                                AppTheme.BgDeepest.copy(alpha = 0f),
+                                AppTheme.BgDeepest.copy(alpha = 0.5f),
+                                AppTheme.BgDeepest.copy(alpha = 0.9f),
+                            )
                         )
                     )
-                )
-                .padding(start = 18.dp, top = 48.dp, end = 18.dp, bottom = 16.dp),
-        ) {
-            // 顶部金色渐隐分隔线（水墨画轴风格）
-            Box(
-                Modifier
-                    .fillMaxWidth()
-                    .height(1.dp)
-                    .background(
-                        Brush.horizontalGradient(
-                            listOf(Color.Transparent, AppTheme.Gold.copy(alpha = 0.63f), Color.Transparent)
-                        )
-                    ),
-            )
-            Spacer(Modifier.height(10.dp))
-            Text(
-                text = def.displayName,
-                fontSize = 22.sp,
-                fontWeight = FontWeight.Bold,
-                color = AppTheme.Text1,
-            )
-            Text(
-                text = def.title,
-                fontSize = 12.sp,
-                color = AppTheme.Text2,
-                modifier = Modifier.padding(top = 3.dp),
-            )
-            // 标签行：稀有度 + 世界
-            Row(
-                modifier = Modifier.padding(top = 8.dp),
-                verticalAlignment = Alignment.CenterVertically,
+                    .padding(start = 18.dp, top = 48.dp, end = 18.dp, bottom = 16.dp),
             ) {
+                // 顶部金色渐隐分隔线（水墨画轴风格）
+                Box(
+                    Modifier
+                        .fillMaxWidth()
+                        .height(1.dp)
+                        .background(
+                            Brush.horizontalGradient(
+                                listOf(Color.Transparent, AppTheme.Gold.copy(alpha = 0.63f), Color.Transparent)
+                            )
+                        ),
+                )
+                Spacer(Modifier.height(10.dp))
                 Text(
-                    text = AppTheme.rarityName(def.baseRarity),
-                    fontSize = 11.sp,
+                    text = def.displayName,
+                    fontSize = 22.sp,
                     fontWeight = FontWeight.Bold,
-                    color = rarityColor,
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(rarityColor.copy(alpha = 0.27f))
-                        .border(1.dp, rarityColor, RoundedCornerShape(8.dp))
-                        .padding(horizontal = 10.dp, vertical = 3.dp),
+                    color = AppTheme.Text1,
                 )
-                Spacer(Modifier.width(8.dp))
                 Text(
-                    text = def.world,
-                    fontSize = 11.sp,
+                    text = def.title,
+                    fontSize = 12.sp,
                     color = AppTheme.Text2,
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(AppTheme.Surface)
-                        .border(1.dp, AppTheme.Stroke, RoundedCornerShape(8.dp))
-                        .padding(horizontal = 10.dp, vertical = 3.dp),
+                    modifier = Modifier.padding(top = 3.dp),
                 )
-            }
-            // CTA 按钮：进入角色详情（铭牌区域底部右侧）
-            Box(
-                modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
-                contentAlignment = Alignment.CenterEnd,
-            ) {
-                androidx.compose.material3.TextButton(
-                    // B1 修复：此前为空实现（注释谎称"由外层处理"，实际无处处理）→
-                    // 首页主视觉 CTA 点了完全没反应。现直接接通角色详情路由。
-                    onClick = { onOpenCharacter(def.characterId) },
-                    contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 12.dp, vertical = 0.dp),
+                // 标签行：稀有度 + 世界
+                Row(
+                    modifier = Modifier.padding(top = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
-                        text = "查看详情 ›",
+                        text = AppTheme.rarityName(def.baseRarity),
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
                         color = rarityColor,
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(rarityColor.copy(alpha = 0.27f))
+                            .border(1.dp, rarityColor, RoundedCornerShape(8.dp))
+                            .padding(horizontal = 10.dp, vertical = 3.dp),
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        text = def.world,
+                        fontSize = 11.sp,
+                        color = AppTheme.Text2,
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(AppTheme.Surface)
+                            .border(1.dp, AppTheme.Stroke, RoundedCornerShape(8.dp))
+                            .padding(horizontal = 10.dp, vertical = 3.dp),
                     )
                 }
+                // CTA 按钮
+                Box(
+                    modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
+                    contentAlignment = Alignment.CenterEnd,
+                ) {
+                    androidx.compose.material3.TextButton(
+                        onClick = { onOpenCharacter(def.characterId) },
+                        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 12.dp, vertical = 0.dp),
+                    ) {
+                        Text(
+                            text = "查看详情 ›",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = rarityColor,
+                        )
+                    }
+                }
             }
+        }
+
+        // 流光边框层：在圆角矩形边上绘制移动的高光
+        Canvas(
+            modifier = Modifier
+                .matchParentSize()
+                .padding(0.5.dp)
+        ) {
+            val strokeW = 2.dp.toPx()
+            val corner = 18.dp.toPx()
+            // 构建圆角矩形路径（替代 outline.toPath()，Outline 无此方法）
+            val basePath = androidx.compose.ui.graphics.Path().apply {
+                addRoundRect(
+                    androidx.compose.ui.geometry.RoundRect(
+                        left = 0f, top = 0f,
+                        right = size.width, bottom = size.height,
+                        cornerRadius = androidx.compose.ui.geometry.CornerRadius(corner),
+                    )
+                )
+            }
+            // 基础边框：低透明度稀有度色
+            drawPath(basePath, style = androidx.compose.ui.graphics.drawscope.Stroke(strokeW), color = rarityColor.copy(alpha = 0.25f))
+            // 流光：一段高亮弧线沿边框移动
+            val glowColor = rarityColor.copy(alpha = 0.85f)
+            val pathMeasure = androidx.compose.ui.graphics.PathMeasure()
+            pathMeasure.setPath(basePath, forceClosed = true)
+            val totalLen = pathMeasure.length
+            val glowLen = totalLen * 0.18f  // 光段占总周长 18%
+            val startDist = shimmerProgress * totalLen
+            val segment = androidx.compose.ui.graphics.Path()
+            pathMeasure.getSegment(startDist, (startDist + glowLen).coerceAtMost(totalLen), segment, true)
+            // 如果还没绕完一圈，补尾段
+            if (startDist + glowLen > totalLen) {
+                val tail = androidx.compose.ui.graphics.Path()
+                pathMeasure.getSegment(0f, (startDist + glowLen) % totalLen, tail, true)
+                segment.addPath(tail)
+            }
+            drawPath(
+                segment,
+                style = androidx.compose.ui.graphics.drawscope.Stroke(
+                    width = strokeW + 1.5.dp.toPx(),
+                    cap = androidx.compose.ui.graphics.StrokeCap.Round,
+                ),
+                color = glowColor,
+            )
         }
     }
 }
@@ -399,7 +449,7 @@ private fun HeroPortrait(def: CharacterDataEntry, rarityColor: Color, modifier: 
     }
 }
 
-/** 主视觉下方动作钮：金箔召唤 + 石青图鉴；次行无尽之塔 / 成就双入口。 */
+/** 主视觉下方动作钮：错落弹簧入场 + 2×4 网格布局。 */
 @Composable
 private fun HeroButtons(
     onOpenGacha: () -> Unit,
@@ -411,41 +461,58 @@ private fun HeroButtons(
     onOpenBattlePass: () -> Unit,
     onOpenAffinity: () -> Unit,
 ) {
+    val buttons = listOf(
+        Triple("✦ 前往召唤", true) { onOpenGacha() },
+        Triple("丹青图鉴", false) { onOpenCollection() },
+        Triple("♾ 无尽之塔", false) { onOpenTower() },
+        Triple("✦ 成 就", false) { onOpenAchievements() },
+        Triple("📖 剧 情", false) { onOpenStory() },
+        Triple("📋 每日任务", false) { onOpenDailyMissions() },
+        Triple("🎫 纪 行", false) { onOpenBattlePass() },
+        Triple("❤️ 好感度", false) { onOpenAffinity() },
+    )
+
     Column {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            GoldButton("✦ 前往召唤", Modifier.weight(1f), onOpenGacha)
-            Spacer(Modifier.width(12.dp))
-            NeonButton("丹青图鉴", Modifier.weight(1f), onOpenCollection)
-        }
-        Spacer(Modifier.height(10.dp))
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            NeonButton("♾ 无尽之塔", Modifier.weight(1f), onOpenTower)
-            Spacer(Modifier.width(12.dp))
-            NeonButton("✦ 成 就", Modifier.weight(1f), onOpenAchievements)
-        }
-        Spacer(Modifier.height(10.dp))
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            NeonButton("📖 剧 情", Modifier.weight(1f), onOpenStory)
-            Spacer(Modifier.width(12.dp))
-            NeonButton("📋 每日任务", Modifier.weight(1f), onOpenDailyMissions)
-        }
-        Spacer(Modifier.height(10.dp))
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            NeonButton("🎫 纪 行", Modifier.weight(1f), onOpenBattlePass)
-            Spacer(Modifier.width(12.dp))
-            NeonButton("❤️ 好感度", Modifier.weight(1f), onOpenAffinity)
+        buttons.chunked(2).forEachIndexed { rowIdx, row ->
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                row.forEachIndexed { colIdx, (label, isGold, onClick) ->
+                    val index = rowIdx * 2 + colIdx
+                    // 错落弹簧入场：逐项延迟 80ms
+                    var ready by remember { mutableStateOf(false) }
+                    LaunchedEffect(Unit) {
+                        delay(index * 80L)
+                        ready = true
+                    }
+                    val itemScale by animateFloatAsState(
+                        targetValue = if (ready) 1f else 0.7f,
+                        animationSpec = spring(dampingRatio = 0.55f, stiffness = Spring.StiffnessMedium),
+                        label = "btnScale$index",
+                    )
+                    val itemAlpha by animateFloatAsState(
+                        targetValue = if (ready) 1f else 0f,
+                        animationSpec = tween(250),
+                        label = "btnAlpha$index",
+                    )
+                    if (colIdx == 1) Spacer(Modifier.width(12.dp))
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .graphicsLayer {
+                                scaleX = itemScale; scaleY = itemScale; alpha = itemAlpha
+                            }
+                    ) {
+                        if (isGold) {
+                            GoldButton(label, Modifier.fillMaxWidth(), onClick)
+                        } else {
+                            NeonButton(label, Modifier.fillMaxWidth(), onClick = onClick)
+                        }
+                    }
+                }
+            }
+            Spacer(Modifier.height(10.dp))
         }
     }
 }
@@ -533,6 +600,42 @@ private fun AvatarStrip(onOpenCharacter: (String) -> Unit) {
                     modifier = Modifier.padding(top = 3.dp),
                 )
                 Text(text = e.source, fontSize = 8.sp, color = AppTheme.Text2)
+            }
+        }
+        // 尾部「查看更多」指示器：暗示名录可继续探索
+        item(key = "moreIndicator", contentType = { "moreIndicator" }) {
+            val moreInteraction = remember { MutableInteractionSource() }
+            Column(
+                modifier = Modifier
+                    .inkSplash(moreInteraction)
+                    .clickable(interactionSource = moreInteraction, indication = null) { onOpenCharacter("") }
+                    .padding(start = 4.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center,
+            ) {
+                // 圆形占位 + 右箭头
+                Box(
+                    modifier = Modifier
+                        .size(58.dp)
+                        .clip(CircleShape)
+                        .background(AppTheme.Surface)
+                        .border(1.5.dp, AppTheme.Gold.copy(alpha = 0.35f), CircleShape),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        text = "›",
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = AppTheme.Gold,
+                    )
+                }
+                Text(
+                    text = "查看全部",
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = AppTheme.Gold,
+                    modifier = Modifier.padding(top = 3.dp),
+                )
             }
         }
     }

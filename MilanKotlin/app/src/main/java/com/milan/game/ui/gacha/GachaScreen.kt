@@ -461,7 +461,8 @@ fun GachaScreen(
             Spacer(Modifier.height(14.dp))
 
             // ── 待机能量枢纽（水墨丹青法阵）──
-            CyberHerald(modifier = Modifier.align(Alignment.CenterHorizontally), testMode = testMode)
+            val heraldPityRatio = if ((pool?.hardPity ?: 0) > 0) pity.toFloat() / pool!!.hardPity.coerceAtLeast(1) else 0f
+            CyberHerald(modifier = Modifier.align(Alignment.CenterHorizontally), testMode = testMode, pityRatio = heraldPityRatio)
             Spacer(Modifier.height(16.dp))
 
             Text(

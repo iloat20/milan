@@ -23,18 +23,22 @@ import kotlinx.coroutines.isActive
 
 /**
  * 次元光柱（Beam 阶段）：光柱自底部上冲 + 火花沿柱上升 + 顶部辉光 + 底部能量环扩散。
+ * rarity 驱动光柱宽度与火花密度：UR 更宽更密，R 纤细快速。
  */
 @Composable
-internal fun RiftBeam(modifier: Modifier = Modifier) {
+internal fun RiftBeam(rarity: Int = 1, modifier: Modifier = Modifier) {
     var time by remember { mutableFloatStateOf(0f) }
     LaunchedEffect(Unit) {
         while (isActive) {
             withFrameNanos { nano -> time = nano / 1_000_000_000f }
         }
     }
-    val sparks = remember {
+    // 稀有度驱动：UR 更多火花、更宽光柱
+    val sparkCount = when { rarity >= 4 -> 40; rarity == 3 -> 32; else -> 26 }
+    val beamWidth = when { rarity >= 4 -> 36f; rarity == 3 -> 30f; else -> 26f }
+    val sparks = remember(rarity) {
         val r = Random(20260822)
-        List(26) {
+        List(sparkCount) {
             CyberParticle(
                 startX = 0.5f,
                 startY = 1f,
@@ -42,8 +46,12 @@ internal fun RiftBeam(modifier: Modifier = Modifier) {
                 endY = r.nextFloat() * 0.85f,
                 delaySec = r.nextFloat() * 0.5f,
                 durSec = 0.45f + r.nextFloat() * 0.4f,
-                radiusDp = 1.2f + r.nextFloat() * 2.2f,
-                color = if (r.nextBoolean()) CyberPalette.Cyan else CyberPalette.BeamCore,
+                radiusDp = 1.2f + r.nextFloat() * 2.2f + if (rarity >= 4) 0.6f else 0f,
+                color = when {
+                    rarity >= 4 && r.nextBoolean() -> CyberPalette.Magenta
+                    r.nextBoolean() -> CyberPalette.Cyan
+                    else -> CyberPalette.BeamCore
+                },
             )
         }
     }
@@ -52,7 +60,8 @@ internal fun RiftBeam(modifier: Modifier = Modifier) {
         val progress = (time / 0.55f).coerceIn(0f, 1f)
         val e = 1f - (1f - progress) * (1f - progress)
         val beamH = size.height * e
-        val w = 26.dp.toPx()
+        val w = beamWidth.dp.toPx()
+        // 核心光柱
         drawRect(
             brush = Brush.verticalGradient(
                 listOf(
@@ -68,20 +77,25 @@ internal fun RiftBeam(modifier: Modifier = Modifier) {
             topLeft = Offset(cx - w / 2f, size.height - beamH),
             size = Size(w, beamH),
         )
+        // 外层辉光：UR 更宽
+        val glowW = if (rarity >= 4) 110f else 84f
         drawRect(
             brush = Brush.verticalGradient(
                 listOf(Color.Transparent, CyberPalette.VioletGlow.copy(alpha = 0.35f), Color.Transparent),
                 startY = size.height - beamH,
                 endY = size.height,
             ),
-            topLeft = Offset(cx - 84.dp.toPx(), size.height - beamH),
-            size = Size(168.dp.toPx(), beamH),
+            topLeft = Offset(cx - glowW.dp.toPx(), size.height - beamH),
+            size = Size(glowW.dp.toPx() * 2f, beamH),
         )
+        // 底部能量球：UR 更大
+        val orbR = if (rarity >= 4) 34f else 26f
         drawCircle(
             color = CyberPalette.Cyan.copy(alpha = 0.55f),
-            radius = 26.dp.toPx(),
+            radius = orbR.dp.toPx(),
             center = Offset(cx, size.height - beamH),
         )
+        // 底部扩散环
         val ringR = 30.dp.toPx() + progress * 170.dp.toPx()
         drawCircle(
             color = CyberPalette.BeamCore.copy(alpha = (1f - progress) * 0.5f),
@@ -95,6 +109,7 @@ internal fun RiftBeam(modifier: Modifier = Modifier) {
             center = Offset(cx, size.height),
             style = Stroke(1.5.dp.toPx()),
         )
+        // 火花
         sparks.forEach { p ->
             val local = ((time - p.delaySec) / p.durSec).coerceIn(0f, 1f)
             if (local <= 0f) return@forEach

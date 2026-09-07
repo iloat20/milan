@@ -221,9 +221,12 @@ private fun GlitchField(modifier: Modifier = Modifier) {
 /**
  * 待机能量枢纽（替换旧八卦法阵的常驻演出，GachaScreen 主界面抽卡区）。
  * 虚线外环 + 金箔旋转刻度弧 + 朱砂内核脉动；180° 周期 14s，内核呼吸 1.8s。
+ * pityRatio (0~1)：保底进度，越接近 1 脉动越快、金色越浓。
  */
 @Composable
-fun CyberHerald(modifier: Modifier = Modifier, testMode: Boolean = false) {
+fun CyberHerald(modifier: Modifier = Modifier, testMode: Boolean = false, pityRatio: Float = 0f) {
+    // 保底越近脉动越快：基准 1800ms → 最短 900ms（pityRatio=1）
+    val pulseDuration = (1800 - (pityRatio * 900f)).toInt().coerceIn(900, 1800)
     val spin by if (testMode) remember { mutableFloatStateOf(0f) }
     else rememberInfiniteTransition(label = "herald").animateFloat(
         initialValue = 0f,
@@ -235,19 +238,19 @@ fun CyberHerald(modifier: Modifier = Modifier, testMode: Boolean = false) {
     else rememberInfiniteTransition(label = "heraldPulse").animateFloat(
         initialValue = 0f,
         targetValue = 1f,
-        animationSpec = infiniteRepeatable(tween(1800, easing = LinearEasing), RepeatMode.Reverse),
+        animationSpec = infiniteRepeatable(tween(pulseDuration, easing = LinearEasing), RepeatMode.Reverse),
         label = "heraldPulse",
     )
+    // 保底越近金色越浓：外环从朱砂渐变到金箔
+    val ringAlpha = 0.35f + pityRatio * 0.35f
     Box(
         modifier = modifier
             .size(196.dp)
             .clip(CircleShape)
             .background(CyberPalette.DeepBg.copy(alpha = 0.85f))
-            .border(1.dp, CyberPalette.Cyan.copy(alpha = 0.35f), CircleShape),
+            .border(1.5.dp, CyberPalette.Cyan.copy(alpha = ringAlpha), CircleShape),
         contentAlignment = Alignment.Center,
     ) {
-        // 性能：drawWithCache 按 size 缓存辉光渐变 Brush——spin/pulse 只在 onDrawBehind 内读取，
-        // 动画帧仅触发重绘、不重建缓存；此前 Canvas 每帧 new Brush.radialGradient 持续分配。
         Box(
             Modifier
                 .fillMaxSize()
@@ -262,25 +265,24 @@ fun CyberHerald(modifier: Modifier = Modifier, testMode: Boolean = false) {
                             center = c,
                             style = Stroke(1.5.dp.toPx()),
                         )
+                        // 旋转弧：保底近时弧段更宽（120° → 180°）
+                        val arcSweep = 120f + pityRatio * 60f
                         drawArc(
-                            color = CyberPalette.Magenta.copy(alpha = 0.45f),
+                            color = CyberPalette.Magenta.copy(alpha = 0.45f + pityRatio * 0.25f),
                             startAngle = spin,
-                            sweepAngle = 120f,
+                            sweepAngle = arcSweep,
                             useCenter = false,
                             topLeft = Offset(d * 0.08f, d * 0.08f),
                             size = Size(d * 0.84f, d * 0.84f),
                             style = Stroke(2.dp.toPx()),
                         )
                         val r = d * (0.16f + 0.025f * pulse)
-                        // 脉冲用 scale 变换实现：渐变按常量半径构建后整体缩放，
-                        // 与「每帧按 r 重建渐变」数学等价（径向渐变均匀缩放不变），零逐帧分配。
                         scale(scaleX = r / d, scaleY = r / d, pivot = c) {
                             drawCircle(brush = glowBrush, radius = d, center = c)
                         }
                     }
                 },
         )
-        // 墨粒轨道：8 颗墨点绕中心旋转，营造水墨丹青仪式感
         if (!testMode) InkParticles(Modifier.fillMaxSize())
         Text("✦", color = CyberPalette.BeamCore, fontSize = 30.sp)
     }
@@ -402,7 +404,7 @@ fun CyberRevealLayer(
         ) {
             when (stage) {
                 RevealStage.Charge -> {
-                    ChargeCore(Modifier.fillMaxSize())
+                    ChargeCore(rarity = singleRarity, Modifier.fillMaxSize())
                     GlitchText(
                         text = when {
                             singleRarity >= 4 -> "古卷展开 · 浓墨蓄力"
@@ -416,7 +418,7 @@ fun CyberRevealLayer(
                     )
                 }
                 RevealStage.Beam -> {
-                    RiftBeam(Modifier.fillMaxSize())
+                    RiftBeam(rarity = singleRarity, Modifier.fillMaxSize())
                     GlitchText(
                         text = when {
                             singleRarity >= 4 -> "裂缝开启 · 万古回响"
