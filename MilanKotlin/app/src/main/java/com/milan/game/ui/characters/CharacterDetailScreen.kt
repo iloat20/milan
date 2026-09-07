@@ -2,6 +2,10 @@ package com.milan.game.ui.characters
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.SharedTransitionScope
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -20,6 +24,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -27,9 +32,11 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -161,6 +168,20 @@ fun CharacterDetailScreen(
     // ── 面板 Tab 切换状态 ──
     var selectedTab by remember { mutableIntStateOf(0) }
 
+    // 入场淡入+微缩放动画：立绘从 0.95 缩放弹入、淡入 400ms
+    var heroEntered by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) { heroEntered = true }
+    val heroAlpha by animateFloatAsState(
+        targetValue = if (heroEntered) 1f else 0f,
+        animationSpec = tween(400),
+        label = "heroAlpha",
+    )
+    val heroScale by animateFloatAsState(
+        targetValue = if (heroEntered) 1f else 0.95f,
+        animationSpec = spring(dampingRatio = 0.75f, stiffness = Spring.StiffnessLow),
+        label = "heroScale",
+    )
+
     PageBackground(modifier = modifier) {
         Column(
             Modifier
@@ -180,38 +201,58 @@ fun CharacterDetailScreen(
                 onBack = onBack,
                 onPrev = { switch(-1) },
                 onNext = { switch(1) },
+                modifier = Modifier.graphicsLayer {
+                    alpha = heroAlpha
+                    scaleX = heroScale; scaleY = heroScale
+                },
             )
             Spacer(Modifier.height(14.dp))
 
-            // ── Tab 栏（云海仙气风格：冰蓝底 + 金箔选中高亮）──
-            Row(
+            // ── Tab 栏（云海仙气风格：冰蓝底 + 金箔选中高亮 + 滑动指示器）──
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp)
                     .clip(RoundedCornerShape(10.dp))
                     .background(AppTheme.Surface.copy(alpha = 0.5f))
                     .border(1.dp, AppTheme.Stroke, RoundedCornerShape(10.dp)),
-                horizontalArrangement = Arrangement.SpaceEvenly,
             ) {
-                detailTabs.forEachIndexed { index, label ->
-                    val isSelected = selectedTab == index
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .clip(RoundedCornerShape(8.dp))
-                            .clickable { selectedTab = index }
-                            .background(
-                                if (isSelected) AppTheme.Gold.copy(alpha = 0.18f) else androidx.compose.ui.graphics.Color.Transparent,
+                // 选中项金色滑动指示器
+                val indicatorOffset by animateDpAsState(
+                    targetValue = (selectedTab * 100 / detailTabs.size).dp,
+                    animationSpec = tween(250),
+                    label = "tabIndicator",
+                )
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth(1f / detailTabs.size)
+                        .offset(x = indicatorOffset)
+                        .height(3.dp)
+                        .padding(horizontal = 4.dp)
+                        .clip(RoundedCornerShape(2.dp))
+                        .background(AppTheme.Gold),
+                )
+                Row(horizontalArrangement = Arrangement.SpaceEvenly) {
+                    detailTabs.forEachIndexed { index, label ->
+                        val isSelected = selectedTab == index
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .clip(RoundedCornerShape(8.dp))
+                                .clickable { selectedTab = index }
+                                .background(
+                                    if (isSelected) AppTheme.Gold.copy(alpha = 0.18f) else androidx.compose.ui.graphics.Color.Transparent,
+                                )
+                                .padding(vertical = 10.dp),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Text(
+                                text = label,
+                                fontSize = 13.sp,
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                color = if (isSelected) AppTheme.Gold else AppTheme.Text2,
                             )
-                            .padding(vertical = 10.dp),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Text(
-                            text = label,
-                            fontSize = 13.sp,
-                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                            color = if (isSelected) AppTheme.Gold else AppTheme.Text2,
-                        )
+                        }
                     }
                 }
             }

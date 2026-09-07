@@ -1,5 +1,12 @@
 package com.milan.game.ui.characters
 
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -15,12 +22,18 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -70,7 +83,7 @@ internal fun StatsPanel(
                 Primary("速", AppTheme.Gold, "速度", "Speed", stats.spd, stats.spd - baseStats.spd),
             )
             primaries.forEachIndexed { i, p ->
-                WoWStatRow(p.glyph, p.col, p.cn, p.en, p.value.toString(), p.bonus)
+                WoWStatRow(p.glyph, p.col, p.cn, p.en, p.value.toString(), p.bonus, index = i)
                 if (i < primaries.size - 1) WoWDivider()
             }
 
@@ -90,7 +103,7 @@ internal fun StatsPanel(
                 Secondary("挡", AppTheme.GoldDeep, "格挡", "Block", "${secCur.block}%", secCur.block - secBase.block),
             )
             secondaries.forEachIndexed { i, s ->
-                WoWStatRow(s.glyph, s.col, s.cn, s.en, s.value, s.bonus)
+                WoWStatRow(s.glyph, s.col, s.cn, s.en, s.value, s.bonus, index = i + primaries.size)
                 if (i < secondaries.size - 1) WoWDivider()
             }
 
@@ -127,7 +140,7 @@ internal fun StatsPanel(
 private data class Primary(val glyph: String, val col: Color, val cn: String, val en: String, val value: Int, val bonus: Int)
 private data class Secondary(val glyph: String, val col: Color, val cn: String, val en: String, val value: String, val bonus: Int)
 
-/** 魔兽风格属性行：圆形角色徽章 + 中英名称 + 等宽数值 + 绿色加成/红色降低（C# WoWStatRow）。 */
+/** 魔兽风格属性行：圆形角色徽章 + 中英名称 + 等宽数值 + 绿色加成/红色降低 + 入场填充条。 */
 @Composable
 private fun WoWStatRow(
     glyph: String,
@@ -136,39 +149,73 @@ private fun WoWStatRow(
     en: String,
     valueText: String,
     bonus: Int,
+    index: Int = 0,
 ) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.padding(vertical = 9.dp),
-    ) {
-        StatBadge(glyph, col)
-        Column(Modifier.padding(start = 12.dp)) {
-            Text(cn, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = AppTheme.Text1)
-            Text(en, fontSize = 10.sp, color = AppTheme.Text3, letterSpacing = 0.08.em)
-        }
-        Spacer(Modifier.weight(1f))
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(
-                valueText,
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold,
-                color = AppTheme.Text1,
-                style = Tabular,
-            )
-            // 变化指示器：正增长=绿色↑，负增长=红色↓，零/无变化不显示
-            if (bonus != 0) {
-                val isPositive = bonus > 0
-                val indicatorColor = if (isPositive) AppTheme.WoWGreen else AppTheme.Danger
-                val arrow = if (isPositive) "↑" else "↓"
-                Text(
-                    " $arrow${kotlin.math.abs(bonus)}",
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = indicatorColor,
-                    style = Tabular,
-                    modifier = Modifier.padding(start = 6.dp),
-                )
+    // 入场填充动画：每行延迟 80ms，从 0 展开到 1
+    var fillReady by remember { mutableFloatStateOf(0f) }
+    LaunchedEffect(Unit) {
+        kotlinx.coroutines.delay(index * 80L)
+        fillReady = 1f
+    }
+    val fillFraction by animateFloatAsState(
+        targetValue = fillReady,
+        animationSpec = spring(dampingRatio = 0.7f, stiffness = Spring.StiffnessLow),
+        label = "statFill$index",
+    )
+
+    Column(Modifier.padding(vertical = 9.dp)) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            StatBadge(glyph, col)
+            Column(Modifier.padding(start = 12.dp)) {
+                Text(cn, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = AppTheme.Text1)
+                Text(en, fontSize = 10.sp, color = AppTheme.Text3, letterSpacing = 0.08.em)
             }
+            Spacer(Modifier.weight(1f))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    valueText,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = AppTheme.Text1,
+                    style = Tabular,
+                )
+                if (bonus != 0) {
+                    val isPositive = bonus > 0
+                    val indicatorColor = if (isPositive) AppTheme.WoWGreen else AppTheme.Danger
+                    val arrow = if (isPositive) "↑" else "↓"
+                    Text(
+                        " $arrow${kotlin.math.abs(bonus)}",
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = indicatorColor,
+                        style = Tabular,
+                        modifier = Modifier.padding(start = 6.dp),
+                    )
+                }
+            }
+        }
+        // 入场填充条：角色色渐隐条，宽度随动画展开
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .padding(start = 46.dp, top = 2.dp)
+                .height(2.dp)
+                .clip(RoundedCornerShape(1.dp))
+                .background(AppTheme.Surface)
+        ) {
+            Box(
+                Modifier
+                    .fillMaxWidth(fraction = fillFraction)
+                    .height(2.dp)
+                    .clip(RoundedCornerShape(1.dp))
+                    .background(
+                        Brush.horizontalGradient(
+                            listOf(col.copy(alpha = 0.7f), col.copy(alpha = 0.2f))
+                        )
+                    )
+            )
         }
     }
 }
