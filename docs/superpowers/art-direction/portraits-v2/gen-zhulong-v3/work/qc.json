@@ -1,0 +1,22 @@
+{
+  "path": "C:\\Users\\Administrator\\Downloads\\work\\milan\\docs\\superpowers\\art-direction\\portraits-v2\\gen-zhulong-v3\\final\\char_ur_zhulong_candidate4.webp",
+  "size": [
+    1536,
+    2304
+  ],
+  "bytes": 3306492,
+  "opacity_ratio": 0.605,
+  "height_frac": 0.952,
+  "center_dx": 0.013,
+  "foot_present": 0.323,
+  "bbox": {
+    "y0": 61,
+    "y1": 2254,
+    "x0": 123,
+    "x1": 1454
+  },
+  "issues": [
+    "WARN[B-size] bytes too large (>2.5M)",
+    "WARN[C] opacity_ratio 0.605 > 0.55 (bg residue)"
+  ]
+}

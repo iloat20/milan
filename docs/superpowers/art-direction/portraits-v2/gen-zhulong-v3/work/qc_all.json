@@ -1,0 +1,385 @@
+[
+  {
+    "name": "char_ur_ironman.webp",
+    "rarity": "UR",
+    "canvas": "1536x2304",
+    "bytes": 1715974,
+    "opacity": 0.282,
+    "height_frac": 0.816,
+    "center_dx": -0.02,
+    "foot": 0.0,
+    "issues": [
+      "WARN[C] foot_present 0.0000 (figure may not reach bottom)"
+    ]
+  },
+  {
+    "name": "char_ur_jinwu.webp",
+    "rarity": "UR",
+    "canvas": "1536x2304",
+    "bytes": 1754138,
+    "opacity": 0.235,
+    "height_frac": 0.865,
+    "center_dx": 0.006,
+    "foot": 0.0,
+    "issues": [
+      "WARN[C] foot_present 0.0000 (figure may not reach bottom)"
+    ]
+  },
+  {
+    "name": "char_ur_keqing.webp",
+    "rarity": "UR",
+    "canvas": "1536x2304",
+    "bytes": 2794524,
+    "opacity": 0.438,
+    "height_frac": 0.977,
+    "center_dx": 0.005,
+    "foot": 0.34,
+    "issues": [
+      "WARN[B] bytes 2794524 > 2500000 (oversized)"
+    ]
+  },
+  {
+    "name": "char_ur_kikyo.webp",
+    "rarity": "UR",
+    "canvas": "1536x2304",
+    "bytes": 2092790,
+    "opacity": 0.337,
+    "height_frac": 0.832,
+    "center_dx": 0.002,
+    "foot": 0.122,
+    "issues": []
+  },
+  {
+    "name": "char_ur_nuwa.webp",
+    "rarity": "UR",
+    "canvas": "1536x2304",
+    "bytes": 2484188,
+    "opacity": 0.453,
+    "height_frac": 0.956,
+    "center_dx": -0.004,
+    "foot": 0.162,
+    "issues": []
+  },
+  {
+    "name": "char_ur_strange.webp",
+    "rarity": "UR",
+    "canvas": "1536x2304",
+    "bytes": 2642140,
+    "opacity": 0.479,
+    "height_frac": 0.946,
+    "center_dx": 0.02,
+    "foot": 0.055,
+    "issues": [
+      "WARN[B] bytes 2642140 > 2500000 (oversized)"
+    ]
+  },
+  {
+    "name": "char_ur_thor.webp",
+    "rarity": "UR",
+    "canvas": "1536x2304",
+    "bytes": 2047266,
+    "opacity": 0.348,
+    "height_frac": 0.91,
+    "center_dx": 0.012,
+    "foot": 0.054,
+    "issues": []
+  },
+  {
+    "name": "char_ur_wuxu.webp",
+    "rarity": "UR",
+    "canvas": "1536x2304",
+    "bytes": 1440708,
+    "opacity": 0.253,
+    "height_frac": 0.848,
+    "center_dx": -0.001,
+    "foot": 0.0,
+    "issues": [
+      "WARN[C] foot_present 0.0000 (figure may not reach bottom)"
+    ]
+  },
+  {
+    "name": "char_ur_xingtian.webp",
+    "rarity": "UR",
+    "canvas": "1536x2304",
+    "bytes": 2351838,
+    "opacity": 0.44,
+    "height_frac": 0.935,
+    "center_dx": -0.005,
+    "foot": 0.066,
+    "issues": []
+  },
+  {
+    "name": "char_ur_zhulong.webp",
+    "rarity": "UR",
+    "canvas": "1536x2304",
+    "bytes": 3296672,
+    "opacity": 0.63,
+    "height_frac": 1.0,
+    "center_dx": 0.026,
+    "foot": 0.47,
+    "issues": [
+      "WARN[B] bytes 3296672 > 2500000 (oversized)",
+      "WARN[C] opacity 0.630 > 0.55 (possible bg residue)"
+    ]
+  },
+  {
+    "name": "char_ssr_baihu.webp",
+    "rarity": "SSR",
+    "canvas": "1280x1920",
+    "bytes": 1880686,
+    "opacity": 0.441,
+    "height_frac": 0.966,
+    "center_dx": 0.025,
+    "foot": 0.057,
+    "issues": []
+  },
+  {
+    "name": "char_ssr_chiyou.webp",
+    "rarity": "SSR",
+    "canvas": "1280x1920",
+    "bytes": 2657628,
+    "opacity": 0.624,
+    "height_frac": 0.998,
+    "center_dx": -0.005,
+    "foot": 0.288,
+    "issues": [
+      "WARN[B] bytes 2657628 > 2000000 (oversized)",
+      "WARN[C] opacity 0.624 > 0.55 (possible bg residue)"
+    ]
+  },
+  {
+    "name": "char_ssr_feilian.webp",
+    "rarity": "SSR",
+    "canvas": "1280x1920",
+    "bytes": 1727048,
+    "opacity": 0.368,
+    "height_frac": 0.972,
+    "center_dx": -0.012,
+    "foot": 0.035,
+    "issues": []
+  },
+  {
+    "name": "char_ssr_fenghuang.webp",
+    "rarity": "SSR",
+    "canvas": "1280x1920",
+    "bytes": 3179162,
+    "opacity": 0.624,
+    "height_frac": 0.985,
+    "center_dx": -0.008,
+    "foot": 0.357,
+    "issues": [
+      "WARN[B] bytes 3179162 > 2000000 (oversized)",
+      "WARN[C] opacity 0.624 > 0.55 (possible bg residue)"
+    ]
+  },
+  {
+    "name": "char_ssr_leishen.webp",
+    "rarity": "SSR",
+    "canvas": "1280x1920",
+    "bytes": 1320092,
+    "opacity": 0.255,
+    "height_frac": 0.803,
+    "center_dx": 0.004,
+    "foot": 0.068,
+    "issues": []
+  },
+  {
+    "name": "char_ssr_shangyang.webp",
+    "rarity": "SSR",
+    "canvas": "1280x1920",
+    "bytes": 2555020,
+    "opacity": 0.604,
+    "height_frac": 0.972,
+    "center_dx": -0.009,
+    "foot": 0.559,
+    "issues": [
+      "WARN[B] bytes 2555020 > 2000000 (oversized)",
+      "WARN[C] opacity 0.604 > 0.55 (possible bg residue)"
+    ]
+  },
+  {
+    "name": "char_ssr_xiangliu.webp",
+    "rarity": "SSR",
+    "canvas": "1280x1920",
+    "bytes": 2299040,
+    "opacity": 0.595,
+    "height_frac": 0.967,
+    "center_dx": 0.006,
+    "foot": 0.364,
+    "issues": [
+      "WARN[B] bytes 2299040 > 2000000 (oversized)",
+      "WARN[C] opacity 0.595 > 0.55 (possible bg residue)"
+    ]
+  },
+  {
+    "name": "char_sr_bifang.webp",
+    "rarity": "SR",
+    "canvas": "1024x1536",
+    "bytes": 904924,
+    "opacity": 0.259,
+    "height_frac": 0.829,
+    "center_dx": 0.009,
+    "foot": 0.0,
+    "issues": [
+      "WARN[C] foot_present 0.0000 (figure may not reach bottom)"
+    ]
+  },
+  {
+    "name": "char_sr_huayao.webp",
+    "rarity": "SR",
+    "canvas": "1024x1536",
+    "bytes": 1901842,
+    "opacity": 0.644,
+    "height_frac": 0.988,
+    "center_dx": 0.003,
+    "foot": 0.396,
+    "issues": [
+      "WARN[B] bytes 1901842 > 1500000 (oversized)",
+      "WARN[C] opacity 0.644 > 0.55 (possible bg residue)"
+    ]
+  },
+  {
+    "name": "char_sr_jingwei.webp",
+    "rarity": "SR",
+    "canvas": "1024x1536",
+    "bytes": 651480,
+    "opacity": 0.259,
+    "height_frac": 0.899,
+    "center_dx": 0.032,
+    "foot": 0.037,
+    "issues": []
+  },
+  {
+    "name": "char_sr_qiongqi.webp",
+    "rarity": "SR",
+    "canvas": "1024x1536",
+    "bytes": 1367502,
+    "opacity": 0.469,
+    "height_frac": 0.876,
+    "center_dx": 0.006,
+    "foot": 0.013,
+    "issues": []
+  },
+  {
+    "name": "char_sr_suanni.webp",
+    "rarity": "SR",
+    "canvas": "1024x1536",
+    "bytes": 1305512,
+    "opacity": 0.474,
+    "height_frac": 0.933,
+    "center_dx": 0.004,
+    "foot": 0.123,
+    "issues": []
+  },
+  {
+    "name": "char_sr_taotie.webp",
+    "rarity": "SR",
+    "canvas": "1024x1536",
+    "bytes": 890282,
+    "opacity": 0.297,
+    "height_frac": 0.669,
+    "center_dx": 0.022,
+    "foot": 0.0,
+    "issues": [
+      "FAIL[C] height_frac 0.669 < 0.7 (bust?)",
+      "WARN[C] foot_present 0.0000 (figure may not reach bottom)"
+    ]
+  },
+  {
+    "name": "char_sr_xuanwu.webp",
+    "rarity": "SR",
+    "canvas": "1024x1536",
+    "bytes": 1516038,
+    "opacity": 0.563,
+    "height_frac": 0.92,
+    "center_dx": 0.001,
+    "foot": 0.214,
+    "issues": [
+      "WARN[B] bytes 1516038 > 1500000 (oversized)",
+      "WARN[C] opacity 0.563 > 0.55 (possible bg residue)"
+    ]
+  },
+  {
+    "name": "char_r_dangang.webp",
+    "rarity": "R",
+    "canvas": "832x1248",
+    "bytes": 1023282,
+    "opacity": 0.534,
+    "height_frac": 0.881,
+    "center_dx": -0.006,
+    "foot": 0.046,
+    "issues": []
+  },
+  {
+    "name": "char_r_lili.webp",
+    "rarity": "R",
+    "canvas": "832x1248",
+    "bytes": 778284,
+    "opacity": 0.445,
+    "height_frac": 0.82,
+    "center_dx": 0.042,
+    "foot": 0.0,
+    "issues": [
+      "WARN[C] foot_present 0.0001 (figure may not reach bottom)"
+    ]
+  },
+  {
+    "name": "char_r_luoyu.webp",
+    "rarity": "R",
+    "canvas": "832x1248",
+    "bytes": 1253552,
+    "opacity": 0.461,
+    "height_frac": 0.897,
+    "center_dx": -0.012,
+    "foot": 0.027,
+    "issues": [
+      "WARN[B] bytes 1253552 > 1200000 (oversized)"
+    ]
+  },
+  {
+    "name": "char_r_qinyuan.webp",
+    "rarity": "R",
+    "canvas": "832x1248",
+    "bytes": 702606,
+    "opacity": 0.283,
+    "height_frac": 0.938,
+    "center_dx": -0.008,
+    "foot": 0.036,
+    "issues": []
+  },
+  {
+    "name": "char_r_shanxiao.webp",
+    "rarity": "R",
+    "canvas": "832x1248",
+    "bytes": 1089938,
+    "opacity": 0.544,
+    "height_frac": 0.82,
+    "center_dx": 0.011,
+    "foot": 0.035,
+    "issues": []
+  },
+  {
+    "name": "char_r_sishu.webp",
+    "rarity": "R",
+    "canvas": "832x1248",
+    "bytes": 750542,
+    "opacity": 0.386,
+    "height_frac": 0.943,
+    "center_dx": -0.004,
+    "foot": 0.052,
+    "issues": []
+  },
+  {
+    "name": "char_r_yecha.webp",
+    "rarity": "R",
+    "canvas": "832x1248",
+    "bytes": 593372,
+    "opacity": 0.335,
+    "height_frac": 0.719,
+    "center_dx": 0.005,
+    "foot": 0.0,
+    "issues": [
+      "WARN[C] foot_present 0.0000 (figure may not reach bottom)"
+    ]
+  }
+]

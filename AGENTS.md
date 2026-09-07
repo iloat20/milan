@@ -35,8 +35,10 @@
   Android 依赖只允许出现在接入层：`MainActivity.kt`、`MilanApp.kt`、`data/AndroidSaveProvider.kt`、`ui/` 可绘制部分。
   SaveProvider 是接口，Android 实现注入。随机源一律 `kotlin.random.Random`（KMP 可移植；`java.util.Random` 已清除）。
 - **`shared/.../domain/progression/EconomyFormulas.kt` 是养成数值的单一事实来源**——任何「升级/突破/升星/重复碎片」公式必须调用它，禁止就地写数字（源码注释明示铁律；桌面模拟器与 App 共用同一份）。
-- 货币/养成写操作是事务范式：先预算/校验可支付 → 改内存 → 落盘；落盘失败回滚本次内存改动并返回非 Success（`WriteOutcome`，见 `services/WriteOutcome.kt`），回滚路径**不广播事件**。写操作统一走 `GameService.transaction(tag, mutate, rollback, onCommit)` 模板；`pull` 返回 `PullOutcome`。UI 刷新优先订阅 `GameService.snapshot`（StateFlow）而非 EventBus 轻标记。
+- 货币/养成写操作是事务范式：先预算/校验可支付 → 改内存 → 落盘；落盘失败回滚本次内存改动并返回非 Success（`WriteOutcome`，见 `services/WriteOutcome.kt`），回滚路径**不广播事件**。写操作统一走 `core.transaction(tag, mutate, rollback, onCommit)` 模板；`pull` 返回 `PullOutcome`。UI 刷新优先订阅 `GameService.snapshot`（StateFlow）而非 EventBus 轻标记。
 - **写操作全部为 `suspend`（2026-08 主线程 IO 异步化）**：内存变更与落盘在 `writeMutex`（串行 Mutex）临界区内完成，落盘经 `Dispatchers.IO`，主线程不阻塞；回滚与落盘判定同临界区同步完成。UI 侧必须在协程（`rememberCoroutineScope().launch` / `LaunchedEffect`）中调用；单元测试用 `runTest`。持锁路径（如 `pull`）内部走 `transactionLocked`（Mutex 不可重入，勿再套 `transaction`）。
+- **临界区统一走 `ServiceCore.withWriteLock`（2026-09-06 S1）**：替代原手动范式 `core.writeMutex.withLock { ... transactionLocked(...) }`，全部聚合服务写入口（21 处）已迁移。它在**出锁后**统一 `EventBus.dispatch()`——防订阅者 handler 内再调 service 写造成 Mutex 重入死锁（不可重入）。新增服务方法务必套本模板，勿裸用 `writeMutex.withLock`。
+- **命名约定（2026-09-06 S6）**：对外"发放类"API 一律 `grant` 前缀（`grantSoft` / `grantHard` / `grantExp` / `grantAffinity` / `grantBattlePassExp` / `grantEquipment`），旧 `addXxx` 名保留为 `@Deprecated` 兼容别名（下次大版本删除）。**例外**：`ServiceCore` 的底层原子增量原语保留 `add` 前缀（`addItemDelta` / `addCurrencyDelta` / `addAffinityDelta`）——语义是"原子增减"非"业务发放"，且必须是临界区内调用的非 suspend 函数。
 - `SaveManager` 载入**永不抛异常**：主档损坏先试 `.bak`/`.tmp` 备份，全失败才回默认档并走 `onTrace` 留痕（对应 CrashReporter）。`GameState` 初始化里抛异常 = App 永久打不开（MilanApp 的 catch 只是兜底）。
 - **不要改动序列化结构**：`@Serializable` 存档模型与 `ContentModels` 的 `@SerialName` 对齐 data.json 的 PascalCase 键（对齐 C# 的 IncludeFields 语义），改键名 = 存档/内容全丢。
 - EventBus `publish` 只入队，必须由宿主定期 `dispatch` 才真正派发（队列上限 512）；订阅时传 `owner` 以便 `unsubscribeAll` 批量退订；handler 抛异常走 `handlerException` 留痕，不炸线程。
