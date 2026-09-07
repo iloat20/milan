@@ -78,6 +78,16 @@ data object BattlePassRoute
 @Serializable
 data object AffinityRoute
 
+/** PVP 竞技场：子页，盖住底部 tab，返回回主页。 */
+@Serializable
+data object ArenaRoute
+
+// PVE 副本路由 PvERoute 已删除（2026-09-06 S2，PvEService 死功能裁撤）。
+
+/** 活动：子页，盖住底部 tab，返回回主页。 */
+@Serializable
+data object EventRoute
+
 /** [NavItem] → 对应 tab 路由（底部导航统一映射入口；命名 toNavRoute 避免与 androidx.navigation.toRoute 扩展同名）。 */
 fun NavItem.toNavRoute(): TabRoute = when (this) {
     NavItem.Home -> HomeRoute

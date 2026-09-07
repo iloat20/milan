@@ -338,7 +338,7 @@ fun DialogueScreen(
                                     val speaker = currentLine.speakerId
                                     if (choice.affinityBonus > 0 && speaker != null && speaker != "narrator") {
                                         scope.launch {
-                                            try { service.addCharacterAffinity(speaker, choice.affinityBonus) } catch (_: Exception) { }
+                                            try { service.grantAffinity(speaker, choice.affinityBonus) } catch (_: Exception) { }
                                         }
                                     }
                                     if (choice.nextStageId != null) {

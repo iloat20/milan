@@ -72,7 +72,7 @@ fun InkSplashTransition(
         val cy = size.height / 2f
         val maxRadius = size.width.coerceAtLeast(size.height) * 0.8f
 
-        val animProgress = if (isEntering) progress else (1f - progress)
+        val animProgress = if (isEntering) (1f - progress) else progress
         val currentRadius = maxRadius * animProgress
 
         drawInkBlob(

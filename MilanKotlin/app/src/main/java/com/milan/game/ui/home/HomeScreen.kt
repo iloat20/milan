@@ -98,6 +98,8 @@ fun HomeScreen(
     onOpenDailyMissions: () -> Unit = {},
     onOpenBattlePass: () -> Unit = {},
     onOpenAffinity: () -> Unit = {},
+    onOpenArena: () -> Unit = {},
+    onOpenEvent: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     var entered by remember { mutableStateOf(false) }

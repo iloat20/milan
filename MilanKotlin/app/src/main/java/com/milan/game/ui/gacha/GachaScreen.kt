@@ -355,7 +355,13 @@ fun GachaScreen(
                             Spacer(Modifier.height(8.dp))
                             val softStart = EconomyFormulas.softPityStart(pool.hardPity)
                             val inSoft = softStart > 0 && pity >= softStart
-                            val pityColor = if (inSoft) AppTheme.GoldHi else AppTheme.Frost
+                            // 即将到达软保底（差 5 抽内）：提前预警
+                            val nearSoft = softStart > 0 && !inSoft && pity >= softStart - 5
+                            val pityColor = when {
+                                inSoft -> AppTheme.GoldHi
+                                nearSoft -> AppTheme.Warning
+                                else -> AppTheme.Frost
+                            }
                             LinearProgressIndicator(
                                 progress = { pity.toFloat() / pool.hardPity.coerceAtLeast(1) },
                                 modifier = Modifier
@@ -367,7 +373,16 @@ fun GachaScreen(
                             )
                             Spacer(Modifier.height(4.dp))
                             Text(
-                                text = "保底进度  $pity / ${pool.hardPity}" + if (inSoft) " · 软保底爬坡中" else "",
+                                text = buildString {
+                                    append("保底进度  $pity / ${pool.hardPity}")
+                                    when {
+                                        inSoft -> append(" · 软保底爬坡中 ↑↑")
+                                        nearSoft -> {
+                                            val remaining = softStart - pity
+                                            append(" · 即将进入软保底（还差 $remaining 抽）")
+                                        }
+                                    }
+                                },
                                 fontSize = 11.sp,
                                 color = pityColor,
                             )
@@ -712,13 +727,34 @@ private fun GachaChip(
             .padding(vertical = 10.dp, horizontal = 4.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        PortraitImage(
-            characterId = r.characterId ?: "",
-            rarity = r.rarity,
-            name = r.characterName,
-            modifier = Modifier.size(42.dp).clip(RoundedCornerShape(10.dp)),
-            target = PortraitTarget.Thumb,
-        )
+        Box {
+            PortraitImage(
+                characterId = r.characterId ?: "",
+                rarity = r.rarity,
+                name = r.characterName,
+                modifier = Modifier.size(42.dp).clip(RoundedCornerShape(10.dp)),
+                target = PortraitTarget.Thumb,
+            )
+            // 「新角色」闪光标记：SSR+/UR 首次获取时在立绘右上角显示金色 NEW 徽章
+            if (r.isNew && r.rarity >= 3) {
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(end = 2.dp, top = 2.dp)
+                        .clip(RoundedCornerShape(4.dp))
+                        .background(AppTheme.Gold)
+                        .padding(horizontal = 3.dp, vertical = 1.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        text = "NEW",
+                        fontSize = 7.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = AppTheme.GoldTextOn,
+                    )
+                }
+            }
+        }
         Spacer(Modifier.height(6.dp))
         Text(AppTheme.rarityName(r.rarity), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = rc)
         Text(

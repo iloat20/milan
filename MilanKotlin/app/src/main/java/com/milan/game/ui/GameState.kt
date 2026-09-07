@@ -139,7 +139,13 @@ object GameState {
     }
 
     /**
-     * 由基础值 + 养成推导实时战斗属性（单一事实来源：详情页/养成页/战斗页都走这里）。
+     * 由基础值 + 养成推导实时战斗属性（详情页/养成页用）。
+     *
+     * ⚠️ TODO（BUG #4）：本方法不含装备属性加成，而 [ServiceCore.unitStatsFor] 包含。
+     * 当前装备系统已禁用（EquipmentService 删除），无实际影响；若未来恢复装备系统，
+     * 详情页/养成页显示的属性将与战斗实际使用的属性不一致。
+     * 修复方向：将 [ServiceCore.calculateEquipmentStats] 下沉到 shared domain，
+     * 或在本方法中调用 service 的装备计算接口。
      */
     fun computeStats(ch: OwnedCharacterView): UnitStats =
         computeStatsAt(ch, ch.save.level, max(1, ch.save.stage))
@@ -162,6 +168,15 @@ object GameState {
         val branchIds = ch.talent?.nodes.orEmpty()
             .filter { save.talentPoints.contains(it.nodeId) }
             .map { it.branchId }
+
+        // 构建节点 Effects 映射（新天赋效果系统）
+        val allocatedNodes = ch.talent?.nodes.orEmpty()
+            .filter { save.talentPoints.contains(it.nodeId) }
+            .map { it.nodeId }
+        val nodeEffectsMap = ch.talent?.nodes.orEmpty()
+            .filter { it.effects.isNotEmpty() }
+            .associate { it.nodeId to it.effects }
+
         // 属性公式单一事实来源下沉 shared domain（StatsCalculator）：
         // 桌面模拟器 / 未来战斗页与 App 同口径；此处仅做 app 类型 → 领域参数的适配。
         return StatsCalculator.compute(
@@ -173,6 +188,8 @@ object GameState {
             characterId = save.characterId,
             progression = progressionEngine,
             talent = talentEngine,
+            nodeEffectsMap = nodeEffectsMap.ifEmpty { null },
+            allocatedNodes = allocatedNodes,
         )
     }
 }

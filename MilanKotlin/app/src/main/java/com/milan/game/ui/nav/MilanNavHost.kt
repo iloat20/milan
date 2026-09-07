@@ -175,6 +175,8 @@ internal fun MilanNavHost(openGachaOnStart: Boolean = false) {
                         onOpenDailyMissions = { navController.navigate(DailyMissionRoute) },
                         onOpenBattlePass = { navController.navigate(BattlePassRoute) },
                         onOpenAffinity = { navController.navigate(AffinityRoute) },
+                        onOpenArena = { navController.navigate(ArenaRoute) },
+                        onOpenEvent = { navController.navigate(EventRoute) },
                     )
                 }
                 composable<GachaRoute>(
@@ -322,6 +324,19 @@ internal fun MilanNavHost(openGachaOnStart: Boolean = false) {
                     com.milan.game.ui.affinity.AffinityScreen(
                         onBack = { navController.popBackStack() },
                         onOpenCharacter = ::openCharacter,
+                    )
+                }
+                // PVP 竞技场：子页盖 tab，返回回主页
+                composable<ArenaRoute> {
+                    com.milan.game.ui.arena.ArenaScreen(
+                        onBack = { navController.popBackStack() },
+                    )
+                }
+                // PVE 副本 composable 块已删除（2026-09-06 S2，PvEService 死功能裁撤）。
+                // 活动：子页盖 tab，返回回主页
+                composable<EventRoute> {
+                    com.milan.game.ui.event.EventScreen(
+                        onBack = { navController.popBackStack() },
                     )
                 }
             }

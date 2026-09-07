@@ -82,7 +82,8 @@ fun TowerScreen(
     }
     val teamPower = members.sumOf { GameState.computeStats(it).atk }
 
-    PageBackground(modifier = modifier) {
+    Box(modifier = modifier.fillMaxSize()) {
+    PageBackground(modifier = Modifier) {
         Column(Modifier.fillMaxSize()) {
             AppTopBar(title = "无 尽 之 塔", onBack = onBack)
             Column(
@@ -256,6 +257,22 @@ fun TowerScreen(
                 Spacer(Modifier.height(20.dp))
             }
         }
+    }
+
+    // ── 全屏战斗结算覆盖层（2026-09 战斗视觉增强）──
+    val completedResult = result as? TowerOutcome.Completed
+    if (completedResult != null) {
+        com.milan.game.ui.components.BattleResultOverlay(
+            victory = completedResult.victory,
+            turns = completedResult.turns,
+            rewardSoft = completedResult.rewardSoft,
+            rewardHard = completedResult.rewardHard,
+            recordAdvanced = completedResult.recordAdvanced,
+            bestFloorAfter = completedResult.bestFloorAfter,
+            onDismiss = { result = null },
+            log = completedResult.log,
+        )
+    }
     }
 }
 

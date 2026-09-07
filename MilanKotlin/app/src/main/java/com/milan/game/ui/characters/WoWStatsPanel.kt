@@ -127,7 +127,7 @@ internal fun StatsPanel(
 private data class Primary(val glyph: String, val col: Color, val cn: String, val en: String, val value: Int, val bonus: Int)
 private data class Secondary(val glyph: String, val col: Color, val cn: String, val en: String, val value: String, val bonus: Int)
 
-/** 魔兽风格属性行：圆形角色徽章 + 中英名称 + 等宽数值 + 绿色加成（C# WoWStatRow）。 */
+/** 魔兽风格属性行：圆形角色徽章 + 中英名称 + 等宽数值 + 绿色加成/红色降低（C# WoWStatRow）。 */
 @Composable
 private fun WoWStatRow(
     glyph: String,
@@ -155,12 +155,16 @@ private fun WoWStatRow(
                 color = AppTheme.Text1,
                 style = Tabular,
             )
-            if (bonus > 0) {
+            // 变化指示器：正增长=绿色↑，负增长=红色↓，零/无变化不显示
+            if (bonus != 0) {
+                val isPositive = bonus > 0
+                val indicatorColor = if (isPositive) AppTheme.WoWGreen else AppTheme.Danger
+                val arrow = if (isPositive) "↑" else "↓"
                 Text(
-                    " +$bonus",
+                    " $arrow${kotlin.math.abs(bonus)}",
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Bold,
-                    color = AppTheme.WoWGreen,
+                    color = indicatorColor,
                     style = Tabular,
                     modifier = Modifier.padding(start = 6.dp),
                 )

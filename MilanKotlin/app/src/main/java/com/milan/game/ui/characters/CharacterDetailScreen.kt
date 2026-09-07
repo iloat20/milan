@@ -1,23 +1,46 @@
 package com.milan.game.ui.characters
 
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.SharedTransitionScope
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.SharedTransitionScope.ResizeMode
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.milan.game.data.CharacterSaveState
 import com.milan.game.infrastructure.SpeechPlayer
@@ -33,13 +56,14 @@ import com.milan.game.ui.theme.ElementTheme
 import com.milan.game.ui.theme.WorldTheme
 import kotlin.math.max
 
+// 角色详情面板标签（武器/属性/技能/故事/语音）
+private val detailTabs = listOf("武器", "属性", "技能", "故事", "语音")
+
 /**
  * 角色详情页（C# CharacterDetailActivity 翻译）。
  *
- * 布局：Hero（[SubPageHero]：立绘 + 底部渐隐 + 铭牌 + 悬浮操作）→ 五个面板
- * （武器 [WeaponPanel] / 属性 [StatsPanel] / 技能 [SkillPanel] / 故事 [StoryPanel] / 语音 [VoicePanel]，
- * P4-1 已拆分为同包 WeaponPanel.kt / WoWStatsPanel.kt / InfoPanels.kt）。
- * 属性面板走 [GameState.computeStats] / [GameState.computeStatsAt]，与养成/战斗同源。
+ * 布局：Hero（[SubPageHero]：立绘 + 底部渐隐 + 铭牌 + 悬浮操作）→ Tab 栏 + AnimatedContent 面板切换。
+ * 面板走 [GameState.computeStats] / [GameState.computeStatsAt]，与养成/战斗同源。
  *
  * P2 未迁移（单 Activity 架构下简化）：视差立绘（Parallax3DPortraitView）、
  * 武器舞台帧动画（WeaponPreviewView）、错落入场动画（Motion.PlayEntrance）、
@@ -122,7 +146,7 @@ fun CharacterDetailScreen(
             Modifier.sharedBounds(
                 sharedContentState = rememberSharedContentState(key = "portrait_${view.save.characterId}"),
                 animatedVisibilityScope = animatedVisibilityScope,
-                resizeMode = SharedTransitionScope.ResizeMode.RemeasureToBounds,
+                resizeMode = ResizeMode.RemeasureToBounds,
             )
         }
     } else Modifier
@@ -133,6 +157,9 @@ fun CharacterDetailScreen(
         derivedStateOf { scrollState.value * 0.3f }
     }
     val parallaxPortraitModifier = portraitModifier.graphicsLayer { translationY = heroParallax }
+
+    // ── 面板 Tab 切换状态 ──
+    var selectedTab by remember { mutableIntStateOf(0) }
 
     PageBackground(modifier = modifier) {
         Column(
@@ -156,40 +183,82 @@ fun CharacterDetailScreen(
             )
             Spacer(Modifier.height(14.dp))
 
-            Column(Modifier.padding(horizontal = 16.dp)) {
-                if (def.weapon.isNotBlank()) {
-                    SectionTitle("专 属 武 器")
-                    Spacer(Modifier.height(10.dp))
-                    WeaponPanel(def = def, view = view, owned = owned, rarityCol = rarityCol, worldColor = world)
-                    Spacer(Modifier.height(16.dp))
+            // ── Tab 栏（云海仙气风格：冰蓝底 + 金箔选中高亮）──
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(AppTheme.Surface.copy(alpha = 0.5f))
+                    .border(1.dp, AppTheme.Stroke, RoundedCornerShape(10.dp)),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+            ) {
+                detailTabs.forEachIndexed { index, label ->
+                    val isSelected = selectedTab == index
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .clip(RoundedCornerShape(8.dp))
+                            .clickable { selectedTab = index }
+                            .background(
+                                if (isSelected) AppTheme.Gold.copy(alpha = 0.18f) else androidx.compose.ui.graphics.Color.Transparent,
+                            )
+                            .padding(vertical = 10.dp),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(
+                            text = label,
+                            fontSize = 13.sp,
+                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                            color = if (isSelected) AppTheme.Gold else AppTheme.Text2,
+                        )
+                    }
                 }
-
-                SectionTitle("基 本 属 性")
-                Spacer(Modifier.height(10.dp))
-                StatsPanel(
-                    view = view,
-                    owned = owned,
-                    stats = stats,
-                    baseStats = baseStats,
-                )
-                Spacer(Modifier.height(16.dp))
-
-                SectionTitle("技 能")
-                Spacer(Modifier.height(10.dp))
-                SkillPanel(def.skills, worldColor = world)
-                Spacer(Modifier.height(16.dp))
-
-                SectionTitle("背 景 故 事")
-                Spacer(Modifier.height(10.dp))
-                StoryPanel(view, worldColor = world)
-                Spacer(Modifier.height(16.dp))
-
-                SectionTitle("语 音 / 台 词")
-                Spacer(Modifier.height(10.dp))
-                VoicePanel(def.voices, worldColor = world)
-
-                Spacer(Modifier.height(24.dp))
             }
+            Spacer(Modifier.height(12.dp))
+
+            // ── AnimatedContent 面板切换（横向滑入/淡入过渡）──
+            Column(Modifier.padding(horizontal = 16.dp)) {
+                AnimatedContent(
+                    targetState = selectedTab,
+                    transitionSpec = {
+                        fadeIn(tween(200)) + slideInHorizontally(tween(250)) { it / 6 } togetherWith
+                            fadeOut(tween(150)) + slideOutHorizontally(tween(200)) { -it / 6 }
+                    },
+                    label = "detailPanel",
+                ) { tab ->
+                    Column {
+                        when (tab) {
+                            0 -> {
+                                // 武器面板
+                                if (def.weapon.isNotBlank()) {
+                                    WeaponPanel(def = def, view = view, owned = owned, rarityCol = rarityCol, worldColor = world)
+                                } else {
+                                    Text("暂无专属武器", fontSize = 14.sp, color = AppTheme.Text3)
+                                }
+                            }
+                            1 -> {
+                                // 属性面板
+                                StatsPanel(view = view, owned = owned, stats = stats, baseStats = baseStats)
+                            }
+                            2 -> {
+                                // 技能面板
+                                SkillPanel(def.skills, worldColor = world)
+                            }
+                            3 -> {
+                                // 故事面板
+                                StoryPanel(view, worldColor = world)
+                            }
+                            4 -> {
+                                // 语音面板
+                                VoicePanel(def.voices, worldColor = world)
+                            }
+                        }
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(24.dp))
         }
     }
 }
