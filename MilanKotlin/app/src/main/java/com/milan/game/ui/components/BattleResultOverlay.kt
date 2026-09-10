@@ -107,6 +107,12 @@ fun BattleResultOverlay(
         event = if (victory) BattleHapticEvent.Victory else BattleHapticEvent.Defeat,
         isActive = true,
     )
+    // 结算音效（第 8 节 P0）：资源缺失静默
+    LaunchedEffect(Unit) {
+        com.milan.game.infrastructure.MilanAudio.playSfx(
+            if (victory) "battle_victory" else "battle_defeat",
+        )
+    }
 
     val primaryColor = if (victory) AppTheme.Gold else AppTheme.Text2
     val accentColor = if (victory) AppTheme.GoldHi else AppTheme.Text3

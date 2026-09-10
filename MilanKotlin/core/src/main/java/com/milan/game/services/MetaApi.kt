@@ -42,4 +42,16 @@ interface MetaApi {
 
     /** 领取成就奖励。 */
     suspend fun claimAchievement(id: String): WriteOutcome
+
+    /** 新手引导当前步骤（null=已完成/已跳过/无需展示）。 */
+    fun tutorialCurrentStep(): String?
+
+    /** 新手引导是否已结束（完成或跳过）。 */
+    fun tutorialFinished(): Boolean
+
+    /** 完成一步引导（幂等；落盘失败回滚）。 */
+    suspend fun completeTutorialStep(step: String): WriteOutcome
+
+    /** 跳过整段引导。 */
+    suspend fun skipTutorial(): WriteOutcome
 }

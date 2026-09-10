@@ -138,6 +138,10 @@ class SaveData(
     // ─────────── 图鉴收集 ───────────
     /** 图鉴收集数据（角色解锁/收集里程碑）。 */
     @SerialName("CollectionData") var collectionData: CollectionSaveData? = null,
+
+    // ─────────── 新手引导（第 8 节）───────────
+    /** 新手引导进度；null=未开始（旧档兼容）。 */
+    @SerialName("TutorialData") var tutorialData: TutorialSaveData? = null,
 ) {
     /**
      * 序列化为紧凑 JSON（落盘热路径，[json] 的 prettyPrint=false）。
@@ -527,6 +531,8 @@ class SaveData(
         if (seasonData == null) seasonData = SeasonSaveData()
         if (collectionData == null) collectionData = CollectionSaveData()
         if (characterAffinityData == null) characterAffinityData = emptyMap()
+        // 新手引导：旧档无键 → 空初值（未完成、未跳过），与其余子系统同范式
+        if (tutorialData == null) tutorialData = TutorialSaveData()
     }
 
     /** 编队 characterId 列表（已滤空槽；顺序即槽位顺序）。 */

@@ -339,6 +339,13 @@ internal fun MilanNavHost(openGachaOnStart: Boolean = false) {
             }
         }
     }
+    // 新手引导（第 8 节）：覆盖在导航树之上，可跳过；完成步由业务路径自动写入
+    com.milan.game.ui.tutorial.TutorialOverlay(
+        onNavigateTab = { label ->
+            val item = NavItem.entries.firstOrNull { it.label == label }
+            if (item != null) navigateToTab(item)
+        },
+    )
     SnackbarHost(
         hostState = snackbarHost,
         modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 84.dp),

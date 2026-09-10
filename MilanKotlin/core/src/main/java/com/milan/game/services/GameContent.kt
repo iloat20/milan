@@ -39,7 +39,7 @@ internal object GameContent {
             listOf(165, 95, 1250, 19), 7, true,
             "上古山海经所载烛龙，睁眼为白昼、闭眼为长夜，吐息化为天火。神話世界的最高图腾，昼夜的化身，觉醒之日，星辰为之焚尽。",
             "tree_zhulong", listOf(
-                sk("zhulong_1", "烛照八荒", "以烛龙真火焚烧全体敌人，造成巨额火焰伤害", "Flame", "Ultimate", 95), sk("zhulong_2", "昼夜轮转", "切换昼夜：昼间攻速+30%，夜间暴击+25%", "Flame", "Active", 70), sk("zhulong_3", "不灭之焰", "受到致命伤害时保留1点生命并回复30%血量（每场一次）", "Flame", "Passive", 60),
+                sk("zhulong_1", "烛照八荒", "以烛龙真火焚烧全体敌人，造成巨额火焰伤害", "Flame", "Ultimate", 95), sk("zhulong_2", "昼夜轮转", "切换昼夜：昼间攻速+30%，夜间暴击+25%", "Flame", "Active", 70), sk("zhulong_3", "不灭之焰", "致死伤保留1血并回30%（每场一次）", "Flame", "Passive", 60),
             ))
         add(chars, "char_ur_wuxu", "虚无 Wuxu", "万象终焉", "Aether", "Shadow", 4,
             listOf(155, 125, 1150, 17), 7, true,
@@ -57,13 +57,13 @@ internal object GameContent {
             listOf(158, 90, 1050, 20), 7, true,
             "域外净世巫女，灵力高强、清冷孤高。以陶土复生，携前世执念独行于世，以破魔之箭净化众生、封印邪祟。",
             "tree_kikyo", listOf(
-                sk("kikyo_1", "破魂之箭", "射出贯穿一切的破魔箭，对单体造成巨额真实伤害并封印其技能3秒", "Shadow", "Ultimate", 90), sk("kikyo_2", "净化之阵", "展开净化结界，持续驱散队友负面状态并回复生命", "Shadow", "Active", 68), sk("kikyo3", "孤独之念", "场上每有一名队友阵亡，自身攻击与暴击大幅提升", "Shadow", "Passive", 72),
+                sk("kikyo_1", "破魂之箭", "破魔一矢，真伤封技", "Shadow", "Ultimate", 90), sk("kikyo_2", "净化之阵", "展开净化结界，持续驱散队友负面状态并回复生命", "Shadow", "Active", 68), sk("kikyo3", "孤独之念", "场上每有一名队友阵亡，自身攻击与暴击大幅提升", "Shadow", "Passive", 72),
             ))
         add(chars, "char_ur_keqing", "曜 Yao", "雷部神女", "Aether", "Thunder", 4,
             listOf(162, 105, 1150, 21), 7, true,
             "域外雷部剑客，勤勉正直、不信天命。坚信凡人命运应由自己掌握，以雷霆剑法守护此界。",
             "tree_keqing", listOf(
-                sk("keqing_1", "天街游移", "化身雷霆穿梭敌阵，对路径上所有敌人造成多段雷伤并瞬移至终点", "Thunder", "Ultimate", 91), sk("keqing_2", "惊雷瞬斩", "投掷雷钉标记敌人，瞬移至目标身后发动必定暴击的斩击", "Thunder", "Active", 72), sk("keqing_3", "雷部之誓", "普攻积攒「雷势」层数，满层后下次技能伤害翻倍", "Thunder", "Passive", 70),
+                sk("keqing_1", "天街游移", "雷霆穿阵多段雷伤，瞬至终点", "Thunder", "Ultimate", 91), sk("keqing_2", "惊雷瞬斩", "投掷雷钉标记敌人，瞬移至目标身后发动必定暴击的斩击", "Thunder", "Active", 72), sk("keqing_3", "雷部之誓", "普攻积攒「雷势」层数，满层后下次技能伤害翻倍", "Thunder", "Passive", 70),
             ))
         add(chars, "char_ssr_fenghuang", "凤凰 Fenghuang", "涅槃圣禽", "Shinwa", "Flame", 3,
             listOf(125, 85, 1050, 16), 6, true,
@@ -159,7 +159,7 @@ internal object GameContent {
             listOf(168, 92, 1220, 20), 7, true,
             "太阳的化身，山海经载其载日而行。十日九陨，仅剩金乌独自照耀神話残片，每一次振翅都能点燃大气。",
             "tree_jinwu", listOf(
-                sk("jinwu_1", "日轮天罚", "射出凝聚太阳核心的等离子箭矢，对单体造成巨额火焰伤害并灼烧周围敌人", "Flame", "Ultimate", 94), sk("jinwu_2", "耀斑冲击", "释放太阳耀斑，对全体敌人造成火焰伤害并附加致盲", "Flame", "Active", 72), sk("jinwu_3", "不灭烈日", "生命低于30%时进入烈日形态，攻击与暴击大幅提升", "Flame", "Passive", 68),
+                sk("jinwu_1", "日轮天罚", "日核离弦，单体焚尽并灼烧周围", "Flame", "Ultimate", 94), sk("jinwu_2", "耀斑冲击", "释放太阳耀斑，对全体敌人造成火焰伤害并附加致盲", "Flame", "Active", 72), sk("jinwu_3", "不灭烈日", "生命低于30%时进入烈日形态，攻击与暴击大幅提升", "Flame", "Passive", 68),
             ))
         add(chars, "char_ur_nuwa", "女娲 Nuwa", "泥塑苍天", "Aether", "Earth", 4,
             listOf(150, 135, 1400, 16), 7, true,
@@ -207,7 +207,7 @@ internal object GameContent {
             listOf(160, 135, 1300, 16), 7, true,
             "域外机巧文明的天才偃师，一场跨维度实验中被裂隙吞噬，坠入铁帷纪元。以废墟残骸重铸偃甲——凡人之躯，比肩神明。",
             "tree_ironman", listOf(
-                sk("ironman_1", "掌心雷暴", "双掌聚能轰出偃甲聚变光束，对直线上敌人造成巨额金属伤害并击退", "Metal", "Ultimate", 93), sk("ironman_2", "纳米重构", "纳米蜂群瞬间重构装甲，回复生命并展开可吸收伤害的护盾", "Metal", "Active", 70), sk("ironman_3", "偃甲过载", "每次释放技能叠加过载层数，满层后下一次攻击必定暴击", "Metal", "Passive", 66),
+                sk("ironman_1", "掌心雷暴", "聚变光束贯直线，重击并击退", "Metal", "Ultimate", 93), sk("ironman_2", "纳米重构", "纳米蜂群瞬间重构装甲，回复生命并展开可吸收伤害的护盾", "Metal", "Active", 70), sk("ironman_3", "偃甲过载", "叠技能过载，满层下次必暴", "Metal", "Passive", 66),
             ))
         add(chars, "char_ur_thor", "苍霆 Cangting", "破晓雷神", "Shinwa", "Thunder", 4,
             listOf(168, 120, 1400, 15), 7, true,
@@ -219,7 +219,7 @@ internal object GameContent {
             listOf(150, 110, 1150, 18), 7, true,
             "域外秘术师，窥见裂隙与多元宇宙裂缝同源。以结界守护此界，以秘仪缚住终焉。",
             "tree_strange", listOf(
-                sk("strange_1", "绯红枷锁", "召唤绯红魔力锁链缚住全体敌人，造成光耀伤害并封印其技能", "Light", "Ultimate", 90), sk("strange_2", "曼陀罗圣盾", "展开多层符文结界，为全队抵挡伤害并驱散负面效果", "Light", "Active", 69), sk("strange_3", "时序回溯", "队友首次阵亡时回溯时间线将其复活（每场一次），自身回复能量", "Light", "Passive", 72),
+                sk("strange_1", "绯红枷锁", "召唤绯红魔力锁链缚住全体敌人，造成光耀伤害并封印其技能", "Light", "Ultimate", 90), sk("strange_2", "曼陀罗圣盾", "展开多层符文结界，为全队抵挡伤害并驱散负面效果", "Light", "Active", 69), sk("strange_3", "时序回溯", "队友首亡时回溯复活一次，并回能", "Light", "Passive", 72),
             ))
 
         // 域外来客阵营：跨三界但同属「域外」

@@ -305,6 +305,8 @@ class GameService constructor(
         val result = gachaService.pull(poolId, tenPull)
         if (result is PullOutcome.Success) {
             onProgress(ProgressEvent.GachaPull(result.results.size))
+            // 新手引导：首次成功抽卡自动勾完成（幂等，旧档/已完成档无副作用）
+            metaService.completeTutorialStep(com.milan.game.data.TutorialSteps.FIRST_PULL)
         }
         return result
     }
@@ -314,6 +316,7 @@ class GameService constructor(
         val result = progressionService.levelUp(charId, n)
         if (result == WriteOutcome.Success) {
             onProgress(ProgressEvent.LevelUp(n))
+            metaService.completeTutorialStep(com.milan.game.data.TutorialSteps.FIRST_LEVEL)
         }
         return result
     }
@@ -323,6 +326,9 @@ class GameService constructor(
         val result = towerService.runTowerFloor(floor)
         if (result is TowerOutcome.Completed) {
             onProgress(ProgressEvent.TowerBattle)
+            if (result.victory) {
+                metaService.completeTutorialStep(com.milan.game.data.TutorialSteps.FIRST_BATTLE)
+            }
         }
         return result
     }
@@ -341,6 +347,33 @@ class GameService constructor(
         val result = storyService.completeStoryStage(stageId)
         if (result == WriteOutcome.Success) {
             onProgress(ProgressEvent.StoryComplete)
+        }
+        return result
+    }
+
+    /** 设置编队。成功非空编队时勾新手引导「组队」步。 */
+    override suspend fun setFormation(characterIds: List<String>): WriteOutcome {
+        val result = towerService.setFormation(characterIds)
+        if (result == WriteOutcome.Success && characterIds.any { it.isNotBlank() }) {
+            metaService.completeTutorialStep(com.milan.game.data.TutorialSteps.FORM_TEAM)
+        }
+        return result
+    }
+
+    /** 切换单位上/下阵。成功且编队非空时勾「组队」步。 */
+    override suspend fun toggleFormation(characterId: String): WriteOutcome {
+        val result = towerService.toggleFormation(characterId)
+        if (result == WriteOutcome.Success && core.saveData.getFormationIds().isNotEmpty()) {
+            metaService.completeTutorialStep(com.milan.game.data.TutorialSteps.FORM_TEAM)
+        }
+        return result
+    }
+
+    /** 策略战斗结算。胜利时勾新手引导「首战」步（与自动爬塔口径一致）。 */
+    override suspend fun settleStrategicBattle(floor: Int, victory: Boolean, turns: Int): TowerOutcome {
+        val result = towerService.settleStrategicBattle(floor, victory, turns)
+        if (result is TowerOutcome.Completed && result.victory) {
+            metaService.completeTutorialStep(com.milan.game.data.TutorialSteps.FIRST_BATTLE)
         }
         return result
     }

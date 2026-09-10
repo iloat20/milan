@@ -24,6 +24,7 @@ import com.milan.game.ui.settings.SettingsViewModel
 import com.milan.game.ui.shop.ShopViewModel
 import com.milan.game.ui.story.StoryViewModel
 import com.milan.game.ui.tower.TowerViewModel
+import com.milan.game.ui.tutorial.TutorialViewModel
 
 /**
  * 组合根（Composition Root）：进程内 [GameService] 的唯一装配点。
@@ -80,6 +81,7 @@ object AppGraph {
         initializer { DailyMissionViewModel(service) }
         initializer { EventViewModel(service) }
         initializer { StrategicBattleViewModel(service) }
+        initializer { TutorialViewModel(service) }
     }
 
     /** 角色详情：按 characterId 建实例（切角色 = 换 key = 新 VM）。 */

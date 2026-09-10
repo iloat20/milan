@@ -48,7 +48,7 @@
 				{
 					"SkillId": "zhulong_3",
 					"DisplayName": "不灭之焰",
-					"Description": "受到致命伤害时保留1点生命并回复30%血量（每场一次）",
+					"Description": "致死伤保留1血并回30%（每场一次）",
 					"Element": "Flame",
 					"Type": "Passive",
 					"Power": 60
@@ -197,7 +197,7 @@
 				{
 					"SkillId": "kikyo_1",
 					"DisplayName": "破魂之箭",
-					"Description": "射出贯穿一切的破魔箭，对单体造成巨额真实伤害并封印其技能3秒",
+					"Description": "破魔一矢，真伤封技",
 					"Element": "Shadow",
 					"Type": "Ultimate",
 					"Power": 90
@@ -252,7 +252,7 @@
 				{
 					"SkillId": "keqing_1",
 					"DisplayName": "天街游移",
-					"Description": "化身雷霆穿梭敌阵，对路径上所有敌人造成多段雷伤并瞬移至终点",
+					"Description": "雷霆穿阵多段雷伤，瞬至终点",
 					"Element": "Thunder",
 					"Type": "Ultimate",
 					"Power": 91
@@ -1130,7 +1130,7 @@
 				{
 					"SkillId": "jinwu_1",
 					"DisplayName": "日轮天罚",
-					"Description": "射出凝聚太阳核心的等离子箭矢，对单体造成巨额火焰伤害并灼烧周围敌人",
+					"Description": "日核离弦，单体焚尽并灼烧周围",
 					"Element": "Flame",
 					"Type": "Ultimate",
 					"Power": 94
@@ -1570,7 +1570,7 @@
 				{
 					"SkillId": "ironman_1",
 					"DisplayName": "掌心雷暴",
-					"Description": "双掌聚能轰出偃甲聚变光束，对直线上敌人造成巨额金属伤害并击退",
+					"Description": "聚变光束贯直线，重击并击退",
 					"Element": "Metal",
 					"Type": "Ultimate",
 					"Power": 93
@@ -1586,7 +1586,7 @@
 				{
 					"SkillId": "ironman_3",
 					"DisplayName": "偃甲过载",
-					"Description": "每次释放技能叠加过载层数，满层后下一次攻击必定暴击",
+					"Description": "叠技能过载，满层下次必暴",
 					"Element": "Metal",
 					"Type": "Passive",
 					"Power": 66
@@ -1696,7 +1696,7 @@
 				{
 					"SkillId": "strange_3",
 					"DisplayName": "时序回溯",
-					"Description": "队友首次阵亡时回溯时间线将其复活（每场一次），自身回复能量",
+					"Description": "队友首亡时回溯复活一次，并回能",
 					"Element": "Light",
 					"Type": "Passive",
 					"Power": 72

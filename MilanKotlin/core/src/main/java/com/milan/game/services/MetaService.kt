@@ -270,4 +270,55 @@ class MetaService(private val core: ServiceCore) : MetaApi {
             onCommit = { core.publishCurrencyChanged() },
         )
     }
+
+    // ─────────────────────────── 新手引导（第 8 节）──────────────────────────
+
+    private fun tutorialOrNew(): com.milan.game.data.TutorialSaveData {
+        val cur = saveData.tutorialData
+        if (cur == null) {
+            val fresh = com.milan.game.data.TutorialSaveData()
+            saveData.tutorialData = fresh
+            return fresh
+        }
+        return cur
+    }
+
+    override fun tutorialCurrentStep(): String? {
+        val t = saveData.tutorialData ?: com.milan.game.data.TutorialSaveData()
+        if (t.completed || t.skipped) return null
+        return com.milan.game.data.TutorialSteps.ORDER.firstOrNull { !t.hasDone(it) }
+    }
+
+    override fun tutorialFinished(): Boolean {
+        val t = saveData.tutorialData ?: return false
+        return t.completed || t.skipped
+    }
+
+    override suspend fun completeTutorialStep(step: String): WriteOutcome = core.withWriteLock {
+        val t = tutorialOrNew()
+        if (t.completed || t.skipped || t.hasDone(step)) return@withWriteLock WriteOutcome.Success
+        val oldDone = t.done
+        val oldCompleted = t.completed
+        core.transactionLocked(
+            tag = "tutorial.step",
+            mutate = { t.markDone(step) },
+            rollback = {
+                t.done = oldDone
+                t.completed = oldCompleted
+            },
+            onCommit = { core.refreshSnapshot() },
+        )
+    }
+
+    override suspend fun skipTutorial(): WriteOutcome = core.withWriteLock {
+        val t = tutorialOrNew()
+        if (t.completed || t.skipped) return@withWriteLock WriteOutcome.Success
+        val oldSkipped = t.skipped
+        core.transactionLocked(
+            tag = "tutorial.skip",
+            mutate = { t.markSkipped() },
+            rollback = { t.skipped = oldSkipped },
+            onCommit = { core.refreshSnapshot() },
+        )
+    }
 }

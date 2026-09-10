@@ -335,7 +335,8 @@ def main():
     script_dir = Path(__file__).resolve().parent
     project_root = script_dir.parent
     data_json_path = project_root / "app" / "src" / "main" / "assets" / "data.json"
-    output_path = project_root / "app" / "src" / "main" / "java" / "com" / "milan" / "game" / "services" / "GameContent.kt"
+    # GameContent 属于 :core 模块（领域内容兜底），不是 :app
+    output_path = project_root / "core" / "src" / "main" / "java" / "com" / "milan" / "game" / "services" / "GameContent.kt"
 
     if not data_json_path.exists():
         print(f"错误：找不到 data.json：{data_json_path}", file=sys.stderr)

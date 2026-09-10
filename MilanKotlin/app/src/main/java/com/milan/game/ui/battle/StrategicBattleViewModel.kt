@@ -27,6 +27,10 @@ data class StrategicBattleUi(
     val settling: Boolean = false,
     val outcome: TowerOutcome? = null,
     val finished: Boolean = false,
+    /** 本批新打击演出脉冲（Screen 播完后 clearFx）。 */
+    val fxPulses: List<StrikeFxPulse> = emptyList(),
+    /** 最近一条技能脉冲（vignette / 红闪用，不清空）。 */
+    val lastFx: StrikeFxPulse? = null,
 )
 
 /**
@@ -43,16 +47,44 @@ class StrategicBattleViewModel(
     val ui: StateFlow<StrategicBattleUi> = _ui.asStateFlow()
 
     private var actedThisTurn = mutableSetOf<Int>()
+    private var fxSeq = 0L
 
     fun start(floor: Int) {
         val state = service.initializeStrategicBattle(floor)
         actedThisTurn = mutableSetOf()
+        fxSeq = 0L
         _ui.value = StrategicBattleUi(
             floor = floor,
             state = state,
             currentActor = firstAlivePlayer(state) ?: 0,
             logLines = listOf("第 ${floor} 层 · 战斗开始"),
         )
+    }
+
+    /** Screen 播完本批脉冲后清空，避免重组重播。 */
+    fun clearFx() {
+        _ui.value = _ui.value.copy(fxPulses = emptyList())
+    }
+
+    private fun buildPulses(
+        events: List<com.milan.game.domain.battle.StrikeEvent>,
+        energyCost: Int,
+        playerIds: Set<String>,
+    ): List<StrikeFxPulse> {
+        val kind = strikeFxKindOf(energyCost)
+        return events.map { e ->
+            StrikeFxPulse(
+                id = ++fxSeq,
+                attackerId = e.attackerId,
+                targetId = e.targetId,
+                attackerIsPlayer = e.attackerId in playerIds,
+                targetIsPlayer = e.targetId in playerIds,
+                kind = kind,
+                targetDefeated = e.targetDefeated,
+                damage = e.damage,
+                attackerElement = e.attackerElement,
+            )
+        }
     }
 
     fun selectSkill(skillId: String) {
@@ -94,13 +126,18 @@ class StrategicBattleViewModel(
         if (actor.energy < skill.energyCost || (actor.cooldowns[skillId] ?: 0) > 0) return
 
         var next = service.executeStrategicAction(st, PlayerAction(cur.currentActor, skillId, target))
-        val lines = next.log.drop(st.log.size).map { strikeLabel(it) }
+        val newEvents = next.log.drop(st.log.size)
+        val lines = newEvents.map { strikeLabel(it) }
+        val playerIds = st.playerTeam.map { it.stats.characterId }.toSet()
+        val pulses = buildPulses(newEvents, skill.energyCost, playerIds)
         _ui.value = cur.copy(
             state = next,
             selectedSkillId = null,
             selectedTarget = null,
             needTarget = false,
             logLines = (cur.logLines + lines).takeLast(40),
+            fxPulses = pulses,
+            lastFx = pulses.lastOrNull() ?: cur.lastFx,
         )
         actedThisTurn += cur.currentActor
         advanceActor(next)
@@ -120,17 +157,35 @@ class StrategicBattleViewModel(
             _ui.value = _ui.value.copy(logLines = _ui.value.logLines + "—— 敌方回合 ——")
             delay(350)
             var s = service.executeStrategicEnemyTurn(st)
-            val eLines = s.log.drop(st.log.size).map { strikeLabel(it) }
+            val eEvents = s.log.drop(st.log.size)
+            val eLines = eEvents.map { strikeLabel(it) }
             s = service.updateStrategicTurnState(s)
             val phase = service.checkStrategicBattleResult(s)
             s = s.copy(phase = phase)
             actedThisTurn = mutableSetOf()
+            val playerIds = s.playerTeam.map { it.stats.characterId }.toSet()
+            // 敌方行动按普攻档演出（无技能上下文时用伤害粗分）
+            val ePulses = eEvents.map { e ->
+                StrikeFxPulse(
+                    id = ++fxSeq,
+                    attackerId = e.attackerId,
+                    targetId = e.targetId,
+                    attackerIsPlayer = e.attackerId in playerIds,
+                    targetIsPlayer = e.targetId in playerIds,
+                    kind = if (e.damage >= 120) StrikeFxKind.ULTIMATE else if (e.damage >= 60) StrikeFxKind.SKILL else StrikeFxKind.NORMAL,
+                    targetDefeated = e.targetDefeated,
+                    damage = e.damage,
+                    attackerElement = e.attackerElement,
+                )
+            }
             _ui.value = _ui.value.copy(
                 state = s,
                 logLines = (_ui.value.logLines + eLines).takeLast(40),
                 currentActor = firstAlivePlayer(s) ?: 0,
                 selectedSkillId = null,
                 needTarget = false,
+                fxPulses = ePulses,
+                lastFx = ePulses.lastOrNull() ?: _ui.value.lastFx,
             )
             when (phase) {
                 BattlePhase.VICTORY, BattlePhase.DEFEAT, BattlePhase.DRAW -> settle()

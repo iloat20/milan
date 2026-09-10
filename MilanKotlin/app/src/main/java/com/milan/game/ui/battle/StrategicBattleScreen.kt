@@ -46,6 +46,8 @@ import com.milan.game.ui.components.NeonButton
 import com.milan.game.ui.components.PageBackground
 import com.milan.game.ui.theme.AppTheme
 import com.milan.game.ui.theme.ElementTheme
+import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.runtime.remember
 
 /**
  * 可操作战斗全屏层（2026-09-09）。
@@ -97,6 +99,24 @@ fun StrategicBattleScreen(
                     return@Column
                 }
 
+                // 打击演出：按单位 id 挂 punch/shake/death 驱动器（id 稳定则复用）
+                val playerFx = remember { mutableStateMapOf<String, UnitStrikeFx>() }
+                val enemyFx = remember { mutableStateMapOf<String, UnitStrikeFx>() }
+                st.playerTeam.forEachIndexed { i, u ->
+                    val id = u.stats.characterId.ifEmpty { "p_$i" }
+                    if (!playerFx.containsKey(id)) playerFx[id] = UnitStrikeFx()
+                }
+                st.enemyTeam.forEachIndexed { i, u ->
+                    val id = u.stats.characterId.ifEmpty { "e_$i" }
+                    if (!enemyFx.containsKey(id)) enemyFx[id] = UnitStrikeFx()
+                }
+                BattleStrikeOrchestrator(
+                    pulses = ui.fxPulses,
+                    playerFx = playerFx,
+                    enemyFx = enemyFx,
+                    onConsumed = vm::clearFx,
+                )
+
                 Spacer(Modifier.height(6.dp))
                 Text("敌方", fontSize = 12.sp, color = AppTheme.Danger, fontWeight = FontWeight.Bold)
                 Spacer(Modifier.height(6.dp))
@@ -105,6 +125,7 @@ fun StrategicBattleScreen(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     st.enemyTeam.forEachIndexed { i, u ->
+                        val unitId = u.stats.characterId.ifEmpty { "e_$i" }
                         UnitTile(
                             unit = u,
                             selected = ui.needTarget && ui.selectedTarget == i &&
@@ -121,7 +142,7 @@ fun StrategicBattleScreen(
                                     vm.selectTarget(i)
                                 }
                             },
-                            modifier = Modifier.weight(1f),
+                            modifier = Modifier.weight(1f).unitStrikeLayer(enemyFx[unitId] ?: UnitStrikeFx()),
                         )
                     }
                 }
@@ -159,6 +180,7 @@ fun StrategicBattleScreen(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     st.playerTeam.forEachIndexed { i, u ->
+                        val unitId = u.stats.characterId.ifEmpty { "p_$i" }
                         UnitTile(
                             unit = u,
                             selected = i == ui.currentActor && u.hp > 0,
@@ -171,7 +193,7 @@ fun StrategicBattleScreen(
                                     vm.selectTarget(i)
                                 }
                             },
-                            modifier = Modifier.weight(1f),
+                            modifier = Modifier.weight(1f).unitStrikeLayer(playerFx[unitId] ?: UnitStrikeFx()),
                         )
                     }
                 }
@@ -236,6 +258,16 @@ fun StrategicBattleScreen(
                     }
                 }
             }
+        }
+
+        // 全屏打击层（须在 PageBackground 外的 Box 内，避免挤占 Column 流）
+        if (ui.state != null) {
+            val skillPulse = ui.fxPulses.lastOrNull { it.kind != StrikeFxKind.NORMAL }
+            BattleSkillVignette(pulse = skillPulse, modifier = Modifier.matchParentSize())
+            val hurtPulse = ui.fxPulses.lastOrNull {
+                it.targetIsPlayer && it.damage > 0 && !it.targetDefeated
+            }
+            BattleHurtFlash(pulse = hurtPulse, modifier = Modifier.matchParentSize())
         }
 
         // 结算：与自动爬塔共用 BattleResultOverlay（粒子/触觉/奖励滚动），非 Completed 仍用轻量 Dialog
