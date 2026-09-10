@@ -57,7 +57,7 @@ internal object GameContent {
             listOf(158, 90, 1050, 20), 7, true,
             "域外净世巫女，灵力高强、清冷孤高。以陶土复生，携前世执念独行于世，以破魔之箭净化众生、封印邪祟。",
             "tree_kikyo", listOf(
-                sk("kikyo_1", "破魂之箭", "破魔一矢，真伤封技", "Shadow", "Ultimate", 90), sk("kikyo_2", "净化之阵", "展开净化结界，持续驱散队友负面状态并回复生命", "Shadow", "Active", 68), sk("kikyo3", "孤独之念", "场上每有一名队友阵亡，自身攻击与暴击大幅提升", "Shadow", "Passive", 72),
+                sk("kikyo_1", "破魂之箭", "破魔一矢，真伤封技", "Shadow", "Ultimate", 90), sk("kikyo_2", "净化之阵", "展开净化结界，持续驱散队友负面状态并回复生命", "Shadow", "Active", 68), sk("kikyo_3", "孤独之念", "场上每有一名队友阵亡，自身攻击与暴击大幅提升", "Shadow", "Passive", 72),
             ))
         add(chars, "char_ur_keqing", "曜 Yao", "雷部神女", "Aether", "Thunder", 4,
             listOf(162, 105, 1150, 21), 7, true,
@@ -81,7 +81,7 @@ internal object GameContent {
             listOf(130, 90, 1000, 17), 6, false,
             "山海经雷兽，龙身人头，腹中雷鸣。铁帷城邦的能量核心守护者，以雷霆审判一切。",
             "tree_leishen", listOf(
-                sk("leishen_1", "雷霆万钧", "召唤巨型闪电劈向敌阵，主目标伤害翻倍", "Thunder", "Ultimate", 84), sk("leishen2", "雷神之锤", "投掷雷霆之锤，命中后弹射至多3个敌人", "Thunder", "Active", 66), sk("leishen_3", "静电充能", "每次受到攻击积累静电，下次技能伤害+25%", "Thunder", "Passive", 56),
+                sk("leishen_1", "雷霆万钧", "召唤巨型闪电劈向敌阵，主目标伤害翻倍", "Thunder", "Ultimate", 84), sk("leishen_2", "雷神之锤", "投掷雷霆之锤，命中后弹射至多3个敌人", "Thunder", "Active", 66), sk("leishen_3", "静电充能", "每次受到攻击积累静电，下次技能伤害+25%", "Thunder", "Passive", 56),
             ))
         add(chars, "char_ssr_feilian", "飞廉 Feilian", "风驰电掣", "Shinwa", "Wood", 3,
             listOf(122, 70, 880, 24), 6, false,
@@ -93,7 +93,7 @@ internal object GameContent {
             listOf(115, 100, 1080, 15), 6, false,
             "山海经商羊，一足鸟身，预知风雨。以太议会首席预言者，以星象指引命运。",
             "tree_shangyang", listOf(
-                sk("shangyang_1", "星轨预言", "揭示敌方弱点，全队暴击率+30%持续6秒", "Light", "Ultimate", 76), sk("shangyang_2", "预知闪避", "预判下一次攻击，必定闪避并反击", "Light", "Active", 60), sk("shangyang3", "命运织网", "战斗开始时随机标记一名敌人，其受到伤害+20%", "Light", "Passive", 54),
+                sk("shangyang_1", "星轨预言", "揭示敌方弱点，全队暴击率+30%持续6秒", "Light", "Ultimate", 76), sk("shangyang_2", "预知闪避", "预判下一次攻击，必定闪避并反击", "Light", "Active", 60), sk("shangyang_3", "命运织网", "战斗开始时随机标记一名敌人，其受到伤害+20%", "Light", "Passive", 54),
             ))
         add(chars, "char_sr_suanni", "狻猊 Suanni", "狮吼震魂", "Shinwa", "Flame", 2,
             listOf(95, 75, 900, 14), 5, false,
@@ -117,13 +117,13 @@ internal object GameContent {
             listOf(92, 115, 1100, 9), 5, false,
             "山海经旋龟，鸟首虺尾，其音如判木。女娲浮岛的守护者，以守为攻。",
             "tree_xuanwu", listOf(
-                sk("xuanwu_1", "玄甲护体", "为全队施加护盾，吸收伤害持续6秒", "Earth", "Active", 54), sk("xuanwu_2", "龟缩防御", "进入龟壳形态，减伤60%但无法攻击", "Earth", "Active", 46), sk("xuanwu3", "大地之根", "站立不动3秒后每秒回复4%生命", "Earth", "Passive", 38),
+                sk("xuanwu_1", "玄甲护体", "为全队施加护盾，吸收伤害持续6秒", "Earth", "Active", 54), sk("xuanwu_2", "龟缩防御", "进入龟壳形态，减伤60%但无法攻击", "Earth", "Active", 46), sk("xuanwu_3", "大地之根", "站立不动3秒后每秒回复4%生命", "Earth", "Passive", 38),
             ))
         add(chars, "char_sr_bifang", "毕方 Bifang", "焚羽烈鸟", "Aether", "Thunder", 2,
             listOf(90, 70, 820, 18), 5, false,
             "山海经毕方，一足鹤身，见则讹火。雷火交加的独足神鸟。",
             "tree_bifang", listOf(
-                sk("bifang_1", "焚羽俯冲", "自高空俯冲，对路径上敌人造成雷电伤害", "Thunder", "Active", 53), sk("bifang_2", "雷羽散射", "散射雷电羽毛攻击随机3个敌人", "Thunder", "Active", 48), sk("bifang3", "闪电之翼", "每次闪避后下次攻击附加雷电伤害", "Thunder", "Passive", 36),
+                sk("bifang_1", "焚羽俯冲", "自高空俯冲，对路径上敌人造成雷电伤害", "Thunder", "Active", 53), sk("bifang_2", "雷羽散射", "散射雷电羽毛攻击随机3个敌人", "Thunder", "Active", 48), sk("bifang_3", "闪电之翼", "每次闪避后下次攻击附加雷电伤害", "Thunder", "Passive", 36),
             ))
         add(chars, "char_r_lili", "狸力 LiLi", "遁地灵兽", "Shinwa", "Earth", 1,
             listOf(72, 65, 750, 12), 4, false,

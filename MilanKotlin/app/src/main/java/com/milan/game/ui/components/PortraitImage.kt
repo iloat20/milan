@@ -36,14 +36,13 @@ import com.milan.game.ui.theme.AppTheme
 /**
  * 角色立绘（C# PortraitLoader 的 Compose 等价物，2026-08-08 低端机性能优化异步化）。
  *
- * 立绘资源名 = 角色 CharacterId（drawable/char_<rarity>_<pinyin>.png）。
- * data.json 有 56 个角色但 drawable 只有 28 张立绘 —— 缺图必须占位兜底，
- * 直接 painterResource 引用不存在的资源会抛 NotFoundException 闪退，
+ * 立绘资源名 = 角色 CharacterId（drawable-nodpi/char_*.webp，当前 31 角 31 图，另有 avatar_*.webp）。
+ * 缺图仍必须占位兜底：直接 painterResource 引用不存在的资源会抛 NotFoundException 闪退，
  * 故先用 getIdentifier 探测资源是否存在，缺失时渲染「稀有度渐变 + 角色名首字」。
  *
  * 加载路径（性能优化）：getIdentifier 探测 → PortraitLoader 在 IO 线程按
  * [PortraitTarget] 采样解码（默认 Full=2x）→ 缓存命中直取；解码期间与失败
- * 均渲染占位，成功通过 Crossfade 淡入立绘。首帧不再同步解码 3.8MB 大图。
+ * 均渲染占位，成功通过 Crossfade 淡入立绘。首帧不再同步解码大图。
  *
  * @param aura 是否在立绘脚下叠加稀有度氛围圈（v2 工程配套，默认关）。
  *            开启后内部用 Box 包裹：AuraHalo 作底层 + 立绘居中。

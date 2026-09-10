@@ -211,7 +211,7 @@
 					"Power": 68
 				},
 				{
-					"SkillId": "kikyo3",
+					"SkillId": "kikyo_3",
 					"DisplayName": "孤独之念",
 					"Description": "场上每有一名队友阵亡，自身攻击与暴击大幅提升",
 					"Element": "Shadow",
@@ -423,7 +423,7 @@
 					"Power": 84
 				},
 				{
-					"SkillId": "leishen2",
+					"SkillId": "leishen_2",
 					"DisplayName": "雷神之锤",
 					"Description": "投掷雷霆之锤，命中后弹射至多3个敌人",
 					"Element": "Thunder",
@@ -541,7 +541,7 @@
 					"Power": 60
 				},
 				{
-					"SkillId": "shangyang3",
+					"SkillId": "shangyang_3",
 					"DisplayName": "命运织网",
 					"Description": "战斗开始时随机标记一名敌人，其受到伤害+20%",
 					"Element": "Light",
@@ -761,7 +761,7 @@
 					"Power": 46
 				},
 				{
-					"SkillId": "xuanwu3",
+					"SkillId": "xuanwu_3",
 					"DisplayName": "大地之根",
 					"Description": "站立不动3秒后每秒回复4%生命",
 					"Element": "Earth",
@@ -816,7 +816,7 @@
 					"Power": 48
 				},
 				{
-					"SkillId": "bifang3",
+					"SkillId": "bifang_3",
 					"DisplayName": "闪电之翼",
 					"Description": "每次闪避后下次攻击附加雷电伤害",
 					"Element": "Thunder",
