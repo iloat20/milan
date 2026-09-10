@@ -5,6 +5,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -16,21 +17,17 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.milan.game.services.AchievementDef
 import com.milan.game.services.AchievementStatus
-import com.milan.game.services.WriteOutcome
-import com.milan.game.ui.GameState
 import com.milan.game.ui.components.EntranceItem
 import com.milan.game.ui.components.GlyphBadge
 import com.milan.game.ui.components.GoldButton
@@ -38,26 +35,24 @@ import com.milan.game.ui.components.PageBackground
 import com.milan.game.ui.feedback.LocalFeedback
 import com.milan.game.ui.nav.AppTopBar
 import com.milan.game.ui.theme.AppTheme
-import kotlinx.coroutines.launch
 
 /**
- * 成就页（2026-08 二期）：
+ * 成就页（2026-08 二期；2026-09-08 P1-6 VM 化）：
  * - 全部成就定义/阈值/奖励出自 services/Achievements.kt（单一事实来源），本页只做展示与领取；
  * - 解锁态由存档实时推导（不落盘），领取态以存档为准；
- * - 领取走 GameService.claimAchievement 事务（重复领取/未解锁在服务层拒绝）。
+ * - 状态与领取动作在 [AchievementViewModel]，本组合层只订阅 + 透传提示（无服务直读）。
  */
 @Composable
 fun AchievementScreen(
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val scope = rememberCoroutineScope()
     val feedback = LocalFeedback.current
-    val snapshot by GameState.service.snapshot.collectAsStateWithLifecycle()
-    var busy by remember { mutableStateOf(false) }
+    val vm: AchievementViewModel = viewModel(factory = com.milan.game.di.AppGraph.factory)
+    val statuses by vm.statuses.collectAsStateWithLifecycle()
+    val busy by vm.busy.collectAsStateWithLifecycle()
+    LaunchedEffect(vm) { vm.toasts.collect { feedback.show(it) } }
 
-    // 快照 revision 触发重算：任何页面的经济/养成写操作都会推进进度显示
-    val statuses = remember(snapshot.revision) { GameState.service.achievementStatuses() }
     val unlockedCount = statuses.count { it.unlocked }
     val claimedCount = statuses.count { it.claimed }
 
@@ -76,7 +71,7 @@ fun AchievementScreen(
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxWidth(),
-                contentPadding = androidx.compose.foundation.layout.PaddingValues(
+                contentPadding = PaddingValues(
                     start = 18.dp, top = 10.dp, end = 18.dp, bottom = 16.dp,
                 ),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
@@ -84,25 +79,9 @@ fun AchievementScreen(
                 items(statuses.size, key = { statuses[it].def.id }, contentType = { "achievement" }) { i ->
                     EntranceItem(index = i) {
                         AchievementCard(
-                        status = statuses[i],
-                        enabled = !busy,
-                        onClaim = {
-                            val id = statuses[i].def.id
-                            scope.launch {
-                                if (busy) return@launch
-                                busy = true
-                                try {
-                                    val msg = when (val outcome = GameState.service.claimAchievement(id)) {
-                                        WriteOutcome.Success -> "奖励已发放"
-                                        WriteOutcome.Rejected -> "尚未解锁或已领取"
-                                        WriteOutcome.SaveFailed -> "保存失败，请重试"
-                                    }
-                                    feedback.show(msg)
-                                } finally {
-                                    busy = false
-                                }
-                            }
-                        },
+                            status = statuses[i],
+                            enabled = !busy,
+                            onClaim = { vm.claim(statuses[i].def.id) },
                         )
                     }
                 }

@@ -82,6 +82,9 @@ dependencies {
     implementation(libs.androidx.lifecycle.runtime.ktx)
     // collectAsStateWithLifecycle：StateFlow 状态快照的 UI 订阅（2026-08 现代化）
     implementation(libs.androidx.lifecycle.runtime.compose)
+    // P1-6（2026-09-08 ViewModel 化）：ViewModel + viewModelScope + compose viewModel()
+    implementation(libs.androidx.lifecycle.viewmodel.ktx)
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.activity.compose)
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.ui)
@@ -101,6 +104,10 @@ dependencies {
     implementation(libs.androidx.glance.appwidget)
     // WorkManager（2026-08 每日补给本地提醒）：此前仅经 Glance 传递携带，无法直接引用 API
     implementation(libs.androidx.work.runtime.ktx)
+    // P2-9 Phase 2：数据模型模块（存档/枚举/序列化类），零 Android 依赖
+    implementation(project(":data"))
+    // P2-9 Phase 3：服务+基础设施模块（EventBus/CrashReporter/Audio/Services）
+    implementation(project(":core"))
     // KMP 共享领域层：抽卡/养成/战斗引擎与跨平台模型（commonMain，见 :shared 模块）。
     // 领域逻辑自此与桌面/将来 iOS 共用同一份实现（2026-08 KMP 下沉）。
     implementation(project(":shared"))
@@ -114,4 +121,14 @@ dependencies {
     testImplementation(libs.robolectric)
     debugImplementation(libs.androidx.ui.test.manifest)
     debugImplementation(libs.androidx.ui.tooling)
+}
+
+// ── GameContent 自动生成（P1-7: data.json 单一 SoT）──
+// 用法: ./gradlew :app:generateGameContent
+// 修改 data.json 后运行此 task 重新生成 GameContent.kt
+tasks.register<Exec>("generateGameContent") {
+    description = "从 data.json 生成 GameContent.kt 兜底内容"
+    group = "content"
+    commandLine("python", "tools/generate_gamecontent.py")
+    workingDir(rootProject.projectDir)
 }

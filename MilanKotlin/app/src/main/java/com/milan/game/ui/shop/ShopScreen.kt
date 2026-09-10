@@ -15,22 +15,18 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.milan.game.domain.progression.EconomyFormulas
 import com.milan.game.services.DailyOffer
 import com.milan.game.services.DailyOfferKind
-import com.milan.game.services.WriteOutcome
-import com.milan.game.ui.GameState
 import com.milan.game.ui.components.EntranceItem
 import com.milan.game.ui.components.GlassPanel
 import com.milan.game.ui.components.GlyphBadge
@@ -43,50 +39,31 @@ import com.milan.game.ui.nav.GameNavBar
 import com.milan.game.ui.nav.NavItem
 import com.milan.game.ui.feedback.LocalFeedback
 import com.milan.game.ui.theme.AppTheme
-import kotlinx.coroutines.launch
 
 /**
  * 商店页（水墨国风版）。
  *
  * 结构：资源一览（星尘/钻石/星魂碎片）→ 每日特惠 → 碎片补给 → 碎片兑换 → 钻石商城。
- * 定价一律走 [EconomyFormulas]（单一事实来源）；购买走 GameService 事务方法。
- * 资源数字订阅 [GameState.snapshot] 自动刷新。
+ * 定价一律走 [EconomyFormulas]（单一事实来源）；购买走 ShopViewModel 事务方法
+ * （2026-09-08 P1-6 C 批：状态与写动作收敛进 VM，Composable 只订阅与回调）。
+ * 资源数字随快照自动刷新。
  */
 @Composable
 fun ShopScreen(
     onNav: (NavItem) -> Unit,
 ) {
-    val service = GameState.service
     val feedback = LocalFeedback.current
-    var busy by remember { mutableStateOf(false) }
-    val snap by service.snapshot.collectAsStateWithLifecycle()
-    val soft = snap.softCurrency
-    val hard = snap.hardCurrency
-    val frags = snap.starFragments
-    val tickets = snap.battleTickets
-
-    val dailyOffers = remember(snap.revision) { service.dailyOffers() }
-    val dailyBought = remember(snap.revision) { service.dailyBoughtToday() }
-
-    val scope = rememberCoroutineScope()
-
-    /** 每日特惠购买通用流程 */
-    fun buyDaily(index: Int, successMsg: String) {
-        scope.launch {
-            if (busy) return@launch
-            busy = true
-            try {
-                val msg = when (service.buyDailyOffer(index)) {
-                    WriteOutcome.Success -> successMsg
-                    WriteOutcome.Rejected -> "星尘不足或今日已购"
-                    WriteOutcome.SaveFailed -> "保存失败，请重试"
-                }
-                feedback.show(msg)
-            } finally {
-                busy = false
-            }
-        }
-    }
+    // P1-6 C 批：派生状态（经济四资源 + 每日特惠/已购）与四类购买/兑换全部在 ShopViewModel。
+    val vm: ShopViewModel = viewModel(factory = com.milan.game.di.AppGraph.factory)
+    val ui by vm.uiState.collectAsStateWithLifecycle()
+    val busy by vm.busy.collectAsStateWithLifecycle()
+    LaunchedEffect(vm) { vm.toasts.collect { feedback.show(it) } }
+    val soft = ui.softCurrency
+    val hard = ui.hardCurrency
+    val frags = ui.starFragments
+    val tickets = ui.battleTickets
+    val dailyOffers = ui.dailyOffers
+    val dailyBought = ui.dailyBought
 
     PageBackground {
         Column(Modifier.fillMaxSize()) {
@@ -111,18 +88,7 @@ fun ShopScreen(
                             bought = bought,
                             affordable = offer.costSoft == 0 || soft >= offer.costSoft,
                             enabled = !busy,
-                            onBuy = {
-                                buyDaily(
-                                    index = offer.index,
-                                    successMsg = when (offer.kind) {
-                                        DailyOfferKind.FREE_SUPPLY -> "每日补给已领取"
-                                        DailyOfferKind.DISCOUNT_PACK ->
-                                            "已获得 ${EconomyFormulas.fragmentPackSize(offer.pack)} 片星魂碎片"
-                                        DailyOfferKind.TICKET_BUNDLE ->
-                                            "已获得 ${EconomyFormulas.dailyTicketBundleSize()} 张战票"
-                                    },
-                                )
-                            },
+                            onBuy = { vm.buyDailyOffer(offer) },
                         )
                     }
                 }
@@ -137,22 +103,7 @@ fun ShopScreen(
                             cost = EconomyFormulas.fragmentPackCost(pack),
                             affordable = soft >= EconomyFormulas.fragmentPackCost(pack),
                             enabled = !busy,
-                            onBuy = {
-                                scope.launch {
-                                    if (busy) return@launch
-                                    busy = true
-                                    try {
-                                        val msg = when (service.buyFragmentPack(pack)) {
-                                            WriteOutcome.Success -> "已获得 ${EconomyFormulas.fragmentPackSize(pack)} 片星魂碎片"
-                                            WriteOutcome.Rejected -> "星尘不足"
-                                            WriteOutcome.SaveFailed -> "保存失败，请重试"
-                                        }
-                                        feedback.show(msg)
-                                    } finally {
-                                        busy = false
-                                    }
-                                }
-                            },
+                            onBuy = { vm.buyFragmentPack(pack) },
                         )
                     }
                 }
@@ -164,23 +115,7 @@ fun ShopScreen(
                         yield = EconomyFormulas.fragmentExchangeYield(),
                         frags = frags,
                         enabled = !busy,
-                        onExchange = {
-                            scope.launch {
-                                if (busy) return@launch
-                                busy = true
-                                try {
-                                    val msg = when (service.exchangeFragmentsForSoft()) {
-                                        WriteOutcome.Success -> "已兑换 ${EconomyFormulas.fragmentExchangeYield()} 星尘"
-                                        WriteOutcome.Rejected ->
-                                            "碎片不足（需 ${EconomyFormulas.fragmentExchangeBatch()} 片）"
-                                        WriteOutcome.SaveFailed -> "保存失败，请重试"
-                                    }
-                                    feedback.show(msg)
-                                } finally {
-                                    busy = false
-                                }
-                            }
-                        },
+                        onExchange = { vm.exchangeFragmentsForSoft() },
                     )
                 }
 
@@ -191,22 +126,7 @@ fun ShopScreen(
                         gain = EconomyFormulas.diamondExchangeYield(),
                         affordable = hard >= EconomyFormulas.diamondExchangeCost(),
                         enabled = !busy,
-                        onExchange = {
-                            scope.launch {
-                                if (busy) return@launch
-                                busy = true
-                                try {
-                                    val msg = when (service.buyDiamondExchange()) {
-                                        WriteOutcome.Success -> "已兑换 ${EconomyFormulas.diamondExchangeYield()} 星尘"
-                                        WriteOutcome.Rejected -> "钻石不足"
-                                        WriteOutcome.SaveFailed -> "保存失败，请重试"
-                                    }
-                                    feedback.show(msg)
-                                } finally {
-                                    busy = false
-                                }
-                            }
-                        },
+                        onExchange = { vm.buyDiamondExchange() },
                     )
                 }
             }

@@ -21,10 +21,13 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.activity.compose.BackHandler
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -33,7 +36,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import kotlinx.coroutines.launch
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -44,10 +47,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.milan.game.data.SaveData
-import com.milan.game.services.WriteOutcome
-import com.milan.game.ui.GameState
-import com.milan.game.ui.OwnedCharacterView
+import com.milan.game.OwnedCharacterView
 import com.milan.game.ui.components.CharacterCard
 import com.milan.game.ui.components.FormationBar
 import com.milan.game.ui.components.NeonButton
@@ -58,6 +58,7 @@ import com.milan.game.ui.nav.AppTopBar
 import com.milan.game.ui.nav.GameNavBar
 import com.milan.game.ui.nav.NavItem
 import com.milan.game.ui.theme.AppTheme
+import kotlinx.coroutines.launch
 
 /**
  * 卡组屏（水墨国风版）：
@@ -71,35 +72,23 @@ fun DeckScreen(
     modifier: Modifier = Modifier,
     animatedVisibilityScope: androidx.compose.animation.AnimatedVisibilityScope? = null,
 ) {
-    val snapshot by GameState.service.snapshot.collectAsStateWithLifecycle()
-    val owned = remember(snapshot.revision) { GameState.owned() }
+    // P1-6 E 批：派生状态（拥有列表/编队成员）与 toggleFormation 全部在 DeckViewModel。
+    val vm: DeckViewModel = viewModel(factory = com.milan.game.di.AppGraph.factory)
+    val ui by vm.uiState.collectAsStateWithLifecycle()
+    val feedback = LocalFeedback.current
+    // 纯 UI 引导提示（非写反馈）在回调内发：需要本组合作用域包一层协程（show 为 suspend）。
+    val scope = rememberCoroutineScope()
+    LaunchedEffect(vm) { vm.toasts.collect { feedback.show(it) } }
+    val owned = ui.owned
     var previewId by rememberSaveable { mutableStateOf<String?>(null) }
     val preview = owned.firstOrNull { it.save.characterId == previewId }
 
-    val scope = rememberCoroutineScope()
-    val feedback = LocalFeedback.current
-    val members = remember(snapshot.revision) {
-        val formed = snapshot.formation.toSet()
-        owned.filter { it.save.characterId in formed }
-    }
+    val members = ui.members
     // U2（2026-08-28 审查修复）：读-改-写整体下沉到服务层（在 writeMutex 临界区内串行）。
     // 原实现在 UI 侧读 formation → 计算 next → 调 setFormation，跨锁执行存在竞态：
     // 快速连点时两次都基于同一份过期快照计算，后提交者覆盖前者，前一次点击被静默丢弃。
-    val toggleFormation: (String) -> Unit = { id ->
-        scope.launch {
-            try {
-                when (GameState.service.toggleFormation(id)) {
-                    WriteOutcome.Success -> Unit
-                    // 列表内的角色必定已拥有，Rejected 只剩「编队已满」一种语义
-                    WriteOutcome.Rejected -> feedback.show("编队已满（${GameState.maxFormationSize} 人），请先移出一名角色")
-                    WriteOutcome.SaveFailed -> feedback.show("保存失败，请重试")
-                }
-            } catch (_: Exception) {
-                feedback.show("操作异常，请重试")
-            }
-        }
-    }
-    val previewInFormation = preview != null && preview.save.characterId in snapshot.formation
+    val toggleFormation: (String) -> Unit = { id -> vm.toggleFormation(id) }
+    val previewInFormation = preview != null && preview.save.characterId in ui.formation
     val previewToggle: (() -> Unit)? =
         preview?.save?.characterId?.let { id -> ({ toggleFormation(id) }) }
 
@@ -118,7 +107,7 @@ fun DeckScreen(
             if (owned.isNotEmpty()) {
                 FormationBar(
                     members = members,
-                    maxSlots = GameState.maxFormationSize,
+                    maxSlots = ui.maxSlots,
                     onSlotClick = { onOpenDeckSlot ->
                         if (onOpenDeckSlot != null) {
                             // 已入队槽位：弹出该角色预览层（可移出编队/查看详情）
@@ -143,7 +132,7 @@ fun DeckScreen(
                     contentAlignment = Alignment.Center,
                 ) {
                     com.milan.game.ui.components.EmptyState(
-                        icon = "✦",
+                        icon = Icons.Outlined.Person,
                         title = "还没有角色",
                         subtitle = "去寻访吧",
                         actionText = "前往寻访",
@@ -249,13 +238,13 @@ private fun DeckPreviewOverlay(
                 Column(
                     modifier = Modifier
                         .size(width = 220.dp, height = 312.dp)
-                        .clip(RoundedCornerShape(18.dp))
+                        .clip(RoundedCornerShape(AppTheme.Roundness.xl))
                         .background(
                             Brush.verticalGradient(
                                 listOf(rc.copy(alpha = 0.34f), AppTheme.BgDeepest, AppTheme.BgDeepest),
                             ),
                         )
-                        .border(2.dp, rc.copy(alpha = 0.85f), RoundedCornerShape(18.dp)),
+                        .border(2.dp, rc.copy(alpha = 0.85f), RoundedCornerShape(AppTheme.Roundness.xl)),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     PortraitImage(

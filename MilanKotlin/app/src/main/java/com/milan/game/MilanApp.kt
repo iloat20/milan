@@ -4,7 +4,7 @@ import android.app.Application
 import com.milan.game.data.AndroidSaveProvider
 import com.milan.game.infrastructure.CrashReporter
 import com.milan.game.infrastructure.MilanAudio
-import com.milan.game.ui.GameState
+import com.milan.game.GameState
 import com.milan.game.ui.components.PortraitLoader
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers

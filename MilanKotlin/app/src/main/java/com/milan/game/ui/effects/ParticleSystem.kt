@@ -204,12 +204,7 @@ fun GachaStarBurst(
     active: Boolean,
     modifier: Modifier = Modifier
 ) {
-    val colors = when (rarity) {
-        4 -> listOf(Color(0xFFFFD700), Color(0xFFFFA500), Color(0xFFFFE4B5), Color.White)
-        3 -> listOf(Color(0xFF9370DB), Color(0xFFBA55D3), Color(0xFFDDA0DD), Color.White)
-        2 -> listOf(Color(0xFF4169E1), Color(0xFF6495ED), Color(0xFF87CEEB), Color.White)
-        else -> listOf(Color(0xFF3CB371), Color(0xFF90EE90), Color.White)
-    }
+    val colors = rarityEffectColors(rarity)
 
     val config = EmitterConfig(
         maxParticles = when (rarity) { 4 -> 150; 3 -> 100; else -> 60 },
@@ -235,11 +230,7 @@ fun GachaBeamParticles(
     active: Boolean,
     modifier: Modifier = Modifier
 ) {
-    val colors = when (rarity) {
-        4 -> listOf(Color(0xFFFFD700), Color(0xFFFFA500), Color.White)
-        3 -> listOf(Color(0xFFDDA0DD), Color(0xFFBA55D3), Color.White)
-        else -> listOf(Color(0xFF87CEEB), Color.White)
-    }
+    val colors = rarityEffectColors(rarity)
 
     val config = EmitterConfig(
         maxParticles = when (rarity) { 4 -> 80; 3 -> 50; else -> 30 },
@@ -299,12 +290,7 @@ fun RarityAuraParticles(
     active: Boolean,
     modifier: Modifier = Modifier
 ) {
-    val colors = when (rarity) {
-        4 -> listOf(Color(0xFFFFD700), Color(0xFFFFA500))
-        3 -> listOf(Color(0xFF9370DB), Color(0xFFDDA0DD))
-        2 -> listOf(Color(0xFF4169E1), Color(0xFF87CEEB))
-        else -> listOf(Color(0xFF3CB371), Color(0xFF90EE90))
-    }
+    val colors = rarityEffectColors(rarity).take(2)
 
     val config = EmitterConfig(
         maxParticles = 40,
@@ -330,17 +316,7 @@ fun ElementParticles(
     active: Boolean,
     modifier: Modifier = Modifier
 ) {
-    val colors = when (element) {
-        "Metal" -> listOf(Color(0xFFC0C0C0), Color(0xFFE8E8E8), Color.White)
-        "Wood" -> listOf(Color(0xFF228B22), Color(0xFF90EE90), Color.White)
-        "Water" -> listOf(Color(0xFF1E90FF), Color(0xFF87CEEB), Color.White)
-        "Flame" -> listOf(Color(0xFFFF4500), Color(0xFFFF6347), Color.White)
-        "Earth" -> listOf(Color(0xFF8B4513), Color(0xFFD2691E), Color.White)
-        "Light" -> listOf(Color(0xFFFFFACD), Color(0xFFFFD700), Color.White)
-        "Shadow" -> listOf(Color(0xFF2F4F4F), Color(0xFF696969), Color.White)
-        "Thunder" -> listOf(Color(0xFFFFD700), Color(0xFFFFA500), Color.White)
-        else -> listOf(Color.White)
-    }
+    val colors = elementEffectColors(element)
 
     val config = EmitterConfig(
         maxParticles = 50,

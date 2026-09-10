@@ -18,6 +18,9 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -38,8 +41,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.milan.game.services.CharacterDataEntry
-import com.milan.game.ui.GameState
 import com.milan.game.ui.components.CharacterCard
 import com.milan.game.ui.components.GlassPanel
 import com.milan.game.ui.components.ListFilter
@@ -53,7 +56,7 @@ import com.milan.game.ui.theme.ElementTheme
 /**
  * 角色列表屏（水墨国风版）：
  * 顶部栏 + 筛选条（搜索/稀有度/元素/排序）+ 2 列稀有度描边卡片网格。
- * 筛选状态 rememberSaveable 保留；数据取自进程级 GameState。
+ * 筛选状态 rememberSaveable 保留；数据取自 CharacterListViewModel（AppGraph 注入）。
  */
 @Composable
 fun CharacterListScreen(
@@ -62,13 +65,14 @@ fun CharacterListScreen(
     animatedVisibilityScope: androidx.compose.animation.AnimatedVisibilityScope,
     modifier: Modifier = Modifier,
 ) {
-    val snap by GameState.snapshot.collectAsStateWithLifecycle()
-    val owned = remember(snap.revision) { GameState.owned() }
-    val total = remember(snap.revision) { GameState.ownedCount }
-    val roster = remember(snap.revision) { GameState.service.characters }
-    val ownedIds = remember(snap.revision) {
-        GameState.service.saveData.ownedCharacters.filterNotNull().map { it.characterId }.toSet()
-    }
+    // P1-6 D 批：owned/ownedCount/ownedIds/roster 收敛进 [CharacterListViewModel]
+    //（owned 随快照刷新；roster 为内容定义，进程内不变）。
+    val vm: CharacterListViewModel = viewModel(factory = com.milan.game.di.AppGraph.factory)
+    val ui by vm.uiState.collectAsStateWithLifecycle()
+    val owned = ui.owned
+    val total = ui.ownedCount
+    val roster = vm.roster
+    val ownedIds = ui.ownedIds
     var searchText by rememberSaveable { mutableStateOf("") }
     var rarityFilter by rememberSaveable { mutableIntStateOf(-1) }
     var elementFilter by rememberSaveable { mutableStateOf<String?>(null) }
@@ -124,7 +128,7 @@ fun CharacterListScreen(
             if (owned.isEmpty() || visible.isEmpty()) {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
                     com.milan.game.ui.components.EmptyState(
-                        icon = if (owned.isEmpty()) "✦" else "🔍",
+                        icon = if (owned.isEmpty()) Icons.Outlined.Person else Icons.Outlined.Search,
                         title = if (owned.isEmpty()) "还没有角色" else "没有符合条件的角色",
                         subtitle = if (owned.isEmpty()) "去寻访吧" else "试试调整筛选条件",
                         modifier = Modifier.padding(top = 60.dp),
@@ -209,7 +213,7 @@ private fun CompletionPanel(
             }
             LinearProgressIndicator(
                 progress = { if (totalRoster == 0) 0f else ownedCount / totalRoster.toFloat() },
-                modifier = Modifier.fillMaxWidth().height(4.dp).clip(RoundedCornerShape(2.dp)),
+                modifier = Modifier.fillMaxWidth().height(4.dp).clip(RoundedCornerShape(AppTheme.Roundness.xxs)),
                 color = AppTheme.Gold,
                 trackColor = AppTheme.BgMid,
             )

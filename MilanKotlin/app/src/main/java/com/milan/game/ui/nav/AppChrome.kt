@@ -46,7 +46,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.milan.game.ui.GameState
+import com.milan.game.di.AppGraph
 import com.milan.game.ui.formatCount
 import com.milan.game.ui.theme.AppTheme
 
@@ -127,35 +127,38 @@ fun AppTopBar(
         }
         if (showResource) {
             Spacer(Modifier.weight(1f))
-            ResourceBar()
+            // 顶栏空间紧：compact 只显示双货币；完整四资源见 Home/Gacha 与 Shop 面板
+            ResourceBar(compact = true)
         }
     }
 }
 
 /**
- * 资源胶囊：星尘（金 ✦）+ 钻石（青 ◆）两项（C# AppChrome.ResourceBar 翻译）。
- * 主页与子页面复用。数值订阅 [GameState.snapshot]（StateFlow，2026-08 现代化）：
- * 任何成功写操作后自动刷新——此前仅靠宿主重组「碰巧」刷新，子页停留期间的经济
- * 变动（如商店购买）会让胶囊显示陈旧值（P2-14）。
- * P2-5 符号统一：✦ 星尘 / ◆ 钻石 / ❖ 星魂碎片（此前钻石误用 ❖，与商店/养成页冲突）。
+ * 资源胶囊：✦ 星尘 / ◆ 钻石 / ❖ 星魂碎片 / ⚔ 战票（与 Shop ResourcePanel 同符号口径）。
+ * 主页与子页面复用。订阅 **economy 切片**；[compact] 时仅显示双货币（窄顶栏）。
+ * 2026-09-10：补齐碎片/战票，消除「抽卡消耗星尘时看不到碎片」与商店面板口径分裂。
  */
 @Composable
-fun ResourceBar(modifier: Modifier = Modifier) {
-    val snap by GameState.snapshot.collectAsStateWithLifecycle()
-    val dust = snap.softCurrency
-    val gems = snap.hardCurrency
+fun ResourceBar(modifier: Modifier = Modifier, compact: Boolean = false) {
+    val eco by AppGraph.service.economy.collectAsStateWithLifecycle()
 
     Row(
         modifier = modifier
-            .background(AppTheme.Surface, RoundedCornerShape(16.dp))
-            .border(1.dp, AppTheme.Stroke, RoundedCornerShape(16.dp))
-            .padding(horizontal = 12.dp, vertical = 7.dp),
+            .background(AppTheme.Surface, RoundedCornerShape(AppTheme.Roundness.lg))
+            .border(1.dp, AppTheme.Stroke, RoundedCornerShape(AppTheme.Roundness.lg))
+            .padding(horizontal = 10.dp, vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Center,
     ) {
-        Chip("✦", dust, AppTheme.Gold)
-        Spacer(Modifier.width(10.dp))
-        Chip("◆", gems, AppTheme.Frost)
+        Chip("✦", eco.softCurrency, AppTheme.Gold)
+        Spacer(Modifier.width(8.dp))
+        Chip("◆", eco.hardCurrency, AppTheme.Frost)
+        if (!compact) {
+            Spacer(Modifier.width(8.dp))
+            Chip("❖", eco.starFragments, AppTheme.Frost)
+            Spacer(Modifier.width(8.dp))
+            Chip("⚔", eco.battleTickets, AppTheme.Text2)
+        }
     }
 }
 

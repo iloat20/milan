@@ -88,47 +88,35 @@ private fun inkBorderPath(
     return path
 }
 
-/** 水墨面板 v2：宣纸底色 + 墨迹不均匀笔触边框 + 顶部内高光。
- *  [highlighted] 金箔墨迹边框点睛；[nested] 嵌套态略深。 */
+/** 丹青展陈面板 v3：玄墨实底 + 发丝线边框 + 顶部内高光。
+ *  [highlighted] 金箔边框点睛；[nested] 嵌套态略深。 */
 @Composable
 fun GlassPanel(
     modifier: Modifier = Modifier,
-    radius: Dp = 14.dp,
+    radius: Dp = AppTheme.Roundness.lg,
     highlighted: Boolean = false,
     nested: Boolean = false,
     content: @Composable BoxScope.() -> Unit,
 ) {
     val shape = RoundedCornerShape(radius)
-    val fill = if (nested) AppTheme.SurfaceNested else AppTheme.Surface
-    val borderColor = if (highlighted) AppTheme.Gold.copy(alpha = 0.5f) else AppTheme.Text3.copy(alpha = 0.35f)
+    val fill = if (nested) AppTheme.SurfaceNested else AppTheme.BgMid
+    val borderColor = if (highlighted) AppTheme.Gold.copy(alpha = 0.45f) else AppTheme.Stroke
 
     Box(
         modifier = modifier
             .clip(shape)
             .background(fill, shape)
-            // 墨迹笔触边框（代替均匀 border）
-            .drawBehind {
-                val strokeW = 1.5f
-                val path = inkBorderPath(size.width, size.height, radius.toPx(), strokeW)
-                drawPath(
-                    path,
-                    color = borderColor,
-                    style = Stroke(
-                        width = strokeW,
-                        // 粗细变化模拟毛笔提按
-                    ),
-                )
-            },
+            .border(1.dp, borderColor, shape),
     ) {
-        // 顶部内高光：宣纸白 α8% → 透明
+        // 顶部内高光：微暖白 α6% → 透明（玻璃材质托底，文字永远有实底）
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(radius * 2)
+                .height(radius)
                 .clip(shape)
                 .background(
                     Brush.verticalGradient(
-                        listOf(Color.White.copy(alpha = 0.08f), Color.Transparent),
+                        listOf(AppTheme.Text1.copy(alpha = 0.06f), Color.Transparent),
                     ),
                 ),
         )
@@ -136,7 +124,7 @@ fun GlassPanel(
     }
 }
 
-/** 水墨页面底色：宣纸暖灰三段渐变（非纯黑）。scrollOffset 驱动背景视差（0.3x 速率）。 */
+/** 页面玄墨底：Ink0 → Ink1 → Ink0 三段。scrollOffset 驱动背景视差（0.3x）。 */
 @Composable
 fun PageBackground(
     modifier: Modifier = Modifier,

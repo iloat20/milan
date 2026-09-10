@@ -10,60 +10,68 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontVariation
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.milan.game.R
 
-// 云海仙气 · Material 3 Expressive 配色
+// 丹青典藏 v3 · Material 3 Expressive 配色
 //
-// 保留 MaterialExpressiveTheme + GameShapes 体系，色调从墨色+金箔+朱砂切换到云海蓝+冰蓝+金箔：
-//  - primary = 石青（冰蓝绿，仙境矿物色）
-//  - secondary = 金箔（温暖的仙宫金色，延续强调功能）
-//  - tertiary = 朱砂（印章红，点缀）
-//  - background / surface = 云海蓝层次
+// 玄墨基底 + 金箔主强调 + 朱砂行动色 + 石青次操作。
+// 与 AppTheme.kt 单一事实来源对齐；游戏默认关闭动态取色以保品牌一致性。
 
 private val InkColors = darkColorScheme(
-    primary = Color(0xFF68B0A8),              // 石青（仙气提亮）
-    onPrimary = Color(0xFF0A1A18),
-    primaryContainer = Color(0xFF1E3838),
-    onPrimaryContainer = Color(0xFFD0EDE8),
-    inversePrimary = Color(0xFF90D8D0),
+    primary = AppTheme.Gold,                     // 金箔 = 珍贵与度量 / 主 CTA
+    onPrimary = AppTheme.GoldTextOn,
+    primaryContainer = Color(0xFF3A3020),
+    onPrimaryContainer = Color(0xFFF3E8CF),
+    inversePrimary = AppTheme.GoldDeep,
 
-    secondary = AppTheme.Gold,                // 金箔（单一事实来源）
-    onSecondary = Color(0xFF2A1800),
-    secondaryContainer = Color(0xFF3A3020),
-    onSecondaryContainer = Color(0xFFF3E8CF),
+    secondary = AppTheme.Frost,                  // 石青 = 次操作 / 导航
+    onSecondary = Color(0xFF0A1A18),
+    secondaryContainer = Color(0xFF1E3838),
+    onSecondaryContainer = Color(0xFFD0EDE8),
 
-    tertiary = Color(0xFFD86060),            // 朱砂
+    tertiary = AppTheme.SealRed,                 // 朱砂 = 行动 / 警示
     onTertiary = Color(0xFF2A0A0A),
     tertiaryContainer = Color(0xFF4A1A1A),
     onTertiaryContainer = Color(0xFFFFD9D9),
 
-    background = Color(0xFF0F1428),          // 云海底
-    onBackground = Color(0xFFF0ECF0),
+    background = AppTheme.BgDeepest,             // Ink0
+    onBackground = AppTheme.Text1,
 
-    surface = Color(0xFF1A2040),             // 云海中层
-    onSurface = Color(0xFFF0ECF0),
-    surfaceVariant = Color(0xFF1E2848),      // 冰蓝面板
-    onSurfaceVariant = Color(0xFFB8C0D0),
-    surfaceTint = Color(0xFF68B0A8),
+    surface = AppTheme.BgMid,                    // Ink1
+    onSurface = AppTheme.Text1,
+    surfaceVariant = AppTheme.SurfaceNested,     // Ink2
+    onSurfaceVariant = AppTheme.Text2,
+    surfaceTint = AppTheme.Gold,
 
-    outline = Color(0xFF2A3050),
-    outlineVariant = Color(0xFF1E2848),
+    outline = Color(0xFF2A2E38),
+    outlineVariant = Color(0xFF1C2028),
 
     scrim = Color(0xFF000000),
 
-    error = Color(0xFFD05050),
+    error = AppTheme.Danger,
     onError = Color(0xFF2A0808),
     errorContainer = Color(0xFF4A1414),
     onErrorContainer = Color(0xFFFFD9D9),
 )
+
+/**
+ * 当前世界氛围调色板（v3 §5.1：三世界 ambient 层的唯一注入点）。
+ * 默认神话界；详情页/主页 Hero 用
+ * `CompositionLocalProvider(LocalWorldPalette provides WorldTheme.forWorld(world)) { ... }`
+ * 包裹子树即可换氛围。世界调色板**只允许作用于背景氛围层**（GalleryBackdrop /
+ * 光晕/粒子），永不下渗到按钮、文字、形状 token。
+ */
+val LocalWorldPalette = compositionLocalOf { AppTheme.Shinwa }
 
 /**
  * 动态主题支持（Material You）。
@@ -106,13 +114,16 @@ fun MilanTheme(content: @Composable () -> Unit) {
     MilanTheme(useDynamicColor = false, useDarkTheme = true, content = content)
 }
 
-/** 游戏形状体系：收敛全站圆角为五档 token。 */
+/**
+ * 游戏形状体系：从 [AppTheme.Roundness] token 派生（单一事实来源，v3 §5.3）。
+ * 历史：此处曾有独立的 6/10/14/16/20 第二套档位，与 Roundness token 矛盾，已废除。
+ */
 val GameShapes = Shapes(
-    extraSmall = RoundedCornerShape(6.dp),
-    small = RoundedCornerShape(10.dp),
-    medium = RoundedCornerShape(14.dp),
-    large = RoundedCornerShape(16.dp),
-    extraLarge = RoundedCornerShape(20.dp),
+    extraSmall = RoundedCornerShape(AppTheme.Roundness.xs),
+    small = RoundedCornerShape(AppTheme.Roundness.sm),
+    medium = RoundedCornerShape(AppTheme.Roundness.md),
+    large = RoundedCornerShape(AppTheme.Roundness.lg),
+    extraLarge = RoundedCornerShape(AppTheme.Roundness.xl),
 )
 
 /**
@@ -127,23 +138,90 @@ val GameShapes = Shapes(
 private val MaShanZheng = FontFamily(Font(R.font.ma_shan_zheng_regular))
 
 /**
- * 游戏排版体系：水墨国风的标题/正文/标签档位。
+ * Noto Serif SC 可变字重（res/font/noto_serif_sc_variable.ttf）——v3 §5.4 Display/Title 档字体。
+ * U-02（2026-09-09）：此前该文件为**零引用死资源**，本次排印收敛激活。
+ * 可变字体经 [FontVariation.weight] 实例化 500/600 两档；字库为全集 CJK，无楷书的缺字回退问题。
+ */
+private val NotoSerifSC = FontFamily(
+    Font(
+        R.font.noto_serif_sc_variable,
+        weight = FontWeight.Medium,
+        variationSettings = FontVariation.Settings(FontVariation.weight(500)),
+    ),
+    Font(
+        R.font.noto_serif_sc_variable,
+        weight = FontWeight.SemiBold,
+        variationSettings = FontVariation.Settings(FontVariation.weight(600)),
+    ),
+)
+
+/**
+ * 品牌排印（v3 §5.4：楷书仅两处——「丹青录」Logo 与抽卡仪式标题，不作页面标题用）。
+ * 楷书为单一 Regular 字重，**禁止 FontWeight.Bold**（合成伪粗体笔锋糊团，见 U-01 记录）。
+ */
+val BrandType = TextStyle(
+    fontFamily = MaShanZheng,
+    fontSize = 26.sp,
+    lineHeight = 34.sp,
+    letterSpacing = 4.sp,
+)
+
+/** 仪式标题（抽卡揭晓等 ritual 时刻的楷书大字）。 */
+val RitualType = TextStyle(
+    fontFamily = MaShanZheng,
+    fontSize = 34.sp,
+    lineHeight = 44.sp,
+    letterSpacing = 6.sp,
+)
+
+/**
+ * 游戏排版体系 v3（§5.4 Type Scale，全站唯一档位）：
  *
- * **仅大字号标题用楷书**——小字号（≤15sp）楷书笔画易粘连、可读性下降，故正文与标签沿用系统无衬线。
- * 楷书为单一 Regular 字重，标题**不再设 FontWeight.Bold**（否则触发合成伪粗体，笔锋糊成一团）。
+ * - Display/Title 档 = Noto Serif SC（宋体骨架衬线，典藏气质）；
+ * - 正文/控件/数字 = 系统无衬线，数字档带 `tnum` 等宽；
+ * - 楷书只保留 [BrandType] / [RitualType] 两个品牌位（不再进 typography 档位）。
  *
- * 字库覆盖：马善政含 GB2312 全集 6763 字；项目实际用字 1439 个中覆盖 1433 个（99.6%），
- * 缺 6 字（槃 / 蝟 / 話 / 跂 / 開 / 陣，多为繁体与生僻字）由系统字体自动回退。
+ * 历史：v2 曾把楷书放进 headline/title 档（22/20/17sp），小字号笔画粘连且 275 处裸
+ * fontSize 与档位互相脱节；v3 收敛后 UI 层新代码禁止裸 fontSize，一律走本档位。
  */
 val GameTypography = Typography(
-    headlineSmall = TextStyle(fontFamily = MaShanZheng, fontSize = 22.sp, letterSpacing = 3.sp),
-    titleLarge = TextStyle(fontFamily = MaShanZheng, fontSize = 20.sp, letterSpacing = 0.5.sp),
-    titleMedium = TextStyle(fontFamily = MaShanZheng, fontSize = 17.sp, letterSpacing = 0.5.sp),
-    titleSmall = TextStyle(fontSize = 15.sp, fontWeight = FontWeight.Bold),
-    bodyLarge = TextStyle(fontSize = 14.sp),
-    bodyMedium = TextStyle(fontSize = 13.sp),
-    bodySmall = TextStyle(fontSize = 12.sp),
-    labelLarge = TextStyle(fontSize = 12.sp, fontWeight = FontWeight.Bold),
-    labelMedium = TextStyle(fontSize = 11.sp),
-    labelSmall = TextStyle(fontSize = 10.sp),
+    displayLarge = TextStyle(
+        fontFamily = NotoSerifSC, fontWeight = FontWeight.SemiBold,
+        fontSize = 40.sp, lineHeight = 48.sp, fontFeatureSettings = "tnum",
+    ),
+    displayMedium = TextStyle(
+        fontFamily = NotoSerifSC, fontWeight = FontWeight.SemiBold,
+        fontSize = 32.sp, lineHeight = 40.sp, fontFeatureSettings = "tnum",
+    ),
+    displaySmall = TextStyle(
+        fontFamily = NotoSerifSC, fontWeight = FontWeight.SemiBold,
+        fontSize = 28.sp, lineHeight = 36.sp, fontFeatureSettings = "tnum",
+    ),
+    headlineMedium = TextStyle(
+        fontFamily = NotoSerifSC, fontWeight = FontWeight.SemiBold,
+        fontSize = 22.sp, lineHeight = 30.sp,
+    ),
+    headlineSmall = TextStyle(
+        fontFamily = NotoSerifSC, fontWeight = FontWeight.SemiBold,
+        fontSize = 20.sp, lineHeight = 28.sp,
+    ),
+    titleLarge = TextStyle(
+        fontFamily = NotoSerifSC, fontWeight = FontWeight.Medium,
+        fontSize = 18.sp, lineHeight = 26.sp,
+    ),
+    titleMedium = TextStyle(
+        fontWeight = FontWeight.SemiBold, fontSize = 16.sp, lineHeight = 24.sp,
+    ),
+    titleSmall = TextStyle(
+        fontWeight = FontWeight.Medium, fontSize = 15.sp, lineHeight = 20.sp,
+    ),
+    bodyLarge = TextStyle(fontSize = 15.sp, lineHeight = 23.sp),
+    bodyMedium = TextStyle(fontSize = 13.sp, lineHeight = 20.sp),
+    bodySmall = TextStyle(fontSize = 12.sp, lineHeight = 16.sp),
+    labelLarge = TextStyle(
+        fontWeight = FontWeight.Medium, fontSize = 12.sp, lineHeight = 16.sp,
+        letterSpacing = 0.5.sp, fontFeatureSettings = "tnum",
+    ),
+    labelMedium = TextStyle(fontSize = 11.sp, lineHeight = 14.sp),
+    labelSmall = TextStyle(fontSize = 11.sp, lineHeight = 14.sp),
 )

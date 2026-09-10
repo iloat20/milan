@@ -8,6 +8,7 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
@@ -24,12 +25,10 @@ import com.milan.game.data.DialogueLine
 import com.milan.game.data.StoryChoice
 import com.milan.game.data.StoryStageDef
 import com.milan.game.data.StoryStageType
-import com.milan.game.ui.GameState
 import com.milan.game.ui.components.GlassPanel
 import com.milan.game.ui.components.PortraitImage
 import com.milan.game.ui.theme.AppTheme
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 
 /**
  * 视觉小说式对话界面（v2 增强版）。
@@ -43,6 +42,8 @@ import kotlinx.coroutines.launch
  * - 半透明毛玻璃对话框
  * - 角色切换动画（淡入淡出）
  * - 墨汁泼溅进入/退出转场
+ *
+ * 好感落账经 [onGrantAffinity] 回调上抛（由 StoryViewModel 执行），本屏不碰服务层。
  */
 @Composable
 fun DialogueScreen(
@@ -55,6 +56,8 @@ fun DialogueScreen(
      * 无内容引用该能力时保持默认空实现，不影响既有线性关卡。
      */
     onNavigateStage: (String) -> Unit = {},
+    /** 好感选项落账（默认 no-op；生产由 NavHost 注入 StoryViewModel.grantAffinity）。 */
+    onGrantAffinity: (characterId: String, amount: Int) -> Unit = { _, _ -> },
 ) {
     val dialogue = stage.dialogue ?: return
     var currentIndex by remember { mutableStateOf(0) }
@@ -73,9 +76,6 @@ fun DialogueScreen(
     }
 
     val currentLine = dialogue.getOrNull(currentIndex)
-    val service = GameState.service
-    // 2026-09-02：好感选项落账用（suspend 写操作须在协程调用）。
-    val scope = rememberCoroutineScope()
 
     // 打字机效果
     LaunchedEffect(currentIndex, dialogue) {
@@ -149,7 +149,7 @@ fun DialogueScreen(
                     Box(
                         modifier = Modifier
                             .size(80.dp)
-                            .clip(RoundedCornerShape(40.dp))
+                            .clip(CircleShape)
                             .background(
                                 Brush.radialGradient(
                                     colors = listOf(
@@ -180,7 +180,7 @@ fun DialogueScreen(
                     modifier = Modifier
                         .background(
                             if (autoPlay) AppTheme.Gold.copy(alpha = 0.2f) else AppTheme.Surface,
-                            RoundedCornerShape(8.dp)
+                            RoundedCornerShape(AppTheme.Roundness.sm)
                         )
                         .clickable { autoPlay = !autoPlay }
                         .padding(horizontal = 10.dp, vertical = 4.dp),
@@ -196,7 +196,7 @@ fun DialogueScreen(
                 if (autoPlay) {
                     Box(
                         modifier = Modifier
-                            .background(AppTheme.Surface, RoundedCornerShape(8.dp))
+                            .background(AppTheme.Surface, RoundedCornerShape(AppTheme.Roundness.sm))
                             .clickable { showSpeedMenu = !showSpeedMenu }
                             .padding(horizontal = 10.dp, vertical = 4.dp),
                     ) {
@@ -211,7 +211,7 @@ fun DialogueScreen(
                 // 跳过按钮
                 Box(
                     modifier = Modifier
-                        .background(AppTheme.Danger.copy(alpha = 0.15f), RoundedCornerShape(8.dp))
+                        .background(AppTheme.Danger.copy(alpha = 0.15f), RoundedCornerShape(AppTheme.Roundness.sm))
                         .clickable { exiting = true }
                         .padding(horizontal = 10.dp, vertical = 4.dp),
                 ) {
@@ -241,7 +241,7 @@ fun DialogueScreen(
                                 .padding(horizontal = 4.dp)
                                 .background(
                                     if (autoPlaySpeed == speed) AppTheme.Gold.copy(alpha = 0.3f) else AppTheme.Surface,
-                                    RoundedCornerShape(6.dp)
+                                    RoundedCornerShape(AppTheme.Roundness.sm)
                                 )
                                 .clickable {
                                     autoPlaySpeed = speed
@@ -300,8 +300,8 @@ fun DialogueScreen(
                                     rarity = getCharacterRarity(currentLine.speakerId),
                                     modifier = Modifier
                                         .size(28.dp)
-                                        .clip(RoundedCornerShape(14.dp)),
-                                    target = com.milan.game.ui.components.PortraitTarget.Thumb,
+                                        .clip(RoundedCornerShape(AppTheme.Roundness.lg)),
+                                    target = com.milan.game.ui.components.PortraitTarget.Avatar,
                                 )
                                 Spacer(Modifier.width(8.dp))
                             }
@@ -325,9 +325,10 @@ fun DialogueScreen(
                     )
 
                     // 选择分支
-                    if (!isTyping && currentLine?.choices != null) {
+                    val lineChoices = currentLine?.choices
+                    if (!isTyping && lineChoices != null) {
                         Spacer(Modifier.height(12.dp))
-                        currentLine.choices.forEachIndexed { index, choice ->
+                        lineChoices.forEachIndexed { index, choice ->
                             ChoiceCard(
                                 choice = choice,
                                 onClick = {
@@ -336,16 +337,15 @@ fun DialogueScreen(
                                     // 满级/落盘失败等 Rejected 静默忽略（剧情产出不打断流程）。
                                     // 旁白（narrator）没有好感归属，跳过。
                                     val speaker = currentLine.speakerId
-                                    if (choice.affinityBonus > 0 && speaker != null && speaker != "narrator") {
-                                        scope.launch {
-                                            try { service.grantAffinity(speaker, choice.affinityBonus) } catch (_: Exception) { }
-                                        }
+                                    if (choice.affinityBonus > 0 && speaker != "narrator") {
+                                        onGrantAffinity(speaker, choice.affinityBonus)
                                     }
-                                    if (choice.nextStageId != null) {
+                                    val gotoStage = choice.nextStageId
+                                    if (gotoStage != null) {
                                         // M3 修复：此前「暂不支持，直接退出」→ 点分支选项直接结束整关，
                                         // 与数据模型注释（nextStageId = 跳转目标关卡）相悖。
                                         // 现上抛跳转意图，由导航层完成「当前关完结 + 打开目标关」。
-                                        onNavigateStage(choice.nextStageId)
+                                        onNavigateStage(gotoStage)
                                     } else {
                                         // 无跳转目标：按本关内分支处理，继续后续台词
                                         if (currentIndex < dialogue.lastIndex) {
@@ -356,7 +356,7 @@ fun DialogueScreen(
                                     }
                                 },
                             )
-                            if (index < currentLine.choices.lastIndex) {
+                            if (index < lineChoices.lastIndex) {
                                 Spacer(Modifier.height(6.dp))
                             }
                         }
@@ -386,7 +386,7 @@ fun DialogueScreen(
                 .align(Alignment.TopStart)
                 .padding(16.dp)
                 .clickable { exiting = true }
-                .background(AppTheme.Surface.copy(alpha = 0.6f), RoundedCornerShape(8.dp))
+                .background(AppTheme.Surface.copy(alpha = 0.6f), RoundedCornerShape(AppTheme.Roundness.sm))
                 .padding(horizontal = 12.dp, vertical = 6.dp),
         ) {
             Text(
@@ -401,7 +401,7 @@ fun DialogueScreen(
             modifier = Modifier
                 .align(Alignment.TopCenter)
                 .padding(top = 16.dp)
-                .background(AppTheme.Surface.copy(alpha = 0.6f), RoundedCornerShape(8.dp))
+                .background(AppTheme.Surface.copy(alpha = 0.6f), RoundedCornerShape(AppTheme.Roundness.sm))
                 .padding(horizontal = 12.dp, vertical = 6.dp),
         ) {
             Text(
@@ -445,7 +445,7 @@ private fun ChoiceCard(
                         AppTheme.Surface,
                     )
                 ),
-                RoundedCornerShape(8.dp)
+                RoundedCornerShape(AppTheme.Roundness.sm)
             )
             .clickable { onClick() }
             .padding(horizontal = 12.dp, vertical = 8.dp),
@@ -477,30 +477,31 @@ private fun ChoiceCard(
     }
 }
 
-/** 获取说话者显示名称。 */
-private fun getSpeakerName(speakerId: String): String = when (speakerId) {
-    "narrator" -> "旁白"
-    "char_ur_zhulong" -> "烛龙"
-    "char_ur_wuxu" -> "虚无"
-    "char_ur_xingtian" -> "刑天"
-    "char_ur_taotie" -> "饕餮"
-    else -> speakerId.removePrefix("char_").replace("_", " ").uppercase()
+/** 说话者显示名：内容表查角色；旁白/未知 id 兜底。 */
+private fun getSpeakerName(speakerId: String): String {
+    if (speakerId == "narrator" || speakerId.isBlank()) return "旁白"
+    val def = com.milan.game.di.AppGraph.service.character(speakerId)
+    return def?.displayName?.takeIf { it.isNotBlank() }
+        ?: speakerId.removePrefix("char_").replace("_", " ")
 }
 
-/** 获取角色稀有度（用于立绘加载）。 */
-private fun getCharacterRarity(speakerId: String): Int = when {
-    speakerId.contains("ur_") -> 4
-    speakerId.contains("ssr_") -> 3
-    speakerId.contains("sr_") -> 2
-    else -> 1
+/** 说话者稀有度（立绘加载）；内容表缺失时按 id 前缀兜底。 */
+private fun getCharacterRarity(speakerId: String): Int {
+    val fromContent = com.milan.game.di.AppGraph.service.character(speakerId)?.baseRarity
+    if (fromContent != null) return fromContent
+    return when {
+        speakerId.contains("ur_") -> 4
+        speakerId.contains("ssr_") -> 3
+        speakerId.contains("sr_") -> 2
+        else -> 1
+    }
 }
 
-/** 获取说话者主题色。 */
-private fun getSpeakerColor(speakerId: String): Color = when {
-    speakerId == "narrator" -> Color(0xFFBBBBBB)
-    speakerId.contains("zhulong") -> Color(0xFFFF6347) // 火焰红
-    speakerId.contains("wuxu") -> Color(0xFF9370DB) // 紫金
-    speakerId.contains("xingtian") -> Color(0xFF4169E1) // 钢铁蓝
-    speakerId.contains("taotie") -> Color(0xFFCD853F) // 金铜
-    else -> AppTheme.Gold
+/** 说话者主题色：优先稀有度色，其次元素色；旁白中性灰。 */
+private fun getSpeakerColor(speakerId: String): Color {
+    if (speakerId == "narrator") return Color(0xFFBBBBBB)
+    val def = com.milan.game.di.AppGraph.service.character(speakerId) ?: return AppTheme.Gold
+    val (eFrom, _, _, _) = com.milan.game.ui.theme.ElementTheme.forElement(def.element)
+    // 稀有度色为主色，元素色作强调（金箔 UR / 朱砂 SSR 统一取 AppTheme）
+    return AppTheme.rarityColor(def.baseRarity).takeIf { def.baseRarity >= 3 } ?: eFrom
 }

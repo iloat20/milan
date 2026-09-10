@@ -5,7 +5,7 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
-import com.milan.game.ui.GameState
+import com.milan.game.GameState
 import kotlinx.coroutines.flow.first
 
 /**

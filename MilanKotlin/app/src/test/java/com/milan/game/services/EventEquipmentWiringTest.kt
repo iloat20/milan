@@ -21,7 +21,7 @@ import org.junit.Test
  * - C1 活动代币体系：奖励按 rewardType 入账、商店按 currencyType 扣款
  * - C2 活动激活：ensureActiveEvents 实例化模板并让四个写操作脱离恒 Rejected
  *
- * C3 装备发放测试随 EquipmentService 一并删除（2026-09-06 S2，死功能层裁撤）。
+ * C3 装备发放测试见 EquipmentGrantWiringTest（2026-09-09 重建入库路径）。
  */
 class EventEquipmentWiringTest {
 
@@ -232,7 +232,5 @@ class EventEquipmentWiringTest {
         assertEquals("拒绝后代币不得再变", afterTen, service.getEventCurrencyBalance("EVENT_CURRENCY"))
     }
 
-    // ═══════════════════ C3 删除（2026-09-06 S2）═══════════════════
-    // 装备发放入库 5 个测试随 EquipmentService 一并删除（属死功能层）。
-    // C1（活动代币体系）+ C2（活动激活）共 10 个测试保留，覆盖 EventRhythmService 主路径。
+    // C3 装备发放回归测试迁至 EquipmentGrantWiringTest（2026-09-09 重建 grantEquipment）。
 }

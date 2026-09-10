@@ -15,17 +15,14 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.milan.game.data.GameEvent
-import com.milan.game.ui.GameState
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.milan.game.ui.components.GlassPanel
 import com.milan.game.ui.components.PageBackground
 import com.milan.game.ui.nav.AppTopBar
@@ -39,20 +36,16 @@ import com.milan.game.ui.theme.AppTheme
  * - 活动代币系统（addEventCurrency / balanceOf / spendCurrency）
  * - 任务进度追踪
  *
- * 本页展示当前活跃活动列表。
+ * 本页展示当前活跃活动列表。2026-09-08 P1-6 C 批：懒激活与派生读取收敛进
+ * [EventViewModel]，Composable 只订阅。
  */
 @Composable
 fun EventScreen(
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val service = GameState.service
-    val snapshot by service.snapshot.collectAsStateWithLifecycle()
-
-    // 进入活动页时懒激活默认活动（EventRhythmService 设计文档要求）
-    LaunchedEffect(Unit) { service.ensureActiveEvents() }
-
-    val activeEvents = remember(snapshot.revision) { service.getActiveEvents() }
+    val vm: EventViewModel = viewModel(factory = com.milan.game.di.AppGraph.factory)
+    val activeEvents by vm.uiState.collectAsStateWithLifecycle()
 
     Box(
         modifier = modifier
@@ -76,8 +69,8 @@ fun EventScreen(
                             EmptyEventCard()
                         }
                     } else {
-                        items(activeEvents, key = { it.eventId }) { event ->
-                            EventCard(event = event)
+                        items(activeEvents, key = { it.event.eventId }) { card ->
+                            EventCard(card = card)
                         }
                     }
                 }
@@ -88,7 +81,8 @@ fun EventScreen(
 
 /** 活动卡片。 */
 @Composable
-private fun EventCard(event: GameEvent) {
+private fun EventCard(card: EventCardUi) {
+    val event = card.event
     GlassPanel(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(
@@ -113,8 +107,8 @@ private fun EventCard(event: GameEvent) {
                 EventCountdown(endTime = event.endTime)
             }
 
-            // 活动进度
-            if (event.tasks.isNotEmpty()) {
+            // 活动进度（来自存档 eventTaskProgress，不再硬编码 0）
+            if (card.tasks.isNotEmpty()) {
                 Spacer(Modifier.height(10.dp))
                 Text(
                     text = "活动任务",
@@ -122,7 +116,7 @@ private fun EventCard(event: GameEvent) {
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Bold,
                 )
-                event.tasks.filterNotNull().forEach { task ->
+                card.tasks.forEach { taskUi ->
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -130,14 +124,14 @@ private fun EventCard(event: GameEvent) {
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Text(
-                            text = task.name.ifEmpty { task.taskId },
+                            text = taskUi.task.name.ifEmpty { taskUi.task.taskId },
                             color = AppTheme.Text2,
                             fontSize = 11.sp,
                             modifier = Modifier.weight(1f),
                         )
                         Text(
-                            text = if (task.isCompleted) "已完成" else "0 / ${task.target}",
-                            color = if (task.isCompleted) AppTheme.Success else AppTheme.Text3,
+                            text = taskUi.progressLabel,
+                            color = if (taskUi.task.isCompleted) AppTheme.Success else AppTheme.Text3,
                             fontSize = 10.sp,
                         )
                     }

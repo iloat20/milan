@@ -1,5 +1,6 @@
 package com.milan.game.ui
 
+import com.milan.game.GameState
 import com.milan.game.data.SaveProvider
 import java.io.File
 import org.junit.Assert.assertFalse

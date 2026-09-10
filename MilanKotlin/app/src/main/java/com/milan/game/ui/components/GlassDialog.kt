@@ -79,7 +79,7 @@ fun GlassDialog(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 40.dp)
-                            .clip(RoundedCornerShape(18.dp))
+                            .clip(RoundedCornerShape(AppTheme.Roundness.xl))
                             .background(
                                 Brush.verticalGradient(
                                     listOf(
@@ -88,7 +88,7 @@ fun GlassDialog(
                                     ),
                                 ),
                             )
-                            .border(1.dp, AppTheme.Gold.copy(alpha = 0.2f), RoundedCornerShape(18.dp))
+                            .border(1.dp, AppTheme.Gold.copy(alpha = 0.2f), RoundedCornerShape(AppTheme.Roundness.xl))
                             .padding(20.dp),
                         horizontalAlignment = Alignment.CenterHorizontally,
                     ) {

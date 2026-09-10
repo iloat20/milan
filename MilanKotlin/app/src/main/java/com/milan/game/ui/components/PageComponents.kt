@@ -1,5 +1,6 @@
 package com.milan.game.ui.components
 
+import com.milan.game.OwnedCharacterView
 // 从 CharacterDetailScreen.kt / ProgressionScreen.kt 提取的角色页共享组件。
 // 2026-08 水墨国风重构：视觉风格从暗紫+熔金切换到墨色+金箔+朱砂。
 
@@ -32,12 +33,15 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.animation.AnimatedVisibilityScope
+import androidx.compose.animation.SharedTransitionScope
+import androidx.compose.animation.SharedTransitionScope.ResizeMode
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
-import com.milan.game.ui.OwnedCharacterView
+import com.milan.game.ui.LocalSharedTransitionScope
 import com.milan.game.ui.theme.AppTheme
 
 /** 角色不存在（C# Finish 的等价安全态）。 */
@@ -66,9 +70,9 @@ fun BackCapsule(onClick: () -> Unit, modifier: Modifier = Modifier, text: String
         color = AppTheme.Gold,
         modifier = modifier
             .defaultMinSize(minWidth = 48.dp, minHeight = 48.dp)
-            .clip(RoundedCornerShape(20.dp))
+            .clip(RoundedCornerShape(AppTheme.Roundness.xl))
             .background(AppTheme.Surface)
-            .border(1.dp, AppTheme.Gold.copy(alpha = 0.65f), RoundedCornerShape(20.dp))
+            .border(1.dp, AppTheme.Gold.copy(alpha = 0.65f), RoundedCornerShape(AppTheme.Roundness.xl))
             .padding(horizontal = 12.dp, vertical = 8.dp)
             .clickable(onClick = onClick)
             .semantics { contentDescription = "返回" },
@@ -94,13 +98,27 @@ fun SubPageHero(
     owned: Boolean = true,
     onOpenProgression: ((String) -> Unit)? = null,
     portraitModifier: Modifier = Modifier,
+    /** 传入 NavHost 的 AnimatedVisibilityScope 后，立绘参与 `portrait_{id}` 共享元素过渡。 */
+    animatedVisibilityScope: AnimatedVisibilityScope? = null,
 ) {
+    val sharedScope = LocalSharedTransitionScope.current
+    val sharedPortraitMod = if (sharedScope != null && animatedVisibilityScope != null) {
+        with(sharedScope) {
+            Modifier.sharedBounds(
+                sharedContentState = rememberSharedContentState(key = "portrait_${view.save.characterId}"),
+                animatedVisibilityScope = animatedVisibilityScope,
+                resizeMode = ResizeMode.RemeasureToBounds,
+            )
+        }
+    } else {
+        Modifier
+    }
     Box(modifier.fillMaxWidth().height(heroHeight)) {
         PortraitImage(
             characterId = view.save.characterId,
             rarity = view.rarity,
             name = view.name,
-            modifier = Modifier.fillMaxSize().then(portraitModifier),
+            modifier = Modifier.fillMaxSize().then(sharedPortraitMod).then(portraitModifier),
             contentScale = ContentScale.Crop,
             aura = true,
         )
@@ -156,9 +174,9 @@ fun SubPageHero(
                 modifier = Modifier
                     .align(Alignment.TopEnd)
                     .padding(top = 40.dp, end = 14.dp)
-                    .clip(RoundedCornerShape(20.dp))
+                    .clip(RoundedCornerShape(AppTheme.Roundness.xl))
                     .background(AppTheme.Surface)
-                    .border(1.dp, AppTheme.Gold.copy(alpha = 0.65f), RoundedCornerShape(20.dp))
+                    .border(1.dp, AppTheme.Gold.copy(alpha = 0.65f), RoundedCornerShape(AppTheme.Roundness.xl))
                     .padding(horizontal = 16.dp, vertical = 9.dp)
                     .clickable(onClick = { onOpenProgression(view.save.characterId) }),
             )
@@ -183,9 +201,9 @@ fun GlassArrow(
         textAlign = TextAlign.Center,
         modifier = modifier
             .size(48.dp)
-            .clip(RoundedCornerShape(24.dp))
+            .clip(RoundedCornerShape(AppTheme.Roundness.xxl))
             .background(AppTheme.Surface)
-            .border(1.dp, AppTheme.Gold.copy(alpha = 0.65f), RoundedCornerShape(24.dp))
+            .border(1.dp, AppTheme.Gold.copy(alpha = 0.65f), RoundedCornerShape(AppTheme.Roundness.xxl))
             .clickable(onClick = onClick)
             .semantics { this.contentDescription = desc },
     )
@@ -216,9 +234,9 @@ fun HeroNameplate(
                 fontWeight = FontWeight.Bold,
                 color = rarityCol,
                 modifier = Modifier
-                    .clip(RoundedCornerShape(7.dp))
+                    .clip(RoundedCornerShape(AppTheme.Roundness.sm))
                     .background(rarityCol.copy(alpha = 45f / 255f))
-                    .border(1.dp, rarityCol.copy(alpha = 150f / 255f), RoundedCornerShape(7.dp))
+                    .border(1.dp, rarityCol.copy(alpha = 150f / 255f), RoundedCornerShape(AppTheme.Roundness.sm))
                     .padding(horizontal = 10.dp, vertical = 4.dp),
             )
             Text(
@@ -271,7 +289,7 @@ fun SectionTitle(text: String) {
         Box(
             Modifier
                 .size(width = 3.dp, height = 16.dp)
-                .clip(RoundedCornerShape(2.dp))
+                .clip(RoundedCornerShape(AppTheme.Roundness.xxs))
                 .background(AppTheme.Gold),
         )
         Text(

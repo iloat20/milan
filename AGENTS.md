@@ -46,8 +46,9 @@
 ## 架构要点
 
 - **单 Activity**：`MainActivity` + Navigation Compose 2.9 类型安全路由（`NavHost` + `ui/nav/Routes.kt` 的 `@Serializable` 路由类，替代早期自研状态路由；`RoutesTest` 覆盖 `NavItem.toNavRoute()` 映射）。底部 5 tab：`Home 主页 / Gacha 抽卡 / Deck 卡组 / Shop 商店 / Settings 设置`（`ui/nav/GameNavBar.kt` 的 `NavItem` 枚举，Material 标准图标）。子页盖住 tab：神谱图鉴（占位）→ 我的角色（CharacterListScreen）→ 角色详情（CharacterDetailScreen）→ 角色养成（ProgressionScreen），顶栏返回/系统返回（Predictive Back）逐层退出。立绘共享元素过渡：`SharedTransitionLayout` 包 `NavHost`（作用域经 `ui/SharedTransitionLocals.kt` 的 `LocalSharedTransitionScope` 注入）。
-- `ui/GameState.kt` 是**进程级单例**（`ensureInitialized` 幂等、双检锁），持有唯一 `GameService`；访问 `service` 前必须先初始化。UI 从这里取最新状态，不要另建 service。
-- `MilanApp`（Application）启动顺序敏感：`CrashReporter.install` → `beginBootTrace` → `GameState.ensureInitialized(saveProvider = AndroidSaveProvider, contentJson, onTrace)`。
+- `ui/GameState.kt` 是**进程级启动门控**（`ensureInitialized` 幂等、双检锁 + `ready`/`failure`）：成功后 `AppGraph.install(service)`。**Compose 层禁止再摸 `GameState.service`**——Screen 一律 `viewModel(factory = AppGraph.factory)` / `AppGraph.xxxFactory(id)`；属性推导走 `ui/stats/CharacterStats`；`OwnedCharacterView.talent` 构造时注入（经 `GameService.ownedView`）。Application / Worker / 测试仍可读 `GameState.service`。
+- **组合根 `di/AppGraph.kt`**：进程内唯一持有 `GameService` 的装配点；ViewModel 构造函数**必填** `GameService`（无 `= GameState.service` 默认参数）。`GameState.resetForTest()` 会 `AppGraph.clear()`。层间规则可用 `./gradlew checkArchitecture` 校验（领域 `android.*` / VM 默认注入 / UI 业务单例直连，违规 fail-fast）。
+- `MilanApp`（Application）启动顺序敏感：`CrashReporter.install` → `beginBootTrace` → `GameState.ensureInitialized(saveProvider = AndroidSaveProvider, contentJson, onTrace)`（内部装 AppGraph）。
 - 分层（2026-08-13 KMP 下沉后）：`ui/` → `services/`（GameService）→ **`:shared` commonMain**（`domain/` battle/gacha/progression + `data/Rarity`）→ `data/`（存档，app 内）+ `infrastructure/`（EventBus、CrashReporter）。桌面/未来 iOS 与 App 共用同一份领域实现（`desktopApp` 即演示）。
 - 代码注释常带「C# 某某翻译」对照标注（从 .NET 版迁移而来），历史坑因注释请保留，改相关代码前先读。
 

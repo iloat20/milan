@@ -20,6 +20,11 @@ import java.nio.file.StandardCopyOption
  * - 主档替换用 Files.move + ATOMIC_MOVE（同卷原子；旧实现 renameTo 在 Windows 无法覆盖
  *   已存在目标，回退的 copyTo+delete 非原子，中途被杀会截断主档）；
  * - save() 加对象级写锁：为未来 IO 线程化后的并发写预留串行化。
+ *
+ * 2026-09-08 P0-1：单次 save() 的 fsync 次数由 2 降为 1（见 [save] 内注释）。
+ * 溯源：写事务热路径上序列化本身仅约 0.4ms（见 SaveSerializationBaselineTest），
+ * 成本集中在 fsync 这类磁盘屏障；而 [SaveData.json] 关闭 prettyPrint 后存档体积降约 60%，
+ * 两项叠加后单次事务的 IO 字节数与屏障次数同步下降。
  */
 class AndroidSaveProvider(context: Context) : SaveProvider {
 
@@ -37,11 +42,19 @@ class AndroidSaveProvider(context: Context) : SaveProvider {
     override fun save(json: String): Boolean = synchronized(writeLock) {
         try {
             tmp.writeText(json)
+            // fsync 必须保留：tmp 完整是后续 ATOMIC_MOVE 生效的前提，掉电不能留下半截 tmp。
             tmp.sync()
-            // 主档更替前先滚动备份（读旧主档写 bak）；备份与主档同盘，进程被杀最多丢一次写档
+            // 主档更替前先滚动备份（读旧主档写 bak）。
+            //
+            // 2026-09-08 P0-1：此处**不再对 bak 做 fsync**（原实现 bak.sync()）。
+            // 推理：fsync 是单次 save() 里最昂贵的磁盘屏障，本方法原本串行触发两次。
+            // 备份档只在「主档损坏」时才被 [loadBackup] 读取，而主档始终经 ATOMIC_MOVE
+            // 替换——要么旧档要么新档，不存在半截态。因此 bak 未落盘即崩溃的唯一后果是
+            // 「备份停留在上一版或半截」，而这只在主档同时损坏时才会被读到，
+            // 且 [SaveData.tryParse] 会拒绝半截内容并回退默认档（与「无备份」后果等价）。
+            // 主档的持久性保证完全不受影响（tmp.sync + ATOMIC_MOVE 已覆盖）。
             if (main.exists()) {
                 bak.writeText(main.readText())
-                bak.sync()
             }
             try {
                 // 原子替换：同卷 ATOMIC_MOVE 保证「要么旧档要么新档」，杜绝半截主档

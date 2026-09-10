@@ -1,7 +1,6 @@
 package com.milan.game.ui.characters
 
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
@@ -9,7 +8,6 @@ import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.SharedTransitionScope.ResizeMode
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
@@ -49,11 +47,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.milan.game.data.CharacterSaveState
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.milan.game.di.AppGraph
 import com.milan.game.infrastructure.SpeechPlayer
-import com.milan.game.ui.GameState
-import com.milan.game.ui.LocalSharedTransitionScope
-import com.milan.game.ui.OwnedCharacterView
+import com.milan.game.OwnedCharacterView
+import com.milan.game.ui.stats.CharacterStats
+import com.milan.game.ui.feedback.LocalFeedback
 import com.milan.game.ui.components.MissingCharacter
 import com.milan.game.ui.components.PageBackground
 import com.milan.game.ui.components.SectionTitle
@@ -63,14 +62,14 @@ import com.milan.game.ui.theme.ElementTheme
 import com.milan.game.ui.theme.WorldTheme
 import kotlin.math.max
 
-// 角色详情面板标签（武器/属性/技能/故事/语音）
-private val detailTabs = listOf("武器", "属性", "技能", "故事", "语音")
+// 角色详情面板标签（武器/装备/属性/技能/故事/语音）
+private val detailTabs = listOf("武器", "装备", "属性", "技能", "故事", "语音")
 
 /**
  * 角色详情页（C# CharacterDetailActivity 翻译）。
  *
  * 布局：Hero（[SubPageHero]：立绘 + 底部渐隐 + 铭牌 + 悬浮操作）→ Tab 栏 + AnimatedContent 面板切换。
- * 面板走 [GameState.computeStats] / [GameState.computeStatsAt]，与养成/战斗同源。
+ * 面板走 [CharacterStats]，与养成/战斗同源。
  *
  * P2 未迁移（单 Activity 架构下简化）：视差立绘（Parallax3DPortraitView）、
  * 武器舞台帧动画（WeaponPreviewView）、错落入场动画（Motion.PlayEntrance）、
@@ -85,9 +84,17 @@ fun CharacterDetailScreen(
     animatedVisibilityScope: androidx.compose.animation.AnimatedVisibilityScope,
     modifier: Modifier = Modifier,
 ) {
-    val def = remember(characterId) {
-        GameState.service.character(characterId)
-    }
+    // P1-6 D 批：def/save/owned/characterIds 收敛进 [CharacterDetailViewModel]（按 characterId
+    // 建 VM 实例，key 隔离不同角色）。VM 订阅快照，任何成功写操作后重读最新存档
+    // （P2-13/P3-5 语义保留，替代原 revision 副作用 + remember 缓存 ownedSave 引用的脆弱契约）。
+    val vm: CharacterDetailViewModel = viewModel(
+        key = characterId,
+        factory = AppGraph.characterDetailFactory(characterId),
+    )
+    val ui by vm.uiState.collectAsStateWithLifecycle()
+    val feedback = LocalFeedback.current
+    LaunchedEffect(vm) { vm.toasts.collect { feedback.show(it) } }
+    val def = ui.def
     if (def == null) {
         // C# ResolveCharacter 失败 → Finish()；单 Activity 下渲染空态并给返回入口
         MissingCharacter(onBack, modifier)
@@ -99,22 +106,10 @@ fun CharacterDetailScreen(
         onDispose { SpeechPlayer.stop() }
     }
 
-    // P2-13/P3-5：订阅快照 revision，任何成功写操作后重组重读最新存档——此前
-    // remember(characterId) 缓存 ownedSave 引用，依赖「GameService 原地修改同一对象」的
-    // 脆弱契约（resetSave 整体替换存档后，缓存会指向失效对象）。
-    val snap by GameState.snapshot.collectAsStateWithLifecycle()
-    @Suppress("UNUSED_EXPRESSION")
-    snap.revision
-    // 路径 B：ownedSaves 随快照刷新（写操作后自动更新），替代 saveData.ownedCharacters.firstOrNull 直读
-    val ownedSave = snap.ownedSaves[characterId]
-    val owned = ownedSave != null
-    // 未拥有兜底存档（Level/Stage/Stars=1）：纯渲染模型，按角色缓存即可（拥有后 ownedSave 优先）。
-    val fallbackSave = remember(characterId) {
-        CharacterSaveState(characterId = characterId, level = 1, stage = 1, stars = 1)
-    }
-    val save = ownedSave ?: fallbackSave
+    val save = ui.save
+    val owned = ui.owned
     // 视图为轻量值对象，每次重组直接构建（勿 remember 缓存，避免拿到陈旧 save 引用）
-    val view = OwnedCharacterView(save, def)
+    val view = OwnedCharacterView(save, def, vm.talentTree())
 
     val world = WorldTheme.forWorld(view.world)
     val rarityCol = AppTheme.rarityColor(view.rarity)
@@ -126,44 +121,33 @@ fun CharacterDetailScreen(
     // key 恒不相等、记忆化完全失效，与注释意图相反。改用影响推导结果的稳定字段。
     val stats = remember(
         def, save.characterId, save.level, save.stage, save.stars, save.talentPoints.size,
-    ) { GameState.computeStats(view) }
+    ) { CharacterStats.compute(view) }
     // C# ComputeBaseStats：StatAtLevel(1, stage, 1f) —— stars=1 → 星级倍率 ×1.0
     val baseStats = remember(def, save.characterId, save.stage) {
-        GameState.computeStatsAt(view, 1, max(1, save.stage), stars = 1)
+        CharacterStats.computeAt(view, 1, max(1, save.stage), stars = 1)
     }
 
-    val chars = remember { GameState.service.characters }
+    val chars = ui.characterIds
     // C# SwitchCharacter：全表循环切换（含未拥有角色，图鉴剪影也能左右浏览）
     fun switch(delta: Int) {
-        val idx = chars.indexOfFirst { it.characterId == characterId }
+        val idx = chars.indexOf(characterId)
         if (idx < 0) return
         val next = (idx + delta + chars.size) % chars.size
-        onSwitchCharacter(chars[next].characterId)
+        onSwitchCharacter(chars[next])
     }
 
     val heroHeight = with(LocalDensity.current) {
         LocalWindowInfo.current.containerSize.height.toDp() * 0.56f
     }
 
-    // Shared Element 作用域：AnimatedContent 提供（null 时退化为普通渲染，安全降级）
-    // 立绘 sharedBounds（key 全局唯一 = "portrait_${characterId}"，与列表卡片同 key 配对）
-    val sharedScope = LocalSharedTransitionScope.current
-    val portraitModifier = if (sharedScope != null) {
-        with(sharedScope) {
-            Modifier.sharedBounds(
-                sharedContentState = rememberSharedContentState(key = "portrait_${view.save.characterId}"),
-                animatedVisibilityScope = animatedVisibilityScope,
-                resizeMode = ResizeMode.RemeasureToBounds,
-            )
-        }
-    } else Modifier
-
+    // Shared Element：统一由 SubPageHero 内部挂 sharedBounds（key=portrait_{id}），
+    // 本页只叠加滚动视差；不再在 Screen 侧重复 Modifier.sharedBounds。
     // 水墨视差：滚动时立绘滞后 30%，产生宣纸层叠深度感
     val scrollState = rememberScrollState()
     val heroParallax by remember {
         derivedStateOf { scrollState.value * 0.3f }
     }
-    val parallaxPortraitModifier = portraitModifier.graphicsLayer { translationY = heroParallax }
+    val parallaxPortraitModifier = Modifier.graphicsLayer { translationY = heroParallax }
 
     // ── 面板 Tab 切换状态 ──
     var selectedTab by remember { mutableIntStateOf(0) }
@@ -198,6 +182,7 @@ fun CharacterDetailScreen(
                 owned = owned,
                 onOpenProgression = onOpenProgression,
                 portraitModifier = parallaxPortraitModifier,
+                animatedVisibilityScope = animatedVisibilityScope,
                 onBack = onBack,
                 onPrev = { switch(-1) },
                 onNext = { switch(1) },
@@ -213,9 +198,9 @@ fun CharacterDetailScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp)
-                    .clip(RoundedCornerShape(10.dp))
+                    .clip(RoundedCornerShape(AppTheme.Roundness.md))
                     .background(AppTheme.Surface.copy(alpha = 0.5f))
-                    .border(1.dp, AppTheme.Stroke, RoundedCornerShape(10.dp)),
+                    .border(1.dp, AppTheme.Stroke, RoundedCornerShape(AppTheme.Roundness.md)),
             ) {
                 // 选中项金色滑动指示器
                 val indicatorOffset by animateDpAsState(
@@ -229,7 +214,7 @@ fun CharacterDetailScreen(
                         .offset(x = indicatorOffset)
                         .height(3.dp)
                         .padding(horizontal = 4.dp)
-                        .clip(RoundedCornerShape(2.dp))
+                        .clip(RoundedCornerShape(AppTheme.Roundness.xxs))
                         .background(AppTheme.Gold),
                 )
                 Row(horizontalArrangement = Arrangement.SpaceEvenly) {
@@ -238,7 +223,7 @@ fun CharacterDetailScreen(
                         Box(
                             modifier = Modifier
                                 .weight(1f)
-                                .clip(RoundedCornerShape(8.dp))
+                                .clip(RoundedCornerShape(AppTheme.Roundness.sm))
                                 .clickable { selectedTab = index }
                                 .background(
                                     if (isSelected) AppTheme.Gold.copy(alpha = 0.18f) else androidx.compose.ui.graphics.Color.Transparent,
@@ -279,18 +264,30 @@ fun CharacterDetailScreen(
                                 }
                             }
                             1 -> {
+                                // 装备面板（C3：穿脱/强化/分解）
+                                EquipmentPanel(
+                                    owned = owned,
+                                    equipped = ui.equippedSlots,
+                                    bag = ui.bag,
+                                    onEquip = vm::equip,
+                                    onUnequip = vm::unequip,
+                                    onEnhance = vm::enhance,
+                                    onDismantle = vm::dismantle,
+                                )
+                            }
+                            2 -> {
                                 // 属性面板
                                 StatsPanel(view = view, owned = owned, stats = stats, baseStats = baseStats)
                             }
-                            2 -> {
+                            3 -> {
                                 // 技能面板
                                 SkillPanel(def.skills, worldColor = world)
                             }
-                            3 -> {
+                            4 -> {
                                 // 故事面板
                                 StoryPanel(view, worldColor = world)
                             }
-                            4 -> {
+                            5 -> {
                                 // 语音面板
                                 VoicePanel(def.voices, worldColor = world)
                             }

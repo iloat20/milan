@@ -17,16 +17,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.milan.game.services.AffinityFormulas
-import com.milan.game.services.WriteOutcome
-import com.milan.game.ui.GameState
 import com.milan.game.ui.components.GlassPanel
 import com.milan.game.ui.components.PageBackground
 import com.milan.game.ui.components.PortraitImage
 import com.milan.game.ui.feedback.LocalFeedback
 import com.milan.game.ui.nav.AppTopBar
 import com.milan.game.ui.theme.AppTheme
-import kotlinx.coroutines.launch
 
 /**
  * 角色好感度界面。
@@ -36,52 +35,18 @@ import kotlinx.coroutines.launch
  * - 好感度等级奖励预览
  * - 累计好感度经验
  *
- * 2026-09-02 完整闭环：
- * - 「赠送礼物」入口（100 星尘 → +200 好感，数值见 [AffinityFormulas]）——
- *   此前信息卡宣称「通过赠送礼物、出战战斗提升」但页面无任何入口，好感度恒为 0
- *   （服务层 addCharacterAffinity 零生产调用点）。
- * - 好感数据随 [GameState.snapshot] revision 重算——此前 `remember { }` 一次性取值，
- *   赠送后界面永不刷新（与 C2 同模式：无 key remember + 不订阅快照）。
+ * 2026-09-02 完整闭环 + 2026-09-08 P1-6 VM 化：状态/赠送动作在 [AffinityViewModel]，
+ * 好感数据随 snapshot revision 重算下沉 VM；本组合层只订阅 + 转发反馈。
  */
 @Composable
 fun AffinityScreen(
     onBack: () -> Unit,
     onOpenCharacter: (String) -> Unit,
 ) {
-    val service = GameState.service
     val feedback = LocalFeedback.current
-    val scope = rememberCoroutineScope()
-    val snapshot by service.snapshot.collectAsState()
-    val characters = remember { service.characters }
-    // 好感数据不在 snapshot 字段内：随 revision 重算，任何写操作（赠送/战斗/剧情）落盘后
-    // refreshSnapshot 的 revision+1 都会触发本页重组刷新。
-    val affinityData = remember(snapshot.revision) { service.getCharacterAffinityData() }
-    val softCurrency = snapshot.softCurrency
-
-    // 赠送处理：同一协程内调 suspend 写操作并给 Snackbar 反馈。
-    val onGift: (String) -> Unit = { characterId ->
-        scope.launch {
-            try {
-                when (service.giftAffinity(characterId)) {
-                    WriteOutcome.Success -> feedback.show(
-                        "好感 +${AffinityFormulas.GIFT_AFFINITY_AMOUNT}（扣除 ${AffinityFormulas.GIFT_COST_SOFT} 星尘）",
-                    )
-                    WriteOutcome.Rejected -> {
-                        val current = service.getCharacterAffinityData()[characterId] ?: 0
-                        val reason = if (current >= AffinityFormulas.MAX_AFFINITY) {
-                            "该角色好感已满级"
-                        } else {
-                            "星尘不足（赠送需 ${AffinityFormulas.GIFT_COST_SOFT}）"
-                        }
-                        feedback.show(reason)
-                    }
-                    WriteOutcome.SaveFailed -> feedback.show("保存失败，请重试")
-                }
-            } catch (_: Exception) {
-                feedback.show("操作异常，请重试")
-            }
-        }
-    }
+    val vm: AffinityViewModel = viewModel(factory = com.milan.game.di.AppGraph.factory)
+    val ui by vm.uiState.collectAsStateWithLifecycle()
+    LaunchedEffect(vm) { vm.toasts.collect { feedback.show(it) } }
 
     Box(
         modifier = Modifier
@@ -104,18 +69,17 @@ fun AffinityScreen(
                         AffinityInfoCard()
                     }
 
-                    // 角色好感度列表
-                    items(characters.filter { service.getSave(it.characterId) != null }) { char ->
-                        val affinity = affinityData[char.characterId] ?: 0
+                    // 角色好感度列表（owned 过滤已在 VM 完成）
+                    items(ui.rows) { row ->
                         AffinityCard(
-                            characterId = char.characterId,
-                            name = char.displayName,
-                            rarity = char.baseRarity,
-                            affinity = affinity,
-                            giftEnabled = affinity < AffinityFormulas.MAX_AFFINITY &&
-                                softCurrency >= AffinityFormulas.GIFT_COST_SOFT,
-                            onGift = { onGift(char.characterId) },
-                            onClick = { onOpenCharacter(char.characterId) },
+                            characterId = row.characterId,
+                            name = row.displayName,
+                            rarity = row.rarity,
+                            affinity = row.affinity,
+                            giftEnabled = row.affinity < AffinityFormulas.MAX_AFFINITY &&
+                                ui.softCurrency >= AffinityFormulas.GIFT_COST_SOFT,
+                            onGift = { vm.gift(row.characterId) },
+                            onClick = { onOpenCharacter(row.characterId) },
                         )
                     }
                 }
@@ -126,6 +90,9 @@ fun AffinityScreen(
 
 /**
  * 好感度说明卡片。
+ *
+ * 2026-09-10：等级奖励文案改为「规划中」——当前版本好感闭环仅含赠送/战斗加好感与等级展示，
+ * 语音/剧情/头像框/皮肤/称号等尚未接服务解锁，避免把装饰文案当成已上线功能。
  */
 @Composable
 private fun AffinityInfoCard() {
@@ -139,21 +106,21 @@ private fun AffinityInfoCard() {
             )
             Spacer(Modifier.height(8.dp))
             Text(
-                text = "通过赠送礼物、出战战斗提升角色好感度，解锁专属剧情和奖励。",
+                text = "通过赠送礼物、出战战斗提升角色好感度。当前版本开放赠送与等级成长；下列奖励规划中。",
                 color = AppTheme.Text2,
                 fontSize = 12.sp,
             )
             Spacer(Modifier.height(8.dp))
-            // 等级奖励预览
+            // 等级奖励预览（规划中）
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
-                AffinityLevelReward(level = 1, reward = "角色语音")
-                AffinityLevelReward(level = 3, reward = "专属剧情")
-                AffinityLevelReward(level = 5, reward = "头像框")
-                AffinityLevelReward(level = 8, reward = "限定皮肤")
-                AffinityLevelReward(level = 10, reward = "专属称号")
+                AffinityLevelReward(level = 1, reward = "语音·规划中")
+                AffinityLevelReward(level = 3, reward = "剧情·规划中")
+                AffinityLevelReward(level = 5, reward = "头像框·规划中")
+                AffinityLevelReward(level = 8, reward = "皮肤·规划中")
+                AffinityLevelReward(level = 10, reward = "称号·规划中")
             }
         }
     }
@@ -168,7 +135,7 @@ private fun AffinityLevelReward(level: Int, reward: String) {
         Box(
             modifier = Modifier
                 .size(32.dp)
-                .clip(RoundedCornerShape(6.dp))
+                .clip(RoundedCornerShape(AppTheme.Roundness.sm))
                 .background(AppTheme.Surface),
             contentAlignment = Alignment.Center,
         ) {
@@ -225,7 +192,7 @@ private fun AffinityCard(
                 rarity = rarity,
                 modifier = Modifier
                     .size(56.dp)
-                    .clip(RoundedCornerShape(8.dp)),
+                    .clip(RoundedCornerShape(AppTheme.Roundness.sm)),
                 name = name,
             )
 
@@ -259,7 +226,7 @@ private fun AffinityCard(
                         modifier = Modifier
                             .weight(1f)
                             .height(4.dp)
-                            .clip(RoundedCornerShape(2.dp)),
+                            .clip(RoundedCornerShape(AppTheme.Roundness.xxs)),
                         color = AppTheme.Frost,
                         trackColor = AppTheme.Surface,
                     )
@@ -294,7 +261,7 @@ private fun AffinityCard(
                 ) {
                     Box(
                         modifier = Modifier
-                            .clip(RoundedCornerShape(10.dp))
+                            .clip(RoundedCornerShape(AppTheme.Roundness.md))
                             .background(
                                 if (giftEnabled) AppTheme.Gold.copy(alpha = 0.18f) else AppTheme.Surface
                             )

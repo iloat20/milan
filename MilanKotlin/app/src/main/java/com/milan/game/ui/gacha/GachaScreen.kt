@@ -38,7 +38,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -59,13 +58,13 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.milan.game.infrastructure.CrashReporter
 import com.milan.game.infrastructure.MilanAudio
 import com.milan.game.services.CharacterDataEntry
 import com.milan.game.services.GachaPoolDataEntry
-import com.milan.game.services.PullOutcome
 import com.milan.game.services.PullResult
-import com.milan.game.ui.GameState
+import com.milan.game.ui.components.GlassDialog
 import com.milan.game.ui.components.GlassPanel
 import com.milan.game.ui.components.GoldButton
 import com.milan.game.ui.feedback.LocalFeedback
@@ -104,172 +103,61 @@ fun GachaScreen(
     val context = LocalContext.current
     val feedback = LocalFeedback.current
     val scope = rememberCoroutineScope()
+    val vm: GachaViewModel = viewModel(factory = com.milan.game.di.AppGraph.factory)
     // 多卡池支持：选中态 rememberSaveable 持久化；内容表改动导致旧 id 失配时回落首池
-    val pools = remember { GameState.service.pools }
+    val pools = vm.pools
     var selectedPoolId by rememberSaveable { mutableStateOf(pools.firstOrNull()?.poolId.orEmpty()) }
     val pool = pools.firstOrNull { it.poolId == selectedPoolId } ?: pools.firstOrNull()
-    // 订阅状态快照——保底进度/余额/振动开关从快照派生
-    val snap by GameState.snapshot.collectAsStateWithLifecycle()
+    // 切片订阅（经济/保底/设置）——无关字段变化不重组本页
+    val eco by vm.economy.collectAsStateWithLifecycle()
+    val gachaSlice by vm.gachaSlice.collectAsStateWithLifecycle()
+    val meta by vm.meta.collectAsStateWithLifecycle()
+    // ViewModel 状态
+    val busy by vm.busy.collectAsStateWithLifecycle()
+    val reveal by vm.reveal.collectAsStateWithLifecycle()
+    val results by vm.results.collectAsStateWithLifecycle()
+    val summary by vm.summary.collectAsStateWithLifecycle()
+    val batch by vm.batch.collectAsStateWithLifecycle()
 
-    val pity = pool?.let { snap.pityByPool[it.poolId] } ?: 0
-    var busy by remember { mutableStateOf(false) }
-    // 结果列表与摘要用 rememberSaveable——旋转后恢复
-    var results by rememberSaveable(stateSaver = PullResultsSaver) {
-        mutableStateOf<List<PullResult>>(emptyList())
-    }
-    var summary by rememberSaveable { mutableStateOf("") }
-    var batch by remember { mutableIntStateOf(0) }
-    // 演出状态聚合
-    var reveal by remember { mutableStateOf(RevealUiState()) }
+    val pity = pool?.let { gachaSlice.pityByPool[it.poolId] } ?: 0
     var entered by remember { mutableStateOf(false) }
+    var showTenConfirm by rememberSaveable { mutableStateOf(false) }
 
     LaunchedEffect(Unit) { entered = true }
 
     /** 触觉反馈（统一委托 HapticManager）。 */
     fun buzz(effect: Int) {
-        if (!snap.vibrationEnabled) return
+        if (!meta.vibrationEnabled) return
         try {
             val view = (context as? android.app.Activity)?.window?.decorView ?: return
             HapticManager.performHapticFeedback(view, effect)
         } catch (_: Exception) { }
     }
 
-    /** 演出结束 / 跳过：展示结果、复位状态。 */
-    fun finishReveal() {
-        val list = reveal.staged
-        if (list != null) {
-            results = list
-            summary = buildSummary(list)
-            batch++
-        }
-        reveal = RevealUiState(token = reveal.token)
-        busy = false
-    }
-
-    /** 跳过演出：仅递增 token 作废挂起编排。
-     *  finishReveal 由动画协程检测 token 变化后调用——
-     *  避免 busy=false 在协程退出前被复位，引发新旧 doPull 并发。 */
-    fun skipReveal() {
-        if (!busy || !reveal.visible) return
-        reveal = reveal.copy(token = reveal.token + 1)
-    }
-
     // 演出中系统返回拦截——转跳过演出
-    BackHandler(enabled = reveal.visible) { skipReveal() }
+    BackHandler(enabled = reveal.visible) { vm.skipReveal() }
 
     /** 抽卡入口：余额检查 → pull → 兜底 → 演出编排。 */
     fun doPull(tenPull: Boolean) {
-        if (busy) return
         val p = pool ?: return
-        val cost = if (tenPull) p.tenCost else p.singleCost
-        if (snap.softCurrency < cost) {
-            scope.launch { feedback.show("星尘不足") }
-            return
-        }
-        busy = true
-        scope.launch {
-            try {
-                val pulled = when (val outcome = GameState.service.pull(p.poolId, tenPull)) {
-                    is PullOutcome.Success -> outcome.results
-                    is PullOutcome.Rejected -> {
-                        busy = false
-                        feedback.show("抽卡失败，请重试")
-                        try { CrashReporter.boot("gacha.pull.rejected poolId=${p.poolId}") } catch (_: Exception) { }
-                        return@launch
-                    }
-                    is PullOutcome.SaveFailed -> {
-                        busy = false
-                        feedback.show("保存失败，请重试")
-                        try { CrashReporter.boot("gacha.pull.saveFailed poolId=${p.poolId}") } catch (_: Exception) { }
-                        return@launch
-                    }
-                }
-                val best = pulled.maxByOrNull { it.rarity }
-                if (best == null || best.characterId == null) {
-                    busy = false
-                    feedback.show("抽卡失败，请重试")
-                    try { CrashReporter.boot("gacha.pull.empty poolId=${p.poolId}") } catch (_: Exception) { }
-                    return@launch
-                }
-                val bestDef = best.characterId.let { GameState.service.character(it) }
-                val token = reveal.token + 1
-                // 按稀有度分级触觉反馈：UR=丰富振动，SSR=CONFIRM，SR=KEYBOARD_TAP，R=CLOCK_TICK
-                when (best.rarity) {
+        vm.doPull(
+            tenPull = tenPull,
+            poolId = p.poolId,
+            singleCost = p.singleCost,
+            tenCost = p.tenCost,
+            softCurrency = eco.softCurrency,
+            onBuzz = { bestRarity ->
+                when (bestRarity) {
                     4 -> HapticManager.gachaUrSpecial(context)
                     3 -> buzz(if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R)
                         HapticFeedbackConstants.CONFIRM else HapticFeedbackConstants.LONG_PRESS)
                     2 -> buzz(HapticFeedbackConstants.KEYBOARD_TAP)
                     else -> buzz(HapticFeedbackConstants.CLOCK_TICK)
                 }
-                MilanAudio.playSfx("gacha_pull")
-                // 稀有度分级演出时长：UR 拉满仪式感，R 快速过场
-                val chargeMs = when (best.rarity) {
-                    4 -> 900L   // UR：浓墨蓄力
-                    3 -> 600L   // SSR：金箔凝聚
-                    2 -> 420L   // SR：默认水墨
-                    else -> 300L // R：快速闪烁
-                }
-                val beamMs = when (best.rarity) {
-                    4 -> 640L   // UR：光柱扩展
-                    3 -> 520L   // SSR：金箔光柱
-                    else -> 480L // R/SR：标准
-                }
-                val revealMs = when {
-                    tenPull -> when (best.rarity) {
-                        4 -> 4800L  // UR 十连：加长展示
-                        3 -> 4000L  // SSR 十连
-                        else -> 3600L
-                    }
-                    else -> when (best.rarity) {
-                        4 -> 3000L  // UR 单抽：仪式感
-                        3 -> 2400L  // SSR 单抽
-                        2 -> 1500L  // SR 单抽
-                        else -> 1000L // R 单抽：一闪而过
-                    }
-                }
-                // 阶段一：蓄能
-                reveal = RevealUiState(
-                    token = token,
-                    staged = pulled,
-                    def = bestDef,
-                    rarity = best.rarity,
-                    flashColor = AppTheme.rarityColor(best.rarity),
-                    fortune = bestDef?.let { FortuneAgentRegistry.activeAgent.fortune(it, it.characterId.hashCode().toLong() + token) } ?: "",
-                    stage = RevealStage.Charge,
-                )
-                delay(chargeMs)
-                if (token != reveal.token) { finishReveal(); return@launch }
-                // 阶段二：光柱爆发
-                reveal = reveal.copy(stage = RevealStage.Beam, flashVisible = true)
-                delay(beamMs)
-                if (token != reveal.token) { finishReveal(); return@launch }
-                reveal = reveal.copy(flashVisible = false)
-                delay(120)
-                if (token != reveal.token) { finishReveal(); return@launch }
-                // 阶段三：揭晓
-                reveal = reveal.copy(
-                    cardIn = true,
-                    visible = true,
-                    stage = if (tenPull) RevealStage.Ten else RevealStage.Single,
-                )
-                MilanAudio.playSfx("gacha_reveal")
-                if (best.rarity >= 3) {
-                    val confirm = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R)
-                        HapticFeedbackConstants.CONFIRM else HapticFeedbackConstants.LONG_PRESS
-                    buzz(confirm)
-                } else {
-                    buzz(HapticFeedbackConstants.VIRTUAL_KEY)
-                }
-                delay(revealMs)
-                if (token != reveal.token) { finishReveal(); return@launch }
-                // 阶段四：结果
-                finishReveal()
-            } catch (e: Exception) {
-                busy = false
-                feedback.show("抽卡异常，请重试")
-                try { CrashReporter.traceNonFatal("gacha.pull.exception", e) } catch (_: Exception) { }
-            }
-        }
+            },
+            onSfx = { sfx -> MilanAudio.playSfx(sfx) },
+            onError = { msg -> scope.launch { feedback.show(msg) } },
+        )
     }
 
     val entranceAlpha by animateFloatAsState(
@@ -317,9 +205,9 @@ fun GachaScreen(
                                     fontWeight = FontWeight.Bold,
                                     color = if (selected) AppTheme.GoldTextOn else AppTheme.Text2,
                                     modifier = Modifier
-                                        .clip(RoundedCornerShape(16.dp))
+                                        .clip(RoundedCornerShape(AppTheme.Roundness.lg))
                                         .background(if (selected) AppTheme.Gold else AppTheme.Surface)
-                                        .border(1.dp, if (selected) AppTheme.Gold else AppTheme.Stroke, RoundedCornerShape(16.dp))
+                                        .border(1.dp, if (selected) AppTheme.Gold else AppTheme.Stroke, RoundedCornerShape(AppTheme.Roundness.lg))
                                         .clickable { selectedPoolId = p.poolId }
                                         .padding(horizontal = 14.dp, vertical = 6.dp),
                                 )
@@ -330,7 +218,7 @@ fun GachaScreen(
                                             .padding(top = 4.dp)
                                             .width(20.dp)
                                             .height(2.dp)
-                                            .clip(RoundedCornerShape(1.dp))
+                                            .clip(RoundedCornerShape(AppTheme.Roundness.xxs))
                                             .background(AppTheme.Gold),
                                     )
                                 }
@@ -367,7 +255,7 @@ fun GachaScreen(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .height(4.dp)
-                                    .clip(RoundedCornerShape(2.dp)),
+                                    .clip(RoundedCornerShape(AppTheme.Roundness.xxs)),
                                 color = pityColor,
                                 trackColor = AppTheme.Surface,
                             )
@@ -390,7 +278,7 @@ fun GachaScreen(
                         // UP 定轨行
                         val upDef = pool.featuredCharacterId
                             .takeIf { it.isNotEmpty() }
-                            ?.let { GameState.service.character(it) }
+                            ?.let { vm.character(it) }
                         if (upDef != null) {
                             Spacer(Modifier.height(6.dp))
                             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -400,7 +288,7 @@ fun GachaScreen(
                                     fontWeight = FontWeight.Bold,
                                     color = AppTheme.GoldTextOn,
                                     modifier = Modifier
-                                        .clip(RoundedCornerShape(6.dp))
+                                        .clip(RoundedCornerShape(AppTheme.Roundness.sm))
                                         .background(AppTheme.Gold)
                                         .padding(horizontal = 6.dp, vertical = 1.dp),
                                 )
@@ -411,7 +299,7 @@ fun GachaScreen(
                                     fontWeight = FontWeight.Bold,
                                     color = AppTheme.Gold,
                                 )
-                                if (snap.featuredLostByPool[pool.poolId] == true) {
+                                if (gachaSlice.featuredLostByPool[pool.poolId] == true) {
                                     Spacer(Modifier.width(8.dp))
                                     Text(
                                         text = "上次歪了 · 下次必中",
@@ -429,11 +317,11 @@ fun GachaScreen(
                 // ── 池角色预览：横排圆形头像 ──
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     items(pool.entries, key = { it.characterId }, contentType = { "poolEntry" }) { entry ->
-                        val def = GameState.service.character(entry.characterId)
+                        val def = vm.character(entry.characterId)
                         val entryInteraction = remember { MutableInteractionSource() }
                         Column(
                             modifier = Modifier
-                                .clip(RoundedCornerShape(10.dp))
+                                .clip(RoundedCornerShape(AppTheme.Roundness.md))
                                 .inkSplash(entryInteraction)
                                 .clickable(interactionSource = entryInteraction, indication = null) { def?.let { onOpenCharacter(it.characterId) } }
                                 .padding(4.dp),
@@ -444,7 +332,7 @@ fun GachaScreen(
                                 rarity = entry.rarityIndex,
                                 name = def?.displayName,
                                 modifier = Modifier.size(52.dp).clip(CircleShape),
-                                target = PortraitTarget.Thumb,
+                                target = PortraitTarget.Avatar,
                             )
                             Spacer(Modifier.height(4.dp))
                             Text(
@@ -479,7 +367,33 @@ fun GachaScreen(
                 // I3 修复：演出/结算期间禁用（此前按钮视觉如常但 doPull 首行 if(busy) return 静默吞点击）
                 NeonButton("单 抽", Modifier.weight(1f), enabled = !busy, onClick = { doPull(false) })
                 Spacer(Modifier.width(14.dp))
-                GoldButton("十 连", Modifier.weight(1f), enabled = !busy, onClick = { doPull(true) })
+                // 十连为大额消耗：二次确认防误触（单抽保持一键）
+                GoldButton("十 连", Modifier.weight(1f), enabled = !busy, onClick = { showTenConfirm = true })
+            }
+            pool?.let { p ->
+                GlassDialog(
+                    show = showTenConfirm,
+                    onDismiss = { showTenConfirm = false },
+                    title = "确认十连寻访",
+                    body = "将消耗 ${p.tenCost} 星尘进行十次召唤。是否继续？",
+                    buttons = {
+                        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            NeonButton(
+                                text = "取 消",
+                                onClick = { showTenConfirm = false },
+                                modifier = Modifier.weight(1f),
+                            )
+                            GoldButton(
+                                text = "确认寻访",
+                                onClick = {
+                                    showTenConfirm = false
+                                    doPull(true)
+                                },
+                                modifier = Modifier.weight(1f),
+                            )
+                        }
+                    },
+                )
             }
             Spacer(Modifier.height(10.dp))
 
@@ -502,7 +416,7 @@ fun GachaScreen(
                         fontWeight = FontWeight.Bold,
                         color = AppTheme.Gold,
                         modifier = Modifier
-                            .clip(RoundedCornerShape(10.dp))
+                            .clip(RoundedCornerShape(AppTheme.Roundness.md))
                             .inkSplash(shareInteraction)
                             // U1：绘制 + 压缩 + 写盘已 suspend 化（移出主线程），此处在协程中调用
                             .clickable(interactionSource = shareInteraction, indication = null) { scope.launch { PullShareCard.shareResults(context, results) } }
@@ -515,7 +429,7 @@ fun GachaScreen(
                     fontWeight = FontWeight.Bold,
                     color = AppTheme.Frost,
                     modifier = Modifier
-                        .clip(RoundedCornerShape(10.dp))
+                        .clip(RoundedCornerShape(AppTheme.Roundness.md))
                         .clickable(onClick = onOpenHistory)
                         .padding(horizontal = 8.dp, vertical = 4.dp),
                 )
@@ -605,7 +519,7 @@ fun GachaScreen(
                 fortune = reveal.fortune,
                 batch = reveal.staged ?: emptyList(),
                 cardIn = reveal.cardIn,
-                onSkip = ::skipReveal,
+                onSkip = { vm.skipReveal() },
                 onFlip = { r ->
                     if (r >= 3) {
                         buzz(if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R)
@@ -623,7 +537,7 @@ fun GachaScreen(
 /**
  * 抽卡演出状态机。
  */
-private data class RevealUiState(
+internal data class RevealUiState(
     val token: Int = 0,
     val staged: List<PullResult>? = null,
     val def: CharacterDataEntry? = null,
@@ -702,7 +616,7 @@ private fun GachaChip(
         modifier = modifier
             .padding(3.dp)
             .graphicsLayer { scaleX = chipScale; scaleY = chipScale; alpha = chipAlpha }
-            .clip(RoundedCornerShape(12.dp))
+            .clip(RoundedCornerShape(AppTheme.Roundness.md))
             .background(
                 when {
                     isUr -> Brush.verticalGradient(
@@ -722,7 +636,7 @@ private fun GachaChip(
             .border(
                 width = if (isUr) 2.dp else 1.dp,
                 color = rc.copy(alpha = if (isEpic) glowA else 0.55f),
-                shape = RoundedCornerShape(12.dp),
+                shape = RoundedCornerShape(AppTheme.Roundness.md),
             )
             .clickable(onClick = onOpen)
             .padding(vertical = 10.dp, horizontal = 4.dp),
@@ -733,8 +647,8 @@ private fun GachaChip(
                 characterId = r.characterId ?: "",
                 rarity = r.rarity,
                 name = r.characterName,
-                modifier = Modifier.size(42.dp).clip(RoundedCornerShape(10.dp)),
-                target = PortraitTarget.Thumb,
+                modifier = Modifier.size(42.dp).clip(RoundedCornerShape(AppTheme.Roundness.md)),
+                target = PortraitTarget.Avatar,
             )
             // 「新角色」闪光标记：SSR+/UR 首次获取时在立绘右上角显示金色 NEW 徽章
             if (r.isNew && r.rarity >= 3) {
@@ -742,7 +656,7 @@ private fun GachaChip(
                     modifier = Modifier
                         .align(Alignment.TopEnd)
                         .padding(end = 2.dp, top = 2.dp)
-                        .clip(RoundedCornerShape(4.dp))
+                        .clip(RoundedCornerShape(AppTheme.Roundness.xs))
                         .background(AppTheme.Gold)
                         .padding(horizontal = 3.dp, vertical = 1.dp),
                     contentAlignment = Alignment.Center,
@@ -779,15 +693,6 @@ private fun ratesLabel(pool: GachaPoolDataEntry): String {
     }.joinToString(" · ")
 }
 
-/** 摘要行 */
-private fun buildSummary(list: List<PullResult>): String {
-    if (list.isEmpty()) return ""
-    val ssr = list.count { it.rarity >= 3 }
-    val frags = list.sumOf { it.fragmentsAwarded }
-    val latest = list.maxByOrNull { it.rarity }?.characterName ?: ""
-    val fragPart = if (frags > 0) " · 星魂碎片 +$frags" else ""
-    return "共 ${list.size} 抽 · SSR+ $ssr$fragPart ✦ 最新: $latest"
-}
 
 /** 抽卡结果统计卡片：数量/稀有度分布/保底进度 */
 @Composable
@@ -832,7 +737,7 @@ private fun PullStatsPanel(
                 Spacer(Modifier.height(6.dp))
                 LinearProgressIndicator(
                     progress = { pity.toFloat() / hardPity.coerceAtLeast(1) },
-                    modifier = Modifier.fillMaxWidth().height(3.dp).clip(RoundedCornerShape(2.dp)),
+                    modifier = Modifier.fillMaxWidth().height(3.dp).clip(RoundedCornerShape(AppTheme.Roundness.xxs)),
                     color = AppTheme.Gold,
                     trackColor = AppTheme.Surface,
                 )

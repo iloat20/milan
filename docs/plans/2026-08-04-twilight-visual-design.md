@@ -1,3 +1,5 @@
+> ⚠️ **已废弃（2026-09-09）**：本文件为历史方案，仅作参考勿再执行。视觉规范已由 [docs/superpowers/design-language/00-design-language-v3.md](../superpowers/design-language/00-design-language-v3.md)（「丹青典藏 · Gilded Codex」v3）取代。
+
 # Milan 视觉审美提升 — 暗夜神性·诸神黄昏 设计文档
 
 > **版本**: v1.0 | **日期**: 2026-08-04 | **状态**: 设计定稿（已与用户确认方向）

@@ -32,12 +32,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.milan.game.domain.battle.UnitStats
 import com.milan.game.domain.progression.TalentEngine
 import com.milan.game.services.TalentNodeData
-import com.milan.game.ui.GameState
-import com.milan.game.ui.OwnedCharacterView
+import com.milan.game.OwnedCharacterView
 import com.milan.game.ui.components.GlassPanel
 import com.milan.game.ui.components.GoldButton
 import com.milan.game.ui.components.NeonButton
@@ -57,20 +55,21 @@ private fun n0(v: Int): String = String.format(Locale.US, "%,d", v)
 // ── 资源条（C# BuildResourceBar）──
 
 @Composable
-internal fun ResourceBar() {
-    // 快照订阅（范式对齐 AppChrome.ResourceBar）：不再依赖外层 revision「碰巧」触发本组件重组
-    val snap by GameState.snapshot.collectAsStateWithLifecycle()
-    val soft = snap.softCurrency
-    val frags = snap.starFragments
+internal fun ResourceBar(
+    softCurrency: Int,
+    starFragments: Int,
+) {
+    val soft = softCurrency
+    val frags = starFragments
 
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
             .fillMaxWidth()
             .padding(start = 16.dp, end = 16.dp, top = 10.dp, bottom = 10.dp)
-            .clip(RoundedCornerShape(14.dp))
+            .clip(RoundedCornerShape(AppTheme.Roundness.lg))
             .background(AppTheme.Surface)
-            .border(1.dp, AppTheme.Stroke, RoundedCornerShape(14.dp))
+            .border(1.dp, AppTheme.Stroke, RoundedCornerShape(AppTheme.Roundness.lg))
             .padding(start = 16.dp, end = 16.dp),
     ) {
         Chip("✦", AppTheme.Gold, "星尘 ${n0(soft)}")
@@ -100,19 +99,17 @@ private fun Chip(glyph: String, col: Color, value: String) {
 internal fun LevelPanel(
     view: OwnedCharacterView,
     owned: Boolean,
+    queries: ProgressionQueries,
+    softCurrency: Int,
     onLevel: (Int) -> Unit,
     busy: Boolean = false,
 ) {
     val save = view.save
-    val cap = GameState.service.maxLevelForStage(save.stage)
-    // M2（2026-08-28 审查修复）：改为订阅快照（与上方 ResourceBar 同范式）。
-    // 直读 .value 不建立订阅，星尘变化不会触发本面板重组，升级按钮的可用性会停留在旧值，
-    // 此前仅靠外层重组「碰巧」生效。
-    val snap by GameState.snapshot.collectAsStateWithLifecycle()
-    val soft = snap.softCurrency
-    val (cur, need) = GameState.service.expProgress(save.characterId)
+    val cap = queries.maxLevelForStage(save.stage)
+    val soft = softCurrency
+    val (cur, need) = queries.expProgress()
 
-    val canLevel = owned && save.level < cap && soft >= GameState.service.levelCost(save.level)
+    val canLevel = owned && save.level < cap && soft >= queries.levelCost(save.level)
 
     GlassPanel(modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 14.dp)) {
@@ -152,7 +149,7 @@ internal fun LevelPanel(
                 Modifier
                     .fillMaxWidth()
                     .height(12.dp)
-                    .clip(RoundedCornerShape(6.dp))
+                    .clip(RoundedCornerShape(AppTheme.Roundness.sm))
                     .background(AppTheme.BgDeepest.copy(alpha = 0.24f)),
             ) {
                 // 金墨汁填充：从左向右平滑增长
@@ -160,7 +157,7 @@ internal fun LevelPanel(
                     Modifier
                         .fillMaxWidth(animatedFraction.coerceIn(0f, 1f))
                         .fillMaxSize()
-                        .clip(RoundedCornerShape(6.dp))
+                        .clip(RoundedCornerShape(AppTheme.Roundness.sm))
                         .background(AppTheme.Gold),
                 )
                 // 填充前沿光效：微弱脉冲辉光
@@ -235,18 +232,18 @@ internal fun AscendPanel(
     view: OwnedCharacterView,
     defMaxStage: Int,
     owned: Boolean,
+    queries: ProgressionQueries,
+    softCurrency: Int,
+    starFragments: Int,
     onAscend: () -> Unit,
     busy: Boolean = false,
 ) {
     val save = view.save
-    // M2（2026-08-28 审查修复）：订阅快照（同 LevelPanel / ResourceBar 范式），
-    // 直读 .value 不建立订阅会让突破按钮的可用性停留在旧余额。
-    val snap by GameState.snapshot.collectAsStateWithLifecycle()
-    val soft = snap.softCurrency
-    val frags = snap.starFragments
+    val soft = softCurrency
+    val frags = starFragments
     val atMax = save.stage >= defMaxStage
-    val aFrag = GameState.service.ascendFragments(save.stage)
-    val aSoft = GameState.service.ascendSoft(save.stage)
+    val aFrag = queries.ascendFragments(save.stage)
+    val aSoft = queries.ascendSoft(save.stage)
     val canAscend = owned && !atMax && frags >= aFrag && soft >= aSoft
 
     GlassPanel(modifier = Modifier.fillMaxWidth()) {
@@ -290,16 +287,15 @@ internal fun StarPanel(
     view: OwnedCharacterView,
     defMaxStars: Int,
     owned: Boolean,
+    queries: ProgressionQueries,
+    starFragments: Int,
     onStarUp: () -> Unit,
     busy: Boolean = false,
 ) {
     val save = view.save
-    // 附带修复：与 LevelPanel 同范式改为订阅快照。直读 getStarFragments() 不建立订阅，
-    // 星尘/碎片变化不会触发本面板重组，升星按钮的可用性会停留在旧值。
-    val snap by GameState.snapshot.collectAsStateWithLifecycle()
-    val frags = snap.starFragments
+    val frags = starFragments
     val starMax = save.stars >= defMaxStars
-    val sFrag = GameState.service.starUpFragments(save.stars)
+    val sFrag = queries.starUpFragments(save.stars)
     val canStar = owned && !starMax && frags >= sFrag
 
     // C# 注释铁律：不能用 PadLeft 拼星，Stars 为 0 会画出实心星；手动 repeat 并夹下限
@@ -351,7 +347,7 @@ private data class StatRow(
 
 /**
  * [StatsPanel] 的四组推导结果（M4：整体记忆化用）。
- * 当前属性 + 「升一级 / 突破 / 升星」三个预览，共 4 次 [GameState.computeStats] 全量推导。
+ * 当前属性 + 「升一级 / 突破 / 升星」三个预览，共 4 次 [ProgressionQueries.computeStats] 全量推导。
  */
 private data class StatsBundle(
     val cur: UnitStats,
@@ -365,6 +361,7 @@ internal fun StatsPanel(
     view: OwnedCharacterView,
     defMaxStage: Int,
     defMaxStars: Int,
+    queries: ProgressionQueries,
 ) {
     val save = view.save
     // M4（2026-08-28 审查修复）：4 次全属性推导（当前 + 升一级/突破/升星预览）
@@ -373,14 +370,14 @@ internal fun StatsPanel(
         save.characterId, save.level, save.stage, save.stars,
         save.talentPoints.size, defMaxStage, defMaxStars,
     ) {
-        val cur = GameState.computeStats(view)
-        val cap = GameState.service.maxLevelForStage(save.stage)
+        val cur = queries.computeStats(view)
+        val cap = queries.maxLevelForStage(save.stage)
         StatsBundle(
             cur = cur,
-            nextLv = if (save.level < cap) GameState.computeStatsAt(view, save.level + 1, save.stage) else null,
-            nextStg = if (save.stage < defMaxStage) GameState.computeStatsAt(view, save.level, save.stage + 1) else null,
+            nextLv = if (save.level < cap) queries.computeStatsAt(view, save.level + 1, save.stage) else null,
+            nextStg = if (save.stage < defMaxStage) queries.computeStatsAt(view, save.level, save.stage + 1) else null,
             nextStar = if (save.stars < defMaxStars) {
-                GameState.computeStatsAt(view, save.level, save.stage, save.stars + 1)
+                queries.computeStatsAt(view, save.level, save.stage, save.stars + 1)
             } else null,
         )
     }
@@ -439,14 +436,15 @@ internal fun StatsPanel(
 
 @Composable
 internal fun TalentPanel(
-    characterId: String,
     view: OwnedCharacterView,
     owned: Boolean,
+    queries: ProgressionQueries,
     onTalent: (String) -> Unit,
     busy: Boolean = false,
 ) {
     val save = view.save
-    val tree = GameState.service.getTalentTree(characterId)
+    val characterId = save.characterId
+    val tree = queries.talentTree()
     // C# 空树回退三分支；树节点为 null 时对应分支为空列（防养成界面静默空白）
     val branches = tree?.branchIds
         ?: listOf(TalentEngine.BRANCH_POWER, TalentEngine.BRANCH_DEFENSE, TalentEngine.BRANCH_UTILITY)
@@ -489,7 +487,7 @@ internal fun TalentPanel(
                             val isAlloc = save.talentPoints.contains(node.nodeId)
                             val canAlloc = !isAlloc && owned
                                 && save.unspentPoints >= node.cost
-                                && GameState.service.canAllocateTalent(characterId, node.nodeId)
+                                && queries.canAllocateTalent(node.nodeId)
                             TalentNode(
                                 node = node,
                                 col = col,
@@ -549,9 +547,9 @@ private fun TalentNode(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
+            .clip(RoundedCornerShape(AppTheme.Roundness.md))
             .background(bg)
-            .border(strokeWidth.dp, stroke, RoundedCornerShape(12.dp))
+            .border(strokeWidth.dp, stroke, RoundedCornerShape(AppTheme.Roundness.md))
             .clickable(enabled = canAlloc && enabled, onClick = onClick)
             .padding(horizontal = 8.dp, vertical = 8.dp),
     ) {

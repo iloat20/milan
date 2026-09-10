@@ -96,9 +96,16 @@ private fun PortraitImageContent(
 ) {
     val resources = LocalResources.current
     val context = LocalContext.current
-    val portraitId = remember(characterId) {
-        // I11 补充：进程级记忆化（PortraitLoader.resourceIdOf），Lazy 网格不再每次反射查表
-        PortraitLoader.resourceIdOf(resources, context.packageName, characterId)
+    // 仅 Avatar 档优先专用裁脸资源；Thumb 仍采样全立绘（卡面构图需要）
+    val portraitId = remember(characterId, target) {
+        if (target == PortraitTarget.Avatar) {
+            val avatarName = PortraitLoader.avatarResourceNameOf(characterId)
+            val avatarId = PortraitLoader.resourceIdOf(resources, context.packageName, avatarName)
+            if (avatarId != 0) avatarId
+            else PortraitLoader.resourceIdOf(resources, context.packageName, characterId)
+        } else {
+            PortraitLoader.resourceIdOf(resources, context.packageName, characterId)
+        }
     }
 
     if (portraitId == 0) {

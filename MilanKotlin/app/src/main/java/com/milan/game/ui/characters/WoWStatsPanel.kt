@@ -1,5 +1,6 @@
 package com.milan.game.ui.characters
 
+import com.milan.game.OwnedCharacterView
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
@@ -41,7 +42,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import com.milan.game.domain.battle.UnitStats
-import com.milan.game.ui.OwnedCharacterView
 import com.milan.game.ui.components.WoWDivider
 import com.milan.game.ui.theme.AppTheme
 
@@ -65,11 +65,11 @@ internal fun StatsPanel(
     Box(
         Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(14.dp))
+            .clip(RoundedCornerShape(AppTheme.Roundness.lg))
             .background(Brush.verticalGradient(listOf(AppTheme.WoWPanelTop, AppTheme.WoWPanelBottom)))
-            .border(2.dp, AppTheme.Gold, RoundedCornerShape(14.dp))
+            .border(2.dp, AppTheme.Gold, RoundedCornerShape(AppTheme.Roundness.lg))
             .padding(5.dp)
-            .border(1.dp, AppTheme.Gold.copy(alpha = 130f / 255f), RoundedCornerShape(12.dp)),
+            .border(1.dp, AppTheme.Gold.copy(alpha = 130f / 255f), RoundedCornerShape(AppTheme.Roundness.md)),
     ) {
         Column(Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 14.dp)) {
             // ── 主属性（对应魔兽 力量/敏捷/智力/耐力）──
@@ -202,14 +202,14 @@ private fun WoWStatRow(
                 .fillMaxWidth()
                 .padding(start = 46.dp, top = 2.dp)
                 .height(2.dp)
-                .clip(RoundedCornerShape(1.dp))
+                .clip(RoundedCornerShape(AppTheme.Roundness.xxs))
                 .background(AppTheme.Surface)
         ) {
             Box(
                 Modifier
                     .fillMaxWidth(fraction = fillFraction)
                     .height(2.dp)
-                    .clip(RoundedCornerShape(1.dp))
+                    .clip(RoundedCornerShape(AppTheme.Roundness.xxs))
                     .background(
                         Brush.horizontalGradient(
                             listOf(col.copy(alpha = 0.7f), col.copy(alpha = 0.2f))

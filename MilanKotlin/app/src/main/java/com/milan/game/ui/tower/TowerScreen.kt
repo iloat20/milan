@@ -19,13 +19,15 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -37,23 +39,21 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.milan.game.domain.battle.ElementChart
 import com.milan.game.domain.battle.StrikeEvent
 import com.milan.game.domain.battle.UnitStats
-import com.milan.game.domain.progression.EconomyFormulas
 import com.milan.game.services.TowerOutcome
-import com.milan.game.ui.GameState
 import com.milan.game.ui.components.EntranceItem
 import com.milan.game.ui.components.FormationBar
 import com.milan.game.ui.components.GlyphBadge
 import com.milan.game.ui.components.GoldButton
-import com.milan.game.ui.components.HealthBar
 import com.milan.game.ui.components.NeonButton
 import com.milan.game.ui.components.PageBackground
+import com.milan.game.ui.battle.StrategicBattleScreen
 import com.milan.game.ui.nav.AppTopBar
 import com.milan.game.ui.theme.AppTheme
 import com.milan.game.ui.theme.ElementTheme
-import kotlinx.coroutines.launch
 
 /**
  * 无尽之塔（2026-08 终局内容，对标 StS 进阶难度 / Balatro 无尽模式的长线留存定位）：
@@ -67,26 +67,23 @@ fun TowerScreen(
     onOpenDeck: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val scope = rememberCoroutineScope()
-    val snapshot by GameState.service.snapshot.collectAsStateWithLifecycle()
-    val best = snapshot.towerBestFloor
-    val nextFloor = best + 1
-    // 门票门槛（2026-08 二期）：入场扣票、胜利返票；票源走商店每日补给
-    val ticketCost = EconomyFormulas.towerTicketCost()
-    val tickets = snapshot.battleTickets
-    val canChallenge = tickets >= ticketCost
+    // P1-6 E 批：派生状态与挑战状态机收敛进 TowerViewModel；
+    // 战力/元素/奖励预览已预计算进 TowerUiState，本屏纯渲染。
+    val vm: TowerViewModel = viewModel(factory = com.milan.game.di.AppGraph.factory)
+    val ui by vm.uiState.collectAsStateWithLifecycle()
+    val running by vm.running.collectAsStateWithLifecycle()
+    val result by vm.result.collectAsStateWithLifecycle()
+    // rememberSaveable：进程死亡/配置变更后策略战斗层可恢复（此前 remember 会丢）
+    var showStrategic by rememberSaveable { mutableStateOf(false) }
+    val best = ui.best
+    val nextFloor = ui.nextFloor
+    val ticketCost = ui.ticketCost
+    val tickets = ui.tickets
+    val canChallenge = ui.canChallenge
 
-    var running by remember { mutableStateOf(false) }
-    var result by remember { mutableStateOf<TowerOutcome?>(null) }
-
-    // 编队成员视图（快照 revision 触发重算；战力/元素预览同口径 StatsCalculator）。
-    // M5（2026-08-28 审查修复）：按**编队槽位顺序**映射，而非按 owned() 的拥有顺序——
-    // 否则玩家在卡组页调整的出战顺序到爬塔页被还原成拥有顺序，槽位语义丢失。
-    val members = remember(snapshot.revision) {
-        val byId = GameState.owned().associateBy { it.save.characterId }
-        snapshot.formation.mapNotNull { byId[it] }
-    }
-    val teamPower = members.sumOf { GameState.computeStats(it).atk }
+    // 编队成员战力预览（M5：成员已按编队槽位顺序在 VM 内映射）。
+    val members = ui.members
+    val teamPower = ui.teamPower
 
     Box(modifier = modifier.fillMaxSize()) {
     PageBackground(modifier = Modifier) {
@@ -146,7 +143,7 @@ fun TowerScreen(
                 Spacer(Modifier.height(14.dp))
                 FormationBar(
                     members = members,
-                    maxSlots = GameState.maxFormationSize,
+                    maxSlots = com.milan.game.data.SaveData.MAX_FORMATION_SIZE,
                     onSlotClick = { onOpenDeck() },
                 )
 
@@ -154,18 +151,19 @@ fun TowerScreen(
                 if (members.isNotEmpty()) {
                     Spacer(Modifier.height(12.dp))
                     BattlePreviewCard(
-                        myTeam = members.map { GameState.computeStats(it) },
-                        myElements = members.map { it.element },
+                        myTeam = ui.teamStats,
+                        myElements = ui.teamElements,
                         floor = nextFloor,
                         myPower = teamPower,
+                        enemy = ui.enemyPreview,
                     )
                 }
 
                 Spacer(Modifier.height(16.dp))
 
-                if (snapshot.formation.isEmpty()) {
+                if (ui.formationEmpty) {
                     com.milan.game.ui.components.EmptyState(
-                        icon = "⚔",
+                        icon = Icons.Outlined.Person,
                         title = "还没有出战编队",
                         subtitle = "先去卡组页点选角色入队",
                         actionText = "前往编队",
@@ -174,7 +172,7 @@ fun TowerScreen(
                 } else {
                     // 下一层挑战：奖励预览按 EconomyFormulas 计算，禁止就地写数字。
                     Text(
-                        text = "第 $nextFloor 层 · 入场 ⚔$ticketCost · 预计通关星尘 ${EconomyFormulas.towerRewardSoft(nextFloor)}",
+                        text = "第 $nextFloor 层 · 入场 ⚔$ticketCost · 预计通关星尘 ${ui.nextFloorRewardSoft}",
                         style = MaterialTheme.typography.bodySmall,
                         color = AppTheme.Text2,
                     )
@@ -193,36 +191,26 @@ fun TowerScreen(
                             !canChallenge -> "战票不足"
                             else -> "⚔ 挑战第 $nextFloor 层"
                         },
-                        onClick = {
-                            if (running || !canChallenge) return@GoldButton
-                            running = true
-                            scope.launch {
-                                try {
-                                    result = GameState.service.runTowerFloor(nextFloor)
-                                } finally {
-                                    running = false
-                                }
-                            }
-                        },
+                        onClick = { vm.challengeNext() },
                         modifier = Modifier.fillMaxWidth(),
                         enabled = canChallenge && !running,
                     )
+                    // 策略挑战：可操作回合制（选技能/选目标）
+                    if (canChallenge && !running && members.isNotEmpty()) {
+                        Spacer(Modifier.height(8.dp))
+                        NeonButton(
+                            text = "策略挑战第 $nextFloor 层（可操作）",
+                            onClick = { showStrategic = true },
+                            modifier = Modifier.fillMaxWidth(),
+                            enabled = canChallenge && !running,
+                        )
+                    }
                     // 已通层的复刷入口：低层速刷拿保底星尘收益（数值线性，低层仍有意义）。
                     if (best > 0) {
                         Spacer(Modifier.height(8.dp))
                         NeonButton(
                             text = "复刷第 $best 层（⚔$ticketCost）",
-                            onClick = {
-                                if (running || !canChallenge) return@NeonButton
-                                running = true
-                                scope.launch {
-                                    try {
-                                        result = GameState.service.runTowerFloor(best)
-                                    } finally {
-                                        running = false
-                                    }
-                                }
-                            },
+                            onClick = { vm.retryBest() },
                             modifier = Modifier.fillMaxWidth(),
                             enabled = canChallenge && !running,
                         )
@@ -243,7 +231,7 @@ fun TowerScreen(
                     // 下一次挑战改写为 Draw / SaveFailed —— 不安全强转会抛 ClassCastException 闪退。
                     // 用 as? + 提前返回，与文件下方「本地快照」范式（:266）保持一致。
                     val done = result as? TowerOutcome.Completed ?: return@AnimatedVisibility
-                    TowerResultCard(done = done)
+                    TowerResultCard(done = done, names = ui.characterNames)
                 }
                 val outcome = result  // 本地快照，解决委托属性无法 smart-cast
                 when (outcome) {
@@ -260,7 +248,7 @@ fun TowerScreen(
                         modifier = Modifier.padding(top = 8.dp),
                     )
                     is TowerOutcome.Draw -> {
-                        BattleReportSection(outcome.log)
+                        BattleReportSection(outcome.log, ui.characterNames)
                         Text(
                             text = "僵局（${outcome.turns} 回合）——双方仍存活，门票已退还。",
                             style = MaterialTheme.typography.bodySmall,
@@ -286,8 +274,16 @@ fun TowerScreen(
             rewardHard = completedResult.rewardHard,
             recordAdvanced = completedResult.recordAdvanced,
             bestFloorAfter = completedResult.bestFloorAfter,
-            onDismiss = { result = null },
+            onDismiss = { vm.dismissResult() },
             log = completedResult.log,
+        )
+    }
+
+    // ── 可操作策略战斗全屏层 ──
+    if (showStrategic) {
+        StrategicBattleScreen(
+            floor = nextFloor,
+            onExit = { showStrategic = false },
         )
     }
     }
@@ -297,7 +293,7 @@ fun TowerScreen(
 
 /** 战报折叠区：默认收起，展开后限高内部滚动（外层 verticalScroll 不受嵌套滚动干扰）。 */
 @Composable
-private fun BattleReportSection(log: List<StrikeEvent>) {
+private fun BattleReportSection(log: List<StrikeEvent>, names: Map<String, String>) {
     if (log.isEmpty()) return
     // result 每次挑战整体替换 → remember(result 实例) 以 log 身份作 key，新战斗自动折叠复位
     var expanded by remember(log) { mutableStateOf(false) }
@@ -320,14 +316,14 @@ private fun BattleReportSection(log: List<StrikeEvent>) {
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 10.dp, vertical = 6.dp),
         ) {
-            log.forEach { e -> StrikeRow(e) }
+            log.forEach { e -> StrikeRow(e, names) }
         }
     }
 }
 
 /** 单条攻击流水行：元素图标 + 攻击者 → 目标 + 伤害色阶 + 克制标记 + 击杀特效。 */
 @Composable
-private fun StrikeRow(e: StrikeEvent) {
+private fun StrikeRow(e: StrikeEvent, names: Map<String, String>) {
     val counterMul = ElementChart.damageMultiplier(e.attackerElement, e.targetElement)
     val counter = counterMul > 1.05
     val defeated = e.targetDefeated
@@ -352,7 +348,7 @@ private fun StrikeRow(e: StrikeEvent) {
             .padding(vertical = 3.dp)
             .then(
                 if (defeated) Modifier
-                    .clip(RoundedCornerShape(4.dp))
+                    .clip(RoundedCornerShape(AppTheme.Roundness.xs))
                     .background(AppTheme.Danger.copy(alpha = 0.08f))
                     .padding(horizontal = 4.dp, vertical = 2.dp)
                 else Modifier
@@ -377,13 +373,13 @@ private fun StrikeRow(e: StrikeEvent) {
                 color = attackerEi.glow,
                 modifier = Modifier
                     .size(16.dp)
-                    .clip(RoundedCornerShape(3.dp))
+                    .clip(RoundedCornerShape(AppTheme.Roundness.xxs))
                     .background(attackerEi.glow.copy(alpha = 0.15f))
                     .padding(1.dp),
             )
             Spacer(Modifier.width(3.dp))
             Text(
-                text = unitLabel(e.attackerId, e.attackerElement),
+                text = unitLabel(e.attackerId, e.attackerElement, names),
                 style = MaterialTheme.typography.labelSmall,
                 color = AppTheme.Text2,
                 maxLines = 1,
@@ -411,13 +407,13 @@ private fun StrikeRow(e: StrikeEvent) {
                 color = targetEi.glow,
                 modifier = Modifier
                     .size(16.dp)
-                    .clip(RoundedCornerShape(3.dp))
+                    .clip(RoundedCornerShape(AppTheme.Roundness.xxs))
                     .background(targetEi.glow.copy(alpha = 0.15f))
                     .padding(1.dp),
             )
             Spacer(Modifier.width(3.dp))
             Text(
-                text = unitLabel(e.targetId, e.targetElement),
+                text = unitLabel(e.targetId, e.targetElement, names),
                 style = MaterialTheme.typography.labelSmall,
                 color = if (defeated) AppTheme.Danger else AppTheme.Text2,
                 maxLines = 1,
@@ -447,7 +443,7 @@ private fun StrikeRow(e: StrikeEvent) {
                     color = AppTheme.Gold,
                     modifier = Modifier
                         .padding(start = 3.dp)
-                        .clip(RoundedCornerShape(3.dp))
+                        .clip(RoundedCornerShape(AppTheme.Roundness.xxs))
                         .background(AppTheme.Gold.copy(alpha = 0.15f))
                         .padding(horizontal = 3.dp, vertical = 1.dp),
                 )
@@ -475,7 +471,12 @@ private fun StrikeRow(e: StrikeEvent) {
  * 2. **可读性**：原内联 50 行让 TowerScreen 主体更难读。
  */
 @Composable
-internal fun TowerResultCard(done: TowerOutcome.Completed, modifier: Modifier = Modifier) {
+internal fun TowerResultCard(
+    done: TowerOutcome.Completed,
+    modifier: Modifier = Modifier,
+    /** 战报单位名解析表（内容表静态映射；默认空 → 单位显示「未知」，测试内容无关）。 */
+    names: Map<String, String> = emptyMap(),
+) {
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -519,7 +520,7 @@ internal fun TowerResultCard(done: TowerOutcome.Completed, modifier: Modifier = 
                 Text(text = "纪录推进至第 ${done.bestFloorAfter} 层", style = MaterialTheme.typography.bodySmall, color = AppTheme.Text2)
             }
         }
-        BattleReportSection(done.log)
+        BattleReportSection(done.log, names)
         Text(
             text = "提示：敌方元素随层数轮转，用克制元素编队能显著降低损血。",
             style = MaterialTheme.typography.labelMedium,
@@ -532,7 +533,7 @@ internal fun TowerResultCard(done: TowerOutcome.Completed, modifier: Modifier = 
 
 /**
  * 战力对比预览：展示我方 vs 敌方阵容、元素分布、战力对比条。
- * 敌方数据按 EconomyFormulas 程序化生成，与 TowerService.buildTowerEnemies 同源。
+ * 敌方数据由 [TowerViewModel] 预计算（[TowerEnemyPreview]，与 TowerService 同源）。
  */
 @Composable
 private fun BattlePreviewCard(
@@ -540,19 +541,12 @@ private fun BattlePreviewCard(
     myElements: List<String>,
     floor: Int,
     myPower: Int,
+    enemy: TowerEnemyPreview?,
 ) {
-    // 敌方数据（与 TowerService.buildTowerEnemies 同源）
-    val elements = listOf("Metal", "Wood", "Water", "Flame", "Earth", "Light", "Shadow", "Thunder")
-    val towerRng = remember(floor) { kotlin.random.Random(floor * 1_000_003L + 7L) }
-    val enemyCount = remember(floor) { EconomyFormulas.towerEnemyCount(floor) }
-    val enemyScale = remember(floor) { EconomyFormulas.towerEnemyStatScale(floor) }
-    val enemyBase = remember(floor) { EconomyFormulas.towerEnemyBaseStats() }
-    val enemyPower = remember(floor) {
-        (enemyBase[0] * enemyScale * enemyCount).toInt()
-    }
-    val enemyElements = remember(floor) {
-        List(enemyCount) { elements[towerRng.nextInt(elements.size)] }
-    }
+    val enemyCount = enemy?.count ?: 0
+    val enemyPower = enemy?.power ?: 0
+    val enemyScale = enemy?.scale ?: 1.0
+    val enemyElements = enemy?.elements.orEmpty()
 
     // 元素分布统计
     val myElementCounts = remember(myElements) {
@@ -569,9 +563,9 @@ private fun BattlePreviewCard(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
+            .clip(RoundedCornerShape(AppTheme.Roundness.md))
             .background(AppTheme.Surface.copy(alpha = 0.5f))
-            .border(1.dp, AppTheme.Stroke, RoundedCornerShape(12.dp))
+            .border(1.dp, AppTheme.Stroke, RoundedCornerShape(AppTheme.Roundness.md))
             .padding(12.dp),
     ) {
         // VS 标题
@@ -621,7 +615,7 @@ private fun BattlePreviewCard(
                 modifier = Modifier
                     .weight(1f)
                     .height(8.dp)
-                    .clip(RoundedCornerShape(4.dp))
+                    .clip(RoundedCornerShape(AppTheme.Roundness.xs))
                     .background(AppTheme.BgDeepest),
             ) {
                 Row(Modifier.fillMaxSize()) {
@@ -629,7 +623,7 @@ private fun BattlePreviewCard(
                         Modifier
                             .fillMaxWidth(myRatio)
                             .height(8.dp)
-                            .clip(RoundedCornerShape(4.dp))
+                            .clip(RoundedCornerShape(AppTheme.Roundness.xs))
                             .background(
                                 Brush.horizontalGradient(
                                     listOf(AppTheme.Frost.copy(alpha = 0.7f), AppTheme.Frost)
@@ -732,7 +726,7 @@ private fun ElementBadge(glyph: String, color: Color, count: Int) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
-            .clip(RoundedCornerShape(4.dp))
+            .clip(RoundedCornerShape(AppTheme.Roundness.xs))
             .background(color.copy(alpha = 0.15f))
             .padding(horizontal = 4.dp, vertical = 2.dp),
     ) {
@@ -743,10 +737,14 @@ private fun ElementBadge(glyph: String, color: Color, count: Int) {
     }
 }
 
-/** 战报单位显示名：我方取内容表短名；程序化敌方 tower_f{floor}_e{i} 显示「敌方N·元素」。 */
-private fun unitLabel(characterId: String, element: String): String = when {
+/** 战报单位显示名：我方取内容表短名（names 由 VM 从内容表构建）；程序化敌方 tower_f{floor}_e{i} 显示「敌方N·元素」。 */
+private fun unitLabel(
+    characterId: String,
+    element: String,
+    names: Map<String, String>,
+): String = when {
     characterId.startsWith("tower_f") ->
         "敌方·${ElementTheme.forElement(element).glyph}"
     else ->
-        GameState.service.character(characterId)?.displayName?.substringBefore(' ') ?: "未知"
+        names[characterId]?.substringBefore(' ') ?: "未知"
 }

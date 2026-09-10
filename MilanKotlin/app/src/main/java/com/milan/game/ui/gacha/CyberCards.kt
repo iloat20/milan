@@ -57,55 +57,47 @@ import kotlin.math.sin
 
 // P4-2（2026-08-27）：揭晓卡牌族从 CyberStage.kt 拆出（分镜 3/4：Single / Ten）。
 
-/** 装裱册页卡背（十连牌桌待翻面）：绫绢底 + 金箔隔水双线 + 中央朱砂落印。 */
+/** 装裱册页卡背（单抽/十连共用）：玄墨绫绢 + 金箔内框 + 朱砂「丹」印。 */
 @Composable
 internal fun CyberCardBack(modifier: Modifier = Modifier) {
+    val shape = RoundedCornerShape(6.dp)
     Box(
         modifier = modifier
-            .clip(RoundedCornerShape(10.dp))
-            .background(CyberPalette.DeepBg)
-            .border(1.dp, CyberPalette.Magenta.copy(alpha = 0.55f), RoundedCornerShape(10.dp)),
+            .clip(shape)
+            .background(
+                Brush.verticalGradient(listOf(Color(0xFF1A1E28), Color(0xFF0C0E14))),
+                shape,
+            )
+            .border(1.dp, AppTheme.Gold.copy(alpha = 0.45f), shape),
         contentAlignment = Alignment.Center,
     ) {
-        // 绫绢底：淡墨经纬织纹（低 alpha 网格，喻绢丝）
         Canvas(Modifier.fillMaxSize()) {
-            val sp = 12.dp.toPx()
+            val sp = 10.dp.toPx()
+            val line = Color.White.copy(alpha = 0.04f)
             var y = sp
             while (y < size.height) {
-                drawLine(CyberPalette.Grid, Offset(0f, y), Offset(size.width, y), 1f)
+                drawLine(line, Offset(0f, y), Offset(size.width, y), 1f)
                 y += sp
             }
             var x = sp
             while (x < size.width) {
-                drawLine(CyberPalette.Grid, Offset(x, 0f), Offset(x, size.height), 1f)
+                drawLine(line, Offset(x, 0f), Offset(x, size.height), 1f)
                 x += sp
             }
         }
-        // 隔水：内层金箔细线框
         Box(
             Modifier
                 .fillMaxSize()
                 .padding(7.dp)
-                .border(1.dp, CyberPalette.Magenta.copy(alpha = 0.28f), RoundedCornerShape(6.dp)),
+                .border(0.75.dp, AppTheme.Gold.copy(alpha = 0.28f), RoundedCornerShape(4.dp))
         )
-        // 画心留白区（更深墨色衬托落印）
         Box(
             Modifier
-                .fillMaxSize()
-                .padding(14.dp)
-                .background(CyberPalette.DeepBg.copy(alpha = 0.55f))
-                .border(1.dp, CyberPalette.Cyan.copy(alpha = 0.16f), RoundedCornerShape(4.dp)),
-        )
-        // 中央朱砂落印（方章）
-        Box(
-            Modifier
-                .size(30.dp)
-                .clip(RoundedCornerShape(5.dp))
-                .background(CyberPalette.Cyan.copy(alpha = 0.82f))
-                .border(1.dp, CyberPalette.Cyan.copy(alpha = 0.55f), RoundedCornerShape(5.dp)),
+                .size(32.dp)
+                .background(AppTheme.SealRed.copy(alpha = 0.92f), RoundedCornerShape(3.dp)),
             contentAlignment = Alignment.Center,
         ) {
-            Text("墨", color = CyberPalette.BeamCore, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+            Text("丹", color = AppTheme.Text1, fontSize = 16.sp, fontWeight = FontWeight.Bold)
         }
     }
 }
@@ -176,19 +168,19 @@ internal fun SingleCard(
             Box(
                 Modifier
                     .matchParentSize()
-                    .clip(RoundedCornerShape(14.dp))
-                    .background(frame, RoundedCornerShape(14.dp))
-                    .border(1.5.dp, frame, RoundedCornerShape(14.dp))
+                    .clip(RoundedCornerShape(AppTheme.Roundness.lg))
+                    .background(frame, RoundedCornerShape(AppTheme.Roundness.lg))
+                    .border(1.5.dp, frame, RoundedCornerShape(AppTheme.Roundness.lg))
                     .padding(2.5.dp)
-                    .clip(RoundedCornerShape(11.dp))
-                    .border(innerBorderWidth.dp, innerBorderColor, RoundedCornerShape(11.dp)),
+                    .clip(RoundedCornerShape(AppTheme.Roundness.md))
+                    .border(innerBorderWidth.dp, innerBorderColor, RoundedCornerShape(AppTheme.Roundness.md)),
             ) {
                 // 画心：立绘
                 Box(
                     Modifier
                         .fillMaxSize()
                         .padding(3.dp)
-                        .clip(RoundedCornerShape(9.dp)),
+                        .clip(RoundedCornerShape(AppTheme.Roundness.md)),
                 ) {
                     PortraitImage(
                         characterId = def?.characterId.orEmpty(),
@@ -222,9 +214,9 @@ internal fun SingleCard(
                     modifier = Modifier
                         .align(Alignment.TopEnd)
                         .padding(12.dp)
-                        .clip(RoundedCornerShape(4.dp))
+                        .clip(RoundedCornerShape(AppTheme.Roundness.xs))
                         .background(AppTheme.rarityColor(rarity))
-                        .border(1.dp, AppTheme.rarityColor(rarity).copy(alpha = 0.6f), RoundedCornerShape(4.dp))
+                        .border(1.dp, AppTheme.rarityColor(rarity).copy(alpha = 0.6f), RoundedCornerShape(AppTheme.Roundness.xs))
                         .padding(horizontal = 6.dp, vertical = 2.dp),
                 )
             }
@@ -278,8 +270,8 @@ internal fun SingleCard(
 }
 
 /**
- * 十连牌桌（Ten 阶段）：2×5 卡背飞入 + 逐张翻牌（间隔 300ms）。
- * 翻到正面瞬间回调 onFlip(rarity)，供上层触发分级音效/触觉/震屏。
+ * 十连牌桌（Ten 阶段，2026-09-09 重做）：
+ * 两行实体卡阶梯入场 → 从左到右逐张翻开 → SSR/UR 翻开时全卡闪色。
  */
 @Composable
 internal fun TenTable(
@@ -291,16 +283,12 @@ internal fun TenTable(
     val flipped = remember { mutableStateListOf<Boolean>().apply { repeat(batch.size) { add(false) } } }
     LaunchedEffect(batch) {
         batch.indices.forEach { i ->
-            // P1 修复：串行 forEach 中延时必须是固定间隔——原 delay(300L * i) 会二次累积，
-            // 第 i 张实际在 Σ300k 毫秒时刻翻开（第 6 张起 >3600ms），而 GachaScreen 在 Ten 阶段
-            // 固定 3600ms 后收场卸载演出层，导致第 6~10 张永远不翻、其 SSR/UR 音效/震动/震屏丢失。
-            // 固定 delay(300L) 后末张恰为 2700ms < 3600ms 收场线，全部翻牌可见且反馈完整。
-            // P4-3：按稀有度分级翻牌节奏——UR 更慢（更多期待感），R 快速闪过。
-            val delayMs = if (i == 0) 200L else when {
-                batch[i - 1].rarity >= 4 -> 500L  // UR 后：慢翻（期待感）
-                batch[i - 1].rarity == 3 -> 400L  // SSR 后：稍慢
-                batch[i - 1].rarity == 2 -> 300L  // SR 后：标准
-                else -> 250L                        // R 后：快速闪过
+            // 固定间隔，避免二次累积导致后半批翻不开（见旧注释 P1）
+            val delayMs = if (i == 0) 180L else when {
+                batch[i - 1].rarity >= 4 -> 520L
+                batch[i - 1].rarity == 3 -> 420L
+                batch[i - 1].rarity == 2 -> 320L
+                else -> 260L
             }
             delay(delayMs)
             if (i < flipped.size) {
@@ -310,16 +298,18 @@ internal fun TenTable(
         }
     }
     Column(
-        modifier = modifier.padding(horizontal = 18.dp, vertical = 64.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp),
+        modifier = modifier.padding(horizontal = 14.dp, vertical = 56.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         batch.chunked(5).forEachIndexed { rowIdx, row ->
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 row.forEachIndexed { i, r ->
                     TenCard(
                         result = r,
                         up = flipped[rowIdx * 5 + i],
-                        modifier = Modifier.weight(1f).aspectRatio(0.72f),
+                        modifier = Modifier
+                            .weight(1f)
+                            .aspectRatio(0.71f),
                         onClick = { if (r.success) r.characterId?.let(onOpenCharacter) },
                     )
                 }
@@ -328,8 +318,7 @@ internal fun TenTable(
     }
 }
 
-/** 十连单卡：飞入（透明度 + 下移）→ 翻牌（scaleX 两段动画，中点切正/背面）。
- *  UR 翻开瞬间叠加金色粒子迸发（12 颗金点从中心放射扩散）。 */
+/** 十连单卡：卡背 → 实体卡翻面。高稀有度有金箔爆裂 + 闪框。 */
 @Composable
 internal fun TenCard(
     result: PullResult,
@@ -337,111 +326,193 @@ internal fun TenCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val enterY by animateFloatAsState(if (up) 0f else 46f, tween(320), label = "tenY")
-    val cardAlpha by animateFloatAsState(if (up) 1f else 0f, tween(260), label = "tenAlpha")
+    val enterY by animateFloatAsState(if (up) 0f else 40f, tween(300), label = "tenY")
+    val cardAlpha by animateFloatAsState(if (up) 1f else 0f, tween(240), label = "tenAlpha")
     val flip = remember { Animatable(1f) }
     var faceUp by remember { mutableStateOf(false) }
-    val isUr = result.rarity >= 4
-    // UR 金箔爆裂：翻开后 400ms 内从中心扩散 12 颗金点
+    val rarity = result.rarity
+    val isUr = rarity >= 4
+    val isSsr = rarity == 3
     val burstAnim = remember { Animatable(0f) }
+    val flashAnim = remember { Animatable(0f) }
+
     LaunchedEffect(up) {
         if (up && !faceUp) {
-            flip.animateTo(0f, tween(130))
+            flip.animateTo(0f, tween(120))
             faceUp = true
-            flip.animateTo(1f, tween(150))
+            flip.animateTo(1f, tween(160))
+            if (rarity >= 3) {
+                flashAnim.snapTo(1f)
+                flashAnim.animateTo(0f, tween(if (isUr) 520 else 360))
+            }
             if (isUr) {
                 burstAnim.snapTo(0f)
-                burstAnim.animateTo(1f, tween(400))
+                burstAnim.animateTo(1f, tween(450))
             }
         }
     }
-    val frame = AppTheme.rarityColor(result.rarity).copy(alpha = 0.7f)
-    // 固定种子保证每次渲染一致
+
+    val frame = AppTheme.rarityColor(rarity)
+    val shape = RoundedCornerShape(6.dp)
     val burstDots = remember {
         val r = kotlin.random.Random(result.characterId.hashCode().toLong())
-        List(12) { i ->
-            val angle = i * 30f + r.nextFloat() * 15f
-            val dist = 0.35f + r.nextFloat() * 0.25f
+        List(14) { i ->
+            val angle = i * (360f / 14f) + r.nextFloat() * 12f
+            val dist = 0.3f + r.nextFloat() * 0.35f
             Pair(angle, dist)
         }
     }
+
     Box(
         modifier = modifier
             .graphicsLayer {
                 translationY = enterY
                 alpha = cardAlpha
                 scaleX = flip.value
+                cameraDistance = 12f * density
             }
-            .clip(RoundedCornerShape(8.dp))
+            .clip(shape)
             .clickable { onClick() },
         contentAlignment = Alignment.Center,
     ) {
         if (faceUp) {
-            // 双层描边：外层稀有度色 + 内层金箔隔水线
+            // 实体卡：外边 + 金内线 + 画心
             Box(
                 Modifier
                     .fillMaxSize()
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(frame, RoundedCornerShape(8.dp))
-                    .border(1.dp, frame, RoundedCornerShape(8.dp))
+                    .background(
+                        Brush.verticalGradient(
+                            listOf(frame.copy(alpha = 0.35f), Color(0xFF0A0C10))
+                        ),
+                        shape,
+                    )
+                    .border(1.25.dp, frame.copy(alpha = 0.85f), shape)
                     .padding(2.dp)
-                    .clip(RoundedCornerShape(6.dp))
-                    .border(0.75.dp, AppTheme.Gold.copy(alpha = 0.28f), RoundedCornerShape(6.dp)),
+                    .clip(shape)
+                    .border(0.5.dp, AppTheme.Gold.copy(alpha = 0.35f), shape),
             ) {
-                // 画心
                 Box(
                     Modifier
                         .fillMaxSize()
-                        .padding(2.dp)
+                        .padding(1.5.dp)
                         .clip(RoundedCornerShape(4.dp)),
                 ) {
                     PortraitImage(
                         characterId = result.characterId.orEmpty(),
-                        rarity = result.rarity,
+                        rarity = rarity,
                         name = result.characterName,
-                        aura = true,
-                        target = PortraitTarget.Thumb,
+                        aura = rarity >= 3,
+                        target = PortraitTarget.Full,
                         modifier = Modifier.fillMaxSize(),
                     )
+                    // 底铭牌
                     Box(
                         Modifier
                             .align(Alignment.BottomCenter)
                             .fillMaxWidth()
-                            .height(20.dp)
-                            .background(Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = 0.8f)))),
+                            .height(22.dp)
+                            .background(
+                                Brush.verticalGradient(
+                                    listOf(Color.Transparent, Color(0xCC08090C))
+                                )
+                            ),
                     )
                     Text(
-                        text = rarityLabel(result.rarity),
-                        color = frame,
-                        fontSize = 10.sp,
+                        text = result.characterName ?: "",
+                        color = AppTheme.Text1,
+                        fontSize = 9.sp,
                         fontWeight = FontWeight.Bold,
-                        modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 2.dp),
+                        maxLines = 1,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier
+                            .align(Alignment.BottomCenter)
+                            .fillMaxWidth()
+                            .padding(bottom = 3.dp, start = 2.dp, end = 2.dp),
+                    )
+                    // 稀有度角
+                    Text(
+                        text = rarityLabel(rarity),
+                        color = if (isUr) AppTheme.GoldTextOn else AppTheme.BgDeepest,
+                        fontSize = 8.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier
+                            .align(Alignment.TopStart)
+                            .padding(3.dp)
+                            .background(frame.copy(alpha = 0.92f), RoundedCornerShape(2.dp))
+                            .padding(horizontal = 3.dp, vertical = 1.dp),
                     )
                 }
             }
-            // UR 金箔爆裂层
+
+            // 稀有度全卡闪
+            if (flashAnim.value > 0f) {
+                Box(
+                    Modifier
+                        .fillMaxSize()
+                        .background(frame.copy(alpha = flashAnim.value * 0.35f))
+                )
+            }
+
+            // UR 金箔爆裂
             if (isUr && burstAnim.value > 0f && burstAnim.value < 1f) {
                 Canvas(Modifier.fillMaxSize()) {
                     val cx = size.width / 2f
                     val cy = size.height / 2f
-                    val maxR = size.minDimension * 0.45f
-                    val alpha = (1f - burstAnim.value) * 0.85f
+                    val maxR = size.minDimension * 0.55f
+                    val alpha = (1f - burstAnim.value) * 0.9f
                     burstDots.forEach { (angle, dist) ->
                         val rad = Math.toRadians(angle.toDouble()).toFloat()
                         val d = maxR * dist * burstAnim.value
                         val px = cx + cos(rad) * d
                         val py = cy + sin(rad) * d
-                        val dotR = (3f - burstAnim.value * 2f).dp.toPx()
-                        drawCircle(
-                            color = AppTheme.Gold.copy(alpha = alpha),
-                            radius = dotR,
-                            center = Offset(px, py),
-                        )
+                        val dotR = (3.2f - burstAnim.value * 2f).dp.toPx()
+                        drawCircle(AppTheme.Gold.copy(alpha = alpha), dotR, Offset(px, py))
                     }
                 }
             }
         } else {
-            CyberCardBack(Modifier.fillMaxSize())
+            // 卡背：丹青绫绢 + 金印
+            Box(
+                Modifier
+                    .fillMaxSize()
+                    .background(
+                        Brush.verticalGradient(
+                            listOf(Color(0xFF1A1E28), Color(0xFF0C0E14))
+                        ),
+                        shape,
+                    )
+                    .border(1.dp, AppTheme.Gold.copy(alpha = 0.4f), shape),
+                contentAlignment = Alignment.Center,
+            ) {
+                Canvas(Modifier.fillMaxSize()) {
+                    val sp = 10.dp.toPx()
+                    val line = Color.White.copy(alpha = 0.04f)
+                    var y = sp
+                    while (y < size.height) {
+                        drawLine(line, Offset(0f, y), Offset(size.width, y), 1f)
+                        y += sp
+                    }
+                    var x = sp
+                    while (x < size.width) {
+                        drawLine(line, Offset(x, 0f), Offset(x, size.height), 1f)
+                        x += sp
+                    }
+                }
+                Box(
+                    Modifier
+                        .fillMaxSize()
+                        .padding(6.dp)
+                        .border(0.75.dp, AppTheme.Gold.copy(alpha = 0.25f), RoundedCornerShape(4.dp))
+                )
+                Box(
+                    Modifier
+                        .size(28.dp)
+                        .background(AppTheme.SealRed.copy(alpha = 0.9f), RoundedCornerShape(3.dp)),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text("丹", color = AppTheme.Text1, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                }
+            }
         }
     }
 }

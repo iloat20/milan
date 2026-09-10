@@ -20,6 +20,8 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -38,9 +40,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.milan.game.services.CharacterDataEntry
-import com.milan.game.ui.GameState
-import com.milan.game.ui.OwnedCharacterView
+import com.milan.game.OwnedCharacterView
 import com.milan.game.ui.components.CharacterCard
 import com.milan.game.ui.components.ListFilter
 import com.milan.game.ui.components.ListFilterBar
@@ -64,12 +66,13 @@ fun CollectionScreen(
     animatedVisibilityScope: AnimatedVisibilityScope,
     modifier: Modifier = Modifier,
 ) {
-    // 快照 revision 驱动拥有视图（范式对齐 Detail/Progression 页）：抽卡后图鉴进度随重组刷新。
-    // all 为内容定义（进程内不变），无需 revision key；owned 随快照刷新，ownedById 派生自 owned。
-    val snap by GameState.snapshot.collectAsStateWithLifecycle()
-    val all = remember { GameState.service.characters }
-    val owned = remember(snap.revision) { GameState.owned() }
-    val ownedById = remember(owned) { owned.associateBy { it.save.characterId } }
+    // P1-6 D 批：all/owned/ownedById 收敛进 [CollectionViewModel]（owned 随快照刷新，
+    // 抽卡后图鉴进度随重组更新；all 为内容定义，进程内不变）。
+    val vm: CollectionViewModel = viewModel(factory = com.milan.game.di.AppGraph.factory)
+    val all = vm.all
+    val ui by vm.uiState.collectAsStateWithLifecycle()
+    val owned = ui.owned
+    val ownedById = ui.ownedById
 
     var searchText by rememberSaveable { mutableStateOf("") }
     var rarityFilter by rememberSaveable { mutableIntStateOf(-1) }
@@ -119,7 +122,7 @@ fun CollectionScreen(
                 // 空态：全量页只在筛选无结果时出现
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
                     com.milan.game.ui.components.EmptyState(
-                        icon = "🔍",
+                        icon = Icons.Outlined.Search,
                         title = "没有符合条件的角色",
                         subtitle = "试试调整筛选条件",
                         modifier = Modifier.padding(top = 60.dp),
@@ -180,7 +183,7 @@ private fun CollectionProgressHeader(
     val gotByRarity = owned.groupingBy { it.rarity }.eachCount()
     val rarityOrder = listOf(4, 3, 2, 1)
 
-    val shape = RoundedCornerShape(18.dp)
+    val shape = RoundedCornerShape(AppTheme.Roundness.xl)
     Column(
         modifier = modifier
             .clip(shape)
@@ -209,7 +212,7 @@ private fun CollectionProgressHeader(
                 fontWeight = FontWeight.Bold,
                 color = AppTheme.Gold,
                 modifier = Modifier
-                    .clip(RoundedCornerShape(12.dp))
+                    .clip(RoundedCornerShape(AppTheme.Roundness.md))
                     .clickable(onClick = onOpenMyCharacters)
                     .padding(horizontal = 10.dp, vertical = 8.dp),
             )
@@ -221,19 +224,19 @@ private fun CollectionProgressHeader(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(6.dp)
-                .clip(RoundedCornerShape(3.dp))
-                .background(AppTheme.BgDeepest, RoundedCornerShape(3.dp)),
+                .clip(RoundedCornerShape(AppTheme.Roundness.xxs))
+                .background(AppTheme.BgDeepest, RoundedCornerShape(AppTheme.Roundness.xxs)),
         ) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth(fraction)
                     .height(6.dp)
-                    .clip(RoundedCornerShape(3.dp))
+                    .clip(RoundedCornerShape(AppTheme.Roundness.xxs))
                     .background(
                         Brush.horizontalGradient(
                             listOf(AppTheme.Gold, AppTheme.Gold.copy(alpha = 0.45f)),
                         ),
-                        RoundedCornerShape(3.dp),
+                        RoundedCornerShape(AppTheme.Roundness.xxs),
                     ),
             )
         }

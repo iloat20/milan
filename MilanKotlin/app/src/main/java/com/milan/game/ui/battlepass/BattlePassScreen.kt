@@ -10,6 +10,7 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -19,12 +20,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.milan.game.data.BattlePassReward
-import com.milan.game.ui.GameState
+import com.milan.game.ui.components.GlassDialog
 import com.milan.game.ui.components.GlassPanel
+import com.milan.game.ui.components.GoldButton
+import com.milan.game.ui.components.NeonButton
 import com.milan.game.ui.components.PageBackground
 import com.milan.game.ui.nav.AppTopBar
 import com.milan.game.ui.theme.AppTheme
-import kotlinx.coroutines.launch
 
 /**
  * Battle Pass 界面。
@@ -38,35 +40,12 @@ import kotlinx.coroutines.launch
 fun BattlePassScreen(
     onBack: () -> Unit,
 ) {
-    val scope = rememberCoroutineScope()
-    val service = GameState.service
     val feedback = com.milan.game.ui.feedback.LocalFeedback.current
-    var busy by remember { mutableStateOf(false) }
-    // B2 修复：此前无任何 snapshot 订阅 + remember 无 key → 页面永不重组。
-    // 「购买豪华版 680💎」会真实扣钻落盘，界面却零变化（按钮不消失、豪华轨仍锁），
-    // 用户会重复点击，而重复点击返回 Rejected 且无反馈 → 完全静默的扣费黑洞。
-    // 现按 ShopScreen 范式：订阅 snapshot + revision 作 remember key + 三态反馈 + busy 防重入。
-    val snap by service.snapshot.collectAsStateWithLifecycle()
-    val data = remember(snap.revision) { service.getMonetizationData() }
-    val rewards = remember(snap.revision) { service.getBattlePassRewards() }
-
-    /** 领取纪行奖励通用流程：三态反馈 + busy 防重入（同 ShopScreen.buyDaily 范式）。 */
-    fun claimReward(level: Int) {
-        scope.launch {
-            if (busy) return@launch
-            busy = true
-            try {
-                val msg = when (service.claimBattlePassReward(level)) {
-                    com.milan.game.services.WriteOutcome.Success -> "已领取 Lv.$level 奖励"
-                    com.milan.game.services.WriteOutcome.Rejected -> "等级不足或已领取"
-                    com.milan.game.services.WriteOutcome.SaveFailed -> "保存失败，请重试"
-                }
-                feedback.show(msg)
-            } finally {
-                busy = false
-            }
-        }
-    }
+    val vm: BattlePassViewModel = viewModel(factory = com.milan.game.di.AppGraph.factory)
+    val ui by vm.uiState.collectAsStateWithLifecycle()
+    val busy by vm.busy.collectAsStateWithLifecycle()
+    var showPremiumConfirm by remember { mutableStateOf(false) }
+    LaunchedEffect(vm) { vm.toasts.collect { feedback.show(it) } }
 
     Box(
         modifier = Modifier
@@ -87,44 +66,53 @@ fun BattlePassScreen(
                     // 当前等级信息
                     item {
                         BattlePassHeader(
-                            level = data.battlePassLevel,
-                            exp = data.battlePassExp,
-                            isPremium = data.battlePassPremium,
+                            level = ui.level,
+                            exp = ui.exp,
+                            isPremium = ui.isPremium,
                             enabled = !busy,
-                            onPurchasePremium = {
-                                scope.launch {
-                                    if (busy) return@launch
-                                    busy = true
-                                    try {
-                                        val msg = when (service.purchaseBattlePass(680)) {
-                                            com.milan.game.services.WriteOutcome.Success -> "豪华版已激活"
-                                            com.milan.game.services.WriteOutcome.Rejected -> "钻石不足或已购买"
-                                            com.milan.game.services.WriteOutcome.SaveFailed -> "保存失败，请重试"
-                                        }
-                                        feedback.show(msg)
-                                    } finally {
-                                        busy = false
-                                    }
-                                }
-                            },
+                            onPurchasePremium = { showPremiumConfirm = true },
                         )
                     }
 
                     // 奖励列表
-                    items(rewards) { reward ->
+                    items(ui.rewards) { reward ->
                         RewardRow(
                             reward = reward,
-                            currentLevel = data.battlePassLevel,
-                            claimedLevels = data.claimedBPRewards,
-                            isPremium = data.battlePassPremium,
+                            currentLevel = ui.level,
+                            claimedLevels = ui.claimedLevels,
+                            isPremium = ui.isPremium,
                             enabled = !busy,
-                            onClaimFree = { claimReward(reward.level) },
-                            onClaimPremium = { claimReward(reward.level) },
+                            onClaimFree = { vm.claimReward(reward.level) },
+                            onClaimPremium = { vm.claimReward(reward.level) },
                         )
                     }
                 }
             }
         }
+
+        GlassDialog(
+            show = showPremiumConfirm,
+            onDismiss = { showPremiumConfirm = false },
+            title = "购买豪华版纪行",
+            body = "将消耗 ${BattlePassViewModel.PREMIUM_COST_HARD} 钻石解锁豪华奖励轨。是否继续？",
+            buttons = {
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    NeonButton(
+                        text = "取 消",
+                        onClick = { showPremiumConfirm = false },
+                        modifier = Modifier.weight(1f),
+                    )
+                    GoldButton(
+                        text = "确认购买",
+                        onClick = {
+                            showPremiumConfirm = false
+                            vm.purchasePremium()
+                        },
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+            },
+        )
     }
 }
 
@@ -167,7 +155,7 @@ private fun BattlePassHeader(
                                 Brush.horizontalGradient(
                                     colors = listOf(AppTheme.Gold, AppTheme.Frost)
                                 ),
-                                RoundedCornerShape(8.dp)
+                                RoundedCornerShape(AppTheme.Roundness.sm)
                             )
                             .clickable(enabled = enabled, onClick = onPurchasePremium)
                             .padding(horizontal = 16.dp, vertical = 8.dp),
@@ -182,7 +170,7 @@ private fun BattlePassHeader(
                 } else {
                     Box(
                         modifier = Modifier
-                            .background(AppTheme.Gold.copy(alpha = 0.2f), RoundedCornerShape(8.dp))
+                            .background(AppTheme.Gold.copy(alpha = 0.2f), RoundedCornerShape(AppTheme.Roundness.sm))
                             .padding(horizontal = 16.dp, vertical = 8.dp),
                     ) {
                         Text(
@@ -206,7 +194,7 @@ private fun BattlePassHeader(
                     modifier = Modifier
                         .weight(1f)
                         .height(6.dp)
-                        .clip(RoundedCornerShape(3.dp)),
+                        .clip(RoundedCornerShape(AppTheme.Roundness.xxs)),
                     color = AppTheme.Gold,
                     trackColor = AppTheme.Surface,
                 )
@@ -251,7 +239,7 @@ private fun RewardRow(
             Box(
                 modifier = Modifier
                     .size(32.dp)
-                    .clip(RoundedCornerShape(6.dp))
+                    .clip(RoundedCornerShape(AppTheme.Roundness.sm))
                     .background(
                         if (isUnlocked) AppTheme.Gold.copy(alpha = 0.2f) else AppTheme.Surface
                     ),
@@ -326,7 +314,7 @@ private fun RewardItem(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(48.dp)
-                .clip(RoundedCornerShape(6.dp))
+                .clip(RoundedCornerShape(AppTheme.Roundness.sm))
                 .background(bgColor),
             contentAlignment = Alignment.Center,
         ) {

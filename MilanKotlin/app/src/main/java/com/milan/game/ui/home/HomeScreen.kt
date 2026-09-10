@@ -62,29 +62,30 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.milan.game.infrastructure.CrashReporter
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import com.milan.game.services.CharacterDataEntry
-import com.milan.game.ui.GameState
 import com.milan.game.ui.components.GlassDialog
 import com.milan.game.ui.components.GoldButton
 import com.milan.game.ui.components.NeonButton
 import com.milan.game.ui.components.PortraitImage
 import com.milan.game.ui.components.PortraitTarget
-import com.milan.game.ui.components.SealStamp
+import com.milan.game.ui.components.CardMetrics
 import com.milan.game.ui.nav.GameNavBar
 import com.milan.game.ui.nav.NavItem
 import com.milan.game.ui.nav.ResourceBar
 import com.milan.game.ui.effects.FluidBackground
 import com.milan.game.ui.effects.inkSplash
 import com.milan.game.ui.theme.AppTheme
+import com.milan.game.ui.theme.BrandType
 
 /**
- * 主页（水墨国风版）。
- * 资源栏 / 主视觉（Hero 光晕 + 立绘漂浮 + 铭牌）/ 动画按钮 / 丹青名录横滑条 / 底部导航。
- * 立绘经 PortraitImage 按角色 CharacterId 动态加载（drawable/char_<rarity>_<pinyin>.webp），
- * 缺图自动回退首字占位；R8 保留规则见 res/raw/keep.xml。
+ * 主页 · 丹青典藏馆大厅（2026-09-09 重设计）。
+ *
+ * 版式：品牌条 → 主视觉展柜（Hero）→ 主 CTA + 快捷入口横滑 → 名录横滑 → 底部导航。
+ * 刻意去掉 2×4 文字按钮墙，改「一条主行动 + 可横滑次要入口」，首屏焦点只在展柜。
  */
 @Composable
 fun HomeScreen(
@@ -102,6 +103,8 @@ fun HomeScreen(
     onOpenEvent: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
+    val vm: HomeViewModel = viewModel(factory = com.milan.game.di.AppGraph.factory)
+    val homeUi by vm.uiState.collectAsStateWithLifecycle()
     var entered by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) { entered = true }
     val titleAlpha by animateFloatAsState(
@@ -109,55 +112,40 @@ fun HomeScreen(
         animationSpec = tween(500),
         label = "titleAlpha",
     )
-    val titleOffset by animateFloatAsState(
-        targetValue = if (entered) 0f else 12f,
-        animationSpec = spring(dampingRatio = 0.7f, stiffness = Spring.StiffnessLow),
-        label = "titleOffset",
-    )
 
-    Box(
-        modifier = modifier.fillMaxSize(),
-    ) {
+    Box(modifier = modifier.fillMaxSize()) {
         FluidBackground(Modifier.fillMaxSize())
         Column(Modifier.fillMaxSize()) {
-            // 资源栏：logo + 资源胶囊
+            // ── 品牌条：左 Logo + 右资源 ──
             Row(
                 modifier = Modifier
                     .statusBarsPadding()
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 6.dp),
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Column {
-                    Text(
-                        text = "丹青录",
-                        fontSize = 22.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = AppTheme.Gold,
-                        letterSpacing = 2.6.sp,
-                        modifier = Modifier.graphicsLayer {
-                            alpha = titleAlpha
-                            translationY = titleOffset.dp.toPx()
-                        },
-                    )
-                    Text(
-                        text = "山海经·神话卡牌",
-                        fontSize = 10.sp,
-                        color = AppTheme.Text2,
-                        modifier = Modifier.padding(top = 1.dp),
-                    )
-                }
+                Text(
+                    text = "丹青录",
+                    style = BrandType,
+                    color = AppTheme.Gold,
+                    modifier = Modifier.graphicsLayer { alpha = titleAlpha },
+                )
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    text = "COLLECTION",
+                    fontSize = 9.sp,
+                    color = AppTheme.Text3,
+                    letterSpacing = 2.sp,
+                    modifier = Modifier.padding(top = 10.dp),
+                )
                 Spacer(Modifier.weight(1f))
-                ResourceBar()
+                ResourceBar(compact = true)
             }
 
-            // 主体：滚动
             Box(Modifier.weight(1f)) {
                 val container = LocalWindowInfo.current.containerSize
-                val heroHeight =
-                    if (container.width > container.height) 300.dp else 430.dp
+                val heroHeight = if (container.width > container.height) 320.dp else 400.dp
                 val homeListState = rememberLazyListState()
-                // 水墨视差：滚动进度驱动 Hero 滞后
                 val heroParallax by remember {
                     derivedStateOf {
                         val first = homeListState.layoutInfo.visibleItemsInfo.firstOrNull()
@@ -170,28 +158,49 @@ fun HomeScreen(
                     state = homeListState,
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = androidx.compose.foundation.layout.PaddingValues(
-                        start = 14.dp, top = 6.dp, end = 14.dp, bottom = 8.dp
+                        start = 16.dp, top = 4.dp, end = 16.dp, bottom = 12.dp
                     ),
                 ) {
-                    item { Hero(heroHeight, heroParallax, onOpenCharacter) }
-                    item { Spacer(Modifier.height(10.dp)) }
-                    item { HeroButtons(onOpenGacha, onOpenCollection, onOpenTower, onOpenAchievements, onOpenStory, onOpenDailyMissions, onOpenBattlePass, onOpenAffinity) }
+                    // 展柜主视觉
+                    item { Hero(heroHeight, heroParallax, homeUi.featured, onOpenCharacter) }
                     item { Spacer(Modifier.height(14.dp)) }
+
+                    // 主 CTA：召唤（唯一金色大按钮）
+                    item {
+                        GoldButton(
+                            text = "前往召唤",
+                            modifier = Modifier.fillMaxWidth(),
+                            onClick = onOpenGacha,
+                        )
+                    }
+                    item { Spacer(Modifier.height(12.dp)) }
+
+                    // 快捷入口：横滑 chip（次要行动不抢首屏）
+                    item {
+                        QuickActions(
+                            onOpenCollection, onOpenTower, onOpenStory,
+                            onOpenDailyMissions, onOpenBattlePass, onOpenAffinity,
+                            onOpenAchievements, onOpenArena, onOpenEvent,
+                        )
+                    }
+                    item { Spacer(Modifier.height(18.dp)) }
+
+                    // 名录
                     item { HomeSectionTitle("丹青名录", "ROSTER") }
+                    item { Spacer(Modifier.height(10.dp)) }
+                    item { AvatarStrip(homeUi.avatarEntries, onOpenCharacter, onOpenCollection) }
                     item { Spacer(Modifier.height(8.dp)) }
-                    item { AvatarStrip(onOpenCharacter) }
                     item {
                         Text(
-                            text = "✦ 立绘皆源自山海经与中国上古神话，依各自背景故事创作",
+                            text = "立绘皆源自山海经与中国上古神话，依各自背景故事创作",
                             fontSize = 10.sp,
-                            color = AppTheme.Text2,
-                            modifier = Modifier.padding(horizontal = 14.dp),
+                            color = AppTheme.Text3,
+                            modifier = Modifier.padding(horizontal = 2.dp),
                         )
                     }
                 }
             }
 
-            // 底部导航
             GameNavBar(
                 active = NavItem.Home,
                 onSelect = onNav,
@@ -199,57 +208,34 @@ fun HomeScreen(
             )
         }
 
-        // 上次异常退出现场回显
         CrashDialogIfAny()
-
-        // 朱印装饰：右上角
-        SealStamp(
-            text = "丹",
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .padding(top = 52.dp, end = 14.dp)
-                .alpha(0.55f),
-        )
     }
 }
 
-// ── 主视觉：角色大图 + 底部铭牌 ──
+// ── 主视觉：展柜式大图 ──
 
 @Composable
 private fun Hero(
     fixedH: androidx.compose.ui.unit.Dp,
     scrollProgress: Float = 0f,
+    def: CharacterDataEntry,
     onOpenCharacter: (String) -> Unit,
 ) {
-    // 快照 revision 驱动：抽到更高稀有度角色后回主页，主视觉随之更新
-    val snap by GameState.snapshot.collectAsStateWithLifecycle()
-    val def = remember(snap.revision) { featuredCharacter() }
     val rarityColor = AppTheme.rarityColor(def.baseRarity)
-
-    // 水墨视差：Hero 立绘以 0.4x 速率滚动，与内容层产生宣纸深度感
     val parallaxOffset = scrollProgress * 0.4f
 
-    // 流光边框动画
-    val shimmerT = rememberInfiniteTransition(label = "shimmer")
-    val shimmerProgress by shimmerT.animateFloat(
-        initialValue = 0f, targetValue = 1f,
-        animationSpec = infiniteRepeatable(tween(4000, easing = androidx.compose.animation.core.LinearEasing)),
-        label = "shimmerProgress",
-    )
-
     Box(modifier = Modifier.fillMaxWidth().height(fixedH)) {
-        // 内容卡片（裁剪到圆角）
         Box(
             modifier = Modifier
                 .matchParentSize()
-                .clip(RoundedCornerShape(18.dp))
-                .background(AppTheme.Surface),
+                .clip(RoundedCornerShape(CardMetrics.Corner))
+                .background(AppTheme.BgMid)
+                .border(1.dp, AppTheme.Stroke, RoundedCornerShape(CardMetrics.Corner)),
         ) {
-            // 稀有度光晕（脉动，位于立绘之后）
             Halo(rarityColor, Modifier.fillMaxSize())
-            // 主视觉立绘
             HeroPortrait(def, rarityColor, Modifier.fillMaxSize().graphicsLayer { translationY = parallaxOffset })
-            // 底部暗化渐变 + 铭牌
+
+            // 底部玻璃铭牌（信息托底，可读）
             Column(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
@@ -258,128 +244,48 @@ private fun Hero(
                         Brush.verticalGradient(
                             listOf(
                                 AppTheme.BgDeepest.copy(alpha = 0f),
-                                AppTheme.BgDeepest.copy(alpha = 0.5f),
-                                AppTheme.BgDeepest.copy(alpha = 0.9f),
+                                AppTheme.BgDeepest.copy(alpha = 0.72f),
+                                AppTheme.BgDeepest.copy(alpha = 0.94f),
                             )
                         )
                     )
-                    .padding(start = 18.dp, top = 48.dp, end = 18.dp, bottom = 16.dp),
+                    .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) {
+                        onOpenCharacter(def.characterId)
+                    }
+                    .padding(start = 16.dp, top = 40.dp, end = 16.dp, bottom = 14.dp),
             ) {
-                // 顶部金色渐隐分隔线（水墨画轴风格）
-                Box(
-                    Modifier
-                        .fillMaxWidth()
-                        .height(1.dp)
-                        .background(
-                            Brush.horizontalGradient(
-                                listOf(Color.Transparent, AppTheme.Gold.copy(alpha = 0.63f), Color.Transparent)
-                            )
-                        ),
-                )
-                Spacer(Modifier.height(10.dp))
-                Text(
-                    text = def.displayName,
-                    fontSize = 22.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = AppTheme.Text1,
-                )
-                Text(
-                    text = def.title,
-                    fontSize = 12.sp,
-                    color = AppTheme.Text2,
-                    modifier = Modifier.padding(top = 3.dp),
-                )
-                // 标签行：稀有度 + 世界
-                Row(
-                    modifier = Modifier.padding(top = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = def.displayName,
+                        style = androidx.compose.material3.MaterialTheme.typography.headlineMedium,
+                        color = AppTheme.Text1,
+                    )
+                    Spacer(Modifier.width(10.dp))
                     Text(
                         text = AppTheme.rarityName(def.baseRarity),
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
-                        color = rarityColor,
+                        color = if (def.baseRarity >= 4) AppTheme.GoldTextOn else AppTheme.BgDeepest,
                         modifier = Modifier
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(rarityColor.copy(alpha = 0.27f))
-                            .border(1.dp, rarityColor, RoundedCornerShape(8.dp))
-                            .padding(horizontal = 10.dp, vertical = 3.dp),
-                    )
-                    Spacer(Modifier.width(8.dp))
-                    Text(
-                        text = def.world,
-                        fontSize = 11.sp,
-                        color = AppTheme.Text2,
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(AppTheme.Surface)
-                            .border(1.dp, AppTheme.Stroke, RoundedCornerShape(8.dp))
-                            .padding(horizontal = 10.dp, vertical = 3.dp),
+                            .clip(RoundedCornerShape(3.dp))
+                            .background(rarityColor)
+                            .padding(horizontal = 7.dp, vertical = 2.dp),
                     )
                 }
-                // CTA 按钮
-                Box(
-                    modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
-                    contentAlignment = Alignment.CenterEnd,
-                ) {
-                    androidx.compose.material3.TextButton(
-                        onClick = { onOpenCharacter(def.characterId) },
-                        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 12.dp, vertical = 0.dp),
-                    ) {
-                        Text(
-                            text = "查看详情 ›",
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = rarityColor,
-                        )
-                    }
-                }
-            }
-        }
-
-        // 流光边框层：在圆角矩形边上绘制移动的高光
-        Canvas(
-            modifier = Modifier
-                .matchParentSize()
-                .padding(0.5.dp)
-        ) {
-            val strokeW = 2.dp.toPx()
-            val corner = 18.dp.toPx()
-            // 构建圆角矩形路径（替代 outline.toPath()，Outline 无此方法）
-            val basePath = androidx.compose.ui.graphics.Path().apply {
-                addRoundRect(
-                    androidx.compose.ui.geometry.RoundRect(
-                        left = 0f, top = 0f,
-                        right = size.width, bottom = size.height,
-                        cornerRadius = androidx.compose.ui.geometry.CornerRadius(corner),
-                    )
+                Text(
+                    text = def.title,
+                    style = androidx.compose.material3.MaterialTheme.typography.bodyMedium,
+                    color = AppTheme.Text2,
+                    modifier = Modifier.padding(top = 4.dp),
+                )
+                Text(
+                    text = "查看详情 ›",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = AppTheme.Gold,
+                    modifier = Modifier.padding(top = 8.dp),
                 )
             }
-            // 基础边框：低透明度稀有度色
-            drawPath(basePath, style = androidx.compose.ui.graphics.drawscope.Stroke(strokeW), color = rarityColor.copy(alpha = 0.25f))
-            // 流光：一段高亮弧线沿边框移动
-            val glowColor = rarityColor.copy(alpha = 0.85f)
-            val pathMeasure = androidx.compose.ui.graphics.PathMeasure()
-            pathMeasure.setPath(basePath, forceClosed = true)
-            val totalLen = pathMeasure.length
-            val glowLen = totalLen * 0.18f  // 光段占总周长 18%
-            val startDist = shimmerProgress * totalLen
-            val segment = androidx.compose.ui.graphics.Path()
-            pathMeasure.getSegment(startDist, (startDist + glowLen).coerceAtMost(totalLen), segment, true)
-            // 如果还没绕完一圈，补尾段
-            if (startDist + glowLen > totalLen) {
-                val tail = androidx.compose.ui.graphics.Path()
-                pathMeasure.getSegment(0f, (startDist + glowLen) % totalLen, tail, true)
-                segment.addPath(tail)
-            }
-            drawPath(
-                segment,
-                style = androidx.compose.ui.graphics.drawscope.Stroke(
-                    width = strokeW + 1.5.dp.toPx(),
-                    cap = androidx.compose.ui.graphics.StrokeCap.Round,
-                ),
-                color = glowColor,
-            )
         }
     }
 }
@@ -449,70 +355,53 @@ private fun HeroPortrait(def: CharacterDataEntry, rarityColor: Color, modifier: 
     }
 }
 
-/** 主视觉下方动作钮：错落弹簧入场 + 2×4 网格布局。 */
+/**
+ * 快捷入口：横滑 chip。首屏不堆 8 个大按钮，主 CTA 已给「召唤」。
+ */
 @Composable
-private fun HeroButtons(
-    onOpenGacha: () -> Unit,
+private fun QuickActions(
     onOpenCollection: () -> Unit,
     onOpenTower: () -> Unit,
-    onOpenAchievements: () -> Unit,
     onOpenStory: () -> Unit,
     onOpenDailyMissions: () -> Unit,
     onOpenBattlePass: () -> Unit,
     onOpenAffinity: () -> Unit,
+    onOpenAchievements: () -> Unit,
+    onOpenArena: () -> Unit,
+    onOpenEvent: () -> Unit,
 ) {
-    val buttons = listOf(
-        Triple("✦ 前往召唤", true) { onOpenGacha() },
-        Triple("丹青图鉴", false) { onOpenCollection() },
-        Triple("♾ 无尽之塔", false) { onOpenTower() },
-        Triple("✦ 成 就", false) { onOpenAchievements() },
-        Triple("📖 剧 情", false) { onOpenStory() },
-        Triple("📋 每日任务", false) { onOpenDailyMissions() },
-        Triple("🎫 纪 行", false) { onOpenBattlePass() },
-        Triple("❤️ 好感度", false) { onOpenAffinity() },
+    data class Action(val label: String, val onClick: () -> Unit)
+    val actions = listOf(
+        Action("图鉴", onOpenCollection),
+        Action("爬塔", onOpenTower),
+        Action("剧情", onOpenStory),
+        Action("日常", onOpenDailyMissions),
+        Action("纪行", onOpenBattlePass),
+        Action("好感", onOpenAffinity),
+        Action("成就", onOpenAchievements),
+        Action("竞技", onOpenArena),
+        Action("活动", onOpenEvent),
     )
-
-    Column {
-        buttons.chunked(2).forEachIndexed { rowIdx, row ->
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                row.forEachIndexed { colIdx, (label, isGold, onClick) ->
-                    val index = rowIdx * 2 + colIdx
-                    // 错落弹簧入场：逐项延迟 80ms
-                    var ready by remember { mutableStateOf(false) }
-                    LaunchedEffect(Unit) {
-                        delay(index * 80L)
-                        ready = true
-                    }
-                    val itemScale by animateFloatAsState(
-                        targetValue = if (ready) 1f else 0.7f,
-                        animationSpec = spring(dampingRatio = 0.55f, stiffness = Spring.StiffnessMedium),
-                        label = "btnScale$index",
-                    )
-                    val itemAlpha by animateFloatAsState(
-                        targetValue = if (ready) 1f else 0f,
-                        animationSpec = tween(250),
-                        label = "btnAlpha$index",
-                    )
-                    if (colIdx == 1) Spacer(Modifier.width(12.dp))
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .graphicsLayer {
-                                scaleX = itemScale; scaleY = itemScale; alpha = itemAlpha
-                            }
-                    ) {
-                        if (isGold) {
-                            GoldButton(label, Modifier.fillMaxWidth(), onClick)
-                        } else {
-                            NeonButton(label, Modifier.fillMaxWidth(), onClick = onClick)
-                        }
-                    }
-                }
-            }
-            Spacer(Modifier.height(10.dp))
+    LazyRow(
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(vertical = 2.dp),
+    ) {
+        items(actions.size) { i ->
+            val a = actions[i]
+            val interaction = remember { MutableInteractionSource() }
+            Text(
+                text = a.label,
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Medium,
+                color = AppTheme.Text1,
+                modifier = Modifier
+                    .clip(RoundedCornerShape(AppTheme.Roundness.lg))
+                    .background(AppTheme.BgMid)
+                    .border(1.dp, AppTheme.Stroke, RoundedCornerShape(AppTheme.Roundness.lg))
+                    .inkSplash(interaction)
+                    .clickable(interactionSource = interaction, indication = null, onClick = a.onClick)
+                    .padding(horizontal = 16.dp, vertical = 10.dp),
+            )
         }
     }
 }
@@ -520,41 +409,13 @@ private fun HeroButtons(
 // ── 丹青名录：统一头像横滑 ──
 
 /** 名录优先精选：运行时校验存在性——内容表 id 失配时该项跳过并按稀有度降序补足。 */
-private val PickIds = listOf(
-    "char_ur_zhulong", "char_ur_xingtian", "char_ssr_fenghuang",
-    "char_sr_bifang", "char_sr_jingwei", "char_ssr_leishen",
-)
-
-/** 名录条目：解析后的内容定义 + 展示文案。 */
-private data class AvatarEntry(
-    val def: CharacterDataEntry,
-    val name: String,
-    val source: String,
-)
 
 @Composable
-private fun rememberAvatarEntries(): List<AvatarEntry> {
-    // 快照 revision 触发重算：新抽到角色也能进入名录补足序列
-    val snap by GameState.snapshot.collectAsStateWithLifecycle()
-    return remember(snap.revision) {
-        val all = GameState.service.characters
-        val byId = all.associateBy { it.characterId }
-        val picked = PickIds.mapNotNull { byId[it] }
-        val fill = all.filter { it.characterId !in PickIds.toSet() }
-            .sortedByDescending { it.baseRarity }
-        (picked + fill).take(6).map { def ->
-            AvatarEntry(
-                def = def,
-                name = def.displayName.substringBefore(' '),
-                source = AppTheme.rarityName(def.baseRarity),
-            )
-        }
-    }
-}
-
-@Composable
-private fun AvatarStrip(onOpenCharacter: (String) -> Unit) {
-    val entries = rememberAvatarEntries()
+private fun AvatarStrip(
+    entries: List<HomeAvatarEntry>,
+    onOpenCharacter: (String) -> Unit,
+    onOpenCollection: () -> Unit,
+) {
     if (entries.isEmpty()) return
     LazyRow(
         modifier = Modifier
@@ -602,13 +463,13 @@ private fun AvatarStrip(onOpenCharacter: (String) -> Unit) {
                 Text(text = e.source, fontSize = 8.sp, color = AppTheme.Text2)
             }
         }
-        // 尾部「查看更多」指示器：暗示名录可继续探索
+        // 尾部「查看更多」指示器：进神谱图鉴（勿再走空 id 详情，会落到 MissingCharacter）
         item(key = "moreIndicator", contentType = { "moreIndicator" }) {
             val moreInteraction = remember { MutableInteractionSource() }
             Column(
                 modifier = Modifier
                     .inkSplash(moreInteraction)
-                    .clickable(interactionSource = moreInteraction, indication = null) { onOpenCharacter("") }
+                    .clickable(interactionSource = moreInteraction, indication = null) { onOpenCollection() }
                     .padding(start = 4.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center,
@@ -685,7 +546,7 @@ private fun AvatarCircle(def: CharacterDataEntry, modifier: Modifier = Modifier)
                 .fillMaxSize()
                 .clip(CircleShape),
             contentScale = ContentScale.Crop,
-            target = PortraitTarget.Thumb,
+            target = PortraitTarget.Avatar,
         )
     }
 }
@@ -704,7 +565,7 @@ private fun HomeSectionTitle(title: String, en: String) {
             Modifier
                 .width(3.dp)
                 .height(15.dp)
-                .clip(RoundedCornerShape(2.dp))
+                .clip(RoundedCornerShape(AppTheme.Roundness.xxs))
                 .background(AppTheme.GoldHi),
         )
         Text(
@@ -721,31 +582,6 @@ private fun HomeSectionTitle(title: String, en: String) {
             letterSpacing = 1.sp,
         )
     }
-}
-
-// ── 主视觉角色选取 ──
-
-private fun featuredCharacter(): CharacterDataEntry {
-    // 存档角色可能在内容表查不到：先取已拥有最高稀有度（Def 非空）
-    val best = GameState.owned()
-        .filter { it.def != null }
-        .maxByOrNull { it.rarity }
-        ?.def
-    if (best != null) return best
-
-    val any = GameState.service.characters.firstOrNull()
-    if (any != null) return any
-
-    // 内容表彻底为空时的最后防线：占位角色，宁可难看也不能崩。
-    return CharacterDataEntry(
-        characterId = "placeholder",
-        displayName = "未知存在",
-        title = "数据缺失",
-        world = "Shinwa",
-        element = "Flame",
-        baseRarity = 1,
-        baseStats = listOf(10, 10, 100, 10),
-    )
 }
 
 // ── 上次异常退出现场回显 ──

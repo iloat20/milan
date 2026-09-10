@@ -34,87 +34,9 @@ import androidx.compose.ui.graphics.MeshGradientPainter
 
 // ══════════════════════════════════════════════════════════════════════════════
 // 颜色配置（4×4 顶点网格 = 16 个顶点，行优先排列）
+// v3 清债：稀有度/元素色列统一由 [rarityMeshColors16] / [elementMeshColors16]
+// 从 AppTheme / ElementTheme 权威色板派生（见 EffectPalettes.kt），禁止就地硬编码。
 // ══════════════════════════════════════════════════════════════════════════════
-
-/** 稀有度对应的 Mesh Gradient 颜色组合（16 顶点） */
-private val rarityMeshColors = mapOf(
-    4 to listOf(  // UR: 金色奢华
-        Color(0xFFFFD700), Color(0xFFFFA500), Color(0xFFFFE4B5), Color(0xFFDAA520), // 行0
-        Color(0xFFFFF8DC), Color(0xFFB8860B), Color(0xFFFFDAB9), Color(0xFFCD853F), // 行1
-        Color(0xFFFFFACD), Color(0xFFDAA520), Color(0xFFFFE4B5), Color(0xFFB8860B), // 行2
-        Color(0xFFFFDAB9), Color(0xFFCD853F), Color(0xFFFFF8DC), Color(0xFFFFD700), // 行3
-    ),
-    3 to listOf(  // SSR: 紫金神秘
-        Color(0xFF9370DB), Color(0xFFBA55D3), Color(0xFFDDA0DD), Color(0xFF8A2BE2),
-        Color(0xFFD8BFD8), Color(0xFF9932CC), Color(0xFFE6E6FA), Color(0xFF7B68EE),
-        Color(0xFFDDA0DD), Color(0xFF9370DB), Color(0xFFBA55D3), Color(0xFF8A2BE2),
-        Color(0xFFD8BFD8), Color(0xFF9932CC), Color(0xFFE6E6FA), Color(0xFF7B68EE),
-    ),
-    2 to listOf(  // SR: 蓝金精英
-        Color(0xFF4169E1), Color(0xFF6495ED), Color(0xFF87CEEB), Color(0xFF1E90FF),
-        Color(0xFFB0C4DE), Color(0xFF00BFFF), Color(0xFFADD8E6), Color(0xFF4682B4),
-        Color(0xFFB0E0E6), Color(0xFF4169E1), Color(0xFF6495ED), Color(0xFF1E90FF),
-        Color(0xFFB0C4DE), Color(0xFF00BFFF), Color(0xFFADD8E6), Color(0xFF4682B4),
-    ),
-    1 to listOf(  // R: 绿白清新
-        Color(0xFF3CB371), Color(0xFF66CDAA), Color(0xFF8FBC8F), Color(0xFF2E8B57),
-        Color(0xFF90EE90), Color(0xFF32CD32), Color(0xFF98FB98), Color(0xFF00FA9A),
-        Color(0xFF00FF7F), Color(0xFF3CB371), Color(0xFF66CDAA), Color(0xFF2E8B57),
-        Color(0xFF90EE90), Color(0xFF32CD32), Color(0xFF98FB98), Color(0xFF00FA9A),
-    )
-)
-
-/** 元素对应的 Mesh Gradient 颜色组合（16 顶点） */
-private val elementMeshColors = mapOf(
-    "Metal" to listOf(
-        Color(0xFFC0C0C0), Color(0xFFD3D3D3), Color(0xFFA9A9A9), Color(0xFFDCDCDC),
-        Color(0xFFB0B0B0), Color(0xFFE8E8E8), Color(0xFF909090), Color(0xFFF0F0F0),
-        Color(0xFFA0A0A0), Color(0xFFC0C0C0), Color(0xFFD3D3D3), Color(0xFFDCDCDC),
-        Color(0xFFB0B0B0), Color(0xFFE8E8E8), Color(0xFF909090), Color(0xFFF0F0F0),
-    ),
-    "Wood" to listOf(
-        Color(0xFF228B22), Color(0xFF32CD32), Color(0xFF006400), Color(0xFF90EE90),
-        Color(0xFF2E8B57), Color(0xFF3CB371), Color(0xFF8FBC8F), Color(0xFF00FF7F),
-        Color(0xFF98FB98), Color(0xFF228B22), Color(0xFF32CD32), Color(0xFF90EE90),
-        Color(0xFF2E8B57), Color(0xFF3CB371), Color(0xFF8FBC8F), Color(0xFF00FF7F),
-    ),
-    "Water" to listOf(
-        Color(0xFF1E90FF), Color(0xFF00BFFF), Color(0xFF87CEEB), Color(0xFF4169E1),
-        Color(0xFF6495ED), Color(0xFFB0C4DE), Color(0xFFADD8E6), Color(0xFF00CED1),
-        Color(0xFF40E0D0), Color(0xFF1E90FF), Color(0xFF00BFFF), Color(0xFF4169E1),
-        Color(0xFF6495ED), Color(0xFFB0C4DE), Color(0xFFADD8E6), Color(0xFF00CED1),
-    ),
-    "Flame" to listOf(
-        Color(0xFFFF4500), Color(0xFFFF6347), Color(0xFFFF7F50), Color(0xFFDC143C),
-        Color(0xFFFF0000), Color(0xFFFF8C00), Color(0xFFFFD700), Color(0xFFFF69B4),
-        Color(0xFFFF1493), Color(0xFFFF4500), Color(0xFFFF6347), Color(0xFFDC143C),
-        Color(0xFFFF0000), Color(0xFFFF8C00), Color(0xFFFFD700), Color(0xFFFF69B4),
-    ),
-    "Earth" to listOf(
-        Color(0xFF8B4513), Color(0xFFD2691E), Color(0xFFCD853F), Color(0xFFA0522D),
-        Color(0xFFDEB887), Color(0xFFD2B48C), Color(0xFFBC8F8F), Color(0xFFF4A460),
-        Color(0xFFDAA520), Color(0xFF8B4513), Color(0xFFD2691E), Color(0xFFA0522D),
-        Color(0xFFDEB887), Color(0xFFD2B48C), Color(0xFFBC8F8F), Color(0xFFF4A460),
-    ),
-    "Light" to listOf(
-        Color(0xFFFFFACD), Color(0xFFFFF8DC), Color(0xFFFAFAD2), Color(0xFFFFEFD5),
-        Color(0xFFFFE4B5), Color(0xFFF0E68C), Color(0xFFEEE8AA), Color(0xFFBDB76B),
-        Color(0xFFFFD700), Color(0xFFFFFACD), Color(0xFFFFF8DC), Color(0xFFFFEFD5),
-        Color(0xFFFFE4B5), Color(0xFFF0E68C), Color(0xFFEEE8AA), Color(0xFFBDB76B),
-    ),
-    "Shadow" to listOf(
-        Color(0xFF2F4F4F), Color(0xFF696969), Color(0xFF708090), Color(0xFF778899),
-        Color(0xFF2C2C2C), Color(0xFF3C3C3C), Color(0xFF4A4A4A), Color(0xFF585858),
-        Color(0xFF1C1C1C), Color(0xFF2F4F4F), Color(0xFF696969), Color(0xFF778899),
-        Color(0xFF2C2C2C), Color(0xFF3C3C3C), Color(0xFF4A4A4A), Color(0xFF585858),
-    ),
-    "Thunder" to listOf(
-        Color(0xFFFFD700), Color(0xFFFFA500), Color(0xFFFF8C00), Color(0xFFFFB347),
-        Color(0xFFFFCC33), Color(0xFFE6BE8A), Color(0xFFDAA520), Color(0xFFFFC125),
-        Color(0xFFFFB90F), Color(0xFFFFD700), Color(0xFFFFA500), Color(0xFFFFB347),
-        Color(0xFFFFCC33), Color(0xFFE6BE8A), Color(0xFFDAA520), Color(0xFFFFC125),
-    )
-)
 
 // ══════════════════════════════════════════════════════════════════════════════
 // 公开 Composable 入口
@@ -126,7 +48,7 @@ fun RarityMeshGradient(
     modifier: Modifier = Modifier,
     animated: Boolean = true
 ) {
-    val colors = rarityMeshColors[rarity] ?: rarityMeshColors[1]!!
+    val colors = rarityMeshColors16(rarity)
     MeshGradientBox(colors = colors, animated = animated, modifier = modifier)
 }
 
@@ -136,7 +58,7 @@ fun ElementMeshGradient(
     modifier: Modifier = Modifier,
     animated: Boolean = true
 ) {
-    val colors = elementMeshColors[element] ?: elementMeshColors["Light"]!!
+    val colors = elementMeshColors16(element)
     MeshGradientBox(colors = colors, animated = animated, modifier = modifier)
 }
 

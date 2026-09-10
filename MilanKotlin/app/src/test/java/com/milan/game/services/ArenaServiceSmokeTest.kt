@@ -106,13 +106,17 @@ class ArenaServiceSmokeTest {
     }
 
     @Test
-    fun `challengeOpponent 不崩且返回 WriteOutcome 类型`() = runTest {
+    fun `challengeOpponent 不崩且返回 ArenaChallengeOutcome 类型`() = runTest {
         val service = makeService()
         val opponents = service.getOpponents()
         if (opponents.isNotEmpty()) {
             val outcome = service.challengeOpponent(opponents.first())
-            assertTrue("挑战应返回 WriteOutcome 类型（Success/Rejected/SaveFailed）",
-                outcome == WriteOutcome.Success || outcome == WriteOutcome.Rejected || outcome == WriteOutcome.SaveFailed)
+            assertTrue(
+                "挑战应返回 ArenaChallengeOutcome 类型（Completed/Rejected/SaveFailed）",
+                outcome is com.milan.game.services.ArenaChallengeOutcome.Completed ||
+                    outcome is com.milan.game.services.ArenaChallengeOutcome.Rejected ||
+                    outcome is com.milan.game.services.ArenaChallengeOutcome.SaveFailed,
+            )
         }
     }
 }

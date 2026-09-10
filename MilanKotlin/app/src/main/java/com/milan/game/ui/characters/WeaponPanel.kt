@@ -1,5 +1,6 @@
 package com.milan.game.ui.characters
 
+import com.milan.game.OwnedCharacterView
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import androidx.collection.LruCache
@@ -37,7 +38,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.milan.game.services.CharacterDataEntry
-import com.milan.game.ui.OwnedCharacterView
 import com.milan.game.ui.components.GlassPanel
 import com.milan.game.ui.theme.AppTheme
 import com.milan.game.ui.theme.ElementTheme
@@ -107,9 +107,9 @@ internal fun WeaponPanel(
                     fontWeight = FontWeight.Bold,
                     color = rarityCol,
                     modifier = Modifier
-                        .clip(RoundedCornerShape(6.dp))
+                        .clip(RoundedCornerShape(AppTheme.Roundness.sm))
                         .background(rarityCol.copy(alpha = 45f / 255f))
-                        .border(1.dp, rarityCol.copy(alpha = 150f / 255f), RoundedCornerShape(6.dp))
+                        .border(1.dp, rarityCol.copy(alpha = 150f / 255f), RoundedCornerShape(AppTheme.Roundness.sm))
                         .padding(horizontal = 8.dp, vertical = 2.dp),
                 )
             }
@@ -172,9 +172,9 @@ private fun WeaponStage(
         Modifier
             .fillMaxWidth()
             .height(160.dp)
-            .clip(RoundedCornerShape(14.dp))
+            .clip(RoundedCornerShape(AppTheme.Roundness.lg))
             .background(AppTheme.WeaponStageBg)
-            .border(2.dp, rarityCol.copy(alpha = 200f / 255f), RoundedCornerShape(14.dp)),
+            .border(2.dp, rarityCol.copy(alpha = 200f / 255f), RoundedCornerShape(AppTheme.Roundness.lg)),
     ) {
         // 元素晕染（C# RadialGradient α75→0）
         Box(

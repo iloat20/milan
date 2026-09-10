@@ -1,5 +1,6 @@
 package com.milan.game.ui.components
 
+import com.milan.game.OwnedCharacterView
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -29,7 +30,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.milan.game.domain.battle.TeamResonance
-import com.milan.game.ui.OwnedCharacterView
 import com.milan.game.ui.theme.AppTheme
 import com.milan.game.ui.theme.ElementTheme
 
@@ -86,12 +86,12 @@ fun FormationBar(
                     modifier = Modifier
                         .weight(1f)
                         .aspectRatio(0.74f)
-                        .clip(RoundedCornerShape(12.dp))
+                        .clip(RoundedCornerShape(AppTheme.Roundness.md))
                         .background(AppTheme.Surface.copy(alpha = 0.55f))
                         .border(
                             1.dp,
                             rarityCol?.copy(alpha = 0.85f) ?: AppTheme.Stroke,
-                            RoundedCornerShape(12.dp),
+                            RoundedCornerShape(AppTheme.Roundness.md),
                         )
                         .clickable { onSlotClick(ch?.save?.characterId) },
                     contentAlignment = Alignment.Center,
@@ -115,7 +115,7 @@ fun FormationBar(
                             rarity = ch.rarity,
                             name = ch.name,
                             modifier = Modifier.fillMaxSize(),
-                            target = PortraitTarget.Thumb,
+                            target = PortraitTarget.Avatar,
                             contentScale = androidx.compose.ui.layout.ContentScale.Crop,
                         )
                         // 底部铭牌：元素字 + 名字

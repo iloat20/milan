@@ -1,3 +1,5 @@
+> ⚠️ **已废弃（2026-09-09）**：本文件为历史方案，仅作参考勿再执行。视觉规范已由 [docs/superpowers/design-language/00-design-language-v3.md](../superpowers/design-language/00-design-language-v3.md)（「丹青典藏 · Gilded Codex」v3）取代。
+
 # Milan 主题重做规范 — 诸神黄昏·东方 (Twilight of Gods)
 
 > **日期**: 2026-08-01 | **状态**: 设计原型定稿（见 `docs/prototype/homepage-twilight.html`）→ 待代码落地与立绘重绘

@@ -16,9 +16,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -26,17 +25,18 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.milan.game.data.ArenaOpponent
 import com.milan.game.data.ArenaSaveData
-import com.milan.game.services.WriteOutcome
-import com.milan.game.ui.GameState
+import com.milan.game.services.ArenaChallengeOutcome
+import com.milan.game.ui.components.GlassDialog
 import com.milan.game.ui.components.GlassPanel
+import com.milan.game.ui.components.GoldButton
 import com.milan.game.ui.components.NeonButton
 import com.milan.game.ui.components.PageBackground
 import com.milan.game.ui.feedback.LocalFeedback
 import com.milan.game.ui.nav.AppTopBar
 import com.milan.game.ui.theme.AppTheme
-import kotlinx.coroutines.launch
 
 /**
  * PVP 竞技场界面（2026-09 死功能激活）。
@@ -46,27 +46,24 @@ import kotlinx.coroutines.launch
  * - 挑战走 BattleSimulator 模拟 + WriteOutcome 事务范式。
  *
  * 本页负责：展示段位信息、对手列表、挑战操作。
+ * 2026-09-09 P1-6 D 批：派生数据与挑战动作收敛进 [ArenaViewModel]。
  */
 @Composable
 fun ArenaScreen(
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val service = GameState.service
     val feedback = LocalFeedback.current
-    val scope = rememberCoroutineScope()
-    val snapshot by service.snapshot.collectAsStateWithLifecycle()
-
-    // 竞技场数据随 snapshot.revision 重算
-    val arenaData = remember(snapshot.revision) { service.getArenaData() }
-    val (rankNum, rankTitle) = remember(snapshot.revision) { service.getArenaRank() }
-    val opponents = remember(snapshot.revision) { service.getOpponents() }
-    val seasonRewards = remember(snapshot.revision) { service.getSeasonRewards() }
-
-    // 每日剩余挑战次数（跨日重置与 ArenaService.lastRefreshTime 同口径：epochDay = millis / 86_400_000）
-    val todayKey = System.currentTimeMillis() / 86_400_000L
-    val attacksUsed = if (arenaData.lastRefreshTime == todayKey) arenaData.attackCount else 0
-    val attacksLeft = (ArenaSaveData.DAILY_FREE_ATTACKS - attacksUsed).coerceAtLeast(0)
+    // P1-6 D 批：段位/积分/剩余次数/战绩/对手/赛季奖励 + 挑战动作全部在 ArenaViewModel
+    //（busy 防连点在 VM 内部完成，无需 UI 收集）。
+    val vm: ArenaViewModel = viewModel(factory = com.milan.game.di.AppGraph.factory)
+    val ui by vm.uiState.collectAsStateWithLifecycle()
+    val lastResult by vm.lastResult.collectAsStateWithLifecycle()
+    LaunchedEffect(vm) { vm.toasts.collect { feedback.show(it) } }
+    val rankTitle = ui.rankTitle
+    val opponents = ui.opponents
+    val seasonRewards = ui.seasonRewards
+    val attacksLeft = ui.attacksLeft
 
     Box(
         modifier = modifier
@@ -88,10 +85,10 @@ fun ArenaScreen(
                     item {
                         ArenaRankCard(
                             rankTitle = rankTitle,
-                            points = arenaData.arenaPoints,
+                            points = ui.points,
                             attacksLeft = attacksLeft,
-                            winCount = arenaData.winCount,
-                            loseCount = arenaData.loseCount,
+                            winCount = ui.winCount,
+                            loseCount = ui.loseCount,
                         )
                     }
 
@@ -110,15 +107,7 @@ fun ArenaScreen(
                         OpponentCard(
                             opponent = opponent,
                             canChallenge = attacksLeft > 0,
-                            onChallenge = {
-                                scope.launch {
-                                    when (service.challengeOpponent(opponent)) {
-                                        WriteOutcome.Success -> feedback.show("挑战完成！")
-                                        WriteOutcome.Rejected -> feedback.show("挑战次数不足或未编队")
-                                        WriteOutcome.SaveFailed -> feedback.show("保存失败，请重试")
-                                    }
-                                }
-                            },
+                            onChallenge = { vm.challenge(opponent) },
                         )
                     }
 
@@ -138,7 +127,43 @@ fun ArenaScreen(
                 }
             }
         }
+
+        // 挑战结算卡（胜负 / 回合 / 积分变动）
+        lastResult?.let { result ->
+            ArenaResultDialog(
+                result = result,
+                onDismiss = { vm.dismissResult() },
+            )
+        }
     }
+}
+
+/** 挑战结算对话框：对齐爬塔结算的信息密度（胜负/回合/积分），轻量 GlassDialog 版。 */
+@Composable
+private fun ArenaResultDialog(
+    result: ArenaChallengeOutcome.Completed,
+    onDismiss: () -> Unit,
+) {
+    val title = if (result.victory) "✦ 挑战胜利" else "✖ 挑战失败"
+    val deltaSign = if (result.pointsDelta >= 0) "+" else ""
+    val body = buildString {
+        append("对手：${result.opponentName}\n")
+        append("回合：${result.turns}\n")
+        append("积分：$deltaSign${result.pointsDelta}（当前 ${result.pointsAfter}）")
+    }
+    GlassDialog(
+        show = true,
+        onDismiss = onDismiss,
+        title = title,
+        body = body,
+        buttons = {
+            GoldButton(
+                text = "知道了",
+                onClick = onDismiss,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        },
+    )
 }
 
 /** 段位信息卡片。 */

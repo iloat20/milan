@@ -113,7 +113,7 @@ private fun DrawScope.drawInkBlob(
             val ctrlOffset = radius * 0.15f
             val ctrlX = (x0 + x) / 2f + (Random.nextFloat() - 0.5f) * ctrlOffset
             val ctrlY = (y0 + y) / 2f + (Random.nextFloat() - 0.5f) * ctrlOffset
-            quadraticBezierTo(ctrlX, ctrlY, x, y)
+            quadraticTo(ctrlX, ctrlY, x, y)
         }
         close()
     }

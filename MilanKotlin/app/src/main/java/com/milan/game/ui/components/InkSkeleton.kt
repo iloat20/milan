@@ -65,7 +65,7 @@ fun InkSkeleton(
                     else -> 0.75f
                 },
                 height = 48.dp,
-                shape = RoundedCornerShape(10.dp),
+                shape = RoundedCornerShape(AppTheme.Roundness.md),
                 modifier = Modifier
                     .fillMaxWidth(
                         when {
@@ -99,7 +99,7 @@ fun InkShimmer(
     modifier: Modifier = Modifier,
     fraction: Float = 1f,
     height: Dp = 48.dp,
-    shape: Shape = RoundedCornerShape(10.dp),
+    shape: Shape = RoundedCornerShape(AppTheme.Roundness.md),
 ) {
     val shimmerBrush = rememberInkShimmerBrush()
     Box(

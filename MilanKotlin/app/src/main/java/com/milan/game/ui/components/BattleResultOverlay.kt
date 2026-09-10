@@ -48,6 +48,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.milan.game.domain.battle.StrikeEvent
+import com.milan.game.ui.effects.BattleHapticEffect
+import com.milan.game.ui.effects.BattleHapticEvent
 import com.milan.game.ui.theme.AppTheme
 import kotlin.math.cos
 import kotlin.math.sin
@@ -99,6 +101,12 @@ fun BattleResultOverlay(
         // 阶段四：按钮淡入
         buttonAlpha.animateTo(1f, tween(250, delayMillis = 200))
     }
+
+    // 结算触觉：胜利/失败一次（接线 BattleHapticEffect，此前定义后零调用）
+    BattleHapticEffect(
+        event = if (victory) BattleHapticEvent.Victory else BattleHapticEvent.Defeat,
+        isActive = true,
+    )
 
     val primaryColor = if (victory) AppTheme.Gold else AppTheme.Text2
     val accentColor = if (victory) AppTheme.GoldHi else AppTheme.Text3
@@ -168,9 +176,9 @@ fun BattleResultOverlay(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier
                         .alpha(contentAlpha.value)
-                        .clip(RoundedCornerShape(16.dp))
+                        .clip(RoundedCornerShape(AppTheme.Roundness.lg))
                         .background(AppTheme.Surface.copy(alpha = 0.6f))
-                        .border(1.dp, AppTheme.Gold.copy(alpha = 0.3f), RoundedCornerShape(16.dp))
+                        .border(1.dp, AppTheme.Gold.copy(alpha = 0.3f), RoundedCornerShape(AppTheme.Roundness.lg))
                         .padding(horizontal = 24.dp, vertical = 16.dp),
                 ) {
                     Text(
@@ -353,9 +361,9 @@ private fun BattleStatsPanel(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
+            .clip(RoundedCornerShape(AppTheme.Roundness.md))
             .background(AppTheme.Surface.copy(alpha = 0.5f))
-            .border(1.dp, AppTheme.Stroke, RoundedCornerShape(12.dp))
+            .border(1.dp, AppTheme.Stroke, RoundedCornerShape(AppTheme.Roundness.md))
             .padding(12.dp),
     ) {
         Text(

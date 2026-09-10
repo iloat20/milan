@@ -25,6 +25,12 @@ enum class PortraitTarget(val sample: Int) {
 
     /** 小图（≤58dp 头像/chip）：208×296 ≈ 0.24MB。 */
     Thumb(4),
+
+    /**
+     * 专用头像（256×256 正方形脸裁，2026-09-09 批量产出）。
+     * 资源名 `avatar_<rarity>_<pinyin>.webp`；缺失时回退全立绘采样。
+     */
+    Avatar(1),
 }
 
 /**
@@ -119,6 +125,13 @@ object PortraitLoader {
         packageName: String,
         name: String,
     ): Int = identifierCache.getOrPut(name) { resources.getIdentifier(name, "drawable", packageName) }
+
+    /**
+     * 头像资源名：`char_ur_zhulong` → `avatar_ur_zhulong`（2026-09-09 裁脸批产）。
+     * [PortraitTarget.Avatar] 优先探测此名，缺失回退全立绘。
+     */
+    fun avatarResourceNameOf(characterId: String): String =
+        "avatar_" + characterId.removePrefix("char_")
 
     /**
      * 内存压力回调（P3-7）：PortraitImage 组合期注册到 applicationContext，

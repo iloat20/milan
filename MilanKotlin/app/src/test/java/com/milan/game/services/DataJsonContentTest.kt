@@ -201,4 +201,44 @@ class DataJsonContentTest {
             }
         }
     }
+
+    /**
+     * P1-7（2026-09-08）：数值与技能字段两路径对账。
+     *
+     * 既有「口径一致」测试只比对文本字段（displayName/story/voices/weapon 等）。
+     * 若 data.json 改了**数值/结构字段**（BaseRarity/BaseStats/MaxStars/Element/TalentTreeId/Skills）
+     * 而兜底 GameContent 未同步，抽卡权重、养成成长、属性克制会呈现两套数值，
+     * 而既有断言（文本比对）**不会红**——这是单测网的真实缺口。
+     * 本测试把 [sync_gamecontent.py] 覆盖的字段全部纳入对账（含逐技能逐字段）。
+     */
+    @Test
+    fun `数值与技能字段两路径对账`() {
+        val jsonService = GameService(MemoryProvider(), dataJson)
+        val fallbackService = GameService(MemoryProvider(), null)
+
+        for (j in jsonService.characters) {
+            val f = fallbackService.characters.firstOrNull { it.characterId == j.characterId }
+                ?: error("兜底缺角色 ${j.characterId}（data.json 新增角色后必须跑 sync_gamecontent.py）")
+
+            assertEquals("${j.characterId}.title", j.title, f.title)
+            assertEquals("${j.characterId}.world", j.world, f.world)
+            assertEquals("${j.characterId}.element", j.element, f.element)
+            assertEquals("${j.characterId}.baseRarity", j.baseRarity, f.baseRarity)
+            assertEquals("${j.characterId}.baseStats", j.baseStats, f.baseStats)
+            assertEquals("${j.characterId}.maxStage", j.maxStage, f.maxStage)
+            assertEquals("${j.characterId}.maxStars", j.maxStars, f.maxStars)
+            assertEquals("${j.characterId}.canBreakthrough", j.canBreakthrough, f.canBreakthrough)
+            assertEquals("${j.characterId}.talentTreeId", j.talentTreeId, f.talentTreeId)
+
+            assertEquals("${j.characterId}.skills.size", j.skills.size, f.skills.size)
+            j.skills.zip(f.skills).forEachIndexed { i, (js, fs) ->
+                assertEquals("${j.characterId}.skills[$i].skillId", js.skillId, fs.skillId)
+                assertEquals("${j.characterId}.skills[$i].displayName", js.displayName, fs.displayName)
+                assertEquals("${j.characterId}.skills[$i].description", js.description, fs.description)
+                assertEquals("${j.characterId}.skills[$i].element", js.element, fs.element)
+                assertEquals("${j.characterId}.skills[$i].type", js.type, fs.type)
+                assertEquals("${j.characterId}.skills[$i].power", js.power, fs.power)
+            }
+        }
+    }
 }

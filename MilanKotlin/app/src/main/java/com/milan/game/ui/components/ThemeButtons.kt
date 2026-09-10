@@ -108,9 +108,9 @@ fun NeonButton(
         modifier = modifier
             // I3 修复：同 GoldButton，补禁用态视觉。
             .alpha(if (enabled) 1f else 0.45f)
-            .clip(RoundedCornerShape(10.dp))
-            .background(color.copy(alpha = 0.06f), RoundedCornerShape(10.dp))
-            .border(1.5.dp, color, RoundedCornerShape(10.dp))
+            .clip(RoundedCornerShape(AppTheme.Roundness.md))
+            .background(color.copy(alpha = 0.06f), RoundedCornerShape(AppTheme.Roundness.md))
+            .border(1.5.dp, color, RoundedCornerShape(AppTheme.Roundness.md))
             .inkSplash(interactionSource)
             .clickable(interactionSource = interactionSource, indication = null, enabled = enabled, onClick = onClick)
             .padding(horizontal = 28.dp, vertical = 12.dp),

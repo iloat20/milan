@@ -1,5 +1,6 @@
 package com.milan.game.ui.characters
 
+import com.milan.game.OwnedCharacterView
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -27,7 +28,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.milan.game.infrastructure.SpeechPlayer
 import com.milan.game.services.SkillData
-import com.milan.game.ui.OwnedCharacterView
 import com.milan.game.ui.components.GlassPanel
 import com.milan.game.ui.theme.AppTheme
 import com.milan.game.ui.theme.ElementTheme
@@ -103,7 +103,7 @@ internal fun StoryPanel(
                         Modifier
                             .width(3.dp)
                             .fillMaxHeight()
-                            .background(AppTheme.Gold.copy(alpha = 0.7f), RoundedCornerShape(1.5.dp)),
+                            .background(AppTheme.Gold.copy(alpha = 0.7f), RoundedCornerShape(AppTheme.Roundness.xxs)),
                     )
                     Text(
                         view.lore,
@@ -152,9 +152,9 @@ internal fun StoryPanel(
                         fontWeight = FontWeight.Bold,
                         color = worldColor.glow,
                         modifier = Modifier
-                            .clip(RoundedCornerShape(6.dp))
+                            .clip(RoundedCornerShape(AppTheme.Roundness.sm))
                             .background(worldColor.glow.copy(alpha = 0.12f))
-                            .border(1.dp, worldColor.glow.copy(alpha = 0.35f), RoundedCornerShape(6.dp))
+                            .border(1.dp, worldColor.glow.copy(alpha = 0.35f), RoundedCornerShape(AppTheme.Roundness.sm))
                             .padding(horizontal = 10.dp, vertical = 3.dp),
                     )
                 }
@@ -176,7 +176,7 @@ private fun StorySectionHeader(name: String, accent: Color) {
             Modifier
                 .width(3.dp)
                 .height(15.dp)
-                .background(accent, RoundedCornerShape(1.5.dp)),
+                .background(accent, RoundedCornerShape(AppTheme.Roundness.xxs)),
         )
         Text(
             name,

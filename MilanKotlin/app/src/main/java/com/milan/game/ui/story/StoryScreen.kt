@@ -20,25 +20,29 @@ import androidx.compose.ui.unit.sp
 import com.milan.game.data.StoryChapterDef
 import com.milan.game.data.StoryStageDef
 import com.milan.game.data.StoryStageType
-import com.milan.game.ui.GameState
+import com.milan.game.di.AppGraph
 import com.milan.game.ui.components.GlassPanel
 import com.milan.game.ui.components.PageBackground
 import com.milan.game.ui.components.PortraitImage
 import com.milan.game.ui.feedback.LocalFeedback
 import com.milan.game.ui.nav.AppTopBar
 import com.milan.game.ui.theme.AppTheme
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.launch
 
 /**
  * 剧情章节列表 + 关卡选择界面。
+ * 只读查询与完结写入口统一经 [StoryViewModel]（组合根注入），Screen 不碰进程单例。
  */
 @Composable
 fun StoryScreen(
     onBack: () -> Unit,
     onOpenStage: (String) -> Unit,
 ) {
-    val service = GameState.service
-    val chapters = remember { service.getStoryChapters() }
+    val vm: StoryViewModel = viewModel(factory = AppGraph.factory)
+    val revision by vm.revision.collectAsStateWithLifecycle()
+    val chapters = remember { vm.chapters }
 
     Box(
         modifier = Modifier
@@ -58,6 +62,8 @@ fun StoryScreen(
                 ) {
                     itemsIndexed(chapters) { index, chapter ->
                         StoryChapterCard(
+                            vm = vm,
+                            revision = revision,
                             chapter = chapter,
                             index = index,
                             // 锁定提示：点名前置章节（index>0 时必有前章；首章恒解锁不会走到该分支）。
@@ -80,16 +86,18 @@ fun StoryScreen(
  */
 @Composable
 private fun StoryChapterCard(
+    vm: StoryViewModel,
+    revision: Long,
     chapter: StoryChapterDef,
     index: Int,
     unlockHint: String?,
     onOpenStage: (String) -> Unit,
 ) {
-    val service = GameState.service
     val feedback = LocalFeedback.current
     val scope = rememberCoroutineScope()
-    val isUnlocked = remember { service.isStoryChapterUnlocked(chapter.chapterId) }
-    val progress = remember { service.getStoryChapterProgress(chapter.chapterId) }
+    // key=revision：关卡完成推进 snapshot 后强制重取解锁/进度，避免 remember 永久缓存旧值
+    val isUnlocked = remember(revision) { vm.isChapterUnlocked(chapter.chapterId) }
+    val progress = remember(revision) { vm.chapterProgress(chapter.chapterId) }
 
     var expanded by remember { mutableStateOf(false) }
 
@@ -112,10 +120,10 @@ private fun StoryChapterCard(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(120.dp)
-                    .clip(RoundedCornerShape(14.dp)),
+                    .clip(RoundedCornerShape(AppTheme.Roundness.lg)),
             ) {
                 PortraitImage(
-                    characterId = chapter.coverCharacterId,
+                    characterId = chapter.coverCharacterId ?: "",
                     rarity = 4,
                     modifier = Modifier.fillMaxSize(),
                     name = null,
@@ -185,7 +193,7 @@ private fun StoryChapterCard(
                                 modifier = Modifier
                                     .width(80.dp)
                                     .height(4.dp)
-                                    .clip(RoundedCornerShape(2.dp)),
+                                    .clip(RoundedCornerShape(AppTheme.Roundness.xxs)),
                                 color = AppTheme.Gold,
                                 trackColor = AppTheme.Surface,
                             )
@@ -203,6 +211,8 @@ private fun StoryChapterCard(
                     Spacer(Modifier.height(12.dp))
                     chapter.stages.forEach { stage ->
                         StageRow(
+                            vm = vm,
+                            revision = revision,
                             stage = stage,
                             onOpenStage = onOpenStage,
                         )
@@ -220,14 +230,15 @@ private fun StoryChapterCard(
  */
 @Composable
 private fun StageRow(
+    vm: StoryViewModel,
+    revision: Long,
     stage: StoryStageDef,
     onOpenStage: (String) -> Unit,
 ) {
-    val service = GameState.service
     val feedback = LocalFeedback.current
     val scope = rememberCoroutineScope()
-    val isCompleted = remember { service.isStoryStageCompleted(stage.stageId) }
-    val canEnter = remember { service.canEnterStoryStage(stage.stageId) }
+    val isCompleted = remember(revision) { vm.isStageCompleted(stage.stageId) }
+    val canEnter = remember(revision) { vm.canEnterStage(stage.stageId) }
 
     val stageIcon = when (stage.type) {
         StoryStageType.DIALOGUE -> "💬"
@@ -245,7 +256,7 @@ private fun StageRow(
                 } else {
                     // 不可进入必因前置未通（canEnterStage 对无前置关卡恒 true），点名前置关卡名。
                     val hint = stage.prerequisiteStageId
-                        ?.let { service.findStoryStageDef(it)?.title }
+                        ?.let { vm.findStage(it)?.title }
                         ?.let { "通关「$it」后解锁" }
                         ?: "通关前置关卡后解锁"
                     scope.launch { feedback.show(hint) }
@@ -253,7 +264,7 @@ private fun StageRow(
             }
             .background(
                 if (canEnter) AppTheme.Surface.copy(alpha = 0.3f) else Color.Transparent,
-                RoundedCornerShape(8.dp),
+                RoundedCornerShape(AppTheme.Roundness.sm),
             )
             .padding(horizontal = 12.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -281,9 +292,10 @@ private fun StageRow(
             }
         }
 
-        if (stage.rewards != null && stage.rewards.isNotEmpty()) {
+        val stageRewards = stage.rewards
+        if (stageRewards != null && stageRewards.isNotEmpty()) {
             Text(
-                text = stage.rewards.joinToString(" ") { reward ->
+                text = stageRewards.joinToString(" ") { reward ->
                     when (reward.type) {
                         "soft_currency" -> "💎${reward.amount}"
                         "hard_currency" -> "💰${reward.amount}"

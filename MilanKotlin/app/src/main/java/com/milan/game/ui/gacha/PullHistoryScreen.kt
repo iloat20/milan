@@ -27,8 +27,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.milan.game.data.PullLogEntry
-import com.milan.game.ui.GameState
 import com.milan.game.ui.components.EntranceItem
 import com.milan.game.ui.components.GlassPanel
 import com.milan.game.ui.components.GlyphBadge
@@ -51,17 +51,17 @@ fun PullHistoryScreen(
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val snap by GameState.snapshot.collectAsStateWithLifecycle()
-    // revision 触发重组后重读历史（pull/pullHistory 落盘成功才推进 revision）
-    val history = remember(snap.revision) { GameState.service.pullHistory() }
-    val timeFormat = remember { SimpleDateFormat("MM-dd HH:mm", Locale.US) }
+    val vm: PullHistoryViewModel = viewModel(factory = com.milan.game.di.AppGraph.factory)
+    val ui by vm.uiState.collectAsStateWithLifecycle()
+    val timeFormat = vm.timeFormatter
 
     PageBackground(modifier = modifier) {
         Column(Modifier.fillMaxSize()) {
             AppTopBar(title = "抽 卡 历 史", onBack = onBack)
             Spacer(Modifier.height(10.dp))
 
-            if (history.isEmpty()) {
+            val entries = ui.entries
+            if (entries.isEmpty()) {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
                     Text(
                         text = "还没有召唤记录\n去「次元裂缝」试试手气吧",
@@ -75,16 +75,16 @@ fun PullHistoryScreen(
             }
 
             // 统计头：窗口内总抽数 / SSR+ 次数（对标 pity 追踪类工具的核心指标）
-            val ssrPlus = history.count { it.rarity >= 3 }
+            val ssrPlus = entries.count { it.rarity >= 3 }
             GlassPanel(modifier = Modifier.padding(horizontal = 18.dp)) {
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 12.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    StatCell("累计召唤", "${history.size} 抽")
+                    StatCell("累计召唤", "${entries.size} 抽")
                     StatCell("SSR+ 出货", "$ssrPlus 次")
-                    StatCell("综合占比", if (history.isEmpty()) "—" else "${ssrPlus * 100 / history.size}%")
+                    StatCell("综合占比", if (entries.isEmpty()) "—" else "${ssrPlus * 100 / entries.size}%")
                 }
             }
             Spacer(Modifier.height(8.dp))
@@ -96,7 +96,7 @@ fun PullHistoryScreen(
                 ),
                 verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
-                itemsIndexed(history.asReversed(), key = { _, e -> e.timestamp }) { i, entry ->
+                itemsIndexed(entries, key = { _, e -> e.timestamp }) { i, entry ->
                     EntranceItem(index = i) {
                         HistoryRow(entry = entry, timeText = timeFormat.format(Date(entry.timestamp)))
                     }
@@ -161,7 +161,7 @@ private fun HistoryRow(entry: PullLogEntry, timeText: String) {
                 fontWeight = FontWeight.Bold,
                 color = AppTheme.GoldTextOn,
                 modifier = Modifier
-                    .clip(RoundedCornerShape(5.dp))
+                    .clip(RoundedCornerShape(AppTheme.Roundness.xs))
                     .background(AppTheme.Gold)
                     .padding(horizontal = 5.dp, vertical = 1.dp),
             )

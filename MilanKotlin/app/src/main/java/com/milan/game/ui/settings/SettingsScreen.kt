@@ -27,6 +27,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -36,8 +37,7 @@ import androidx.compose.ui.unit.sp
 import com.milan.game.infrastructure.CrashReporter
 import com.milan.game.infrastructure.DailySupplyNotifier
 import com.milan.game.infrastructure.MilanAudio
-import com.milan.game.services.WriteOutcome
-import com.milan.game.ui.GameState
+import com.milan.game.di.AppGraph
 import com.milan.game.ui.components.EntranceItem
 import com.milan.game.ui.components.GlassDialog
 import com.milan.game.ui.components.GlassPanel
@@ -50,7 +50,6 @@ import com.milan.game.ui.nav.GameNavBar
 import com.milan.game.ui.nav.NavItem
 import com.milan.game.ui.feedback.LocalFeedback
 import com.milan.game.ui.theme.AppTheme
-import com.milan.game.ai.AIRecommendationEngine
 import com.milan.game.ai.CharacterRecommendation
 import com.milan.game.ai.GachaRecommendation
 import kotlinx.coroutines.launch
@@ -59,23 +58,18 @@ import kotlinx.coroutines.launch
  * 设置页（C# SettingsPage 翻译）。
  *
  * 结构：音频与体验（音效/振动/推送三开关）→ 数据管理（重置存档、崩溃日志导出）→ 关于。
- * 开关走 GameService 事务方法（落盘失败回滚，本页同步回滚本地状态并提示）；
- * 音效开关即时应用 MilanAudio 音量；振动开关由 GachaScreen 演出读取生效。
- * 2026-08 UI 现代化：原生 Material Switch/AlertDialog/TextButton 全部替换为
- * GoldSwitch/GlassDialog/NeonButton，全站视觉语言统一；卡片加交错入场动效。
+ * 写操作与推荐派生经 [SettingsViewModel]（组合根注入）；平台副作用
+ * （MilanAudio 音量、WorkManager、通知权限）留在本 Screen 以回调注入。
  */
 @Composable
 fun SettingsScreen(
     onNav: (NavItem) -> Unit,
 ) {
-    val service = GameState.service
+    val vm: SettingsViewModel = viewModel(factory = AppGraph.factory)
     val context = LocalContext.current
-    // I5：开关状态从 GameSnapshot 派生（单一事实来源）。toggle 成功即由 persistSetting→refreshSnapshot
-    // 推进快照，重置存档后快照自动复位，无需本地镜像与手工回滚。
-    val snap = service.snapshot.collectAsStateWithLifecycle()
+    val meta by vm.meta.collectAsStateWithLifecycle()
+    val busy by vm.busy.collectAsStateWithLifecycle()
     val feedback = LocalFeedback.current
-    // I13：in-flight 防重入——设置项落盘期间禁用二次触发，避免快速双击造成重复写。
-    var busy by remember { mutableStateOf(false) }
     var showResetDialog by rememberSaveable { mutableStateOf(false) }
 
     val version = remember {
@@ -84,11 +78,22 @@ fun SettingsScreen(
         }.getOrNull() ?: "1.0"
     }
 
-    // 2026-08 主线程 IO 异步化：设置/重置为 suspend（落盘在 IO 线程），用页面协程调用
     val scope = rememberCoroutineScope()
+    LaunchedEffect(vm) { vm.toasts.collect { feedback.show(it) } }
+    LaunchedEffect(vm) {
+        vm.resetDone.collect { ok ->
+            if (ok) {
+                // pushEnabled 复位为 false → 撤销每日补给提醒任务（否则幽灵任务继续跑）
+                DailySupplyNotifier.setEnabled(context, false)
+                feedback.show("已重置存档")
+            } else {
+                feedback.show("重置失败，请重试")
+            }
+            showResetDialog = false
+        }
+    }
 
     // 推送（API 33+）运行时权限请求：拒绝不回滚开关，仅提示提醒将静默
-    // （launcher 回调非协程上下文，feedback.show 为 suspend 需经 scope.launch）
     val notifPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission(),
     ) { granted ->
@@ -110,20 +115,10 @@ fun SettingsScreen(
                     SettingSwitchRow(
                         title = "音效",
                         subtitle = "战斗与抽卡音效",
-                        checked = snap.value.soundEnabled,
+                        checked = meta.soundEnabled,
                         onCheckedChange = { enabled ->
-                            if (busy) return@SettingSwitchRow
-                            busy = true
-                            scope.launch {
-                                try {
-                                    when (service.setSoundEnabled(enabled)) {
-                                        WriteOutcome.Success -> MilanAudio.setSfxVolume(if (enabled) 0.9f else 0f)
-                                        WriteOutcome.Rejected -> feedback.show("设置失败")
-                                        WriteOutcome.SaveFailed -> feedback.show("保存失败，请重试")
-                                    }
-                                } finally {
-                                    busy = false
-                                }
+                            vm.setSoundEnabled(enabled) { on ->
+                                MilanAudio.setSfxVolume(if (on) 0.9f else 0f)
                             }
                         },
                     )
@@ -132,50 +127,23 @@ fun SettingsScreen(
                     SettingSwitchRow(
                         title = "振动",
                         subtitle = "抽卡演出触觉反馈",
-                        checked = snap.value.vibrationEnabled,
-                        onCheckedChange = { enabled ->
-                            if (busy) return@SettingSwitchRow
-                            busy = true
-                            scope.launch {
-                                try {
-                                    when (service.setVibrationEnabled(enabled)) {
-                                        WriteOutcome.Success -> { /* 快照已推进，UI 从 snapshot 派生 */ }
-                                        WriteOutcome.Rejected -> feedback.show("设置失败")
-                                        WriteOutcome.SaveFailed -> feedback.show("保存失败，请重试")
-                                    }
-                                } finally {
-                                    busy = false
-                                }
-                            }
-                        },
+                        checked = meta.vibrationEnabled,
+                        onCheckedChange = { enabled -> vm.setVibrationEnabled(enabled) },
                     )
                 }
                 EntranceItem(index = 2) {
                     SettingSwitchRow(
                         title = "推送",
                         subtitle = "每日补给刷新时本地提醒（12:00）",
-                        checked = snap.value.pushEnabled,
+                        checked = meta.pushEnabled,
                         onCheckedChange = { enabled ->
-                            if (busy) return@SettingSwitchRow
-                            busy = true
-                            scope.launch {
-                                try {
-                                    when (service.setPushEnabled(enabled)) {
-                                        WriteOutcome.Success -> {
-                                            // 排程/撤销 WorkManager 周期任务（持久化，跨重启有效）
-                                            DailySupplyNotifier.setEnabled(context, enabled)
-                                            if (enabled && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
-                                                !DailySupplyNotifier.canNotify(context)
-                                            ) {
-                                                // API 33+ 运行时权限：未授权时发起请求（拒绝则提醒静默，不回滚开关）
-                                                notifPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-                                            }
-                                        }
-                                        WriteOutcome.Rejected -> feedback.show("设置失败")
-                                        WriteOutcome.SaveFailed -> feedback.show("保存失败，请重试")
-                                    }
-                                } finally {
-                                    busy = false
+                            vm.setPushEnabled(enabled) { on ->
+                                // 排程/撤销 WorkManager 周期任务（持久化，跨重启有效）
+                                DailySupplyNotifier.setEnabled(context, on)
+                                if (on && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                                    !DailySupplyNotifier.canNotify(context)
+                                ) {
+                                    notifPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
                                 }
                             }
                         },
@@ -228,10 +196,7 @@ fun SettingsScreen(
                 SectionTitle("AI 智能推荐")
                 EntranceItem(index = 6) {
                     val recs by produceState(initialValue = emptyList<CharacterRecommendation>()) {
-                        value = AIRecommendationEngine.recommendCharactersToLevelUp(
-                            save = service.saveData,
-                            service = service,
-                        )
+                        value = vm.recommendCharacters()
                     }
                     GlassPanel(modifier = Modifier.fillMaxWidth()) {
                         Column(Modifier.padding(14.dp)) {
@@ -272,10 +237,7 @@ fun SettingsScreen(
                 }
                 EntranceItem(index = 7) {
                     val gachaRec by produceState(initialValue = null as GachaRecommendation?) {
-                        value = AIRecommendationEngine.recommendGachaStrategy(
-                            save = service.saveData,
-                            service = service,
-                        )
+                        value = vm.recommendGacha()
                     }
                     GlassPanel(modifier = Modifier.fillMaxWidth()) {
                         Column(Modifier.padding(14.dp)) {
@@ -345,25 +307,8 @@ fun SettingsScreen(
         show = showResetDialog,
         onDismiss = { showResetDialog = false },
         onConfirm = {
-            // I13 对齐：重置是全档破坏性写操作，确认键补 busy 防双击（其余写操作均有，此前此处漏了）
-            if (busy) return@ResetSaveDialog
-            busy = true
-            scope.launch {
-                try {
-                    val ok = service.resetSave()
-                    if (ok) {
-                        // 开关状态随新档复位：resetSave 已 refreshSnapshot，UI 从 snapshot 派生自动复位；
-                        // pushEnabled 复位为 false → 撤销每日补给提醒任务（否则幽灵任务继续跑）
-                        DailySupplyNotifier.setEnabled(context, false)
-                        feedback.show("已重置存档")
-                    } else {
-                        feedback.show("重置失败，请重试")
-                    }
-                } finally {
-                    busy = false
-                    showResetDialog = false
-                }
-            }
+            // I13 对齐：重置是全档破坏性写操作，确认键补 busy 防双击（busy 在 VM 内）
+            vm.resetSave()
         },
     )
 }

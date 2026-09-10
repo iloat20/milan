@@ -49,7 +49,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.milan.game.ui.theme.AppTheme
 
-/** 全局底部导航项（水墨国风版：墨色玻璃底座 + 金箔选中态）。 */
+/** 全局底部导航项（丹青典藏 v3：玄墨玻璃 + 金箔选中态）。 */
 enum class NavItem(val icon: ImageVector, val label: String) {
     Home(Icons.Outlined.Home, "主页"),
     Gacha(Icons.Outlined.Star, "抽卡"),
@@ -59,7 +59,7 @@ enum class NavItem(val icon: ImageVector, val label: String) {
 }
 
 /**
- * 水墨国风底部导航栏（5 项）。墨色玻璃底座 + 金箔选中高亮面板 +
+ * 丹青典藏底部导航（5 项）。玄墨玻璃底座 + 金箔选中高亮面板 +
  * 顶部金箔指示线 + 按压缩放反馈。
  */
 @Composable
@@ -74,11 +74,11 @@ fun GameNavBar(
             .fillMaxWidth()
             .background(
                 brush = Brush.verticalGradient(
-                    listOf(AppTheme.Surface.copy(alpha = 0.85f), AppTheme.Surface)
+                    listOf(AppTheme.SurfaceNested, AppTheme.BgMid)
                 ),
-                shape = RoundedCornerShape(20.dp),
+                shape = RoundedCornerShape(AppTheme.Roundness.xl),
             )
-            .border(1.dp, AppTheme.Stroke, RoundedCornerShape(20.dp))
+            .border(1.dp, AppTheme.Stroke, RoundedCornerShape(AppTheme.Roundness.xl))
             .padding(horizontal = 6.dp, vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -135,9 +135,9 @@ private fun NavCell(
                         Brush.verticalGradient(
                             listOf(AppTheme.Gold.copy(alpha = 0.22f), AppTheme.Gold.copy(alpha = 0.10f))
                         ),
-                        RoundedCornerShape(14.dp),
+                        RoundedCornerShape(AppTheme.Roundness.lg),
                     )
-                    .border(1.dp, AppTheme.Gold.copy(alpha = 0.35f), RoundedCornerShape(14.dp))
+                    .border(1.dp, AppTheme.Gold.copy(alpha = 0.35f), RoundedCornerShape(AppTheme.Roundness.lg))
                 else Modifier
             )
             .semantics {

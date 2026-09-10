@@ -70,28 +70,42 @@ enum class EffectType {
 }
 
 /**
- * 战斗中的角色状态。
+ * 战斗中的角色状态（2026-09-08 P0-3：**不可变**）。
+ *
+ * 此前 `hp` / `energy` 为 `var`，`cooldowns` / `buffs` / `debuffs` 为可变集合，
+ * 而外层 [BattleState] 是 data class —— `copy()` 只做浅拷贝，新旧状态共享同一批单位对象，
+ * 模拟器就地 mutate 会**同时污染入参**，返回值与入参实为同一份数据
+ * （回归测试见 StrategicBattleImmutabilityTest）。
+ *
+ * 现全部改为 `val` + 只读集合：任何变更都必须 `copy()` 出新实例（替换式更新），
+ * 由 [StrategicBattleSimulator] 负责把新单位换回队伍列表。
+ * 由此状态可安全快照 / 撤销 / 回放 / AI 预演，且无别名突变风险。
  */
 data class BattleUnitState(
     val stats: UnitStats,
-    var hp: Int,
+    val hp: Int,
     val maxHp: Int,
-    var energy: Int = 0,
+    val energy: Int = 0,
     val maxEnergy: Int = 100,
-    var cooldowns: MutableMap<String, Int> = mutableMapOf(),
-    var buffs: MutableList<BuffDebuff> = mutableListOf(),
-    var debuffs: MutableList<BuffDebuff> = mutableListOf(),
+    val cooldowns: Map<String, Int> = emptyMap(),
+    val buffs: List<BuffDebuff> = emptyList(),
+    val debuffs: List<BuffDebuff> = emptyList(),
     val isPlayer: Boolean,
     val skills: List<BattleSkill> = emptyList(),
+    val elementReactionCooldown: Int = 0,  // 元素反应冷却回合数
+    val lastElementUsed: String? = null,  // 上次使用的元素（用于元素反应判定）
 )
 
 /**
- * 增益/减益效果。
+ * 增益/减益效果（2026-09-08 P0-3：不可变）。
+ *
+ * 此前 `remainingTurns` 为 `var`，在战斗模拟中被就地修改。
+ * 现改为 `val`，任何变更都必须 `copy()` 出新实例。
  */
 data class BuffDebuff(
     val type: EffectType,
     val value: Int,
-    var remainingTurns: Int,
+    val remainingTurns: Int,
 )
 
 /**

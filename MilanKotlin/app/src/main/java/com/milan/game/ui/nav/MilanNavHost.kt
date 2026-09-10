@@ -28,7 +28,6 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -36,7 +35,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import kotlinx.coroutines.launch
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
@@ -64,7 +62,7 @@ import com.milan.game.ui.story.DialogueScreen
 import com.milan.game.ui.feedback.Feedback
 import com.milan.game.ui.feedback.LocalFeedback
 import com.milan.game.ui.theme.AppTheme
-import com.milan.game.ui.GameState
+import com.milan.game.GameState
 
 /**
  * 导航宿主（Navigation Compose 2.9 类型安全路由）：tab 切换 + 子页压栈覆盖。
@@ -77,7 +75,7 @@ internal fun MilanNavHost(openGachaOnStart: Boolean = false) {
     val navController = rememberNavController()
 
     // P3-11 配套：内容/存档已在 Application 后台线程初始化（见 MilanApp）。
-    // 就绪前整棵导航树不组合——所有屏幕都直读 GameState.service，门控在此一处收口。
+    // 就绪前整棵导航树不组合——门控在此一处收口（Screen 已全部改走 AppGraph/VM）。
     // 附带移除旧「EventBus 每 250ms 兜底派发」空转轮询：全工程已零订阅者，
     // GameService 所有发布点均内联 dispatch，事件队列不存在滞留风险。
     // R4-04（2026-08-30 审查修复）：初始化失败必须有出口。
@@ -248,6 +246,7 @@ internal fun MilanNavHost(openGachaOnStart: Boolean = false) {
                         characterId = route.characterId,
                         onBack = { navController.popBackStack() },
                         onSwitchCharacter = ::switchCharacter,
+                        animatedVisibilityScope = this,
                     )
                 }
                 // 无尽之塔（2026-08 终局内容）：子页盖 tab，返回回主页
@@ -279,30 +278,28 @@ internal fun MilanNavHost(openGachaOnStart: Boolean = false) {
                 // 剧情关卡（2026-09）：子页盖 tab，返回回章节列表
                 composable<DialogueRoute> { entry ->
                     val route = entry.toRoute<DialogueRoute>()
-                    val service = GameState.service
-                    val stage = remember(route.stageId) { service.findStoryStageDef(route.stageId) }
-                    val scope = rememberCoroutineScope()
+                    // 剧情查询/完结统一走 StoryViewModel（AppGraph 注入），NavHost 不再摸 GameState.service
+                    val storyVm: com.milan.game.ui.story.StoryViewModel =
+                        androidx.lifecycle.viewmodel.compose.viewModel(factory = com.milan.game.di.AppGraph.factory)
+                    val stage = remember(route.stageId) { storyVm.findStage(route.stageId) }
                     if (stage != null) {
                         DialogueScreen(
                             stage = stage,
                             onStageComplete = {
-                                scope.launch {
-                                    try { service.completeStoryStage(route.stageId) } catch (_: Exception) { }
-                                }
+                                storyVm.completeStage(route.stageId)
                                 navController.popBackStack()
                             },
                             // M3 修复：选择分支跳转到目标关卡——当前关完结（标记+发奖），
                             // 再压入目标关。目标为悬空引用（内容无此关）时兜底退出，避免黑屏。
                             onNavigateStage = { targetId ->
-                                scope.launch {
-                                    try { service.completeStoryStage(route.stageId) } catch (_: Exception) { }
-                                }
-                                if (service.findStoryStageDef(targetId) != null) {
+                                storyVm.completeStage(route.stageId)
+                                if (storyVm.findStage(targetId) != null) {
                                     navController.navigate(DialogueRoute(targetId))
                                 } else {
                                     navController.popBackStack()
                                 }
                             },
+                            onGrantAffinity = storyVm::grantAffinity,
                             onBack = { navController.popBackStack() },
                         )
                     }

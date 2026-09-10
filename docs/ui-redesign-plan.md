@@ -1,3 +1,5 @@
+> ⚠️ **已废弃（2026-09-09）**：本文件为历史方案，仅作参考勿再执行。视觉规范已由 [docs/superpowers/design-language/00-design-language-v3.md](../superpowers/design-language/00-design-language-v3.md)（「丹青典藏 · Gilded Codex」v3）取代。
+
 # Milan 全页面 UI 重设计方案
 
 > 版本：v1.0 ｜ 日期：2026-07-30

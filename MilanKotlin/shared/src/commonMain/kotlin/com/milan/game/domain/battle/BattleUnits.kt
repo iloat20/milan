@@ -70,6 +70,10 @@ data class StrikeEvent(
     val damage: Int,
     /** 本次攻击是否击杀目标。 */
     val targetDefeated: Boolean,
+    /** 是否为元素反应触发。 */
+    val isElementReaction: Boolean = false,
+    /** 元素反应名称（如"蒸发"、"感电"等）。 */
+    val reactionName: String = "",
 )
 
 /** 战斗结算结果（C# Milan.Domain.Battle.BattleResult 翻译）。 */

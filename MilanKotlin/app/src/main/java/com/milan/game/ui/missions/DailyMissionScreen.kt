@@ -11,6 +11,7 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -19,14 +20,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.milan.game.ui.GameState
 import com.milan.game.ui.components.GlassPanel
 import com.milan.game.ui.components.PageBackground
 import com.milan.game.ui.nav.AppTopBar
 import com.milan.game.ui.theme.AppTheme
 import com.milan.game.services.ChestStatus
 import com.milan.game.services.DailyMissionStatus
-import kotlinx.coroutines.launch
 
 /**
  * 每日任务界面。
@@ -35,24 +34,21 @@ import kotlinx.coroutines.launch
  * - 6个每日任务列表（进度+完成状态）
  * - 活跃度进度条（0-100）
  * - 5个活跃度宝箱（20/40/60/80/100里程碑）
+ *
+ * 2026-09-08 P1-6 C 批：跨日重置、派生状态与宝箱领取全部收敛进 [DailyMissionViewModel]，
+ * Composable 只订阅与回调。
  */
 @Composable
 fun DailyMissionScreen(
     onBack: () -> Unit,
 ) {
-    val scope = rememberCoroutineScope()
-    val service = GameState.service
     val feedback = com.milan.game.ui.feedback.LocalFeedback.current
-    var busy by remember { mutableStateOf(false) }
-    // I1 修复：与 BattlePassScreen(B2) 同模式——三处 remember 无 key + 无 snapshot 订阅，
-    // 页面永不重组。宝箱真实发放星尘/钻石却仍显示"可领取"，重复点击静默 Rejected。
-    val snap by service.snapshot.collectAsStateWithLifecycle()
-    // R5-I4：进入页面即触发跨日重置（事务 + 落盘），避免只读 API 锁外写。重置成功后
-    // revision 递增，下方 remember(snap.revision) 自动重组刷新今日任务/宝箱。
-    LaunchedEffect(Unit) { service.ensureDailyMissionReset() }
-    val missions = remember(snap.revision) { service.getTodayMissions() }
-    val chestStatuses = remember(snap.revision) { service.getChestStatuses() }
-    val data = remember(snap.revision) { service.getDailyMissionData() }
+    val vm: DailyMissionViewModel = viewModel(factory = com.milan.game.di.AppGraph.factory)
+    val ui by vm.uiState.collectAsStateWithLifecycle()
+    val busy by vm.busy.collectAsStateWithLifecycle()
+    LaunchedEffect(vm) { vm.toasts.collect { feedback.show(it) } }
+    val missions = ui.missions
+    val chestStatuses = ui.chestStatuses
 
     Box(
         modifier = Modifier
@@ -73,8 +69,8 @@ fun DailyMissionScreen(
                     // 活跃度进度条
                     item {
                         ActivityProgressBar(
-                            points = data.activityPoints,
-                            claimedChests = data.claimedChests,
+                            points = ui.activityPoints,
+                            claimedChests = ui.claimedChests,
                         )
                     }
 
@@ -83,30 +79,9 @@ fun DailyMissionScreen(
                         ActivityChests(
                             statuses = chestStatuses,
                             onClaim = { milestone ->
-                                // 状态判断 + 反馈下沉到这里：未解锁/已领取也给出提示，
-                                // 避免"点了没反应"（此前由 ChestItem 外层 if 静默拦截）。
-                                val st = chestStatuses.firstOrNull { it.milestone == milestone }
-                                scope.launch {
-                                    if (busy) return@launch
-                                    when {
-                                        st == null -> Unit
-                                        st.claimed -> feedback.show("该宝箱已领取")
-                                        !st.unlocked -> feedback.show("活跃度达到 $milestone 点可领取")
-                                        else -> {
-                                            busy = true
-                                            try {
-                                                val msg = when (service.claimActivityChest(milestone)) {
-                                                    com.milan.game.services.WriteOutcome.Success -> "已领取 ${milestone} 点活跃度宝箱"
-                                                    com.milan.game.services.WriteOutcome.Rejected -> "活跃度不足或已领取"
-                                                    com.milan.game.services.WriteOutcome.SaveFailed -> "保存失败，请重试"
-                                                }
-                                                feedback.show(msg)
-                                            } finally {
-                                                busy = false
-                                            }
-                                        }
-                                    }
-                                }
+                                // 状态判断 + 反馈已收敛进 VM（未解锁/已领取也给出提示，
+                                // 避免"点了没反应"）。
+                                vm.claimChest(milestone)
                             },
                         )
                     }
@@ -154,7 +129,7 @@ private fun ActivityProgressBar(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(8.dp)
-                    .clip(RoundedCornerShape(4.dp)),
+                    .clip(RoundedCornerShape(AppTheme.Roundness.xs)),
                 color = AppTheme.Gold,
                 trackColor = AppTheme.Surface,
             )
@@ -236,7 +211,7 @@ private fun ChestItem(
         Box(
             modifier = Modifier
                 .size(48.dp)
-                .clip(RoundedCornerShape(8.dp))
+                .clip(RoundedCornerShape(AppTheme.Roundness.sm))
                 .background(bgColor)
                 .then(
                     if (status.unlocked && !status.claimed) {
@@ -293,7 +268,7 @@ private fun MissionCard(mission: DailyMissionStatus) {
             Box(
                 modifier = Modifier
                     .size(40.dp)
-                    .clip(RoundedCornerShape(8.dp))
+                    .clip(RoundedCornerShape(AppTheme.Roundness.sm))
                     .background(
                         if (mission.completed) AppTheme.Gold.copy(alpha = 0.2f) else AppTheme.Surface
                     ),
@@ -330,7 +305,7 @@ private fun MissionCard(mission: DailyMissionStatus) {
                         modifier = Modifier
                             .weight(1f)
                             .height(4.dp)
-                            .clip(RoundedCornerShape(2.dp)),
+                            .clip(RoundedCornerShape(AppTheme.Roundness.xxs)),
                         color = if (mission.completed) AppTheme.Gold else AppTheme.Frost,
                         trackColor = AppTheme.Surface,
                     )
@@ -350,7 +325,7 @@ private fun MissionCard(mission: DailyMissionStatus) {
                 modifier = Modifier
                     .background(
                         if (mission.completed) AppTheme.Gold.copy(alpha = 0.2f) else AppTheme.Surface,
-                        RoundedCornerShape(6.dp)
+                        RoundedCornerShape(AppTheme.Roundness.sm)
                     )
                     .padding(horizontal = 8.dp, vertical = 4.dp),
             ) {
