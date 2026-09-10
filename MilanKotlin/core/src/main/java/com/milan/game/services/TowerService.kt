@@ -427,7 +427,13 @@ class TowerService(private val core: ServiceCore) : TowerApi {
     ): TowerOutcome = core.withWriteLock {
         // R5-I1：补层数上下界（复用 runTowerFloor 的 M6 校验口径）
         if (floor < 1 || floor > EconomyFormulas.towerMaxFloor()) return@withWriteLock TowerOutcome.Rejected
-        
+
+        // R6-P2：victory 仍由调用方断言（状态机在 UI），但**可达性**必须服务端把关——
+        // 否则 API 可一次 claim 远超 best 的层，刷里程碑钻石与首通奖励。
+        // 允许：复刷已通层 / 挑战 best+1；拒绝：跳跃超过一层。
+        val bestAtCheck = saveData.towerBestFloor
+        if (floor > bestAtCheck + 1) return@withWriteLock TowerOutcome.Rejected
+
         // 复用原有runTowerFloor的结算逻辑
         val ticketCost = EconomyFormulas.towerTicketCost()
         val ticketsExisted = saveData.items.any { it?.itemId == ServiceCore.BattleTicketItemId }

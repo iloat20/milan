@@ -320,18 +320,22 @@ private fun InkWashPortrait(
 
                 // ── 第 3 层：宣纸纤维噪点 ──
                 // 确定性散列生成稀疏白点，模拟生宣纸面的纤维纹理
+                // R6-P2：步长随尺寸放大并封顶点数——大图 Full 每帧 drawPoint 上千次会掉帧
                 grainPaint.color = 0x0AFFFFFF.toInt()
                 grainPaint.alpha = 10
                 grainPaint.style = Paint.Style.FILL
-                val step = 14f
+                val step = (maxOf(w, h) / 48f).coerceIn(14f, 36f)
+                val maxGrainPoints = 900
+                var grainPoints = 0
                 var gy = 0f
-                while (gy < h) {
+                while (gy < h && grainPoints < maxGrainPoints) {
                     var gx = 0f
-                    while (gx < w) {
+                    while (gx < w && grainPoints < maxGrainPoints) {
                         val hash = ((gx * 73856093).toInt() xor (gy * 19349663).toInt()) and 0xFF
                         if (hash < 14) {
                             grainPaint.alpha = 6 + (hash and 0x07)
                             drawPoint(gx, gy, grainPaint)
+                            grainPoints++
                         }
                         gx += step
                     }

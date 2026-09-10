@@ -136,68 +136,75 @@ class ArenaService(
         // 生成敌方队伍
         val enemyTeam = buildOpponentTeam(opponent)
 
-        // 模拟战斗
+        // 模拟战斗（纯内存，不持锁）
         val result = simulator.simulate(team, enemyTeam, 50)
         val victory = result.victory
         val turns = result.turns
         val pointsDelta = if (victory) ArenaSaveData.WIN_POINTS else -ArenaSaveData.LOSE_POINTS
-        
-        val originalPoints = arenaData.arenaPoints
-        val originalAttackCount = arenaData.attackCount
-        val originalWinCount = arenaData.winCount
-        val originalLoseCount = arenaData.loseCount
-        val originalLastRefresh = arenaData.lastRefreshTime
-        val originalBattleRecords = core.saveData.arenaBattleRecords
-        
-        val outcome = core.transaction(
-            tag = "arena.attack",
-            mutate = {
-                // 跨日重置（R5-I2：与本次写同事务原子落盘，避免次数耗尽后永久锁死）
-                if (arenaData.lastRefreshTime != today) {
-                    arenaData.lastRefreshTime = today
-                    arenaData.attackCount = 0
-                }
-                arenaData.attackCount++
 
-                if (victory) {
-                    arenaData.winCount++
-                    arenaData.arenaPoints = (arenaData.arenaPoints + ArenaSaveData.WIN_POINTS)
-                        .coerceAtMost(ArenaSaveData.MAX_POINTS)
-                } else {
-                    arenaData.loseCount++
-                    arenaData.arenaPoints = (arenaData.arenaPoints - ArenaSaveData.LOSE_POINTS)
-                        .coerceAtLeast(ArenaSaveData.MIN_POINTS)
-                }
-                // 战斗记录随事务原子落盘（此前在 onCommit 中写入，落盘已完成，
-                // 新记录仅存内存——崩溃后丢失；现移入 mutate 保证原子性）
-                core.saveData.arenaBattleRecords = core.saveData.arenaBattleRecords + PvPBattleRecord(
-                    recordId = "pvp_${System.currentTimeMillis()}",
-                    attackerId = "player",
-                    defenderId = opponent.characterId,
-                    attackerName = "玩家",
-                    defenderName = opponent.name,
-                    attackerTeam = teamIds,
-                    defenderTeam = opponent.defenseTeam,
-                    attackerPoints = originalPoints,
-                    defenderPoints = opponent.points,
-                    result = if (victory) "win" else "lose",
-                    turns = turns,
-                    timestamp = System.currentTimeMillis(),
-                    pointsChanged = pointsDelta,
-                )
-            },
-            rollback = {
-                arenaData.arenaPoints = originalPoints
-                arenaData.attackCount = originalAttackCount
-                arenaData.winCount = originalWinCount
-                arenaData.loseCount = originalLoseCount
-                arenaData.lastRefreshTime = originalLastRefresh
-                core.saveData.arenaBattleRecords = originalBattleRecords
-            },
-            onCommit = {
-                core.publishProgressionChanged()
-            },
-        )
+        // R6-P2：次数上限在锁内复检（锁外 TOCTOU 可超日免费上限）
+        val outcome = core.withWriteLock {
+            val countNow = if (arenaData.lastRefreshTime != today) 0 else arenaData.attackCount
+            if (countNow >= ArenaSaveData.DAILY_FREE_ATTACKS) {
+                return@withWriteLock WriteOutcome.Rejected
+            }
+            val originalPoints = arenaData.arenaPoints
+            val originalAttackCount = arenaData.attackCount
+            val originalWinCount = arenaData.winCount
+            val originalLoseCount = arenaData.loseCount
+            val originalLastRefresh = arenaData.lastRefreshTime
+            val originalBattleRecords = core.saveData.arenaBattleRecords
+
+            core.transactionLocked(
+                tag = "arena.attack",
+                mutate = {
+                    // 跨日重置（R5-I2：与本次写同事务原子落盘，避免次数耗尽后永久锁死）
+                    if (arenaData.lastRefreshTime != today) {
+                        arenaData.lastRefreshTime = today
+                        arenaData.attackCount = 0
+                    }
+                    arenaData.attackCount++
+
+                    if (victory) {
+                        arenaData.winCount++
+                        arenaData.arenaPoints = (arenaData.arenaPoints + ArenaSaveData.WIN_POINTS)
+                            .coerceAtMost(ArenaSaveData.MAX_POINTS)
+                    } else {
+                        arenaData.loseCount++
+                        arenaData.arenaPoints = (arenaData.arenaPoints - ArenaSaveData.LOSE_POINTS)
+                            .coerceAtLeast(ArenaSaveData.MIN_POINTS)
+                    }
+                    // 战斗记录随事务原子落盘（此前在 onCommit 中写入，落盘已完成，
+                    // 新记录仅存内存——崩溃后丢失；现移入 mutate 保证原子性）
+                    core.saveData.arenaBattleRecords = core.saveData.arenaBattleRecords + PvPBattleRecord(
+                        recordId = "pvp_${System.currentTimeMillis()}",
+                        attackerId = "player",
+                        defenderId = opponent.characterId,
+                        attackerName = "玩家",
+                        defenderName = opponent.name,
+                        attackerTeam = teamIds,
+                        defenderTeam = opponent.defenseTeam,
+                        attackerPoints = originalPoints,
+                        defenderPoints = opponent.points,
+                        result = if (victory) "win" else "lose",
+                        turns = turns,
+                        timestamp = System.currentTimeMillis(),
+                        pointsChanged = pointsDelta,
+                    )
+                },
+                rollback = {
+                    arenaData.arenaPoints = originalPoints
+                    arenaData.attackCount = originalAttackCount
+                    arenaData.winCount = originalWinCount
+                    arenaData.loseCount = originalLoseCount
+                    arenaData.lastRefreshTime = originalLastRefresh
+                    core.saveData.arenaBattleRecords = originalBattleRecords
+                },
+                onCommit = {
+                    core.publishProgressionChanged()
+                },
+            )
+        }
         return when (outcome) {
             WriteOutcome.Success -> ArenaChallengeOutcome.Completed(
                 victory = victory,

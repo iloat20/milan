@@ -31,8 +31,6 @@ data class StrategicBattleUi(
     val enemyActing: Boolean = false,
     /** 本批新打击演出脉冲（Screen 播完后 clearFx）。 */
     val fxPulses: List<StrikeFxPulse> = emptyList(),
-    /** 最近一条技能脉冲（vignette / 红闪用，不清空）。 */
-    val lastFx: StrikeFxPulse? = null,
 )
 
 /**
@@ -142,7 +140,6 @@ class StrategicBattleViewModel(
             needTarget = false,
             logLines = (cur.logLines + lines).takeLast(40),
             fxPulses = pulses,
-            lastFx = pulses.lastOrNull() ?: cur.lastFx,
         )
         actedThisTurn += cur.currentActor
         advanceActor(next)
@@ -197,7 +194,6 @@ class StrategicBattleViewModel(
                 needTarget = false,
                 enemyActing = false,
                 fxPulses = ePulses,
-                lastFx = ePulses.lastOrNull() ?: _ui.value.lastFx,
             )
             when (phase) {
                 BattlePhase.VICTORY, BattlePhase.DEFEAT, BattlePhase.DRAW -> settle()

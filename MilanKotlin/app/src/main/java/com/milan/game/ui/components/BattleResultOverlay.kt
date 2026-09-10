@@ -122,7 +122,9 @@ fun BattleResultOverlay(
             .fillMaxSize()
             .alpha(overlayAlpha.value)
             .background(Color.Black.copy(alpha = 0.75f))
+            // R6-P2：等底部按钮淡入后再开放全屏 dismiss，防「点开结算那一下」误关
             .clickable(
+                enabled = buttonAlpha.value > 0.9f,
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
                 onClick = onDismiss,

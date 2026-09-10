@@ -1,5 +1,8 @@
 package com.milan.game.ui.tutorial
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -101,73 +104,76 @@ fun TutorialOverlay(
     val composableScope = rememberCoroutineScope()
     var showIntro by remember { mutableStateOf(false) }
 
+    // R6-P2：用 visible 控制 AnimatedVisibility，finished 时可播 fadeOut（原先提前 return 跳过 exit）
+    val visible = !finished && step != null
+
     LaunchedEffect(step) {
         showIntro = step == TutorialSteps.INTRO
     }
 
-    if (finished || step == null) return
-
-    val copy = tutorialCopyOf(step!!)
-    Box(
-        modifier = modifier
-            .fillMaxSize()
-            // 仅视觉压暗：不加 clickable / pointerInput，避免吞掉底层游戏操作
-            .background(Color.Black.copy(alpha = 0.22f)),
-    ) {
-        Column(
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                // 抬高到导航栏之上，避免盖住底部 5 Tab
-                .navigationBarsPadding()
-                .padding(start = 16.dp, end = 16.dp, bottom = 92.dp)
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(AppTheme.Roundness.md))
-                .background(AppTheme.Surface.copy(alpha = 0.96f))
-                .border(1.dp, AppTheme.Gold.copy(alpha = 0.45f), RoundedCornerShape(AppTheme.Roundness.md))
-                .padding(16.dp),
+    val copy = if (step != null) tutorialCopyOf(step!!) else tutorialCopyOf(TutorialSteps.INTRO)
+    AnimatedVisibility(visible = visible, enter = fadeIn(), exit = fadeOut()) {
+        Box(
+            modifier = modifier
+                .fillMaxSize()
+                // 仅视觉压暗：不加 clickable / pointerInput，避免吞掉底层游戏操作
+                .background(Color.Black.copy(alpha = 0.22f)),
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    text = copy.title,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = AppTheme.Gold,
-                )
-                Spacer(Modifier.weight(1f))
-                Text(
-                    text = "跳过",
-                    fontSize = 12.sp,
-                    color = AppTheme.Text3,
-                    modifier = Modifier.clickable {
-                        composableScope.launch { vm.skip() }
-                    },
-                )
-            }
-            Spacer(Modifier.height(8.dp))
-            Text(
-                text = copy.body,
-                fontSize = 13.sp,
-                color = AppTheme.Text1,
-                lineHeight = 18.sp,
-            )
-            Spacer(Modifier.height(12.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                if (showIntro) {
-                    GoldButton(
-                        text = copy.cta,
-                        modifier = Modifier.weight(1f),
-                        onClick = {
-                            composableScope.launch { vm.completeStep(TutorialSteps.INTRO) }
-                            showIntro = false
+            Column(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    // 抬高到导航栏之上，避免盖住底部 5 Tab
+                    .navigationBarsPadding()
+                    .padding(start = 16.dp, end = 16.dp, bottom = 92.dp)
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(AppTheme.Roundness.md))
+                    .background(AppTheme.Surface.copy(alpha = 0.96f))
+                    .border(1.dp, AppTheme.Gold.copy(alpha = 0.45f), RoundedCornerShape(AppTheme.Roundness.md))
+                    .padding(16.dp),
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = copy.title,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = AppTheme.Gold,
+                    )
+                    Spacer(Modifier.weight(1f))
+                    Text(
+                        text = "跳过",
+                        fontSize = 12.sp,
+                        color = AppTheme.Text3,
+                        modifier = Modifier.clickable {
+                            composableScope.launch { vm.skip() }
                         },
                     )
-                } else {
-                    val tab = copy.tabHint ?: NavItem.Home.label
-                    GoldButton(
-                        text = copy.cta,
-                        modifier = Modifier.weight(1f),
-                        onClick = { onNavigateTab(tab) },
-                    )
+                }
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    text = copy.body,
+                    fontSize = 13.sp,
+                    color = AppTheme.Text1,
+                    lineHeight = 18.sp,
+                )
+                Spacer(Modifier.height(12.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    if (showIntro) {
+                        GoldButton(
+                            text = copy.cta,
+                            modifier = Modifier.weight(1f),
+                            onClick = {
+                                composableScope.launch { vm.completeStep(TutorialSteps.INTRO) }
+                                showIntro = false
+                            },
+                        )
+                    } else {
+                        val tab = copy.tabHint ?: NavItem.Home.label
+                        GoldButton(
+                            text = copy.cta,
+                            modifier = Modifier.weight(1f),
+                            onClick = { onNavigateTab(tab) },
+                        )
+                    }
                 }
             }
         }
