@@ -145,7 +145,11 @@ class DailyMissionService(
                     val id = def.id
                     if (data.completedMissions.contains(id)) continue
                     val progress = data.missionProgress[id] ?: 0
-                    val newProgress = (progress + amount).coerceAtMost(def.targetCount)
+                    // R6-P1：UI「升满」会传 Int.MAX_VALUE，progress+amount 溢出为负 → 任务永久卡死。
+                    // 用 Long 累加后再钳到 targetCount。
+                    val newProgress = (progress.toLong() + amount.toLong())
+                        .coerceAtMost(def.targetCount.toLong())
+                        .toInt()
                     data.missionProgress = data.missionProgress + (id to newProgress)
                     if (newProgress >= def.targetCount) {
                         data.completedMissions = data.completedMissions + id
@@ -171,34 +175,38 @@ class DailyMissionService(
         if (!DailyMissionSaveData.ACTIVITY_MILESTONES.contains(milestone)) return WriteOutcome.Rejected
         // R5-I4：跨日重置纳入事务（幂等），确保领奖前数据已是「今日」口径。
         ensureDailyMissionReset()
-        val data = getDailyMissionData()
-        if (data.activityPoints < milestone) return WriteOutcome.Rejected
-        if (data.claimedChests.contains(milestone)) return WriteOutcome.Rejected
 
-        val origClaimed = data.claimedChests.toList()
-        val origSC = core.saveData.softCurrency
-        val origHC = core.saveData.hardCurrency
+        // R6-P1：claimed/points 校验在锁内复检，防并发双领。
+        return core.withWriteLock {
+            val data = getDailyMissionData()
+            if (data.activityPoints < milestone) return@withWriteLock WriteOutcome.Rejected
+            if (data.claimedChests.contains(milestone)) return@withWriteLock WriteOutcome.Rejected
 
-        return core.transaction(
-            tag = "dailyMissions.claimChest",
-            mutate = {
-                data.claimedChests = data.claimedChests + milestone
-                val softReward = DailyMissionSaveData.MILESTONE_REWARDS[milestone] ?: 0
-                core.addCurrencyDelta(softReward, 0)
-                val hardReward = DailyMissionSaveData.MILESTONE_HARD_REWARDS[milestone] ?: 0
-                if (hardReward > 0) {
-                    core.addCurrencyDelta(0, hardReward)
-                }
-            },
-            rollback = {
-                data.claimedChests = origClaimed
-                core.saveData.softCurrency = origSC
-                core.saveData.hardCurrency = origHC
-            },
-            onCommit = {
-                core.publishCurrencyChanged()
-            },
-        )
+            val origClaimed = data.claimedChests.toList()
+            val origSC = core.saveData.softCurrency
+            val origHC = core.saveData.hardCurrency
+
+            core.transactionLocked(
+                tag = "dailyMissions.claimChest",
+                mutate = {
+                    data.claimedChests = data.claimedChests + milestone
+                    val softReward = DailyMissionSaveData.MILESTONE_REWARDS[milestone] ?: 0
+                    core.addCurrencyDelta(softReward, 0)
+                    val hardReward = DailyMissionSaveData.MILESTONE_HARD_REWARDS[milestone] ?: 0
+                    if (hardReward > 0) {
+                        core.addCurrencyDelta(0, hardReward)
+                    }
+                },
+                rollback = {
+                    data.claimedChests = origClaimed
+                    core.saveData.softCurrency = origSC
+                    core.saveData.hardCurrency = origHC
+                },
+                onCommit = {
+                    core.publishCurrencyChanged()
+                },
+            )
+        }
     }
 
     /** 今日活跃度宝箱状态。 */

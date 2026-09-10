@@ -78,9 +78,14 @@ class AffinityViewModel(
     private val _toasts = Channel<String>(Channel.BUFFERED)
     val toasts: Flow<String> = _toasts.receiveAsFlow()
 
+    /** 写操作防连点（R6-P1：与 Deck/Event 同范式）。 */
+    private val busy = MutableStateFlow(false)
+
     /** 赠送礼物（100 星尘 → +200 好感，数值见 [AffinityFormulas]）。拒绝时给针对性原因。 */
     fun gift(characterId: String) {
+        if (busy.value) return
         viewModelScope.launch {
+            busy.value = true
             try {
                 val msg = when (service.giftAffinity(characterId)) {
                     WriteOutcome.Success -> "好感 +${AffinityFormulas.GIFT_AFFINITY_AMOUNT}（扣除 ${AffinityFormulas.GIFT_COST_SOFT} 星尘）"
@@ -97,13 +102,17 @@ class AffinityViewModel(
                 _toasts.send(msg)
             } catch (_: Exception) {
                 _toasts.send("操作异常，请重试")
+            } finally {
+                busy.value = false
             }
         }
     }
 
     /** 领取好感等级奖励（档位见 [AffinityFormulas.LEVEL_REWARDS]）。 */
     fun claimReward(characterId: String, level: Int) {
+        if (busy.value) return
         viewModelScope.launch {
+            busy.value = true
             try {
                 val def = AffinityFormulas.LEVEL_REWARDS.firstOrNull { it.level == level }
                 val msg = when (service.claimAffinityReward(characterId, level)) {
@@ -122,6 +131,8 @@ class AffinityViewModel(
                 _toasts.send(msg)
             } catch (_: Exception) {
                 _toasts.send("操作异常，请重试")
+            } finally {
+                busy.value = false
             }
         }
     }

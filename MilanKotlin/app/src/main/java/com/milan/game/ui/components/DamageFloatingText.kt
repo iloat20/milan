@@ -48,10 +48,10 @@ fun DamageFloatingText(
 
     val textMeasurer = rememberTextMeasurer()
 
-    // 飘字状态：每条事件的进度（0f→1f）
-    val progresses = events.map { remember { Animatable(0f) } }
+    // R6-P1：remember 槽位必须固定——用 remember(events) 托管列表，避免 map 内 remember 数量变化。
+    val progresses = remember(events) { List(events.size) { Animatable(0f) } }
 
-    LaunchedEffect(active, events.size) {
+    LaunchedEffect(active, events) {
         progresses.forEachIndexed { index, animatable ->
             // 等待前一条事件的间隔
             if (index > 0) {

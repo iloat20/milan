@@ -74,61 +74,63 @@ class StoryService(
      * 「completeStage 发一次 + claimReward 再发一次」的双份奖励漏洞。
      */
     override suspend fun completeStoryStage(stageId: String): WriteOutcome {
-        val data = getStoryData()
-        if (data.isStageCompleted(stageId)) return WriteOutcome.Rejected
-
         val stage = findStoryStageDef(stageId) ?: return WriteOutcome.Rejected
-        // 前置校验：服务层防御，杜绝绕过 UI 直接跳关领奖
-        if (!canEnterStoryStage(stageId)) return WriteOutcome.Rejected
 
-        // 记录原始状态（回滚用）
-        val origCompleted = data.completedStages.toList()
-        val origClaimed = data.claimedRewards.toList()
-        val origSoft = core.saveData.softCurrency
-        val origHard = core.saveData.hardCurrency
-        val origCurrentChapter = data.currentChapterId
-        val origCurrentStage = data.currentStageId
+        // R6-P1：校验必须在 writeMutex 内复检——锁外 TOCTOU 可并发双完成双发奖。
+        return core.withWriteLock {
+            val data = getStoryData()
+            if (data.isStageCompleted(stageId)) return@withWriteLock WriteOutcome.Rejected
+            if (!canEnterStoryStage(stageId)) return@withWriteLock WriteOutcome.Rejected
 
-        return core.transaction(
-            tag = "story.completeStage",
-            mutate = {
-                // 标记关卡完成
-                data.completedStages = data.completedStages + stageId
+            // 记录原始状态（回滚用）
+            val origCompleted = data.completedStages.toList()
+            val origClaimed = data.claimedRewards.toList()
+            val origSoft = core.saveData.softCurrency
+            val origHard = core.saveData.hardCurrency
+            val origCurrentChapter = data.currentChapterId
+            val origCurrentStage = data.currentStageId
 
-                // 一步到位发放奖励 + 标记已领取
-                stage.rewards?.forEach { reward ->
-                    when (reward.type) {
-                        "soft_currency" -> core.addCurrencyDelta(reward.amount, 0)
-                        "hard_currency" -> core.addCurrencyDelta(0, reward.amount)
-                        // 其他奖励类型可扩展
+            core.transactionLocked(
+                tag = "story.completeStage",
+                mutate = {
+                    // 标记关卡完成
+                    data.completedStages = data.completedStages + stageId
+
+                    // 一步到位发放奖励 + 标记已领取
+                    stage.rewards?.forEach { reward ->
+                        when (reward.type) {
+                            "soft_currency" -> core.addCurrencyDelta(reward.amount, 0)
+                            "hard_currency" -> core.addCurrencyDelta(0, reward.amount)
+                            // 其他奖励类型可扩展
+                        }
                     }
-                }
-                data.claimedRewards = data.claimedRewards + stageId
+                    data.claimedRewards = data.claimedRewards + stageId
 
-                // 更新进行中的章节/关卡
-                val chapter = STORY_CHAPTERS.firstOrNull { ch ->
-                    ch.stages.any { it.stageId == stageId }
-                }
-                if (chapter != null) {
-                    data.currentChapterId = chapter.chapterId
-                    // 找到下一个关卡
-                    val stageIndex = chapter.stages.indexOfFirst { it.stageId == stageId }
-                    val nextStage = chapter.stages.getOrNull(stageIndex + 1)
-                    data.currentStageId = nextStage?.stageId
-                }
-            },
-            rollback = {
-                data.completedStages = origCompleted
-                data.claimedRewards = origClaimed
-                core.saveData.softCurrency = origSoft
-                core.saveData.hardCurrency = origHard
-                data.currentChapterId = origCurrentChapter
-                data.currentStageId = origCurrentStage
-            },
-            onCommit = {
-                core.publishCurrencyChanged()
-            },
-        )
+                    // 更新进行中的章节/关卡
+                    val chapter = STORY_CHAPTERS.firstOrNull { ch ->
+                        ch.stages.any { it.stageId == stageId }
+                    }
+                    if (chapter != null) {
+                        data.currentChapterId = chapter.chapterId
+                        // 找到下一个关卡
+                        val stageIndex = chapter.stages.indexOfFirst { it.stageId == stageId }
+                        val nextStage = chapter.stages.getOrNull(stageIndex + 1)
+                        data.currentStageId = nextStage?.stageId
+                    }
+                },
+                rollback = {
+                    data.completedStages = origCompleted
+                    data.claimedRewards = origClaimed
+                    core.saveData.softCurrency = origSoft
+                    core.saveData.hardCurrency = origHard
+                    data.currentChapterId = origCurrentChapter
+                    data.currentStageId = origCurrentStage
+                },
+                onCommit = {
+                    core.publishCurrencyChanged()
+                },
+            )
+        }
     }
 
     /**
@@ -188,6 +190,8 @@ class StoryService(
         if (core.saveData.softCurrency < sweepCost) return StorySweepOutcome.Rejected
 
         val origSC = core.saveData.softCurrency
+        // R6-P1：扫荡可发 hard_currency，rollback 必须一并还原，否则落盘失败白嫖钻石
+        val origHC = core.saveData.hardCurrency
         var totalSoft = 0
         var totalHard = 0
 
@@ -212,6 +216,7 @@ class StoryService(
             },
             rollback = {
                 core.saveData.softCurrency = origSC
+                core.saveData.hardCurrency = origHC
             },
             onCommit = { core.publishCurrencyChanged() },
         ).let {
@@ -244,6 +249,8 @@ class StoryService(
         if (core.saveData.softCurrency < sweepCost) return StorySweepOutcome.Rejected
 
         val origSC = core.saveData.softCurrency
+        // R6-P1：困难扫荡同样可发 hard，rollback 需还原 hardCurrency
+        val origHC = core.saveData.hardCurrency
         val origHard = data.hardModeCompleted.toList()
         var totalSoft = 0
         var totalHard = 0
@@ -274,6 +281,7 @@ class StoryService(
             },
             rollback = {
                 core.saveData.softCurrency = origSC
+                core.saveData.hardCurrency = origHC
                 data.hardModeCompleted = origHard
             },
             onCommit = { core.publishCurrencyChanged() },

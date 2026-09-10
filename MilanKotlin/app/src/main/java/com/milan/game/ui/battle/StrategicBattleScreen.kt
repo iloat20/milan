@@ -23,6 +23,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -100,15 +101,23 @@ fun StrategicBattleScreen(
                 }
 
                 // 打击演出：按单位 id 挂 punch/shake/death 驱动器（id 稳定则复用）
+                // R6-P1：不在组合体里直接写 map（非法 side effect）；SideEffect 填表，
+                // 单元 id 变化时 reset 防死亡残留。缺失项不临时 new，避免每帧分配。
                 val playerFx = remember { mutableStateMapOf<String, UnitStrikeFx>() }
                 val enemyFx = remember { mutableStateMapOf<String, UnitStrikeFx>() }
-                st.playerTeam.forEachIndexed { i, u ->
-                    val id = u.stats.characterId.ifEmpty { "p_$i" }
-                    if (!playerFx.containsKey(id)) playerFx[id] = UnitStrikeFx()
+                val playerKeys = st.playerTeam.mapIndexed { i, u ->
+                    u.stats.characterId.ifEmpty { "p_$i" }
                 }
-                st.enemyTeam.forEachIndexed { i, u ->
-                    val id = u.stats.characterId.ifEmpty { "e_$i" }
-                    if (!enemyFx.containsKey(id)) enemyFx[id] = UnitStrikeFx()
+                val enemyKeys = st.enemyTeam.mapIndexed { i, u ->
+                    u.stats.characterId.ifEmpty { "e_$i" }
+                }
+                SideEffect {
+                    playerKeys.forEach { k -> playerFx.getOrPut(k) { UnitStrikeFx() } }
+                    enemyKeys.forEach { k -> enemyFx.getOrPut(k) { UnitStrikeFx() } }
+                }
+                LaunchedEffect(playerKeys, enemyKeys) {
+                    playerKeys.forEach { playerFx[it]?.reset() }
+                    enemyKeys.forEach { enemyFx[it]?.reset() }
                 }
                 BattleStrikeOrchestrator(
                     pulses = ui.fxPulses,
@@ -142,7 +151,9 @@ fun StrategicBattleScreen(
                                     vm.selectTarget(i)
                                 }
                             },
-                            modifier = Modifier.weight(1f).unitStrikeLayer(enemyFx[unitId] ?: UnitStrikeFx()),
+                            modifier = Modifier.weight(1f).then(
+                                enemyFx[unitId]?.let { Modifier.unitStrikeLayer(it) } ?: Modifier,
+                            ),
                         )
                     }
                 }
@@ -202,7 +213,9 @@ fun StrategicBattleScreen(
                                     vm.selectTarget(i)
                                 }
                             },
-                            modifier = Modifier.weight(1f).unitStrikeLayer(playerFx[unitId] ?: UnitStrikeFx()),
+                            modifier = Modifier.weight(1f).then(
+                                playerFx[unitId]?.let { Modifier.unitStrikeLayer(it) } ?: Modifier,
+                            ),
                         )
                     }
                 }

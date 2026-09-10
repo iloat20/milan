@@ -53,6 +53,10 @@ private data class EquipmentStatBonus(
     val spd: Int = 0,
     val critRate: Double = 0.0,
     val critDmg: Double = 0.0,
+    /** 套装百分比（R6-P1：isPercentage=true 时按基数百分比加成，不可当 flat 加）。 */
+    val atkPct: Float = 0f,
+    val defPct: Float = 0f,
+    val hpPct: Float = 0f,
 )
 
 class ServiceCore(
@@ -545,12 +549,12 @@ class ServiceCore(
         
         // 计算装备属性加成
         val equipmentStats = calculateEquipmentStats(characterId)
-        
-        // 合并属性：四主属性 + 暴击属性
+
+        // 合并属性：四主属性 + 暴击；套装百分比作用在「基础+flat 装备」之上（R6-P1）
         return baseUnitStats.copy(
-            atk = baseUnitStats.atk + equipmentStats.atk,
-            def = baseUnitStats.def + equipmentStats.def,
-            hp = baseUnitStats.hp + equipmentStats.hp,
+            atk = ((baseUnitStats.atk + equipmentStats.atk) * (1f + equipmentStats.atkPct)).toInt(),
+            def = ((baseUnitStats.def + equipmentStats.def) * (1f + equipmentStats.defPct)).toInt(),
+            hp = ((baseUnitStats.hp + equipmentStats.hp) * (1f + equipmentStats.hpPct)).toInt(),
             spd = baseUnitStats.spd + equipmentStats.spd,
             critRate = baseUnitStats.critRate + equipmentStats.critRate,
             critDmg = baseUnitStats.critDmg + equipmentStats.critDmg,
@@ -612,18 +616,25 @@ class ServiceCore(
         
         // 计算套装效果
         val setBonuses = calculateSetBonuses(characterId)
+        var atkPct = 0f
+        var defPct = 0f
+        var hpPct = 0f
         for (bonus in setBonuses) {
+            // R6-P1：isPercentage 必须按百分比记账；此前一律当 flat 加，「攻击力+15%」变成 +15 点。
             when (bonus.statType) {
-                StatValue.STAT_ATTACK -> atk += bonus.value
-                StatValue.STAT_DEFENSE -> def += bonus.value
-                StatValue.STAT_HP -> hp += bonus.value
+                StatValue.STAT_ATTACK ->
+                    if (bonus.isPercentage) atkPct += bonus.value / 100f else atk += bonus.value
+                StatValue.STAT_DEFENSE ->
+                    if (bonus.isPercentage) defPct += bonus.value / 100f else def += bonus.value
+                StatValue.STAT_HP ->
+                    if (bonus.isPercentage) hpPct += bonus.value / 100f else hp += bonus.value
                 StatValue.STAT_SPEED -> spd += bonus.value
                 StatValue.STAT_CRIT_RATE -> critRate += bonus.value / 100.0
                 StatValue.STAT_CRIT_DMG -> critDmg += bonus.value / 100.0
                 else -> {}
             }
         }
-        
+
         return EquipmentStatBonus(
             atk = atk,
             def = def,
@@ -631,6 +642,9 @@ class ServiceCore(
             spd = spd,
             critRate = critRate,
             critDmg = critDmg,
+            atkPct = atkPct,
+            defPct = defPct,
+            hpPct = hpPct,
         )
     }
     

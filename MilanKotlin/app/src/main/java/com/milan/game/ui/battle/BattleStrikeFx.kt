@@ -8,10 +8,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -56,40 +53,36 @@ fun strikeFxKindOf(energyCost: Int): StrikeFxKind = when {
     else -> StrikeFxKind.NORMAL
 }
 
-/** 单位打击演出状态：graphicsLayer 读 punch/shake/death 三通道。 */
+/** 单位打击演出状态：graphicsLayer 直接读 Animatable（禁止在 draw 期写 mutableState）。 */
 class UnitStrikeFx {
-    var punch by mutableStateOf(0f)
-        private set
-    var shake by mutableStateOf(0f)
-        private set
-    var death by mutableStateOf(0f)
-        private set
-
     private val punchAnim = Animatable(0f)
     private val shakeAnim = Animatable(0f)
     private val deathAnim = Animatable(0f)
 
+    /** graphicsLayer 内只读，无副作用（R6-P1：原先 syncFromAnims 在 draw 期写 state）。 */
+    val punch: Float get() = punchAnim.value
+    val shake: Float get() = shakeAnim.value
+    val death: Float get() = deathAnim.value
+
     suspend fun playAttacker() {
         punchAnim.snapTo(0f)
         punchAnim.animateTo(1f, tween(180, easing = FastOutSlowInEasing))
-        punch = 0f
     }
 
     suspend fun playTarget(defeated: Boolean) {
         shakeAnim.snapTo(0f)
         shakeAnim.animateTo(1f, tween(200))
-        shake = 0f
         if (defeated) {
             deathAnim.snapTo(0f)
             deathAnim.animateTo(1f, tween(420, easing = FastOutSlowInEasing))
-            death = 1f
         }
     }
 
-    fun syncFromAnims() {
-        punch = punchAnim.value
-        shake = shakeAnim.value
-        if (deathAnim.value > 0f) death = deathAnim.value
+    /** 新开战局时复位，防死亡残留半沉/幽灵态（R6-P1）。 */
+    suspend fun reset() {
+        punchAnim.snapTo(0f)
+        shakeAnim.snapTo(0f)
+        deathAnim.snapTo(0f)
     }
 }
 
@@ -208,7 +201,6 @@ fun BattleHurtFlash(
  * 注意 GraphicsLayerScope 的 scaleX/alpha 会遮蔽外部同名变量——内部统一用 animX 等局部名。
  */
 fun Modifier.unitStrikeLayer(fx: UnitStrikeFx): Modifier = this.graphicsLayer {
-    fx.syncFromAnims()
     val p = fx.punch
     val s = fx.shake
     val d = fx.death

@@ -184,36 +184,40 @@ class MonetizationService(
 
     /** 领取通行证等级奖励。 */
     override suspend fun claimBattlePassReward(level: Int): WriteOutcome {
-        val data = getMonetizationData()
         if (level < 1) return WriteOutcome.Rejected
-        if (level > data.battlePassLevel) return WriteOutcome.Rejected
-        if (data.claimedBPRewards.contains(level)) return WriteOutcome.Rejected
 
-        val origClaimed = data.claimedBPRewards.toList()
-        val origSoft = core.saveData.softCurrency
-        val origHard = core.saveData.hardCurrency
+        // R6-P1：claimed 校验在锁内复检，防并发双领。
+        return core.withWriteLock {
+            val data = getMonetizationData()
+            if (level > data.battlePassLevel) return@withWriteLock WriteOutcome.Rejected
+            if (data.claimedBPRewards.contains(level)) return@withWriteLock WriteOutcome.Rejected
 
-        return core.transaction(
-            tag = "monetization.bpClaim",
-            mutate = {
-                data.claimedBPRewards = data.claimedBPRewards + level
-                // 基础奖励（免费轨）—— 数值单一事实来源：[MonetizationFormulas.bpFreeRewardSoft]
-                core.addCurrencyDelta(MonetizationFormulas.bpFreeRewardSoft(level), 0)
-                // 豪华轨额外奖励
-                if (data.battlePassPremium) {
-                    core.addCurrencyDelta(0, MonetizationFormulas.bpPremiumRewardHard(level))
-                }
-            },
-            rollback = {
-                data.claimedBPRewards = origClaimed
-                core.saveData.softCurrency = origSoft
-                core.saveData.hardCurrency = origHard
-            },
-            onCommit = {
-                core.publishCurrencyChanged()
-                core.publishProgressionChanged()
-            },
-        )
+            val origClaimed = data.claimedBPRewards.toList()
+            val origSoft = core.saveData.softCurrency
+            val origHard = core.saveData.hardCurrency
+
+            core.transactionLocked(
+                tag = "monetization.bpClaim",
+                mutate = {
+                    data.claimedBPRewards = data.claimedBPRewards + level
+                    // 基础奖励（免费轨）—— 数值单一事实来源：[MonetizationFormulas.bpFreeRewardSoft]
+                    core.addCurrencyDelta(MonetizationFormulas.bpFreeRewardSoft(level), 0)
+                    // 豪华轨额外奖励
+                    if (data.battlePassPremium) {
+                        core.addCurrencyDelta(0, MonetizationFormulas.bpPremiumRewardHard(level))
+                    }
+                },
+                rollback = {
+                    data.claimedBPRewards = origClaimed
+                    core.saveData.softCurrency = origSoft
+                    core.saveData.hardCurrency = origHard
+                },
+                onCommit = {
+                    core.publishCurrencyChanged()
+                    core.publishProgressionChanged()
+                },
+            )
+        }
     }
 
     /** 获取通行证定义奖励列表。 */
@@ -235,33 +239,36 @@ class MonetizationService(
 
     /** 充值（模拟，写入星琼）。 */
     override suspend fun charge(tierId: String, hardCurrency: Int, costCents: Int): WriteOutcome {
-        val data = getMonetizationData()
-        val isDouble = !data.firstChargeClaimed.contains(tierId)
-        val actualHC = if (isDouble) hardCurrency * 2 else hardCurrency
+        // R6-P1：首充翻倍判定必须在锁内——锁外 TOCTOU 可双倍发放。
+        return core.withWriteLock {
+            val data = getMonetizationData()
+            val isDouble = !data.firstChargeClaimed.contains(tierId)
+            val actualHC = if (isDouble) hardCurrency * 2 else hardCurrency
 
-        val origHC = core.saveData.hardCurrency
-        val origFirstCharge = data.firstChargeClaimed.toList()
-        val origTotal = data.totalChargeAmount
+            val origHC = core.saveData.hardCurrency
+            val origFirstCharge = data.firstChargeClaimed.toList()
+            val origTotal = data.totalChargeAmount
 
-        return core.transaction(
-            tag = "monetization.charge",
-            mutate = {
-                core.addCurrencyDelta(0, actualHC)
-                if (isDouble) {
-                    data.firstChargeClaimed = data.firstChargeClaimed + tierId
-                }
-                data.totalChargeAmount += costCents
-            },
-            rollback = {
-                core.saveData.hardCurrency = origHC
-                data.firstChargeClaimed = origFirstCharge
-                data.totalChargeAmount = origTotal
-            },
-            onCommit = {
-                core.publishCurrencyChanged()
-                core.publishProgressionChanged()
-            },
-        )
+            core.transactionLocked(
+                tag = "monetization.charge",
+                mutate = {
+                    core.addCurrencyDelta(0, actualHC)
+                    if (isDouble) {
+                        data.firstChargeClaimed = data.firstChargeClaimed + tierId
+                    }
+                    data.totalChargeAmount += costCents
+                },
+                rollback = {
+                    core.saveData.hardCurrency = origHC
+                    data.firstChargeClaimed = origFirstCharge
+                    data.totalChargeAmount = origTotal
+                },
+                onCommit = {
+                    core.publishCurrencyChanged()
+                    core.publishProgressionChanged()
+                },
+            )
+        }
     }
 
     /** 领取累计充值里程碑奖励。 */
