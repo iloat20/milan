@@ -75,3 +75,8 @@ docs/superpowers/art-direction/portraits-v2/*.err
 # 临时备份文件（脚本改写前自动留存，不入库）
 *.bak
 *.tmp
+
+# Local audio encode tool (not for repo)
+.ffmpeg-win/
+.ffmpeg-tmp/
+

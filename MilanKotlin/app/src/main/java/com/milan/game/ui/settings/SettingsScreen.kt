@@ -57,7 +57,7 @@ import kotlinx.coroutines.launch
 /**
  * 设置页（C# SettingsPage 翻译）。
  *
- * 结构：音频与体验（音效/振动/推送/动效减弱）→ 数据管理（重置存档、崩溃日志导出）→ 关于。
+ * 结构：音频与体验（音效/振动/推送/动效减弱/字号）→ 数据管理（重置存档、崩溃日志导出）→ 关于。
  * 写操作与推荐派生经 [SettingsViewModel]（组合根注入）；平台副作用
  * （MilanAudio 音量、WorkManager、通知权限）留在本 Screen 以回调注入。
  */
@@ -156,6 +156,37 @@ fun SettingsScreen(
                         checked = meta.reduceMotionEnabled,
                         onCheckedChange = { enabled -> vm.setReduceMotionEnabled(enabled) },
                     )
+                }
+                EntranceItem(index = 4) {
+                    Column {
+                        Text(
+                            text = "字号",
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = AppTheme.Text1,
+                        )
+                        Text(
+                            text = "全局文字缩放（标准 / +10% / +20%）",
+                            fontSize = 12.sp,
+                            color = AppTheme.Text3,
+                        )
+                        Spacer(Modifier.height(8.dp))
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            listOf(
+                                0 to "标准",
+                                1 to "+10%",
+                                2 to "+20%",
+                            ).forEach { (tier, label) ->
+                                val selected = meta.fontScaleTier == tier
+                                NeonButton(
+                                    text = label,
+                                    color = if (selected) AppTheme.Gold else AppTheme.Text3,
+                                    onClick = { vm.setFontScaleTier(tier) },
+                                    modifier = Modifier.weight(1f),
+                                )
+                            }
+                        }
+                    }
                 }
 
                 SectionTitle("数据管理")

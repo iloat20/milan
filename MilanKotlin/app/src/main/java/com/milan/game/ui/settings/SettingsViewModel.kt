@@ -75,6 +75,11 @@ class SettingsViewModel(
         mapWrite(service.setReduceMotionEnabled(enabled))
     }
 
+    /** 字号档位：0=标准 1=+10% 2=+20%。 */
+    fun setFontScaleTier(tier: Int) = runWrite {
+        mapWrite(service.setFontScaleTier(tier), failHint = "字号档位无效")
+    }
+
     /**
      * 推送开关。[onSuccess] 由 Screen 排程 WorkManager / 请求通知权限
      *（权限拒绝不回滚开关，与原实现一致）。

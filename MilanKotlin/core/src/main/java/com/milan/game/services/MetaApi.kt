@@ -22,6 +22,9 @@ interface MetaApi {
     /** 动效减弱开关持久化（无障碍；true=关闭高负载演出）。 */
     suspend fun setReduceMotionEnabled(enabled: Boolean): WriteOutcome
 
+    /** 字号档位持久化（0=标准 1=+10% 2=+20%）。 */
+    suspend fun setFontScaleTier(tier: Int): WriteOutcome
+
     /** 重置存档为新档（删除失败返回 false 且不动内存）。 */
     suspend fun resetSave(): Boolean
 

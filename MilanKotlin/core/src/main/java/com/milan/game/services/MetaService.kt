@@ -66,6 +66,16 @@ class MetaService(private val core: ServiceCore) : MetaApi {
         newValue = enabled,
     )
 
+    /** 字号档位：0=标准 1=+10% 2=+20%；非法值拒绝。 */
+    override suspend fun setFontScaleTier(tier: Int): WriteOutcome {
+        if (tier !in 0..2) return WriteOutcome.Rejected
+        return persistSetting(
+            read = { saveData.fontScaleTier },
+            write = { saveData.fontScaleTier = it },
+            newValue = tier,
+        )
+    }
+
     /**
      * 重置存档为新档：删除存档文件并重载默认档，整体替换 saveData 引用，
      * 成功后广播货币/养成变更（各页面据此刷新）。

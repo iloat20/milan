@@ -138,6 +138,7 @@ class ServiceCore(
             vibrationEnabled = saveData.vibrationEnabled,
             pushEnabled = saveData.pushEnabled,
             reduceMotionEnabled = saveData.reduceMotionEnabled,
+            fontScaleTier = saveData.fontScaleTier.coerceIn(0, 2),
             pityByPool = pools.associate { it.poolId to saveData.getGachaCounter(it.poolId) },
             ownedSaves = ownedSaves,
             formation = saveData.getFormationIds(),
@@ -175,10 +176,11 @@ class ServiceCore(
         _gachaSlice.setIfChanged(GachaSlice(snap.pityByPool, snap.featuredLostByPool))
         _meta.setIfChanged(
             MetaSlice(
-                snap.soundEnabled,
-                snap.vibrationEnabled,
-                snap.pushEnabled,
-                snap.reduceMotionEnabled,
+                soundEnabled = snap.soundEnabled,
+                vibrationEnabled = snap.vibrationEnabled,
+                pushEnabled = snap.pushEnabled,
+                reduceMotionEnabled = snap.reduceMotionEnabled,
+                fontScaleTier = snap.fontScaleTier,
             )
         )
     }

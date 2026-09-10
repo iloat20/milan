@@ -88,6 +88,11 @@ class SaveData(
      * 只保留必要信息动画。旧档无此键 → false（全量动效）。
      */
     @SerialName("ReduceMotionEnabled") var reduceMotionEnabled: Boolean = false,
+    /**
+     * 字号档位（设计语言 P3 §5.7）：0=标准 1=+10% 2=+20%。经 LocalDensity.fontScale 全局生效。
+     * 旧档无此键 → 0。
+     */
+    @SerialName("FontScaleTier") var fontScaleTier: Int = 0,
 
     // ─────────── 商店与成就领取 ───────────
     /** 每日商店归属的 UTC 日序号字符串（与当日不一致 = 跨日，已购列表作废重置）。 */

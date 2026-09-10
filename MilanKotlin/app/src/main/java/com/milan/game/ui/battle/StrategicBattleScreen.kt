@@ -65,6 +65,16 @@ fun StrategicBattleScreen(
 
     LaunchedEffect(floor) { vm.start(floor) }
 
+    // 战斗 BGM：进入切 battle，退出切回 theme（资源缺失静默）
+    LaunchedEffect(Unit) {
+        com.milan.game.infrastructure.MilanAudio.playBgm("battle")
+    }
+    androidx.compose.runtime.DisposableEffect(Unit) {
+        onDispose {
+            com.milan.game.infrastructure.MilanAudio.playBgm("theme")
+        }
+    }
+
     Box(modifier = modifier.fillMaxSize()) {
         PageBackground {
             Column(Modifier.fillMaxSize().padding(12.dp)) {

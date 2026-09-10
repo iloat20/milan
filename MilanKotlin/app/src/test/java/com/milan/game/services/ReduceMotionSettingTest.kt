@@ -5,6 +5,7 @@ import com.milan.game.data.SaveProvider
 import com.milan.game.infrastructure.eventbus.EventBus
 import kotlin.random.Random
 import kotlinx.coroutines.test.runTest
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -72,5 +73,19 @@ class ReduceMotionSettingTest {
         provider.stored = bare.toJson()
         val reloaded = GameService(provider, testContent, {}, Random(2))
         assertFalse(reloaded.saveData.reduceMotionEnabled)
+    }
+
+    @Test
+    fun fontScaleTier_clampsAndPersists() = runTest {
+        val provider = FakeProvider()
+        val svc = GameService(provider, testContent, provider.traces::add, Random(3))
+        assertEquals(0, svc.meta.value.fontScaleTier)
+
+        assertTrue(svc.setFontScaleTier(2) is WriteOutcome.Success)
+        assertEquals(2, svc.saveData.fontScaleTier)
+        assertEquals(2, svc.meta.value.fontScaleTier)
+
+        assertTrue(svc.setFontScaleTier(9) is WriteOutcome.Rejected)
+        assertEquals(2, svc.saveData.fontScaleTier)
     }
 }

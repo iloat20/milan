@@ -13,23 +13,15 @@
 | `battle_victory.ogg` | 战斗胜利（结算层） |
 | `battle_defeat.ogg` | 战斗失败（结算层） |
 
-## 当前资产形态
+背景乐：`assets/audio/bgm/battle.ogg`（策略战斗进入时 `playBgm("battle")`，
+退出恢复 `theme`）。
 
-上述 7 个文件为**程序合成占位音效**（`tools/generate_battle_sfx.py`，
-numpy 合成 → 22.05kHz mono 16-bit PCM）。
+## 资产形态
 
-- 容器实为 RIFF/WAVE，扩展名按约定写成 `.ogg`。
-- Android `SoundPool` 经 `MediaExtractor` **按数据嗅探格式**（非扩展名），
-  WAVE/PCM 可加载播放；与现有 `gacha_*.ogg`（真 Ogg Vorbis）并存无冲突。
-- 时长 0.14–0.55s，均 ≤ 0.8s；响度统一 gain≈0.38。
+- 上述 7 条 SFX 与 `bgm/battle.ogg` 为 **程序合成 + libvorbis 编码的真 Ogg Vorbis**（`OggS` magic）。
+- 时长：SFX 0.14–0.55s（≤ 0.8s）；战斗 BGM 约 24s 可循环。
+- 响度对齐 `gacha_*.ogg`。
 
-## 替换为正式音效
+## 替换正式音效
 
-美术/音频侧直接**同名覆盖**为真 Ogg Vorbis 即可（保持 ≤0.8s，
-响度对齐 `gacha_pull.ogg` / `gacha_reveal.ogg`）。无需改代码。
-
-重新生成占位音：
-
-```powershell
-$env:MIMO_PYTHON tools/generate_battle_sfx.py
-```
+同名覆盖即可，无需改代码。保持 ≤0.8s，响度对齐 `gacha_pull.ogg`。
