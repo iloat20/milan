@@ -314,6 +314,68 @@ class ProgressionService(private val core: ServiceCore) : ProgressionApi {
             )
         }
 
+    /** 好感等级奖励领取态（characterId → 已领取档位；null 条目滤掉）。 */
+    override fun getClaimedAffinityRewards(): Map<String, List<Int>> {
+        val raw = saveData.claimedAffinityRewards ?: return emptyMap()
+        return raw.mapNotNull { (id, levels) ->
+            if (id.isEmpty()) null else id to (levels?.filterNotNull() ?: emptyList())
+        }.toMap()
+    }
+
+    /**
+     * 领取好感等级奖励（2026-09-10：UI 此前只展示「规划中」，无领取路径）。
+     *
+     * 事务范式：锁内校验「角色已拥有 + 达到档位 + 未领取」→ 发放 → 标记已领取。
+     * Rejected：角色未拥有 / 未达档位 / 已领取 / 档位非法。数值单一事实来源 [AffinityFormulas.LEVEL_REWARDS]。
+     * 成功后由门面 [GameService.claimAffinityReward] 上报 CLAIM_AFFINITY 每日任务进度。
+     */
+    override suspend fun claimAffinityReward(characterId: String, level: Int): WriteOutcome =
+        core.withWriteLock {
+            val reward = AffinityFormulas.LEVEL_REWARDS.firstOrNull { it.level == level }
+                ?: return@withWriteLock WriteOutcome.Rejected
+            val owned = saveData.ownedCharacters.any { it?.characterId == characterId }
+            if (!owned) return@withWriteLock WriteOutcome.Rejected
+            val affinity = saveData.characterAffinityData?.get(characterId) ?: 0
+            if (AffinityFormulas.levelOf(affinity) < level) {
+                return@withWriteLock WriteOutcome.Rejected
+            }
+            val claimed = saveData.claimedAffinityRewards?.get(characterId)?.filterNotNull().orEmpty()
+            if (level in claimed) return@withWriteLock WriteOutcome.Rejected
+
+            val origClaimed = saveData.claimedAffinityRewards
+            val origSoft = saveData.softCurrency
+            val origHard = saveData.hardCurrency
+            val fragExisted = saveData.items.any { it?.itemId == ServiceCore.StarFragmentItemId }
+            val origFrags = core.itemCount(ServiceCore.StarFragmentItemId)
+
+            core.transactionLocked(
+                tag = "affinity.claimReward",
+                mutate = {
+                    when (reward.kind) {
+                        AffinityFormulas.RewardKind.SOFT ->
+                            core.addCurrencyDelta(softDelta = reward.amount)
+                        AffinityFormulas.RewardKind.HARD ->
+                            core.addCurrencyDelta(hardDelta = reward.amount)
+                        AffinityFormulas.RewardKind.FRAGMENT ->
+                            core.addItemDelta(ServiceCore.StarFragmentItemId, reward.amount)
+                    }
+                    saveData.claimedAffinityRewards =
+                        (saveData.claimedAffinityRewards ?: emptyMap()) +
+                        (characterId to (claimed + level))
+                },
+                rollback = {
+                    saveData.claimedAffinityRewards = origClaimed
+                    saveData.softCurrency = origSoft
+                    saveData.hardCurrency = origHard
+                    core.restoreItemCount(ServiceCore.StarFragmentItemId, fragExisted, origFrags)
+                },
+                onCommit = {
+                    core.publishCurrencyChanged()
+                    core.publishProgressionChanged()
+                },
+            )
+        }
+
     /** 天赋校验结果（P3-3：替代 Triple 元组，字段具名可读）。 */
     private data class TalentCheck(
         val save: CharacterSaveState,

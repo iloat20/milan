@@ -36,6 +36,9 @@ class DailyMissionService(
         DailyMissionDef("arena_1", "挑战竞技场", "挑战1次竞技场", DailyMissionType.CHALLENGE_ARENA, 1, 10, "⚔️"),
         DailyMissionDef("arena_3", "挑战竞技场3次", "挑战3次竞技场", DailyMissionType.CHALLENGE_ARENA, 3, 20, "⚔️"),
         DailyMissionDef("enhance_1", "强化装备", "强化1次装备", DailyMissionType.ENHANCE_EQUIPMENT, 1, 10, "🔧"),
+        // 2026-09-10：好感等级奖励领取已落地（ProgressionService.claimAffinityReward），
+        // 补回此前因「无生产点」被剔除的 CLAIM_AFFINITY 模板。
+        DailyMissionDef("affinity_1", "领取好感奖励", "领取1次好感度等级奖励", DailyMissionType.CLAIM_AFFINITY, 1, 15, "💝"),
     )
 
     /**

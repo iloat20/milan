@@ -25,6 +25,7 @@ import com.milan.game.data.DialogueLine
 import com.milan.game.data.StoryChoice
 import com.milan.game.data.StoryStageDef
 import com.milan.game.data.StoryStageType
+import com.milan.game.services.CharacterDataEntry
 import com.milan.game.ui.components.GlassPanel
 import com.milan.game.ui.components.PortraitImage
 import com.milan.game.ui.theme.AppTheme
@@ -44,6 +45,7 @@ import kotlinx.coroutines.delay
  * - 墨汁泼溅进入/退出转场
  *
  * 好感落账经 [onGrantAffinity] 回调上抛（由 StoryViewModel 执行），本屏不碰服务层。
+ * 说话者内容查询经 [characterOf] 注入（2026-09-10：消除 AppGraph.service 服务定位器泄漏）。
  */
 @Composable
 fun DialogueScreen(
@@ -58,6 +60,8 @@ fun DialogueScreen(
     onNavigateStage: (String) -> Unit = {},
     /** 好感选项落账（默认 no-op；生产由 NavHost 注入 StoryViewModel.grantAffinity）。 */
     onGrantAffinity: (characterId: String, amount: Int) -> Unit = { _, _ -> },
+    /** 说话者内容查找（生产由 NavHost 注入 StoryViewModel.characterOf）。 */
+    characterOf: (String) -> CharacterDataEntry? = { null },
 ) {
     val dialogue = stage.dialogue ?: return
     var currentIndex by remember { mutableStateOf(0) }
@@ -138,11 +142,11 @@ fun DialogueScreen(
                     // 角色立绘（真实图片）
                     PortraitImage(
                         characterId = currentLine.speakerId,
-                        rarity = getCharacterRarity(currentLine.speakerId),
+                        rarity = getCharacterRarity(currentLine.speakerId, characterOf),
                         modifier = Modifier
                             .fillMaxHeight(0.85f)
                             .aspectRatio(0.7f),
-                        name = getSpeakerName(currentLine.speakerId),
+                        name = getSpeakerName(currentLine.speakerId, characterOf),
                     )
                 } else if (currentLine != null) {
                     // 旁白：显示叙述者图标
@@ -297,7 +301,7 @@ fun DialogueScreen(
                             if (currentLine.speakerId != "narrator") {
                                 PortraitImage(
                                     characterId = currentLine.speakerId,
-                                    rarity = getCharacterRarity(currentLine.speakerId),
+                                    rarity = getCharacterRarity(currentLine.speakerId, characterOf),
                                     modifier = Modifier
                                         .size(28.dp)
                                         .clip(RoundedCornerShape(AppTheme.Roundness.lg)),
@@ -306,8 +310,8 @@ fun DialogueScreen(
                                 Spacer(Modifier.width(8.dp))
                             }
                             Text(
-                                text = getSpeakerName(currentLine.speakerId),
-                                color = getSpeakerColor(currentLine.speakerId),
+                                text = getSpeakerName(currentLine.speakerId, characterOf),
+                                color = getSpeakerColor(currentLine.speakerId, characterOf),
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.Bold,
                             )
@@ -478,16 +482,16 @@ private fun ChoiceCard(
 }
 
 /** 说话者显示名：内容表查角色；旁白/未知 id 兜底。 */
-private fun getSpeakerName(speakerId: String): String {
+private fun getSpeakerName(speakerId: String, characterOf: (String) -> CharacterDataEntry?): String {
     if (speakerId == "narrator" || speakerId.isBlank()) return "旁白"
-    val def = com.milan.game.di.AppGraph.service.character(speakerId)
+    val def = characterOf(speakerId)
     return def?.displayName?.takeIf { it.isNotBlank() }
         ?: speakerId.removePrefix("char_").replace("_", " ")
 }
 
 /** 说话者稀有度（立绘加载）；内容表缺失时按 id 前缀兜底。 */
-private fun getCharacterRarity(speakerId: String): Int {
-    val fromContent = com.milan.game.di.AppGraph.service.character(speakerId)?.baseRarity
+private fun getCharacterRarity(speakerId: String, characterOf: (String) -> CharacterDataEntry?): Int {
+    val fromContent = characterOf(speakerId)?.baseRarity
     if (fromContent != null) return fromContent
     return when {
         speakerId.contains("ur_") -> 4
@@ -498,9 +502,9 @@ private fun getCharacterRarity(speakerId: String): Int {
 }
 
 /** 说话者主题色：优先稀有度色，其次元素色；旁白中性灰。 */
-private fun getSpeakerColor(speakerId: String): Color {
+private fun getSpeakerColor(speakerId: String, characterOf: (String) -> CharacterDataEntry?): Color {
     if (speakerId == "narrator") return Color(0xFFBBBBBB)
-    val def = com.milan.game.di.AppGraph.service.character(speakerId) ?: return AppTheme.Gold
+    val def = characterOf(speakerId) ?: return AppTheme.Gold
     val (eFrom, _, _, _) = com.milan.game.ui.theme.ElementTheme.forElement(def.element)
     // 稀有度色为主色，元素色作强调（金箔 UR / 朱砂 SSR 统一取 AppTheme）
     return AppTheme.rarityColor(def.baseRarity).takeIf { def.baseRarity >= 3 } ?: eFrom

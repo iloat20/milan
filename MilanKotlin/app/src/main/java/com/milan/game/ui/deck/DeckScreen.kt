@@ -43,13 +43,20 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.geometry.Offset
 import com.milan.game.OwnedCharacterView
 import com.milan.game.ui.components.CharacterCard
 import com.milan.game.ui.components.FormationBar
+import com.milan.game.ui.components.FormationDragGhost
+import com.milan.game.ui.components.formationDragSource
+import com.milan.game.ui.components.formationDropTarget
+import com.milan.game.ui.components.rememberFormationDragState
 import com.milan.game.ui.components.NeonButton
 import com.milan.game.ui.components.PageBackground
 import com.milan.game.ui.components.PortraitImage
@@ -58,6 +65,8 @@ import com.milan.game.ui.nav.AppTopBar
 import com.milan.game.ui.nav.GameNavBar
 import com.milan.game.ui.nav.NavItem
 import com.milan.game.ui.theme.AppTheme
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInRoot
 import kotlinx.coroutines.launch
 
 /**
@@ -91,8 +100,11 @@ fun DeckScreen(
     val previewInFormation = preview != null && preview.save.characterId in ui.formation
     val previewToggle: (() -> Unit)? =
         preview?.save?.characterId?.let { id -> ({ toggleFormation(id) }) }
+    // 2026-09-10：长按拖到编队条快捷入队（短按仍是预览）
+    val dragState = rememberFormationDragState()
 
     PageBackground(modifier = modifier) {
+        Box(Modifier.fillMaxSize()) {
         Column(Modifier.fillMaxSize()) {
             AppTopBar(title = "卡 组", onBack = { onNav(NavItem.Home) })
             Spacer(Modifier.height(14.dp))
@@ -114,14 +126,22 @@ fun DeckScreen(
                             previewId = onOpenDeckSlot
                         } else {
                             // M2 修复：空槽此前静默 no-op（点了没反应）。
-                            // 卡组页本身就是编队页——点空槽的意图是「往空位放人」，
-                            // 与 TowerScreen 的「跳去组队页」语义不同，此处给可见引导指向下方角色网格。
                             scope.launch { feedback.show("点下方角色卡片，在预览中「加入编队」") }
                         }
                     },
-                    modifier = Modifier.padding(horizontal = 18.dp),
+                    dropHighlight = dragState.isOverDropZone,
+                    modifier = Modifier
+                        .padding(horizontal = 18.dp)
+                        .formationDropTarget(dragState),
                 )
                 Spacer(Modifier.height(12.dp))
+                Text(
+                    text = "长按卡片拖到编队条可快速入队",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = AppTheme.Text3,
+                    modifier = Modifier.padding(horizontal = 18.dp),
+                )
+                Spacer(Modifier.height(6.dp))
             }
 
             if (owned.isEmpty()) {
@@ -162,6 +182,7 @@ fun DeckScreen(
                                 pos.coerceIn(-0.5f, 0.5f) * 2f
                             }
                         }
+                        var cardRoot by remember { mutableStateOf(Offset.Zero) }
                         CharacterCard(
                             characterId = ch.save.characterId,
                             name = ch.name,
@@ -180,7 +201,18 @@ fun DeckScreen(
                             },
                             modifier = Modifier
                                 .animateItem()
-                                .graphicsLayer { translationY = parallax * 8f },
+                                .graphicsLayer { translationY = parallax * 8f }
+                                .onGloballyPositioned { cardRoot = it.positionInRoot() }
+                                .formationDragSource(
+                                    state = dragState,
+                                    character = ch,
+                                    localToRoot = { cardRoot },
+                                    onDropOnFormation = { dropped ->
+                                        if (dropped.save.characterId !in ui.formation) {
+                                            toggleFormation(dropped.save.characterId)
+                                        }
+                                    },
+                                ),
                         )
                     }
                 }
@@ -193,6 +225,8 @@ fun DeckScreen(
             )
         }
 
+        FormationDragGhost(state = dragState)
+
         DeckPreviewOverlay(
             preview = preview,
             onClose = { previewId = null },
@@ -200,6 +234,7 @@ fun DeckScreen(
             inFormation = previewInFormation,
             onToggleFormation = previewToggle,
         )
+        }
     }
 }
 

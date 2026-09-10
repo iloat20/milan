@@ -14,7 +14,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -24,6 +23,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
@@ -35,16 +35,17 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.milan.game.services.CharacterDataEntry
 import com.milan.game.services.PullResult
 import com.milan.game.ui.theme.AppTheme
+import com.milan.game.ui.theme.RitualType
 import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.random.Random
@@ -52,56 +53,35 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 
 /**
- * 赛博霓虹抽卡演出（2026-08-20 新演出层，替换旧「八卦法阵 + 大立绘弹出」方案）。
+ * 丹青典藏抽卡演出（2026-09 从赛博霓虹全面迁入典藏仪式语言）。
  *
- * 设计决策：
- * - 纯 Compose / Canvas 实现，零新依赖（RenderEffect 需 API 31+，弃用，全版本表现一致）。
- * - 色板独立于此文件（AppTheme 与他人并行修改，直接改会冲突/被覆盖）。
- * - 与 GpuEffects（AGSL RuntimeShader）解耦：新演出全 Canvas 自绘。
- * - 稀有度语言沿用全局惯例：R=1 / SR=2 / SSR=3 / UR=4，颜色走 AppTheme.rarityColor。
+ * 设计：
+ * - 纯 Compose / Canvas，零新依赖
+ * - 色板独立（CyberPalette 命名保留以最小化侵入，值已是朱砂/金箔/石青/浓墨）
+ * - 分镜：Charge 蓄墨 → Beam 开卷 → Single/Ten 揭晓 → Done
  *
- * 分镜（由 [RevealStage] 驱动，GachaScreen 持有 stage 并按序推进）：
- *   1. Charge 蓄能：粒子从屏缘汇聚 + 双色弧线环绕 + 能量球脉动（≈420ms）→ CyberCharge.kt
- *   2. Beam  光柱：次元裂缝开启，光柱上冲 + 火花上升 + 底部能量环扩散（≈480ms）→ CyberBeam.kt
- *   3. Single 单抽揭晓：故障翻入大立绘卡 + 稀有度光效 + 签文（≈1500ms，可跳过）→ CyberCards.kt
- *   4. Ten   十连牌桌：2×5 卡背飞入、逐张翻牌（间隔 300ms），SSR/UR 翻开瞬间震屏 → CyberCards.kt
- *   5. Done  收尾（组件卸载）
- *
- * 全程整屏可点击跳过（onSkip），点卡片直接进入角色详情（onOpenCharacter）。
- * P4-2（2026-08-27）：按分镜拆分四文件，本文件保留阶段枚举 / 色板 / 共享粒子与文字件 /
- * 背景与故障层 / 待机枢纽 [CyberHerald] / 总装层 [CyberRevealLayer]。
+ * 全程整屏可点击跳过；点卡片进角色详情。
  */
 enum class RevealStage { Charge, Beam, Single, Ten, Done }
 
-/**
- * 水墨国风演出色板（仅演出族文件使用；不动 AppTheme —— 该文件与他人并行修改中）。
- * 从赛博霓虹（青/品红/紫）迁移到水墨调性（朱砂/金箔/石青/浓墨/宣纸白）。
- * 命名保持 Cyan/Magenta/VioletGlow 等不变，以最小化对 CyberCards/Beam/Charge 的侵入。
- */
+/** 演出色板（命名 Cyan/Magenta/VioletGlow 为历史遗留，值已是水墨国风）。 */
 internal object CyberPalette {
-    /** 朱砂红（主色）。命名 Cyan 为历史遗留（原赛博霓虹色），改名需同步 CyberCards/Beam/Charge。 */
     val Cyan = AppTheme.SealRed
-    /** 金箔（辅色）。命名 Magenta 为历史遗留。 */
     val Magenta = AppTheme.Gold
-    /** 石青淡彩。命名 VioletGlow 为历史遗留。 */
     val VioletGlow = AppTheme.Frost
-    /** 浓墨深底。 */
     val DeepBg = AppTheme.BgDeepest
-    /** 宣纸白（光柱核心）。 */
     val BeamCore = AppTheme.Text1
-    /** 淡墨网格线。 */
-    val Grid = AppTheme.Text1.copy(alpha = 0.15f)
+    val Grid = AppTheme.Text1.copy(alpha = 0.12f)
 }
 
-/** CyberHerald 内核辉光渐变色板（文件级常量：配合 drawWithCache 消除逐帧 Brush/色表分配）。 */
 private val HeraldGlowColors = listOf(
     CyberPalette.BeamCore,
-    CyberPalette.Cyan.copy(alpha = 0.7f),
-    CyberPalette.VioletGlow.copy(alpha = 0.2f),
+    CyberPalette.Cyan.copy(alpha = 0.55f),
+    CyberPalette.Magenta.copy(alpha = 0.2f),
     Color.Transparent,
 )
 
-/** 演出粒子（蓄能汇聚 / 光柱火花共用；坐标归一化，绘制时乘画布尺寸）。 */
+/** 演出粒子（坐标归一化，绘制时乘画布尺寸）。 */
 internal class CyberParticle(
     val startX: Float,
     val startY: Float,
@@ -121,111 +101,136 @@ internal fun rarityLabel(r: Int): String = when (r) {
     else -> "R"
 }
 
-/** 水墨双影文字：朱砂/金箔残影错位 + 主色正文。 */
+/**
+ * 仪式楷书标题：金/稀有度色主字 + 极淡外描边晕。
+ * 替代旧 GlitchText 故障残影——典藏时刻不该「闪屏坏字」。
+ */
 @Composable
-internal fun GlitchText(
+internal fun RitualTitle(
     text: String,
     color: Color,
-    fontSize: TextUnit,
+    fontSize: androidx.compose.ui.unit.TextUnit,
     modifier: Modifier = Modifier,
 ) {
-    Box(modifier) {
+    Box(modifier, contentAlignment = Alignment.Center) {
         Text(
             text = text,
-            color = CyberPalette.Cyan,
-            fontSize = fontSize,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.offset(x = 2.dp),
+            style = RitualType.copy(
+                fontSize = fontSize,
+                lineHeight = fontSize * 1.25f,
+                color = color.copy(alpha = 0.35f),
+            ),
+            modifier = Modifier.padding(2.dp),
         )
         Text(
             text = text,
-            color = CyberPalette.Magenta,
-            fontSize = fontSize,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.offset(x = (-2).dp),
+            style = RitualType.copy(
+                fontSize = fontSize,
+                lineHeight = fontSize * 1.25f,
+                color = color,
+            ),
         )
-        Text(text = text, color = color, fontSize = fontSize, fontWeight = FontWeight.Bold)
     }
 }
 
 /**
- * 全息网格背景：透视会聚垂直线 + 缓速前滚水平线 + 星尘闪烁。
- * 时间用 withFrameNanos 驱动（演出层存活期间持续刷新；卸载即取消协程）。
+ * 宣纸墨韵背景：中心晕光 + 慢速漂浮墨点 + 发丝经纬（无赛博滚动网格/故障条）。
  */
 @Composable
-private fun NeonGridBackdrop(modifier: Modifier = Modifier) {
+private fun InkWashBackdrop(
+    modifier: Modifier = Modifier,
+    rarity: Int = 1,
+) {
     var time by remember { mutableFloatStateOf(0f) }
     LaunchedEffect(Unit) {
         while (isActive) {
             withFrameNanos { nano -> time = nano / 1_000_000_000f }
         }
     }
-    val stars = remember {
-        val r = Random(20260820)
-        List(24) { Triple(r.nextFloat(), r.nextFloat(), r.nextFloat()) }
+    val dust = remember {
+        val r = Random(20260903)
+        List(36) {
+            Triple(r.nextFloat(), r.nextFloat(), r.nextFloat())
+        }
     }
+    val accent = AppTheme.rarityColor(rarity)
     Canvas(modifier) {
-        val spacing = 44.dp.toPx()
-        val scroll = (time * 52f) % spacing
-        var y = scroll
+        // 中心稀有度晕
+        val cx = size.width * 0.5f
+        val cy = size.height * 0.42f
+        val coreR = size.minDimension * 0.55f
+        drawCircle(
+            brush = Brush.radialGradient(
+                listOf(
+                    accent.copy(alpha = 0.18f),
+                    accent.copy(alpha = 0.05f),
+                    Color.Transparent,
+                ),
+                center = Offset(cx, cy),
+                radius = coreR,
+            ),
+            radius = coreR,
+            center = Offset(cx, cy),
+        )
+        // 四角压暗
+        drawRect(
+            brush = Brush.radialGradient(
+                listOf(Color.Transparent, CyberPalette.DeepBg.copy(alpha = 0.55f)),
+                center = Offset(cx, cy),
+                radius = size.maxDimension * 0.72f,
+            ),
+        )
+        // 发丝经纬（静）
+        val step = 48.dp.toPx()
+        var y = step
         while (y < size.height) {
-            drawLine(CyberPalette.Grid, Offset(0f, y), Offset(size.width, y), strokeWidth = 1f)
-            y += spacing
+            drawLine(CyberPalette.Grid, Offset(0f, y), Offset(size.width, y), 1f)
+            y += step
         }
-        val vpX = size.width * 0.5f
-        val vpY = size.height * 0.32f
-        for (i in -5..5) {
-            val bottom = vpX + i * 86.dp.toPx()
-            val top = vpX + i * 12.dp.toPx()
-            drawLine(CyberPalette.Grid, Offset(bottom, size.height), Offset(top, vpY), strokeWidth = 1f)
+        var x = step
+        while (x < size.width) {
+            drawLine(CyberPalette.Grid, Offset(x, 0f), Offset(x, size.height), 1f)
+            x += step
         }
-        stars.forEach { (x, y, phase) ->
-            val tw = (sin(time * 2f + phase * 6.28f) + 1f) * 0.5f
+        // 漂浮墨尘
+        dust.forEach { (px, py, phase) ->
+            val tw = (sin(time * 1.4f + phase * 6.28f) + 1f) * 0.5f
+            val ox = sin(time * 0.35f + phase * 4f) * 12f
+            val oy = cos(time * 0.28f + phase * 3f) * 10f
             drawCircle(
-                color = CyberPalette.Cyan.copy(alpha = 0.10f + tw * 0.25f),
-                radius = 1.2.dp.toPx(),
-                center = Offset(x * size.width, y * size.height),
+                color = CyberPalette.BeamCore.copy(alpha = 0.08f + tw * 0.18f),
+                radius = (1.1f + tw * 1.4f).dp.toPx(),
+                center = Offset(px * size.width + ox, py * size.height + oy),
             )
         }
-    }
-}
-
-/** 水墨晕染闪烁层：随机朱砂/金箔条带（seed 每 90ms 重掷，营造墨迹渗透感）。 */
-@Composable
-private fun GlitchField(modifier: Modifier = Modifier) {
-    var seed by remember { mutableIntStateOf(0) }
-    LaunchedEffect(Unit) {
-        while (isActive) {
-            delay(90)
-            seed = Random.nextInt()
-        }
-    }
-    Canvas(modifier) {
-        if (seed == 0) return@Canvas
-        val rnd = Random(seed)
-        repeat(4) { i ->
-            val y = rnd.nextFloat() * size.height
-            val h = (2f + rnd.nextFloat() * 9f).dp.toPx()
-            val x = rnd.nextFloat() * size.width * 0.35f
-            val w = size.width * (0.2f + rnd.nextFloat() * 0.55f)
-            drawRect(
-                color = if (i % 2 == 0) CyberPalette.Cyan else CyberPalette.Magenta,
-                topLeft = Offset(x, y),
-                size = Size(w, h),
-                alpha = 0.05f + rnd.nextFloat() * 0.09f,
-            )
+        // 稀有度金尘（SSR+）
+        if (rarity >= 3) {
+            val goldCount = if (rarity >= 4) 18 else 10
+            repeat(goldCount) { i ->
+                val ph = i * 0.37f
+                val gx = (0.5f + 0.4f * sin(time * 0.6f + ph)) * size.width
+                val gy = (0.35f + 0.3f * cos(time * 0.5f + ph * 1.3f)) * size.height
+                drawCircle(
+                    color = accent.copy(alpha = 0.25f + 0.2f * sin(time * 2f + ph)),
+                    radius = 1.6.dp.toPx(),
+                    center = Offset(gx, gy),
+                )
+            }
         }
     }
 }
 
 /**
- * 待机能量枢纽（替换旧八卦法阵的常驻演出，GachaScreen 主界面抽卡区）。
- * 虚线外环 + 金箔旋转刻度弧 + 朱砂内核脉动；180° 周期 14s，内核呼吸 1.8s。
- * pityRatio (0~1)：保底进度，越接近 1 脉动越快、金色越浓。
+ * 待机召唤法阵（主界面抽卡区）：
+ * 稀有度驱动的金箔敕令环 + 朱砂印核 + 轨道墨点；
+ * pityRatio 越高脉动越快、金色越浓。
  */
 @Composable
-fun CyberHerald(modifier: Modifier = Modifier, testMode: Boolean = false, pityRatio: Float = 0f) {
-    // 保底越近脉动越快：基准 1800ms → 最短 900ms（pityRatio=1）
+fun CyberHerald(
+    modifier: Modifier = Modifier,
+    testMode: Boolean = false,
+    pityRatio: Float = 0f,
+) {
     val pulseDuration = (1800 - (pityRatio * 900f)).toInt().coerceIn(900, 1800)
     val spin by if (testMode) remember { mutableFloatStateOf(0f) }
     else rememberInfiniteTransition(label = "herald").animateFloat(
@@ -241,13 +246,19 @@ fun CyberHerald(modifier: Modifier = Modifier, testMode: Boolean = false, pityRa
         animationSpec = infiniteRepeatable(tween(pulseDuration, easing = LinearEasing), RepeatMode.Reverse),
         label = "heraldPulse",
     )
-    // 保底越近金色越浓：外环从朱砂渐变到金箔
-    val ringAlpha = 0.35f + pityRatio * 0.35f
+    val ringAlpha = 0.4f + pityRatio * 0.4f
     Box(
         modifier = modifier
-            .size(196.dp)
+            .size(220.dp)
             .clip(CircleShape)
-            .background(CyberPalette.DeepBg.copy(alpha = 0.85f))
+            .background(
+                Brush.radialGradient(
+                    listOf(
+                        CyberPalette.Cyan.copy(alpha = 0.12f + pityRatio * 0.1f),
+                        CyberPalette.DeepBg.copy(alpha = 0.92f),
+                    ),
+                ),
+            )
             .border(1.5.dp, CyberPalette.Cyan.copy(alpha = ringAlpha), CircleShape),
         contentAlignment = Alignment.Center,
     ) {
@@ -259,16 +270,20 @@ fun CyberHerald(modifier: Modifier = Modifier, testMode: Boolean = false, pityRa
                     val c = Offset(d / 2f, d / 2f)
                     val glowBrush = Brush.radialGradient(HeraldGlowColors, center = c, radius = d * 2f)
                     onDrawBehind {
+                        // 外虚线敕令环
                         drawCircle(
-                            color = CyberPalette.Cyan.copy(alpha = 0.5f),
-                            radius = d * 0.46f,
+                            color = CyberPalette.Magenta.copy(alpha = 0.35f + pityRatio * 0.25f),
+                            radius = d * 0.47f,
                             center = c,
-                            style = Stroke(1.5.dp.toPx()),
+                            style = Stroke(
+                                width = 1.dp.toPx(),
+                                pathEffect = PathEffect.dashPathEffect(floatArrayOf(8.dp.toPx(), 6.dp.toPx())),
+                            ),
                         )
-                        // 旋转弧：保底近时弧段更宽（120° → 180°）
-                        val arcSweep = 120f + pityRatio * 60f
+                        // 旋转金弧
+                        val arcSweep = 120f + pityRatio * 70f
                         drawArc(
-                            color = CyberPalette.Magenta.copy(alpha = 0.45f + pityRatio * 0.25f),
+                            color = CyberPalette.Magenta.copy(alpha = 0.5f + pityRatio * 0.25f),
                             startAngle = spin,
                             sweepAngle = arcSweep,
                             useCenter = false,
@@ -276,7 +291,17 @@ fun CyberHerald(modifier: Modifier = Modifier, testMode: Boolean = false, pityRa
                             size = Size(d * 0.84f, d * 0.84f),
                             style = Stroke(2.dp.toPx()),
                         )
-                        val r = d * (0.16f + 0.025f * pulse)
+                        // 反向细弧
+                        drawArc(
+                            color = CyberPalette.Cyan.copy(alpha = 0.35f),
+                            startAngle = -spin * 0.7f,
+                            sweepAngle = 60f,
+                            useCenter = false,
+                            topLeft = Offset(d * 0.16f, d * 0.16f),
+                            size = Size(d * 0.68f, d * 0.68f),
+                            style = Stroke(1.2.dp.toPx()),
+                        )
+                        val r = d * (0.16f + 0.03f * pulse + pityRatio * 0.02f)
                         scale(scaleX = r / d, scaleY = r / d, pivot = c) {
                             drawCircle(brush = glowBrush, radius = d, center = c)
                         }
@@ -284,14 +309,17 @@ fun CyberHerald(modifier: Modifier = Modifier, testMode: Boolean = false, pityRa
                 },
         )
         if (!testMode) InkParticles(Modifier.fillMaxSize())
-        Text("✦", color = CyberPalette.BeamCore, fontSize = 30.sp)
+        Text(
+            text = "敕",
+            style = RitualType.copy(
+                fontSize = 34.sp,
+                lineHeight = 40.sp,
+                color = AppTheme.Text1,
+            ),
+        )
     }
 }
 
-/**
- * 待机枢纽内嵌墨粒轨道：8 颗墨点沿椭圆轨道绕中心旋转，
- * 半径/速度/相位各异，配合 sin 波产生有机呼吸感。
- */
 @Composable
 private fun InkParticles(modifier: Modifier = Modifier) {
     var time by remember { mutableFloatStateOf(0f) }
@@ -300,15 +328,14 @@ private fun InkParticles(modifier: Modifier = Modifier) {
             withFrameNanos { nano -> time = nano / 1_000_000_000f }
         }
     }
-    // 固定种子保证每次渲染一致
     val particles = remember {
         val r = Random(20260829)
-        List(8) { i ->
-            val radius = 0.34f + r.nextFloat() * 0.14f // 0.34~0.48（归一化，乘画布半径）
-            val speed = 0.45f + r.nextFloat() * 0.3f   // 0.45~0.75 rad/s
+        List(10) { i ->
+            val radius = 0.34f + r.nextFloat() * 0.14f
+            val speed = 0.45f + r.nextFloat() * 0.3f
             val phase = r.nextFloat() * 6.28f
             val wobbleAmp = 0.02f + r.nextFloat() * 0.03f
-            val dotRadius = 2.5f + r.nextFloat() * 2f   // dp
+            val dotRadius = 2.2f + r.nextFloat() * 2f
             Triple(radius, speed, phase) to Pair(wobbleAmp, dotRadius)
         }
     }
@@ -322,9 +349,9 @@ private fun InkParticles(modifier: Modifier = Modifier) {
             val angle = time * speed + phase
             val r = baseR * radius * (1f + wobbleAmp * sin(angle * 2.3f))
             val px = cx + r * cos(angle)
-            val py = cy + r * sin(angle) * 0.85f // 椭圆压扁
+            val py = cy + r * sin(angle) * 0.85f
             drawCircle(
-                color = CyberPalette.Cyan.copy(alpha = 0.28f),
+                color = CyberPalette.Cyan.copy(alpha = 0.3f),
                 radius = dotR.dp.toPx(),
                 center = Offset(px, py),
             )
@@ -333,9 +360,8 @@ private fun InkParticles(modifier: Modifier = Modifier) {
 }
 
 /**
- * 演出总装：浓墨深底 + 水墨网格 + 晕染层 + 按 [RevealStage] 渲染阶段内容 + 震屏 + 整屏点击跳过。
- * 翻到 SSR/UR 触发震屏（Single 进入时按稀有度，Ten 翻开时按单卡稀有度）。
- * stage == Done 时调用方不应组合本组件（外层 if 控制）。
+ * 演出总装：墨韵深底 + 阶段内容 + 震屏 + 整屏跳过。
+ * 翻到 SSR/UR 触发震屏（Single 进入按稀有度，Ten 翻开按单卡稀有度）。
  */
 @Composable
 fun CyberRevealLayer(
@@ -351,9 +377,7 @@ fun CyberRevealLayer(
     modifier: Modifier = Modifier,
 ) {
     var shakeAmp by remember { mutableFloatStateOf(0f) }
-    // P2 修复：以自增序号作重启键——十连中连续同稀有度翻牌会写入相同幅度
-    // （两张 SSR 都设 14f），以幅度为 key 时 LaunchedEffect 值不变不会重启，第二次震屏丢失；
-    // 序号每次触发必然变化，保证逐次重放。
+    // 序号作重启键：连续同稀有度翻牌需逐次重放（P2 坑因保留）
     var shakeSeq by remember { mutableIntStateOf(0) }
     val shakeX = remember { Animatable(0f) }
     val shakeY = remember { Animatable(0f) }
@@ -392,8 +416,7 @@ fun CyberRevealLayer(
             .background(CyberPalette.DeepBg.copy(alpha = 0.97f))
             .clickable(interactionSource = tapSrc, indication = null) { onSkip() },
     ) {
-        NeonGridBackdrop(Modifier.fillMaxSize())
-        GlitchField(Modifier.fillMaxSize())
+        InkWashBackdrop(Modifier.fillMaxSize(), rarity = singleRarity.coerceAtLeast(batch.maxOfOrNull { it.rarity } ?: 1))
         Box(
             Modifier
                 .fillMaxSize()
@@ -405,32 +428,36 @@ fun CyberRevealLayer(
             when (stage) {
                 RevealStage.Charge -> {
                     ChargeCore(rarity = singleRarity, Modifier.fillMaxSize())
-                    GlitchText(
+                    RitualTitle(
                         text = when {
                             singleRarity >= 4 -> "古卷展开 · 浓墨蓄力"
                             singleRarity == 3 -> "金箔凝聚 · 丹青觉醒"
-                            singleRarity == 2 -> "墨迹汇聚 · 灵力涌动"
-                            else -> "次元裂缝 · 充能中"
+                            singleRarity == 2 -> "墨迹汇聚 · 灵犀涌动"
+                            else -> "敕令開陣 · 充能中"
                         },
                         color = CyberPalette.Cyan,
                         fontSize = 15.sp,
-                        modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 30.dp),
+                        modifier = Modifier
+                            .align(Alignment.BottomCenter)
+                            .padding(bottom = 36.dp),
                     )
                 }
                 RevealStage.Beam -> {
                     RiftBeam(rarity = singleRarity, Modifier.fillMaxSize())
-                    GlitchText(
+                    RitualTitle(
                         text = when {
-                            singleRarity >= 4 -> "裂缝开启 · 万古回响"
-                            singleRarity == 3 -> "裂缝开启 · 金光乍现"
-                            else -> "裂缝开启"
+                            singleRarity >= 4 -> "敕令开卷 · 万古回响"
+                            singleRarity == 3 -> "敕令开卷 · 金光乍现"
+                            else -> "敕令开卷"
                         },
                         color = when {
                             singleRarity >= 4 -> CyberPalette.Magenta
                             else -> CyberPalette.BeamCore
                         },
                         fontSize = 22.sp,
-                        modifier = Modifier.align(Alignment.TopCenter).padding(top = 150.dp),
+                        modifier = Modifier
+                            .align(Alignment.TopCenter)
+                            .padding(top = 140.dp),
                     )
                 }
                 RevealStage.Single -> {
@@ -443,28 +470,51 @@ fun CyberRevealLayer(
                         modifier = Modifier.align(Alignment.Center),
                     )
                     if (singleRarity >= 2) {
-                        GlitchText(
+                        RitualTitle(
                             text = "${rarityLabel(singleRarity)}!",
                             color = AppTheme.rarityColor(singleRarity),
-                            fontSize = 34.sp,
-                            modifier = Modifier.align(Alignment.TopCenter).padding(top = 56.dp),
+                            fontSize = if (singleRarity >= 4) 40.sp else 32.sp,
+                            modifier = Modifier
+                                .align(Alignment.TopCenter)
+                                .padding(top = 48.dp),
                         )
                     }
                 }
                 RevealStage.Ten -> {
+                    var tenSettled by remember { mutableStateOf(false) }
                     TenTable(
                         batch = batch,
                         onFlip = innerOnFlip,
                         onOpenCharacter = onOpenCharacter,
+                        onAllFlipped = { tenSettled = true },
                         modifier = Modifier.align(Alignment.Center),
                     )
                     val maxR = batch.maxOfOrNull { it.rarity } ?: 1
-                    if (maxR >= 2) {
-                        GlitchText(
-                            text = "${rarityLabel(maxR)}!",
+                    if (!tenSettled) {
+                        RitualTitle(
+                            text = "十连 · 寻访",
+                            color = AppTheme.Text2,
+                            fontSize = 16.sp,
+                            modifier = Modifier
+                                .align(Alignment.TopCenter)
+                                .padding(top = 28.dp),
+                        )
+                    } else {
+                        RitualTitle(
+                            text = "${rarityLabel(maxR)}",
                             color = AppTheme.rarityColor(maxR),
-                            fontSize = 30.sp,
-                            modifier = Modifier.align(Alignment.TopCenter).padding(top = 26.dp),
+                            fontSize = if (maxR >= 4) 36.sp else 28.sp,
+                            modifier = Modifier
+                                .align(Alignment.TopCenter)
+                                .padding(top = 28.dp),
+                        )
+                    }
+                    if (tenSettled) {
+                        TenCurtainCall(
+                            batch = batch,
+                            modifier = Modifier
+                                .align(Alignment.BottomCenter)
+                                .padding(bottom = 52.dp),
                         )
                     }
                 }
@@ -473,9 +523,15 @@ fun CyberRevealLayer(
         }
         Text(
             text = "点击跳过",
-            color = Color.White.copy(alpha = 0.35f),
+            color = Color.White.copy(alpha = 0.38f),
             fontSize = 12.sp,
-            modifier = Modifier.align(Alignment.BottomEnd).padding(14.dp),
+            fontWeight = FontWeight.Medium,
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(16.dp)
+                .clip(androidx.compose.foundation.shape.RoundedCornerShape(8.dp))
+                .background(Color.Black.copy(alpha = 0.35f))
+                .padding(horizontal = 10.dp, vertical = 6.dp),
         )
     }
 }

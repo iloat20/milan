@@ -12,6 +12,7 @@ import com.milan.game.ui.stats.CharacterStats
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.launch
 
 /** 爬塔下一层敌方预览（与 TowerService.buildTowerEnemies 同源公式，纯展示）。 */
@@ -69,29 +70,32 @@ class TowerViewModel(
 
     init {
         viewModelScope.launch {
-            service.snapshot.collect { _uiState.value = buildState() }
+            // P0 fan-out：merge 经济/进度/编队切片（combine 在纯 JVM 单测会踩 Main dispatcher）。
+            merge(service.economy, service.progressSlice, service.roster)
+                .collect { _uiState.value = buildState() }
         }
     }
 
     private fun buildState(): TowerUiState {
-        val snap = service.snapshot.value
+        val best = service.progressSlice.value.towerBestFloor
+        val tickets = service.economy.value.battleTickets
+        val formation = service.roster.value.formation
         val ownedById = service.saveData.ownedCharacters.mapNotNull { ch ->
             ch ?: return@mapNotNull null
             ch.characterId to service.ownedView(ch)
         }.toMap()
         val cost = EconomyFormulas.towerTicketCost()
-        val tickets = snap.battleTickets
-        val members = snap.formation.mapNotNull { ownedById[it] }
+        val members = formation.mapNotNull { ownedById[it] }
         val teamStats = members.map { CharacterStats.compute(it) }
-        val nextFloor = snap.towerBestFloor + 1
+        val nextFloor = best + 1
         return TowerUiState(
-            best = snap.towerBestFloor,
+            best = best,
             nextFloor = nextFloor,
             tickets = tickets,
             ticketCost = cost,
             canChallenge = tickets >= cost,
             members = members,
-            formationEmpty = snap.formation.isEmpty(),
+            formationEmpty = formation.isEmpty(),
             characterNames = service.characters.associate { it.characterId to it.displayName },
             nextFloorRewardSoft = EconomyFormulas.towerRewardSoft(nextFloor),
             teamPower = teamStats.sumOf { it.atk },
@@ -130,10 +134,7 @@ class TowerViewModel(
     /** 挑战指定层（nextFloor / best 由 Screen 决定；guard 与原 onClick 逐条等价）。 */
     private fun challengeFloor(floor: Int) {
         if (_running.value) return
-        if (!service.snapshot.value.let {
-                it.battleTickets >= EconomyFormulas.towerTicketCost()
-            }
-        ) return
+        if (service.economy.value.battleTickets < EconomyFormulas.towerTicketCost()) return
         viewModelScope.launch {
             _running.value = true
             try {

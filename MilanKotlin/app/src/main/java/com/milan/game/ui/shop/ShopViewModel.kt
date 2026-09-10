@@ -44,7 +44,9 @@ class ShopViewModel(
 
     init {
         viewModelScope.launch {
-            service.snapshot.collect { _uiState.value = buildState() }
+            // P0 fan-out：只订经济切片。货币/碎片/战票/每日已购/跨日任一变化才重建；
+            // 爬塔纪录、编队、开关等无关写 setIfChanged 不发射，商店页不再被惊动。
+            service.economy.collect { _uiState.value = buildState() }
         }
     }
 
@@ -56,7 +58,7 @@ class ShopViewModel(
             starFragments = eco.starFragments,
             battleTickets = eco.battleTickets,
             dailyOffers = service.dailyOffers(),
-            dailyBought = service.dailyBoughtToday(),
+            dailyBought = eco.dailyBought,
         )
     }
 

@@ -141,7 +141,11 @@ internal fun MilanNavHost(openGachaOnStart: Boolean = false) {
     // 替代各处 Toast/局部 toast 四套写法。Snackbar 浮层置于底部导航之上。
     val snackbarHost = remember { SnackbarHostState() }
     val feedback = remember { Feedback(snackbarHost) }
-    CompositionLocalProvider(LocalFeedback provides feedback) {
+    CompositionLocalProvider(
+        LocalFeedback provides feedback,
+        // ResourceBar 等 Chrome 组件订阅经济切片（2026-09-10：消除 AppGraph.service 泄漏）
+        LocalEconomySlice provides com.milan.game.di.AppGraph.service.economy,
+    ) {
         Box(Modifier.fillMaxSize()) {
             SharedTransitionLayout(Modifier.fillMaxSize()) {
         // Compose 1.11：SharedTransitionLayout 的 content 以 SharedTransitionScope 为 receiver，
@@ -300,6 +304,7 @@ internal fun MilanNavHost(openGachaOnStart: Boolean = false) {
                                 }
                             },
                             onGrantAffinity = storyVm::grantAffinity,
+                            characterOf = storyVm::characterOf,
                             onBack = { navController.popBackStack() },
                         )
                     }

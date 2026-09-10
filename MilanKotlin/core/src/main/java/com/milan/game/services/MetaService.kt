@@ -67,6 +67,8 @@ class MetaService(private val core: ServiceCore) : MetaApi {
     override suspend fun resetSave(): Boolean = core.withWriteLock {
         val fresh = withContext(Dispatchers.IO) { core.saveManager.reset() } ?: return@withWriteLock false
         core.saveData = fresh
+        // 整档替换：清空 ownedSaves 指纹缓存，防复用旧档拷贝（P0 快照 fan-out）
+        core.invalidateOwnedSavesCache()
         core.publishCurrencyChanged()
         core.publishProgressionChanged()
         true

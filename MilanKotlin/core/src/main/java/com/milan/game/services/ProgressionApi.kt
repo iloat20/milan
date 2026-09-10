@@ -42,4 +42,13 @@ interface ProgressionApi {
 
     /** 赠送礼物（扣除礼物道具 + 加好感，整体事务）。 */
     suspend fun giftAffinity(characterId: String): WriteOutcome
+
+    /** 好感等级奖励领取态（characterId → 已领取等级档位列表）。 */
+    fun getClaimedAffinityRewards(): Map<String, List<Int>>
+
+    /**
+     * 领取好感等级奖励（档位见 [com.milan.game.services.AffinityFormulas.LEVEL_REWARDS]）。
+     * Rejected：未达该档位 / 已领取 / 角色未拥有。
+     */
+    suspend fun claimAffinityReward(characterId: String, level: Int): WriteOutcome
 }

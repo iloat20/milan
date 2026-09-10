@@ -273,6 +273,13 @@ class MonetizationService(
             ?: return WriteOutcome.Rejected
         if (data.totalChargeAmount < amountCents) return WriteOutcome.Rejected
         if (data.claimedChargeMilestones.contains(amountCents)) return WriteOutcome.Rejected
+        // 非货币奖励暂无发放通道：不进入事务、不标记已领取——
+        // 旧实现 mutate 内空 else 分支仍写入 claimed，导致「领空奖却锁死档位」的经济漏洞。
+        if (milestone.rewardType != BPRewardType.HARD_CURRENCY &&
+            milestone.rewardType != BPRewardType.SOFT_CURRENCY
+        ) {
+            return WriteOutcome.Rejected
+        }
 
         val origClaimed = data.claimedChargeMilestones.toList()
         val origHard = core.saveData.hardCurrency
@@ -286,8 +293,7 @@ class MonetizationService(
                 when (milestone.rewardType) {
                     BPRewardType.HARD_CURRENCY -> core.addCurrencyDelta(0, milestone.rewardAmount)
                     BPRewardType.SOFT_CURRENCY -> core.addCurrencyDelta(milestone.rewardAmount, 0)
-                    BPRewardType.CHARACTER_EXP -> { /* TODO：角色经验/道具/角色/装备/皮肤发放需物品系统支持 */ }
-                    else -> { /* 其余类型（EQUIPMENT/SKIN/CHARACTER 等）待物品系统接入后分发 */ }
+                    else -> Unit // 已在事务前拒绝；此处保持 exhaustive
                 }
             },
             rollback = {

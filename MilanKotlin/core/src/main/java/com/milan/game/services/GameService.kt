@@ -114,6 +114,11 @@ sealed interface ProgressEvent {
         override val missionType get() = com.milan.game.data.DailyMissionType.COMPLETE_STORY
         override val battlePassExp get() = com.milan.game.data.MonetizationSaveData.BP_DAILY_TASK_EXP
     }
+
+    /** 领取好感等级奖励（2026-09-10：接通 CLAIM_AFFINITY 任务生产点）。 */
+    data object ClaimAffinityReward : ProgressEvent {
+        override val missionType get() = com.milan.game.data.DailyMissionType.CLAIM_AFFINITY
+    }
 }
 
 /** 成就条目的状态包（定义 + 实时解锁态 + 存档领取态）。 */
@@ -351,7 +356,7 @@ class GameService constructor(
         return result
     }
 
-    /** 设置编队。成功非空编队时勾新手引导「组队」步。 */
+/** 设置编队。成功非空编队时勾新手引导「组队」步。 */
     override suspend fun setFormation(characterIds: List<String>): WriteOutcome {
         val result = towerService.setFormation(characterIds)
         if (result == WriteOutcome.Success && characterIds.any { it.isNotBlank() }) {
@@ -374,6 +379,15 @@ class GameService constructor(
         val result = towerService.settleStrategicBattle(floor, victory, turns)
         if (result is TowerOutcome.Completed && result.victory) {
             metaService.completeTutorialStep(com.milan.game.data.TutorialSteps.FIRST_BATTLE)
+        }
+        return result
+    }
+
+    /** 领取好感等级奖励。成功后上报 CLAIM_AFFINITY 每日任务进度。 */
+    override suspend fun claimAffinityReward(characterId: String, level: Int): WriteOutcome {
+        val result = progressionService.claimAffinityReward(characterId, level)
+        if (result == WriteOutcome.Success) {
+            onProgress(ProgressEvent.ClaimAffinityReward)
         }
         return result
     }

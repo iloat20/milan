@@ -41,7 +41,8 @@ class CharacterListViewModel(
 
     init {
         viewModelScope.launch {
-            service.snapshot.collect { _uiState.value = buildState() }
+            // P0 fan-out：列表只关心持有/养成指纹（roster），无关写不重建。
+            service.roster.collect { _uiState.value = buildState() }
         }
     }
 
@@ -53,7 +54,7 @@ class CharacterListViewModel(
         }
         return CharacterListUiState(
             owned = owned,
-            ownedCount = service.snapshot.value.ownedCount,
+            ownedCount = service.roster.value.ownedCount,
             ownedIds = service.saveData.ownedCharacters.filterNotNull()
                 .map { it.characterId }.toSet(),
         )

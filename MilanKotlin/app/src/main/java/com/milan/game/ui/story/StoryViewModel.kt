@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.milan.game.data.StoryChapterDef
 import com.milan.game.data.StoryStageDef
+import com.milan.game.services.CharacterDataEntry
 import com.milan.game.services.GameService
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -66,4 +67,10 @@ class StoryViewModel(
             }
         }
     }
+
+    /**
+     * 说话者内容查询（2026-09-10）：DialogueScreen 私有 helper 此前直接摸
+     * `AppGraph.service`（服务定位器泄漏）。改为由本 VM 提供查找函数注入。
+     */
+    fun characterOf(speakerId: String): CharacterDataEntry? = service.character(speakerId)
 }

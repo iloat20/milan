@@ -209,6 +209,7 @@ fun StrategicBattleScreen(
                         color = AppTheme.Text2,
                     )
                     Spacer(Modifier.height(6.dp))
+                    val battleView = androidx.compose.ui.platform.LocalView.current
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         actor.skills.forEach { skill ->
                             val ready = skillReady(actor, skill.skillId)
@@ -233,7 +234,13 @@ fun StrategicBattleScreen(
                                         if (selected) AppTheme.Gold else AppTheme.Stroke,
                                         RoundedCornerShape(8.dp),
                                     )
-                                    .clickable(enabled = ready) { vm.selectSkill(skill.skillId) }
+                                    .clickable(enabled = ready) {
+                                        // 2026-09-10：选技能轻触觉，给出「已选中」的物理确认
+                                        if (ready) {
+                                            com.milan.game.infrastructure.HapticManager.buttonClick(battleView)
+                                        }
+                                        vm.selectSkill(skill.skillId)
+                                    }
                                     .padding(vertical = 10.dp, horizontal = 4.dp),
                                 horizontalAlignment = Alignment.CenterHorizontally,
                             ) {

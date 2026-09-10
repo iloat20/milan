@@ -44,28 +44,40 @@ class AndroidSaveProvider(context: Context) : SaveProvider {
             tmp.writeText(json)
             // fsync 必须保留：tmp 完整是后续 ATOMIC_MOVE 生效的前提，掉电不能留下半截 tmp。
             tmp.sync()
-            // 主档更替前先滚动备份（读旧主档写 bak）。
+            // 主档更替前滚动备份。
             //
-            // 2026-09-08 P0-1：此处**不再对 bak 做 fsync**（原实现 bak.sync()）。
-            // 推理：fsync 是单次 save() 里最昂贵的磁盘屏障，本方法原本串行触发两次。
-            // 备份档只在「主档损坏」时才被 [loadBackup] 读取，而主档始终经 ATOMIC_MOVE
-            // 替换——要么旧档要么新档，不存在半截态。因此 bak 未落盘即崩溃的唯一后果是
-            // 「备份停留在上一版或半截」，而这只在主档同时损坏时才会被读到，
-            // 且 [SaveData.tryParse] 会拒绝半截内容并回退默认档（与「无备份」后果等价）。
-            // 主档的持久性保证完全不受影响（tmp.sync + ATOMIC_MOVE 已覆盖）。
-            if (main.exists()) {
-                bak.writeText(main.readText())
+            // 2026-09-08 P0-1：不再对 bak 做 fsync（原 bak.sync() 是单次 save 最贵屏障之一）。
+            // 2026-09-10 P0 写路径：bak 改为 **同卷 rename 滚动**，不再 `main.readText()+writeText`
+            // 整档读回再写——中后期存档每次写都要多做一遍全量拷贝（CPU + IO 字节翻倍）。
+            // rename 在同卷上通常是元数据操作，成本 O(1)。
+            //
+            // 失败恢复：若 tmp→main 失败而 main 已被 rename 走，把 bak rename 回 main，
+            // 保证「要么旧主档要么新主档」，不会出现「只剩 bak、main 消失」的空窗。
+            val hadMain = main.exists()
+            if (hadMain) {
+                Files.move(main.toPath(), bak.toPath(), StandardCopyOption.REPLACE_EXISTING)
             }
             try {
                 // 原子替换：同卷 ATOMIC_MOVE 保证「要么旧档要么新档」，杜绝半截主档
                 // （旧实现 renameTo 在 Windows 覆盖失败 → copyTo+delete 非原子回退，P2-2）。
-                Files.move(
-                    tmp.toPath(), main.toPath(),
-                    StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE,
-                )
-            } catch (_: AtomicMoveNotSupportedException) {
-                // 个别文件系统不支持原子移动：退化为 REPLACE_EXISTING（非常规路径，靠 .bak 兜底）
-                Files.move(tmp.toPath(), main.toPath(), StandardCopyOption.REPLACE_EXISTING)
+                try {
+                    Files.move(
+                        tmp.toPath(), main.toPath(),
+                        StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE,
+                    )
+                } catch (_: AtomicMoveNotSupportedException) {
+                    // 个别文件系统不支持原子移动：退化为 REPLACE_EXISTING（非常规路径，靠 .bak 兜底）
+                    Files.move(tmp.toPath(), main.toPath(), StandardCopyOption.REPLACE_EXISTING)
+                }
+            } catch (e: Exception) {
+                if (hadMain && !main.exists() && bak.exists()) {
+                    try {
+                        Files.move(bak.toPath(), main.toPath(), StandardCopyOption.REPLACE_EXISTING)
+                    } catch (_: Exception) {
+                        // 恢复失败：主档仍缺，靠 load() 走备份链（loadBackup 读 bak）
+                    }
+                }
+                throw e
             }
             true
         } catch (e: Exception) {

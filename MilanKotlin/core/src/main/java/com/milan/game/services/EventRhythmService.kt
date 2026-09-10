@@ -87,6 +87,11 @@ class EventRhythmService(
         return getEventRhythmData().eventTaskProgress[eventId] ?: emptyMap()
     }
 
+    /** 已领取的任务奖励 taskId 列表（UI 领取态）。 */
+    override fun getClaimedEventTaskRewards(eventId: String): List<String> {
+        return getEventRhythmData().claimedTaskRewards[eventId] ?: emptyList()
+    }
+
     /** 领取任务奖励。 */
     override suspend fun claimEventTaskReward(eventId: String, taskId: String): WriteOutcome {
         val data = getEventRhythmData()
@@ -232,6 +237,11 @@ class EventRhythmService(
         return event.shopItems.filterNotNull()
     }
 
+    /** 商店已兑换次数（itemId → count）。 */
+    override fun getEventShopRedemptions(eventId: String): Map<String, Int> {
+        return getEventRhythmData().shopRedemptions[eventId] ?: emptyMap()
+    }
+
     // ─────────────────── 签到系统 ───────────────────
 
     /** 签到。 */
@@ -267,7 +277,6 @@ class EventRhythmService(
     }
 
     /** 获取签到进度。 */
-    @Deprecated("P2-11: UI层零调用", level = DeprecationLevel.WARNING)
     override fun getSignInProgress(eventId: String): Int {
         return getEventRhythmData().signInProgress[eventId] ?: 0
     }

@@ -73,6 +73,11 @@ class SaveData(
     @SerialName("BattleRecords") var battleRecords: List<BattleRecord?> = emptyList(),
     /** 角色好感度数据（角色ID → 好感度等级/经验）。 */
     @SerialName("CharacterAffinityData") var characterAffinityData: Map<String, Int?>? = null,
+    /**
+     * 好感等级奖励领取态（characterId → 已领取的等级档位列表，档位见 AffinityFormulas.LEVEL_REWARDS）。
+     * 2026-09-10：此前 UI 只展示「规划中」，无领取路径；CLAIM_AFFINITY 任务类型也因此恒死。
+     */
+    @SerialName("ClaimedAffinityRewards") var claimedAffinityRewards: Map<String, List<Int?>?>? = null,
 
     // ─────────── 设置（开关类偏好持久化，避免重启即丢失；统一默认开启）───────────
     @SerialName("SoundEnabled") var soundEnabled: Boolean = true,
@@ -531,8 +536,13 @@ class SaveData(
         if (seasonData == null) seasonData = SeasonSaveData()
         if (collectionData == null) collectionData = CollectionSaveData()
         if (characterAffinityData == null) characterAffinityData = emptyMap()
-        // 新手引导：旧档无键 → 空初值（未完成、未跳过），与其余子系统同范式
+// 新手引导：旧档无键 → 空初值（未完成、未跳过），与其余子系统同范式
         if (tutorialData == null) tutorialData = TutorialSaveData()
+        if (claimedAffinityRewards == null) claimedAffinityRewards = emptyMap()
+        // 好感领取档位去空 + 去负
+        claimedAffinityRewards = claimedAffinityRewards?.mapValues { (_, levels) ->
+            levels?.filterNotNull()?.filter { it > 0 }?.distinct() ?: emptyList()
+        } ?: emptyMap()
     }
 
     /** 编队 characterId 列表（已滤空槽；顺序即槽位顺序）。 */

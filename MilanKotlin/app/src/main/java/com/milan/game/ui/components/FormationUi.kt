@@ -61,6 +61,8 @@ fun FormationBar(
     maxSlots: Int,
     onSlotClick: (String?) -> Unit,
     modifier: Modifier = Modifier,
+    /** 拖拽悬停时高亮空槽（2026-09-10 拖放反馈）。 */
+    dropHighlight: Boolean = false,
 ) {
     Column(modifier = modifier.fillMaxWidth()) {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -82,22 +84,33 @@ fun FormationBar(
             repeat(maxSlots) { i ->
                 val ch = members.getOrNull(i)
                 val rarityCol = ch?.let { AppTheme.rarityColor(it.rarity) }
+                val highlight = dropHighlight && ch == null
                 Box(
                     modifier = Modifier
                         .weight(1f)
                         .aspectRatio(0.74f)
                         .clip(RoundedCornerShape(AppTheme.Roundness.md))
-                        .background(AppTheme.Surface.copy(alpha = 0.55f))
+                        .background(
+                            if (highlight) AppTheme.Gold.copy(alpha = 0.18f)
+                            else AppTheme.Surface.copy(alpha = 0.55f)
+                        )
                         .border(
-                            1.dp,
-                            rarityCol?.copy(alpha = 0.85f) ?: AppTheme.Stroke,
+                            width = if (highlight) 2.dp else 1.dp,
+                            color = when {
+                                highlight -> AppTheme.Gold
+                                else -> rarityCol?.copy(alpha = 0.85f) ?: AppTheme.Stroke
+                            },
                             RoundedCornerShape(AppTheme.Roundness.md),
                         )
                         .clickable { onSlotClick(ch?.save?.characterId) },
                     contentAlignment = Alignment.Center,
                 ) {
                     if (ch == null) {
-                        Text(text = "＋", fontSize = 18.sp, color = AppTheme.Text3)
+                        Text(
+                            text = "＋",
+                            fontSize = 18.sp,
+                            color = if (highlight) AppTheme.Gold else AppTheme.Text3,
+                        )
                     } else {
                         // 迷你卡面（与 CharacterCard 同语言）：元素渐变底 + 立绘铺满 + 底部铭牌
                         val ei = ElementTheme.forElement(ch.element)

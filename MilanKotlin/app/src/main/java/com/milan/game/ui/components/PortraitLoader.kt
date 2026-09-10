@@ -156,6 +156,13 @@ object PortraitLoader {
     }
 
     /**
+     * 同步探缓存（2026-09-10 加载提速）：
+     * 命中 LRU 直接返回，UI 可跳过 Crossfade 占位闪烁与 IO 往返。
+     */
+    fun peek(resId: Int, target: PortraitTarget): Bitmap? =
+        cache.get(PortraitKey(resId, target.sample))
+
+    /**
      * 异步解码：命中缓存直接返回；未命中 IO 线程按档位采样解码并入缓存；
      * 同一资源并发请求只解码一次（快速滚动时列表多处引用同一立绘，避免重复解码与内存峰值）；
      * 解码失败/资源损坏返回 null（调用方走占位，宁可难看也不能崩）。

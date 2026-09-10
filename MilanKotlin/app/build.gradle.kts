@@ -69,6 +69,7 @@ android {
             isIncludeAndroidResources = true
         }
     }
+    // 架构红线（checkArchitecture）：见文件末尾 registerArchitectureCheck
 }
 
 kotlin {

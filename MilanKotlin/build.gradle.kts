@@ -73,6 +73,19 @@ tasks.register("checkArchitecture") {
             }
         }
 
+        // 4) ui/ 功能包禁止 AppGraph.service 服务定位器（Screen 必须经 VM 注入）。
+        //    ui/nav/ 为导航组装层，允许在 ready 后 provide CompositionLocal。
+        ktFiles(uiDir).forEach { f ->
+            val rel = f.relativeTo(File(rootPath)).path.replace('\\', '/')
+            if ("/ui/nav/" in rel) return@forEach
+            f.readLines().forEachIndexed { i, line ->
+                if (isCommentOrDoc(line)) return@forEachIndexed
+                if (line.contains("AppGraph.service")) {
+                    violations += "UI 禁止 AppGraph.service（请注入 ViewModel）: ${f.relativeTo(File(rootPath))}:${i + 1}"
+                }
+            }
+        }
+
         if (violations.isNotEmpty()) {
             throw GradleException(
                 "架构检查失败（${violations.size} 处）：\n" + violations.joinToString("\n")

@@ -78,6 +78,7 @@ fun CodexCard(
         else -> 0.45f
     }
 
+    // 无限动画只在 SSR/UR 开启（2026-09-10：R/SR 卡格里十余个 infiniteTransition 会空转耗帧）
     val ssrBreath by rememberInfiniteTransition(label = "codex_ssr_breath").animateFloat(
         initialValue = 0.28f,
         targetValue = 0.58f,

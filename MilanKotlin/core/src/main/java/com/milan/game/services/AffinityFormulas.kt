@@ -38,4 +38,31 @@ object AffinityFormulas {
 
     /** 当前等级内经验进度。 */
     fun expInLevel(affinity: Int): Int = affinity % EXP_PER_LEVEL
+
+    // ─────────────────── 等级奖励（2026-09-10 从「规划中」落地）───────────────────
+
+    /** 好感等级奖励类型。当前版本只发可落盘的经济资源；语音/皮肤等视觉奖励待美术接入。 */
+    enum class RewardKind { SOFT, HARD, FRAGMENT }
+
+    /** 单档好感等级奖励。 */
+    data class LevelReward(
+        val level: Int,
+        val kind: RewardKind,
+        val amount: Int,
+        val label: String,
+    )
+
+    /**
+     * 好感等级奖励档位（产品拍板 1/3/5/8/10）。
+     *
+     * 数值口径与 EconomyFormulas 同尺度：满级累计约 1.2 万星尘 + 350 星玉 + 10 碎片，
+     * 约等于 2 次十连的星玉回报，作为长期培养的保底收益，不与抽卡经济抢主轴。
+     */
+    val LEVEL_REWARDS: List<LevelReward> = listOf(
+        LevelReward(1, RewardKind.SOFT, 2_000, "星尘 ×2000"),
+        LevelReward(3, RewardKind.HARD, 50, "星玉 ×50"),
+        LevelReward(5, RewardKind.FRAGMENT, 10, "星魂碎片 ×10"),
+        LevelReward(8, RewardKind.HARD, 100, "星玉 ×100"),
+        LevelReward(10, RewardKind.HARD, 200, "星玉 ×200"),
+    )
 }

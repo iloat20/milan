@@ -141,19 +141,24 @@ class GachaViewModel(
                     4 -> 640L; 3 -> 520L; else -> 480L
                 }
                 val revealMs = when {
+                    // 卡背阶梯入场 + 逐张 3D 翻面 + 收场条：十连总时长拉长，避免翻到一半被 finishReveal 卸载
                     tenPull -> when (best.rarity) {
-                        4 -> 4800L; 3 -> 4000L; else -> 3600L
+                        4 -> 7200L; 3 -> 6400L; else -> 5600L
                     }
                     else -> when (best.rarity) {
                         4 -> 3000L; 3 -> 2400L; 2 -> 1500L; else -> 1000L
                     }
                 }
+                val fortune = bestDef?.let {
+                    com.milan.game.ai.FortuneAgentRegistry.activeAgent.fortune(it, System.currentTimeMillis())
+                }.orEmpty()
                 _reveal.value = RevealUiState(
                     token = token,
                     staged = pulled,
                     def = bestDef,
                     rarity = best.rarity,
                     stage = RevealStage.Charge,
+                    fortune = fortune,
                 )
                 kotlinx.coroutines.delay(chargeMs)
                 if (token != _reveal.value.token) { finishReveal(); return@launch }

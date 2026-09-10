@@ -65,17 +65,29 @@ class SaveManager(
             SaveData.createDefault()
         }
         current = result
+        // 载入后不设 lastPersistedJson：load 路径可能做过 sanitize，磁盘原文与内存
+        // 序列化结果未必一致。首次 save 必须真正落盘，短路只在一次成功 save 之后生效。
         return result
     }
 
     /**
      * 持久化存档。返回是否成功；失败时已通过 [onTrace] 留痕，调用方应据此回滚内存改动。
      * 未 load 直接保存（current 为 null）时防御性新建默认档。
+     *
+     * 2026-09-10 P0 写路径：序列化结果与上次成功落盘完全一致时跳过 IO。
+     * 事务范式仍保证「mutate 后内存与磁盘语义一致」；本短路只砍掉无语义变化的重复写
+     * （如双 publish 触发的二次 save、或 mutate 空转后仍走 save 的防御路径）。
      */
+    private var lastPersistedJson: String? = null
+
     fun save(): Boolean {
         val data = current ?: SaveData.createDefault().also { current = it }
         return try {
-            provider.save(data.toJson())
+            val json = data.toJson()
+            if (json == lastPersistedJson) return true
+            val ok = provider.save(json)
+            if (ok) lastPersistedJson = json
+            ok
         } catch (e: Exception) {
             onTrace("save.failed: ${e.message}")
             false
@@ -96,6 +108,7 @@ class SaveManager(
             onTrace("save.reset.delete.failed: ${e.message}")
             return null
         }
+        lastPersistedJson = null
         return load()
     }
 }

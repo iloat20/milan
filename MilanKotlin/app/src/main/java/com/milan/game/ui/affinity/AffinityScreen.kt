@@ -76,9 +76,11 @@ fun AffinityScreen(
                             name = row.displayName,
                             rarity = row.rarity,
                             affinity = row.affinity,
+                            claimedLevels = row.claimedLevels,
                             giftEnabled = row.affinity < AffinityFormulas.MAX_AFFINITY &&
                                 ui.softCurrency >= AffinityFormulas.GIFT_COST_SOFT,
                             onGift = { vm.gift(row.characterId) },
+                            onClaimReward = { level -> vm.claimReward(row.characterId, level) },
                             onClick = { onOpenCharacter(row.characterId) },
                         )
                     }
@@ -91,8 +93,8 @@ fun AffinityScreen(
 /**
  * 好感度说明卡片。
  *
- * 2026-09-10：等级奖励文案改为「规划中」——当前版本好感闭环仅含赠送/战斗加好感与等级展示，
- * 语音/剧情/头像框/皮肤/称号等尚未接服务解锁，避免把装饰文案当成已上线功能。
+ * 2026-09-10：等级奖励从「规划中」落地——档位奖励见 [AffinityFormulas.LEVEL_REWARDS]，
+ * 角色卡片内可领取；语音/剧情/皮肤等视觉奖励仍待后续内容接入。
  */
 @Composable
 private fun AffinityInfoCard() {
@@ -106,21 +108,19 @@ private fun AffinityInfoCard() {
             )
             Spacer(Modifier.height(8.dp))
             Text(
-                text = "通过赠送礼物、出战战斗提升角色好感度。当前版本开放赠送与等级成长；下列奖励规划中。",
+                text = "通过赠送礼物、出战战斗提升角色好感度。达到档位后可在角色行领取等级奖励。",
                 color = AppTheme.Text2,
                 fontSize = 12.sp,
             )
             Spacer(Modifier.height(8.dp))
-            // 等级奖励预览（规划中）
+            // 等级奖励预览
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
-                AffinityLevelReward(level = 1, reward = "语音·规划中")
-                AffinityLevelReward(level = 3, reward = "剧情·规划中")
-                AffinityLevelReward(level = 5, reward = "头像框·规划中")
-                AffinityLevelReward(level = 8, reward = "皮肤·规划中")
-                AffinityLevelReward(level = 10, reward = "称号·规划中")
+                AffinityFormulas.LEVEL_REWARDS.forEach { reward ->
+                    AffinityLevelReward(level = reward.level, reward = reward.label)
+                }
             }
         }
     }
@@ -158,9 +158,8 @@ private fun AffinityLevelReward(level: Int, reward: String) {
 /**
  * 单个角色好感度卡片。
  *
- * 右侧操作区（2026-09-02）：已满级 → 徽章；未满级 → 「赠送」按钮（100 星尘 +200 好感）。
- * [giftEnabled] 由外部按「未满级 && 星尘足够」计算；禁用时按钮置灰仍可点
- * （点击给出针对性 Rejected 文案，如余额不足提示）。
+ * 右侧操作区：已满级 → 徽章；未满级 → 「赠送」按钮。
+ * 下方奖励行：已达档位且未领取时显示可点「领取」；已领取显示 ✓。
  */
 @Composable
 private fun AffinityCard(
@@ -168,18 +167,24 @@ private fun AffinityCard(
     name: String,
     rarity: Int,
     affinity: Int,
+    claimedLevels: Set<Int>,
     giftEnabled: Boolean,
     onGift: () -> Unit,
+    onClaimReward: (Int) -> Unit,
     onClick: () -> Unit,
 ) {
     val level = AffinityFormulas.levelOf(affinity)
     val expInLevel = AffinityFormulas.expInLevel(affinity)
+    val claimable = AffinityFormulas.LEVEL_REWARDS.filter {
+        it.level <= level && it.level !in claimedLevels
+    }
 
     GlassPanel(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick),
     ) {
+        Column(Modifier.fillMaxWidth()) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -285,6 +290,34 @@ private fun AffinityCard(
                     )
                 }
             }
+        }
+
+        // 可领取的等级奖励行（2026-09-10：从「规划中」落地为可点领取）
+        if (claimable.isNotEmpty()) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 12.dp, end = 12.dp, bottom = 10.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                claimable.forEach { reward ->
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(AppTheme.Roundness.sm))
+                            .background(AppTheme.Gold.copy(alpha = 0.22f))
+                            .clickable { onClaimReward(reward.level) }
+                            .padding(horizontal = 10.dp, vertical = 4.dp),
+                    ) {
+                        Text(
+                            text = "领取 Lv.${reward.level}",
+                            color = AppTheme.Gold,
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold,
+                        )
+                    }
+                }
+            }
+        }
         }
     }
 }

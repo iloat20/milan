@@ -35,6 +35,9 @@ interface EventRhythmApi {
     /** 活动任务进度表（taskId → 当前进度）。EventScreen 展示用；进度写在存档 `eventTaskProgress`。 */
     fun getEventTaskProgress(eventId: String): Map<String, Int>
 
+    /** 已领取的任务奖励 taskId 集合（UI 领取态展示）。 */
+    fun getClaimedEventTaskRewards(eventId: String): List<String>
+
     /** 领取活动任务奖励。 */
     suspend fun claimEventTaskReward(eventId: String, taskId: String): WriteOutcome
 
@@ -45,11 +48,13 @@ interface EventRhythmApi {
     @Deprecated("P2-11: UI层零调用", level = DeprecationLevel.WARNING)
     fun getEventShopItems(eventId: String): List<EventShopItem>
 
+    /** 商店已兑换次数（itemId → count）。 */
+    fun getEventShopRedemptions(eventId: String): Map<String, Int>
+
     /** 活动签到。 */
     suspend fun signIn(eventId: String): WriteOutcome
 
     /** 活动签到进度（已签天数）。 */
-    @Deprecated("P2-11: UI层零调用", level = DeprecationLevel.WARNING)
     fun getSignInProgress(eventId: String): Int
 
     /** 活动代币余额。 */

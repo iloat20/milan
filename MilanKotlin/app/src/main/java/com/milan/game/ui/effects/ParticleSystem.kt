@@ -10,11 +10,14 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
@@ -89,6 +92,8 @@ fun ParticleSystem(
     active: Boolean = true,
     modifier: Modifier = Modifier,
     emitPosition: Offset = Offset.Unspecified,
+    emitFromCenter: Boolean = false,
+    emitFromCenterBottom: Boolean = false,
 ) {
     val particles = remember { mutableStateListOf<Particle>() }
     val random = remember { Random(System.currentTimeMillis()) }
@@ -96,6 +101,9 @@ fun ParticleSystem(
     // 帧时间追踪
     var lastFrameNanos = remember { 0L }
     var emitAccumulator = remember { 0f }
+    // 画布尺寸（首帧由 Canvas 回写；emitFromCenter* 依赖）
+    var canvasW by remember { mutableFloatStateOf(0f) }
+    var canvasH by remember { mutableFloatStateOf(0f) }
 
     LaunchedEffect(active) {
         if (!active) return@LaunchedEffect
@@ -106,11 +114,18 @@ fun ParticleSystem(
                     else (frameNanos - lastFrameNanos) / 1_000_000_000f
                 lastFrameNanos = frameNanos
 
+                val resolvedEmit = when {
+                    emitFromCenter && canvasW > 0f -> Offset(canvasW / 2f, canvasH / 2f)
+                    emitFromCenterBottom && canvasW > 0f -> Offset(canvasW / 2f, canvasH * 0.92f)
+                    emitPosition != Offset.Unspecified -> emitPosition
+                    else -> Offset(canvasW / 2f, canvasH / 2f).takeIf { canvasW > 0f } ?: return@withFrameNanos
+                }
+
                 // 发射新粒子
                 emitAccumulator += config.emitRate * deltaSeconds
                 while (emitAccumulator >= 1f && particles.size < config.maxParticles) {
                     emitAccumulator -= 1f
-                    particles.add(createParticle(config, emitPosition, random))
+                    particles.add(createParticle(config, resolvedEmit, random))
                 }
 
                 // 更新粒子
@@ -139,7 +154,14 @@ fun ParticleSystem(
         }
     }
 
-    Canvas(modifier = modifier.fillMaxSize()) {
+    Canvas(
+        modifier = modifier
+            .fillMaxSize()
+            .onSizeChanged { size ->
+                canvasW = size.width.toFloat()
+                canvasH = size.height.toFloat()
+            },
+    ) {
         for (p in particles) {
             drawParticle(p)
         }
@@ -197,12 +219,13 @@ private fun DrawScope.drawParticle(p: Particle) {
 // 抽卡特效预设
 // ══════════════════════════════════════════════════════════════════════════════
 
-/** 抽卡星爆（光点从中心向外扩散） */
+/** 抽卡星爆（光点从中心向外扩散）。[emitFromCenter] 在首帧取画布中心，避免 Offset.Unspecified 产生 NaN 粒子。 */
 @Composable
 fun GachaStarBurst(
     rarity: Int,
     active: Boolean,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    emitFromCenter: Boolean = true,
 ) {
     val colors = rarityEffectColors(rarity)
 
@@ -220,15 +243,21 @@ fun GachaStarBurst(
         angle = 0f,
     )
 
-    ParticleSystem(config = config, active = active, modifier = modifier)
+    ParticleSystem(
+        config = config,
+        active = active,
+        modifier = modifier,
+        emitFromCenter = emitFromCenter,
+    )
 }
 
-/** 抽卡光柱（垂直向上喷射） */
+/** 抽卡光柱（垂直向上喷射）。[emitFromCenterBottom] 自画布底边中点发射。 */
 @Composable
 fun GachaBeamParticles(
     rarity: Int,
     active: Boolean,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    emitFromCenterBottom: Boolean = true,
 ) {
     val colors = rarityEffectColors(rarity)
 
@@ -246,7 +275,12 @@ fun GachaBeamParticles(
         angle = 270f, // 向上
     )
 
-    ParticleSystem(config = config, active = active, modifier = modifier)
+    ParticleSystem(
+        config = config,
+        active = active,
+        modifier = modifier,
+        emitFromCenterBottom = emitFromCenterBottom,
+    )
 }
 
 // ══════════════════════════════════════════════════════════════════════════════

@@ -168,23 +168,40 @@ data class EconomySlice(
     val hardCurrency: Int = 0,
     val starFragments: Int = 0,
     val battleTickets: Int = 0,
+    /**
+     * 每日商店归属日与已购槽位（2026-09-10 P0 fan-out）：
+     * ShopViewModel 订阅本切片重建特惠列表；跨日/已购变化必须随经济门控发射，
+     * 否则只靠 currency 四元组会漏刷新「今日已购」与跨日重置。
+     */
+    val dailyShopDate: String = "",
+    val dailyBought: List<Int> = emptyList(),
 )
 
 /**
  * 角色/编队切片：出战编队与持有数量。
  *
- * 刻意**不含** ownedSaves：其元素是 [CharacterSaveState]（普通 class，equals 为引用相等），
+ * 刻意**不含** ownedSaves 明细：其元素是 [CharacterSaveState]（普通 class，equals 为引用相等），
  * 每次 [ServiceCore.refreshSnapshot] 都会重新拷贝，导致本切片恒被判定为「已变」、
- * 门控彻底失效。需要角色养成数据的 Screen（角色列表/详情/养成）继续订阅全量 [GameSnapshot]。
+ * 门控彻底失效。需要单角色详情的 Screen（Detail/Progression）继续订阅全量 [GameSnapshot]；
+ * 列表类（卡组/图鉴/角色列表/主页）订阅本切片——指纹未变时不发射，货币写不再惊动列表重建。
  */
 data class RosterSlice(
     val ownedCount: Int = 0,
     val formation: List<String> = emptyList(),
+    /**
+     * 角色养成内容指纹（id/level/stage/stars/exp/未点天赋点数）。
+     * 仅货币/开关变化时指纹不变 → setIfChanged 不发射。
+     */
+    val ownedFingerprint: Long = 0,
 )
 
-/** 进度切片：爬塔等活动进度。 */
+/** 进度切片：爬塔/好感等活动进度。 */
 data class ProgressSlice(
     val towerBestFloor: Int = 0,
+    /** 好感经验总和（好感页只在成长时重建）。 */
+    val affinityTotal: Int = 0,
+    /** 已领取好感等级奖励档位总数（领取后才触发）。 */
+    val affinityClaims: Int = 0,
 )
 
 /** 抽卡切片：保底计数与 UP 定轨状态。 */

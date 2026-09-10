@@ -6,6 +6,7 @@ import android.graphics.ColorMatrix
 import android.graphics.ColorMatrixColorFilter
 import android.graphics.Paint
 import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -113,6 +114,19 @@ private fun PortraitImageContent(
         return
     }
 
+    // 2026-09-10 加载提速：LRU 同步命中时直接上屏，跳过 Crossfade 的「占位闪一下再淡入」，
+    // 列表快速回滚/复用时首帧即完整立绘（观感接近同步加载，仍不阻塞主线程解码）。
+    val cachedNow = remember(portraitId, target) { PortraitLoader.peek(portraitId, target) }
+    if (cachedNow != null) {
+        InkWashPortrait(
+            bitmap = cachedNow,
+            contentDescription = name ?: characterId,
+            modifier = modifier,
+            contentScale = contentScale,
+        )
+        return
+    }
+
     val bitmap by produceState<Bitmap?>(initialValue = null, portraitId, target) {
         // P1-2：key（portraitId/target）变化时先清空旧值——produceState 在 key 变化后
         // 会保留旧 value 直到新协程产出，IO 解码至少跨一帧，切角色瞬间会闪一瞬上一张立绘。
@@ -121,7 +135,8 @@ private fun PortraitImageContent(
         value = PortraitLoader.load(resources, portraitId, target)
     }
 
-    Crossfade(targetState = bitmap, label = "portrait") { bmp ->
+    // 首次解码：Crossfade 淡入；duration 压到 120ms，减少占位停留时间。
+    Crossfade(targetState = bitmap, animationSpec = tween(120), label = "portrait") { bmp ->
         if (bmp != null) {
             // 水墨画滤镜：降饱和 + 提对比 + 暖色偏移，模拟宣纸上的墨彩效果
             InkWashPortrait(

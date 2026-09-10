@@ -25,12 +25,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Text
@@ -45,13 +42,13 @@ import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import com.milan.game.domain.progression.EconomyFormulas
-import com.milan.game.ai.FortuneAgentRegistry
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -59,13 +56,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.milan.game.infrastructure.CrashReporter
 import com.milan.game.infrastructure.MilanAudio
 import com.milan.game.services.CharacterDataEntry
 import com.milan.game.services.GachaPoolDataEntry
 import com.milan.game.services.PullResult
 import com.milan.game.ui.components.GlassDialog
-import com.milan.game.ui.components.GlassPanel
 import com.milan.game.ui.components.GoldButton
 import com.milan.game.ui.feedback.LocalFeedback
 import com.milan.game.ui.components.NeonButton
@@ -78,19 +73,19 @@ import com.milan.game.ui.nav.NavItem
 import com.milan.game.ui.theme.AppTheme
 import com.milan.game.ui.effects.GachaBeamParticles
 import com.milan.game.ui.effects.GachaStarBurst
-import com.milan.game.ui.effects.RarityMeshGradient
+import com.milan.game.ui.effects.RarityMeshBackdrop
 import com.milan.game.ui.effects.inkSplash
 import java.util.Locale
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 /**
- * 寻访（抽卡）屏（水墨国风版）。
+ * 寻访（抽卡）屏 · 丹青典藏（2026-09 重排）。
  *
- * 结构：标题 + 资源胶囊 → 卡池信息（概率 / 保底进度）→ 池角色横排预览 →
- * 召唤法阵（水墨丹青）→ 单抽 / 十连 → 摘要行 → 5 列结果网格（逐张缩放淡入）→ 底部导航。
+ * 层次：顶栏 → 池 chips → **UP 英雄展签**（大立绘 + 概率/保底/定轨）→
+ * 召唤法阵 → 单抽/十连 CTA（含消耗）→ 摘要/历史 → 大结果网格 → 底部导航。
  *
- * 演出：法阵脉冲 → 稀有度白闪 → 大立绘卡弹出（可整屏点击跳过）→ 展示结果。
+ * 演出：蓄墨 → 开卷 → 单卡/十连牌桌（整屏可跳过）。
  */
 @Composable
 fun GachaScreen(
@@ -104,15 +99,12 @@ fun GachaScreen(
     val feedback = LocalFeedback.current
     val scope = rememberCoroutineScope()
     val vm: GachaViewModel = viewModel(factory = com.milan.game.di.AppGraph.factory)
-    // 多卡池支持：选中态 rememberSaveable 持久化；内容表改动导致旧 id 失配时回落首池
     val pools = vm.pools
     var selectedPoolId by rememberSaveable { mutableStateOf(pools.firstOrNull()?.poolId.orEmpty()) }
     val pool = pools.firstOrNull { it.poolId == selectedPoolId } ?: pools.firstOrNull()
-    // 切片订阅（经济/保底/设置）——无关字段变化不重组本页
     val eco by vm.economy.collectAsStateWithLifecycle()
     val gachaSlice by vm.gachaSlice.collectAsStateWithLifecycle()
     val meta by vm.meta.collectAsStateWithLifecycle()
-    // ViewModel 状态
     val busy by vm.busy.collectAsStateWithLifecycle()
     val reveal by vm.reveal.collectAsStateWithLifecycle()
     val results by vm.results.collectAsStateWithLifecycle()
@@ -125,7 +117,6 @@ fun GachaScreen(
 
     LaunchedEffect(Unit) { entered = true }
 
-    /** 触觉反馈（统一委托 HapticManager）。 */
     fun buzz(effect: Int) {
         if (!meta.vibrationEnabled) return
         try {
@@ -134,10 +125,8 @@ fun GachaScreen(
         } catch (_: Exception) { }
     }
 
-    // 演出中系统返回拦截——转跳过演出
     BackHandler(enabled = reveal.visible) { vm.skipReveal() }
 
-    /** 抽卡入口：余额检查 → pull → 兜底 → 演出编排。 */
     fun doPull(tenPull: Boolean) {
         val p = pool ?: return
         vm.doPull(
@@ -174,11 +163,10 @@ fun GachaScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(start = 20.dp, end = 20.dp, top = 14.dp)
+                .padding(start = 18.dp, end = 18.dp, top = 14.dp)
                 .verticalScroll(rememberScrollState())
                 .graphicsLayer { alpha = entranceAlpha },
         ) {
-            // ── 标题 + 资源胶囊 ──
             Row(Modifier.statusBarsPadding().fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     text = "丹青寻访",
@@ -190,10 +178,9 @@ fun GachaScreen(
                 Spacer(Modifier.weight(1f))
                 ResourceBar()
             }
-            Spacer(Modifier.height(14.dp))
+            Spacer(Modifier.height(12.dp))
 
             if (pool != null) {
-                // ── 池选择 chips ──
                 if (pools.size > 1) {
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         pools.forEach { p ->
@@ -211,7 +198,6 @@ fun GachaScreen(
                                         .clickable { selectedPoolId = p.poolId }
                                         .padding(horizontal = 14.dp, vertical = 6.dp),
                                 )
-                                // 选中池金色指示线
                                 if (selected) {
                                     Box(
                                         Modifier
@@ -228,147 +214,63 @@ fun GachaScreen(
                     Spacer(Modifier.height(10.dp))
                 }
 
-                // ── 卡池信息面板 ──
-                GlassPanel(modifier = Modifier.fillMaxWidth(), highlighted = true) {
-                    Column(Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
-                        Text(
-                            text = pool.displayName.ifEmpty { "常驻卡池" },
-                            fontSize = 15.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = AppTheme.Gold,
-                        )
-                        Spacer(Modifier.height(4.dp))
-                        Text(ratesLabel(pool), fontSize = 11.sp, color = AppTheme.Text2)
-                        if (pool.hardPity > 0) {
-                            Spacer(Modifier.height(8.dp))
-                            val softStart = EconomyFormulas.softPityStart(pool.hardPity)
-                            val inSoft = softStart > 0 && pity >= softStart
-                            // 即将到达软保底（差 5 抽内）：提前预警
-                            val nearSoft = softStart > 0 && !inSoft && pity >= softStart - 5
-                            val pityColor = when {
-                                inSoft -> AppTheme.GoldHi
-                                nearSoft -> AppTheme.Warning
-                                else -> AppTheme.Frost
-                            }
-                            LinearProgressIndicator(
-                                progress = { pity.toFloat() / pool.hardPity.coerceAtLeast(1) },
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(4.dp)
-                                    .clip(RoundedCornerShape(AppTheme.Roundness.xxs)),
-                                color = pityColor,
-                                trackColor = AppTheme.Surface,
-                            )
-                            Spacer(Modifier.height(4.dp))
-                            Text(
-                                text = buildString {
-                                    append("保底进度  $pity / ${pool.hardPity}")
-                                    when {
-                                        inSoft -> append(" · 软保底爬坡中 ↑↑")
-                                        nearSoft -> {
-                                            val remaining = softStart - pity
-                                            append(" · 即将进入软保底（还差 $remaining 抽）")
-                                        }
-                                    }
-                                },
-                                fontSize = 11.sp,
-                                color = pityColor,
-                            )
-                        }
-                        // UP 定轨行
-                        val upDef = pool.featuredCharacterId
-                            .takeIf { it.isNotEmpty() }
-                            ?.let { vm.character(it) }
-                        if (upDef != null) {
-                            Spacer(Modifier.height(6.dp))
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text(
-                                    text = "UP",
-                                    fontSize = 10.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = AppTheme.GoldTextOn,
-                                    modifier = Modifier
-                                        .clip(RoundedCornerShape(AppTheme.Roundness.sm))
-                                        .background(AppTheme.Gold)
-                                        .padding(horizontal = 6.dp, vertical = 1.dp),
-                                )
-                                Spacer(Modifier.width(6.dp))
-                                Text(
-                                    text = upDef.displayName,
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = AppTheme.Gold,
-                                )
-                                if (gachaSlice.featuredLostByPool[pool.poolId] == true) {
-                                    Spacer(Modifier.width(8.dp))
-                                    Text(
-                                        text = "上次歪了 · 下次必中",
-                                        fontSize = 11.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = AppTheme.Frost,
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-                Spacer(Modifier.height(12.dp))
-
-                // ── 池角色预览：横排圆形头像 ──
-                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    items(pool.entries, key = { it.characterId }, contentType = { "poolEntry" }) { entry ->
-                        val def = vm.character(entry.characterId)
-                        val entryInteraction = remember { MutableInteractionSource() }
-                        Column(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(AppTheme.Roundness.md))
-                                .inkSplash(entryInteraction)
-                                .clickable(interactionSource = entryInteraction, indication = null) { def?.let { onOpenCharacter(it.characterId) } }
-                                .padding(4.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                        ) {
-                            PortraitImage(
-                                characterId = entry.characterId,
-                                rarity = entry.rarityIndex,
-                                name = def?.displayName,
-                                modifier = Modifier.size(52.dp).clip(CircleShape),
-                                target = PortraitTarget.Avatar,
-                            )
-                            Spacer(Modifier.height(4.dp))
-                            Text(
-                                text = def?.displayName ?: entry.characterId,
-                                fontSize = 9.sp,
-                                color = AppTheme.Text2,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                            )
-                        }
-                    }
-                }
+                // ── UP 英雄展签：左大立绘 + 右信息 ──
+                val featuredId = pool.featuredCharacterId.ifEmpty { pool.entries.firstOrNull()?.characterId.orEmpty() }
+                val featuredDef = featuredId.takeIf { it.isNotEmpty() }?.let { vm.character(it) }
+                val featuredRarity = pool.entries.firstOrNull { it.characterId == featuredId }?.rarityIndex
+                    ?: featuredDef?.baseRarity ?: 3
+                PoolHeroCard(
+                    pool = pool,
+                    featured = featuredDef,
+                    featuredRarity = featuredRarity,
+                    pity = pity,
+                    featuredLost = gachaSlice.featuredLostByPool[pool.poolId] == true,
+                    onOpenCharacter = { id -> onOpenCharacter(id) },
+                    modifier = Modifier.fillMaxWidth(),
+                )
             }
-            Spacer(Modifier.height(14.dp))
+            Spacer(Modifier.height(18.dp))
 
-            // ── 待机能量枢纽（水墨丹青法阵）──
             val heraldPityRatio = if ((pool?.hardPity ?: 0) > 0) pity.toFloat() / pool!!.hardPity.coerceAtLeast(1) else 0f
-            CyberHerald(modifier = Modifier.align(Alignment.CenterHorizontally), testMode = testMode, pityRatio = heraldPityRatio)
-            Spacer(Modifier.height(16.dp))
+            CyberHerald(
+                modifier = Modifier.align(Alignment.CenterHorizontally),
+                testMode = testMode,
+                pityRatio = heraldPityRatio,
+            )
+            Spacer(Modifier.height(14.dp))
 
             Text(
                 text = "─ 敕令開陣 ─",
                 fontSize = 11.sp,
-                color = AppTheme.Gold.copy(alpha = 0.6f),
+                color = AppTheme.Gold.copy(alpha = 0.65f),
                 letterSpacing = 4.sp,
                 modifier = Modifier.align(Alignment.CenterHorizontally),
             )
-            Spacer(Modifier.height(6.dp))
+            Spacer(Modifier.height(10.dp))
 
-            // ── 单抽 / 十连 ──
-            Row(Modifier.fillMaxWidth().padding(horizontal = 30.dp)) {
-                // I3 修复：演出/结算期间禁用（此前按钮视觉如常但 doPull 首行 if(busy) return 静默吞点击）
-                NeonButton("单 抽", Modifier.weight(1f), enabled = !busy, onClick = { doPull(false) })
-                Spacer(Modifier.width(14.dp))
-                // 十连为大额消耗：二次确认防误触（单抽保持一键）
-                GoldButton("十 连", Modifier.weight(1f), enabled = !busy, onClick = { showTenConfirm = true })
+            // ── CTA：单抽 / 十连（主按钮 + 消耗副标）──
+            Row(
+                Modifier.fillMaxWidth().padding(horizontal = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                val singleCost = pool?.singleCost ?: 0
+                val tenCost = pool?.tenCost ?: 0
+                PullCtaButton(
+                    label = "单 抽",
+                    cost = singleCost,
+                    enabled = !busy && pool != null && eco.softCurrency >= singleCost,
+                    onClick = { doPull(false) },
+                    modifier = Modifier.weight(1f),
+                    primary = false,
+                )
+                PullCtaButton(
+                    label = "十 连",
+                    cost = tenCost,
+                    enabled = !busy && pool != null && eco.softCurrency >= tenCost,
+                    onClick = { showTenConfirm = true },
+                    modifier = Modifier.weight(1f),
+                    primary = true,
+                )
             }
             pool?.let { p ->
                 GlassDialog(
@@ -395,18 +297,19 @@ fun GachaScreen(
                     },
                 )
             }
-            Spacer(Modifier.height(10.dp))
+            Spacer(Modifier.height(12.dp))
 
-            // ── 摘要行 ──
             Row(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text = summary,
+                    text = summary.ifEmpty { "尚未寻访 · 机缘未至" },
                     fontSize = 11.sp,
                     color = AppTheme.Text2,
                     modifier = Modifier.weight(1f),
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
                 )
                 if (results.isNotEmpty()) {
                     val shareInteraction = remember { MutableInteractionSource() }
@@ -418,8 +321,9 @@ fun GachaScreen(
                         modifier = Modifier
                             .clip(RoundedCornerShape(AppTheme.Roundness.md))
                             .inkSplash(shareInteraction)
-                            // U1：绘制 + 压缩 + 写盘已 suspend 化（移出主线程），此处在协程中调用
-                            .clickable(interactionSource = shareInteraction, indication = null) { scope.launch { PullShareCard.shareResults(context, results) } }
+                            .clickable(interactionSource = shareInteraction, indication = null) {
+                                scope.launch { PullShareCard.shareResults(context, results) }
+                            }
                             .padding(horizontal = 8.dp, vertical = 4.dp),
                     )
                 }
@@ -434,31 +338,21 @@ fun GachaScreen(
                         .padding(horizontal = 8.dp, vertical = 4.dp),
                 )
             }
-            Spacer(Modifier.height(6.dp))
+            Spacer(Modifier.height(8.dp))
 
-            // ── 本次统计卡片 ──
-            PullStatsPanel(
-                results = results,
-                pity = pity,
-                hardPity = pool?.hardPity ?: 0,
-                modifier = Modifier.fillMaxWidth(),
-            )
-            Spacer(Modifier.height(4.dp))
+            if (results.isNotEmpty()) {
+                ResultGridHeader(results = results, pity = pity, hardPity = pool?.hardPity ?: 0)
+                Spacer(Modifier.height(6.dp))
+            }
 
-            // ── 结果网格 ──
-            // P5 修复：将 LazyColumn 替换为 Column——外层 Column 已有 verticalScroll，
-            // 嵌套同方向可滚动容器（LazyColumn）在 Compose BOM 2026+ 会抛
-            // IllegalStateException（"Nesting scrollable in the same direction"），
-            // 十连结果 10 项触发布局计算，单抽 1 项刚好不触发。
-            // 结果列表最多 10 项（2×5），Column 全量渲染无性能问题。
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 results.chunked(5).forEachIndexed { rowIdx, row ->
                     Row(Modifier.fillMaxWidth()) {
                         row.forEachIndexed { i, r ->
                             key("${r.characterId}_${rowIdx}_$i") {
                                 GachaChip(
                                     r = r,
-                                    delayMs = (rowIdx * 5 + i) * 60,
+                                    delayMs = (rowIdx * 5 + i) * 55,
                                     batch = batch,
                                     onOpen = { r.characterId?.let(onOpenCharacter) },
                                     modifier = Modifier.weight(1f),
@@ -470,15 +364,13 @@ fun GachaScreen(
             }
             Spacer(Modifier.height(4.dp))
 
-            // ── 底部导航 ──
             GameNavBar(
                 active = NavItem.Gacha,
                 onSelect = onNav,
-                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
             )
         }
 
-        // ── 稀有度白闪层 ──
         if (flashAlpha > 0.01f) {
             Box(
                 Modifier
@@ -488,13 +380,11 @@ fun GachaScreen(
             )
         }
 
-        // ── 粒子特效层（抽卡演出）──
         val isRevealActive = reveal.stage == RevealStage.Beam ||
             reveal.stage == RevealStage.Single ||
             reveal.stage == RevealStage.Ten
         if (isRevealActive && reveal.rarity >= 2) {
-            // Mesh Gradient 背景（稀有度驱动的动态渐变）
-            RarityMeshGradient(
+            RarityMeshBackdrop(
                 rarity = reveal.rarity,
                 modifier = Modifier.fillMaxSize(),
             )
@@ -502,15 +392,16 @@ fun GachaScreen(
                 rarity = reveal.rarity,
                 active = true,
                 modifier = Modifier.fillMaxSize(),
+                emitFromCenter = true,
             )
             GachaBeamParticles(
                 rarity = reveal.rarity,
                 active = reveal.stage == RevealStage.Beam,
                 modifier = Modifier.fillMaxSize(),
+                emitFromCenterBottom = true,
             )
         }
 
-        // ── 翻牌演出层 ──
         if (reveal.visible) {
             CyberRevealLayer(
                 stage = reveal.stage,
@@ -534,9 +425,198 @@ fun GachaScreen(
     }
 }
 
-/**
- * 抽卡演出状态机。
- */
+/** UP 英雄展签：左 2:3 大立绘，右池名/概率/保底/UP。 */
+@Composable
+private fun PoolHeroCard(
+    pool: GachaPoolDataEntry,
+    featured: CharacterDataEntry?,
+    featuredRarity: Int,
+    pity: Int,
+    featuredLost: Boolean,
+    onOpenCharacter: (String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val rc = AppTheme.rarityColor(featuredRarity)
+    val shape = RoundedCornerShape(AppTheme.Roundness.lg)
+    Row(
+        modifier = modifier
+            .clip(shape)
+            .background(AppTheme.BgMid)
+            .border(1.dp, AppTheme.Gold.copy(alpha = 0.35f), shape)
+            .padding(12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(
+            Modifier
+                .width(118.dp)
+                .height(158.dp)
+                .clip(RoundedCornerShape(AppTheme.Roundness.md))
+                .background(rc.copy(alpha = 0.2f))
+                .border(1.5.dp, rc.copy(alpha = 0.85f), RoundedCornerShape(AppTheme.Roundness.md))
+                .clickable(enabled = featured != null) { featured?.let { onOpenCharacter(it.characterId) } },
+        ) {
+            if (featured != null) {
+                PortraitImage(
+                    characterId = featured.characterId,
+                    rarity = featuredRarity,
+                    name = featured.displayName,
+                    target = PortraitTarget.Full,
+                    aura = true,
+                    glowScale = 1.2f,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop,
+                )
+            }
+            Box(
+                Modifier
+                    .align(Alignment.TopStart)
+                    .padding(6.dp)
+                    .clip(RoundedCornerShape(AppTheme.Roundness.xs))
+                    .background(AppTheme.Gold)
+                    .padding(horizontal = 6.dp, vertical = 2.dp),
+            ) {
+                Text("UP", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = AppTheme.GoldTextOn)
+            }
+            Box(
+                Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+                    .height(40.dp)
+                    .background(
+                        Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = 0.75f))),
+                    ),
+            )
+            Text(
+                text = featured?.displayName ?: "典藏",
+                color = Color.White,
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Bold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = 6.dp),
+            )
+        }
+        Spacer(Modifier.width(12.dp))
+        Column(Modifier.weight(1f)) {
+            Text(
+                text = pool.displayName.ifEmpty { "常驻卡池" },
+                fontSize = 15.sp,
+                fontWeight = FontWeight.Bold,
+                color = AppTheme.Gold,
+            )
+            Spacer(Modifier.height(6.dp))
+            Text(ratesLabel(pool), fontSize = 11.sp, color = AppTheme.Text2, lineHeight = 15.sp)
+            if (pool.hardPity > 0) {
+                Spacer(Modifier.height(10.dp))
+                val softStart = EconomyFormulas.softPityStart(pool.hardPity)
+                val inSoft = softStart > 0 && pity >= softStart
+                val nearSoft = softStart > 0 && !inSoft && pity >= softStart - 5
+                val pityColor = when {
+                    inSoft -> AppTheme.GoldHi
+                    nearSoft -> AppTheme.Warning
+                    else -> AppTheme.Frost
+                }
+                LinearProgressIndicator(
+                    progress = { pity.toFloat() / pool.hardPity.coerceAtLeast(1) },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(5.dp)
+                        .clip(RoundedCornerShape(AppTheme.Roundness.xxs)),
+                    color = pityColor,
+                    trackColor = AppTheme.SurfaceNested,
+                )
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    text = buildString {
+                        append("保底 $pity / ${pool.hardPity}")
+                        when {
+                            inSoft -> append(" · 爬坡中")
+                            nearSoft -> append(" · 差 ${softStart - pity} 抽进软保底")
+                        }
+                    },
+                    fontSize = 11.sp,
+                    color = pityColor,
+                )
+            }
+            if (featuredLost) {
+                Spacer(Modifier.height(6.dp))
+                Text(
+                    text = "上次歪了 · 下次必中",
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = AppTheme.Frost,
+                )
+            }
+        }
+    }
+}
+
+/** 抽卡 CTA：主/次按钮 + 星尘消耗。 */
+@Composable
+private fun PullCtaButton(
+    label: String,
+    cost: Int,
+    enabled: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    primary: Boolean,
+) {
+    Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
+        if (primary) {
+            GoldButton(text = label, modifier = Modifier.fillMaxWidth(), enabled = enabled, onClick = onClick)
+        } else {
+            NeonButton(text = label, modifier = Modifier.fillMaxWidth(), enabled = enabled, onClick = onClick)
+        }
+        Spacer(Modifier.height(4.dp))
+        Text(
+            text = "星尘 $cost",
+            fontSize = 11.sp,
+            color = if (enabled) AppTheme.Text2 else AppTheme.Text3,
+        )
+    }
+}
+
+/** 结果区标题：本次稀有度分布。 */
+@Composable
+private fun ResultGridHeader(
+    results: List<PullResult>,
+    pity: Int,
+    hardPity: Int,
+    modifier: Modifier = Modifier,
+) {
+    val counts = remember(results) { results.groupBy { it.rarity }.mapValues { it.value.size } }
+    val best = remember(results) { results.maxOfOrNull { it.rarity } ?: 1 }
+    Row(modifier = modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        Text(
+            text = "本次 ${results.size} 抽",
+            fontSize = 13.sp,
+            fontWeight = FontWeight.Bold,
+            color = AppTheme.Gold,
+        )
+        Spacer(Modifier.width(10.dp))
+        Text(
+            text = "最高 ${AppTheme.rarityName(best)}",
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Bold,
+            color = AppTheme.rarityColor(best),
+        )
+        Spacer(Modifier.weight(1f))
+        for (r in 1..4) {
+            val c = counts[r] ?: 0
+            if (c > 0) {
+                Text(
+                    text = "${"★".repeat(r)}×$c",
+                    fontSize = 11.sp,
+                    color = AppTheme.rarityColor(r),
+                    modifier = Modifier.padding(start = 6.dp),
+                )
+            }
+        }
+    }
+}
+
 internal data class RevealUiState(
     val token: Int = 0,
     val staged: List<PullResult>? = null,
@@ -550,9 +630,6 @@ internal data class RevealUiState(
     val flashColor: Color = Color.White,
 )
 
-/**
- * PullResult 结果列表的 rememberSaveable Saver。
- */
 private val PullResultsSaver = listSaver<List<PullResult>, String>(
     save = { list -> list.map { r ->
         "${r.success}|${r.characterId.orEmpty()}|${r.characterName}|${r.rarity}|${r.isNew}|${r.fragmentsAwarded}"
@@ -571,7 +648,7 @@ private val PullResultsSaver = listSaver<List<PullResult>, String>(
     } },
 )
 
-/** 单张抽卡结果 chip（水墨国风版）：立绘 + 稀有度名 + 角色名，高稀有度渐变发光底。 */
+/** 单张结果卡：立绘 + 稀有度名 + 角色名，高稀有度发光。 */
 @Composable
 private fun GachaChip(
     r: PullResult,
@@ -583,7 +660,6 @@ private fun GachaChip(
     val rc = AppTheme.rarityColor(r.rarity)
     val isEpic = r.rarity >= 3
     val isUr = r.rarity >= 4
-    // UR 脉动更快更亮（600ms），SSR 标准（900ms），其他静态
     val glowA by if (isEpic) {
         rememberInfiniteTransition(label = "chipGlow").animateFloat(
             initialValue = if (isUr) 0.45f else 0.35f,
@@ -604,12 +680,12 @@ private fun GachaChip(
     }
     val chipScale by animateFloatAsState(
         targetValue = if (shown) 1f else 0f,
-        animationSpec = tween(280),
+        animationSpec = tween(300),
         label = "chipScale",
     )
     val chipAlpha by animateFloatAsState(
         targetValue = if (shown) 1f else 0f,
-        animationSpec = tween(280),
+        animationSpec = tween(300),
         label = "chipAlpha",
     )
     Column(
@@ -621,15 +697,15 @@ private fun GachaChip(
                 when {
                     isUr -> Brush.verticalGradient(
                         listOf(
-                            rc.copy(alpha = 0.45f + 0.35f * glowA),
-                            AppTheme.Surface.copy(alpha = 0.85f),
+                            rc.copy(alpha = 0.4f + 0.35f * glowA),
+                            AppTheme.BgMid.copy(alpha = 0.9f),
                         ),
                     )
                     isEpic -> Brush.verticalGradient(
-                        listOf(rc.copy(alpha = 0.30f + 0.35f * glowA), AppTheme.Surface),
+                        listOf(rc.copy(alpha = 0.28f + 0.3f * glowA), AppTheme.BgMid),
                     )
                     else -> Brush.verticalGradient(
-                        listOf(AppTheme.Surface, AppTheme.Surface.copy(alpha = 0.55f)),
+                        listOf(AppTheme.BgMid, AppTheme.SurfaceNested),
                     )
                 },
             )
@@ -647,10 +723,9 @@ private fun GachaChip(
                 characterId = r.characterId ?: "",
                 rarity = r.rarity,
                 name = r.characterName,
-                modifier = Modifier.size(42.dp).clip(RoundedCornerShape(AppTheme.Roundness.md)),
+                modifier = Modifier.size(52.dp).clip(RoundedCornerShape(AppTheme.Roundness.md)),
                 target = PortraitTarget.Avatar,
             )
-            // 「新角色」闪光标记：SSR+/UR 首次获取时在立绘右上角显示金色 NEW 徽章
             if (r.isNew && r.rarity >= 3) {
                 Box(
                     modifier = Modifier
@@ -682,7 +757,6 @@ private fun GachaChip(
     }
 }
 
-/** 概率标签 */
 private fun ratesLabel(pool: GachaPoolDataEntry): String {
     val total = pool.rarityWeights.sum()
     if (total <= 0) return ""
@@ -691,64 +765,4 @@ private fun ratesLabel(pool: GachaPoolDataEntry): String {
         val pctText = if (pct % 1f == 0f) pct.toInt().toString() else String.format(Locale.US, "%.1f", pct)
         "${AppTheme.rarityName(i + 1)} $pctText%"
     }.joinToString(" · ")
-}
-
-
-/** 抽卡结果统计卡片：数量/稀有度分布/保底进度 */
-@Composable
-private fun PullStatsPanel(
-    results: List<PullResult>,
-    pity: Int,
-    hardPity: Int,
-    modifier: Modifier = Modifier,
-) {
-    if (results.isEmpty()) return
-    val counts = remember(results) { results.groupBy { it.rarity }.mapValues { it.value.size } }
-    val best = remember(results) { results.maxOfOrNull { it.rarity } ?: 1 }
-    val softStart = remember(hardPity) { EconomyFormulas.softPityStart(hardPity) }
-    val softRemaining = if (softStart > 0) (softStart - pity).coerceAtLeast(0) else 0
-
-    GlassPanel(modifier = modifier) {
-        Column(Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
-            Text("本次统计", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = AppTheme.Gold)
-            Spacer(Modifier.height(6.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text("总计 ${results.size} 抽", fontSize = 11.sp, color = AppTheme.Text2)
-                Text(
-                    "最高 ${AppTheme.rarityName(best)}",
-                    fontSize = 11.sp,
-                    color = AppTheme.rarityColor(best),
-                )
-            }
-            Spacer(Modifier.height(4.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                for (r in 1..4) {
-                    val c = counts[r] ?: 0
-                    if (c > 0) {
-                        Text(
-                            "${"★".repeat(r)}×$c",
-                            fontSize = 11.sp,
-                            color = AppTheme.rarityColor(r),
-                        )
-                    }
-                }
-            }
-            if (hardPity > 0) {
-                Spacer(Modifier.height(6.dp))
-                LinearProgressIndicator(
-                    progress = { pity.toFloat() / hardPity.coerceAtLeast(1) },
-                    modifier = Modifier.fillMaxWidth().height(3.dp).clip(RoundedCornerShape(AppTheme.Roundness.xxs)),
-                    color = AppTheme.Gold,
-                    trackColor = AppTheme.Surface,
-                )
-                Spacer(Modifier.height(2.dp))
-                Text(
-                    "保底进度  $pity / $hardPity" +
-                        if (softRemaining > 0) "  · 软保底还差 $softRemaining 抽" else "",
-                    fontSize = 10.sp,
-                    color = AppTheme.Text3,
-                )
-            }
-        }
-    }
 }

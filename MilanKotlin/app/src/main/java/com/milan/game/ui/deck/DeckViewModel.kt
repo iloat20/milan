@@ -42,7 +42,9 @@ class DeckViewModel(
 
     init {
         viewModelScope.launch {
-            service.snapshot.collect { _uiState.value = buildState() }
+            // P0 fan-out：订 roster 切片（编队 + 养成指纹）。仅货币/开关变化不发射，
+            // 卡组不再因商店买碎片或设置开关而全量重建 ownedView。
+            service.roster.collect { _uiState.value = buildState() }
         }
     }
 

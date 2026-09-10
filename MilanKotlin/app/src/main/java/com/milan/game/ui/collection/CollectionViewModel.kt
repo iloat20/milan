@@ -39,7 +39,8 @@ class CollectionViewModel(
 
     init {
         viewModelScope.launch {
-            service.snapshot.collect { _uiState.value = buildState() }
+            // P0 fan-out：图鉴只关心持有变化（roster 指纹），货币写不再重建。
+            service.roster.collect { _uiState.value = buildState() }
         }
     }
 

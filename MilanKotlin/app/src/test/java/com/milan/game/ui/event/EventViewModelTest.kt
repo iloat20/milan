@@ -63,8 +63,8 @@ class EventViewModelTest {
             val vm = EventViewModel(svc)
             // init：懒激活（真实 IO 落盘）→ collect 重建。收敛条件必须要求"非空"，
             // 否则两侧同为空表时首轮即真，断言会与 init 的 mutate/collect 时序赛跑。
-            awaitUntil { vm.uiState.value.isNotEmpty() }
-            val cards = vm.uiState.value
+            awaitUntil { vm.uiState.value.cards.isNotEmpty() }
+            val cards = vm.uiState.value.cards
             assertEquals(svc.getActiveEvents().map { it.eventId }, cards.map { it.event.eventId })
             // 任务进度来自存档 eventTaskProgress（默认 0），不再硬编码展示层
             cards.forEach { card ->

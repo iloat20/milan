@@ -31,6 +31,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -46,9 +47,20 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.milan.game.di.AppGraph
+import com.milan.game.services.EconomySlice
 import com.milan.game.ui.formatCount
 import com.milan.game.ui.theme.AppTheme
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+
+/**
+ * 经济切片 CompositionLocal（2026-09-10）：
+ * ResourceBar 跨多个 Screen 复用，此前直接摸 `AppGraph.service.economy`（服务定位器泄漏）。
+ * 现由 MilanNavHost 在 ready 后一次性 provide，Chrome 组件只订阅本地流。
+ */
+val LocalEconomySlice = compositionLocalOf<StateFlow<EconomySlice>> {
+    MutableStateFlow(EconomySlice(0, 0, 0, 0))
+}
 
 /**
  * 统一顶栏（子页面用）：返回箭头 + 标题 + 资源胶囊（C# AppChrome.AppTopBar 翻译）。
@@ -140,7 +152,8 @@ fun AppTopBar(
  */
 @Composable
 fun ResourceBar(modifier: Modifier = Modifier, compact: Boolean = false) {
-    val eco by AppGraph.service.economy.collectAsStateWithLifecycle()
+    val economyFlow = LocalEconomySlice.current
+    val eco by economyFlow.collectAsStateWithLifecycle()
 
     Row(
         modifier = modifier

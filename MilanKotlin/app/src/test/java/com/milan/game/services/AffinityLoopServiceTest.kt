@@ -249,4 +249,70 @@ class AffinityLoopServiceTest {
         assertEquals("好感随事务回滚", 500, svc.affinity("char_a"))
         assertEquals("门票随事务回滚", 3, svc.battleTickets())
     }
+
+    // ── 等级奖励领取（2026-09-10 从「规划中」落地）──
+
+    @Test
+    fun claimReward_level1_grantsSoft_andMarksClaimed() = withService { svc ->
+        svc.saveData.ownedCharacters = listOf(CharacterSaveState(characterId = "char_a", level = 50))
+        svc.saveData.softCurrency = 0
+        svc.saveData.characterAffinityData = mapOf("char_a" to 1000) // Lv.1
+
+        val reward = AffinityFormulas.LEVEL_REWARDS.first { it.level == 1 }
+        assertEquals(WriteOutcome.Success, svc.claimAffinityReward("char_a", 1))
+        assertEquals(reward.amount, svc.saveData.softCurrency)
+        assertEquals(listOf(1), svc.getClaimedAffinityRewards()["char_a"])
+
+        // 重复领取拒绝，货币不双发
+        assertEquals(WriteOutcome.Rejected, svc.claimAffinityReward("char_a", 1))
+        assertEquals(reward.amount, svc.saveData.softCurrency)
+    }
+
+    @Test
+    fun claimReward_belowLevel_rejected_noChange() = withService { svc ->
+        svc.saveData.ownedCharacters = listOf(CharacterSaveState(characterId = "char_a", level = 50))
+        svc.saveData.hardCurrency = 10
+        svc.saveData.characterAffinityData = mapOf("char_a" to 2500) // Lv.2，未到 3
+
+        assertEquals(WriteOutcome.Rejected, svc.claimAffinityReward("char_a", 3))
+        assertEquals(10, svc.saveData.hardCurrency)
+        assertTrue(svc.getClaimedAffinityRewards()["char_a"].isNullOrEmpty())
+    }
+
+    @Test
+    fun claimReward_notOwned_rejected() = withService { svc ->
+        svc.saveData.characterAffinityData = mapOf("char_a" to AffinityFormulas.MAX_AFFINITY)
+        assertEquals(WriteOutcome.Rejected, svc.claimAffinityReward("char_a", 10))
+    }
+
+    @Test
+    fun claimReward_fragmentKind_grantsStarFragments() = withService { svc ->
+        svc.saveData.ownedCharacters = listOf(CharacterSaveState(characterId = "char_a", level = 50))
+        svc.saveData.characterAffinityData = mapOf("char_a" to 5000) // Lv.5
+        val before = svc.getStarFragments()
+
+        assertEquals(WriteOutcome.Success, svc.claimAffinityReward("char_a", 5))
+        val reward = AffinityFormulas.LEVEL_REWARDS.first { it.level == 5 }
+        assertEquals(before + reward.amount, svc.getStarFragments())
+    }
+
+    @Test
+    fun claimReward_saveFailure_rollsBackCurrencyAndClaimed() = runTest {
+        val svc = makeService(failSave = true)
+        svc.saveData.ownedCharacters = listOf(CharacterSaveState(characterId = "char_a", level = 50))
+        svc.saveData.softCurrency = 100
+        svc.saveData.characterAffinityData = mapOf("char_a" to 1000)
+
+        assertEquals(WriteOutcome.SaveFailed, svc.claimAffinityReward("char_a", 1))
+        assertEquals(100, svc.saveData.softCurrency)
+        assertTrue(svc.getClaimedAffinityRewards()["char_a"].isNullOrEmpty())
+    }
+
+    @Test
+    fun claimReward_unknownLevel_rejected() = withService { svc ->
+        svc.saveData.ownedCharacters = listOf(CharacterSaveState(characterId = "char_a", level = 50))
+        svc.saveData.characterAffinityData = mapOf("char_a" to AffinityFormulas.MAX_AFFINITY)
+        assertEquals(WriteOutcome.Rejected, svc.claimAffinityReward("char_a", 2)) // 非档位
+        assertEquals(WriteOutcome.Rejected, svc.claimAffinityReward("char_a", 0))
+    }
 }

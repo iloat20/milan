@@ -20,6 +20,8 @@ data class AffinityRow(
     val displayName: String,
     val rarity: Int,
     val affinity: Int,
+    /** 已领取的好感等级奖励档位。 */
+    val claimedLevels: Set<Int> = emptySet(),
 )
 
 /** 好感度页 UI 状态（派生自角色定义 + owned + 好感数据 + 星尘，随快照 revision 重算）。 */
@@ -44,6 +46,9 @@ class AffinityViewModel(
 
     init {
         viewModelScope.launch {
+            // 好感页数据源跨 roster + affinity 存档 + 领取态，单一切片覆盖不全；
+            // 仍订全量 snapshot（revision 推进即重算）。列表/商店等已迁切片，
+            // 本页保持等价语义，避免 merge/combine 在纯 JVM 单测踩 Main dispatcher。
             service.snapshot.collect { _uiState.value = buildState() }
         }
     }
@@ -53,6 +58,7 @@ class AffinityViewModel(
             .mapNotNull { it?.characterId }
             .toSet()
         val affinity = service.getCharacterAffinityData()
+        val claimed = service.getClaimedAffinityRewards()
         val defs: List<CharacterDataEntry> = service.characters
         val rows = defs.filter { it.characterId in ownedIds }.map { def ->
             AffinityRow(
@@ -60,6 +66,7 @@ class AffinityViewModel(
                 displayName = def.displayName,
                 rarity = def.baseRarity,
                 affinity = affinity[def.characterId] ?: 0,
+                claimedLevels = claimed[def.characterId]?.toSet() ?: emptySet(),
             )
         }
         return AffinityUiState(
@@ -83,6 +90,31 @@ class AffinityViewModel(
                             "该角色好感已满级"
                         } else {
                             "星尘不足（赠送需 ${AffinityFormulas.GIFT_COST_SOFT}）"
+                        }
+                    }
+                    WriteOutcome.SaveFailed -> "保存失败，请重试"
+                }
+                _toasts.send(msg)
+            } catch (_: Exception) {
+                _toasts.send("操作异常，请重试")
+            }
+        }
+    }
+
+    /** 领取好感等级奖励（档位见 [AffinityFormulas.LEVEL_REWARDS]）。 */
+    fun claimReward(characterId: String, level: Int) {
+        viewModelScope.launch {
+            try {
+                val def = AffinityFormulas.LEVEL_REWARDS.firstOrNull { it.level == level }
+                val msg = when (service.claimAffinityReward(characterId, level)) {
+                    WriteOutcome.Success -> "已领取 ${def?.label ?: "好感 Lv.$level 奖励"}"
+                    WriteOutcome.Rejected -> {
+                        val current = service.getCharacterAffinityData()[characterId] ?: 0
+                        val claimed = service.getClaimedAffinityRewards()[characterId].orEmpty()
+                        when {
+                            level in claimed -> "该档奖励已领取"
+                            AffinityFormulas.levelOf(current) < level -> "好感等级不足（需 Lv.$level）"
+                            else -> "暂时无法领取"
                         }
                     }
                     WriteOutcome.SaveFailed -> "保存失败，请重试"

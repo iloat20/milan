@@ -18,6 +18,8 @@ import androidx.compose.ui.draw.paint
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.MeshGradientPainter
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.foundation.layout.fillMaxSize
 
 /**
  * Mesh Gradient 工具集 — Compose 1.12 官方 [MeshGradientPainter]。
@@ -50,6 +52,30 @@ fun RarityMeshGradient(
 ) {
     val colors = rarityMeshColors16(rarity)
     MeshGradientBox(colors = colors, animated = animated, modifier = modifier)
+}
+
+/**
+ * 全屏稀有度氛围底（抽卡演出浮层用）。
+ * 旧 [RarityMeshGradient] 强制 16:9，fillMaxSize 会被裁成顶部一条——演出层必须用本入口。
+ */
+@Composable
+fun RarityMeshBackdrop(
+    rarity: Int,
+    modifier: Modifier = Modifier,
+    animated: Boolean = true,
+) {
+    val colors = rarityMeshColors16(rarity)
+    val painter = if (animated) {
+        rememberAnimatedMeshGradientPainter(colors)
+    } else {
+        rememberStaticMeshGradientPainter(colors)
+    }
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .graphicsLayer { alpha = 0.55f }
+            .paint(painter),
+    )
 }
 
 @Composable

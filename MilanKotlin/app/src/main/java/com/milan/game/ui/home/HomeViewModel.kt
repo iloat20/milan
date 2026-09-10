@@ -49,7 +49,8 @@ class HomeViewModel(
 
     init {
         viewModelScope.launch {
-            service.snapshot.collect { _uiState.value = buildState() }
+            // P0 fan-out：主页名录/主视觉只随持有变化刷新（roster 指纹）。
+            service.roster.collect { _uiState.value = buildState() }
         }
     }
 

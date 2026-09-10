@@ -112,6 +112,18 @@ class ServiceCore(
 
     /** 每次成功写操作后统一刷新快照；revision 是重组触发器。 */
     fun refreshSnapshot() {
+        val ownedFp = ownedFingerprint()
+        // 货币/开关类写：养成指纹未变时复用上次 ownedSaves 拷贝，省 O(n) 分配 + GC。
+        val ownedSaves = if (ownedFp == lastOwnedFingerprint && lastOwnedSaves.isNotEmpty()) {
+            lastOwnedSaves
+        } else {
+            saveData.ownedCharacters.filterNotNull()
+                .associate { it.characterId to it.toSnapshotCopy() }
+                .also {
+                    lastOwnedFingerprint = ownedFp
+                    lastOwnedSaves = it
+                }
+        }
         val snap = GameSnapshot(
             revision = _snapshot.value.revision + 1,
             softCurrency = saveData.softCurrency,
@@ -121,11 +133,8 @@ class ServiceCore(
             soundEnabled = saveData.soundEnabled,
             vibrationEnabled = saveData.vibrationEnabled,
             pushEnabled = saveData.pushEnabled,
-            // 角色级数据随每次写操作刷新——保底计数 + 角色存档拷贝
-            //（显式构造拷贝：CharacterSaveState 为普通 class 无 copy()；拷贝防快照与存档
-            //  共享可变引用，避免 resetSave 后快照持有陈旧对象）。
             pityByPool = pools.associate { it.poolId to saveData.getGachaCounter(it.poolId) },
-            ownedSaves = saveData.ownedCharacters.filterNotNull().associate { it.characterId to it.toSnapshotCopy() },
+            ownedSaves = ownedSaves,
             formation = saveData.getFormationIds(),
             towerBestFloor = saveData.towerBestFloor,
             battleTickets = itemCount(BattleTicketItemId),
@@ -135,12 +144,56 @@ class ServiceCore(
         _snapshot.value = snap
         // 切片同步：内容未变则不发射（setIfChanged），无关字段变化不再惊动订阅者。
         _economy.setIfChanged(
-            EconomySlice(snap.softCurrency, snap.hardCurrency, snap.starFragments, snap.battleTickets)
+            EconomySlice(
+                softCurrency = snap.softCurrency,
+                hardCurrency = snap.hardCurrency,
+                starFragments = snap.starFragments,
+                battleTickets = snap.battleTickets,
+                dailyShopDate = saveData.dailyShopDate,
+                dailyBought = saveData.dailyShopBought.filterNotNull(),
+            )
         )
-        _roster.setIfChanged(RosterSlice(snap.ownedCount, snap.formation))
-        _progress.setIfChanged(ProgressSlice(snap.towerBestFloor))
+        _roster.setIfChanged(
+            RosterSlice(
+                ownedCount = snap.ownedCount,
+                formation = snap.formation,
+                ownedFingerprint = ownedFp,
+            )
+        )
+        _progress.setIfChanged(
+            ProgressSlice(
+                towerBestFloor = snap.towerBestFloor,
+                affinityTotal = saveData.characterAffinityData.orEmpty().values.sumOf { it ?: 0 },
+                affinityClaims = saveData.claimedAffinityRewards.orEmpty().values.sumOf { it?.size ?: 0 },
+            )
+        )
         _gachaSlice.setIfChanged(GachaSlice(snap.pityByPool, snap.featuredLostByPool))
         _meta.setIfChanged(MetaSlice(snap.soundEnabled, snap.vibrationEnabled, snap.pushEnabled))
+    }
+
+    /** 角色养成指纹（列表类 VM 的重建门控；不含装备——装备写走 Detail 页全量快照）。 */
+    private fun ownedFingerprint(): Long {
+        var h = 1125899906842597L
+        for (ch in saveData.ownedCharacters) {
+            if (ch == null) continue
+            h = 31 * h + ch.characterId.hashCode()
+            h = 31 * h + ch.level
+            h = 31 * h + ch.stage
+            h = 31 * h + ch.stars
+            h = 31 * h + ch.totalExp
+            h = 31 * h + ch.unspentPoints
+            h = 31 * h + ch.talentPoints.size
+        }
+        return h
+    }
+
+    private var lastOwnedFingerprint: Long = 0L
+    private var lastOwnedSaves: Map<String, CharacterSaveState> = emptyMap()
+
+    /** 存档整体替换（resetSave）后必须清空指纹缓存，否则复用陈旧拷贝。 */
+    fun invalidateOwnedSavesCache() {
+        lastOwnedFingerprint = 0L
+        lastOwnedSaves = emptyMap()
     }
 
     /** 快照拷贝：显式构造副本，防快照持有可变存档引用（resetSave 后陈旧）。 */
