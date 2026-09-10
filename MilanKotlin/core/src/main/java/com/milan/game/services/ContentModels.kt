@@ -137,6 +137,8 @@ data class GameSnapshot(
     val soundEnabled: Boolean = true,
     val vibrationEnabled: Boolean = true,
     val pushEnabled: Boolean = true,
+    /** 动效减弱（无障碍）。 */
+    val reduceMotionEnabled: Boolean = false,
     // 路径 B（2026-08）：角色级数据纳入快照，UI 从快照读替代 saveData 直读 firstOrNull。
     // pityByPool：poolId → 保底计数（GachaScreen 保底进度显示/余额预拦截）；
     // ownedSaves：characterId → 角色存档拷贝（CharacterSaveState 为可变字段，拷贝防快照持有陈旧引用）。
@@ -215,6 +217,7 @@ data class MetaSlice(
     val soundEnabled: Boolean = true,
     val vibrationEnabled: Boolean = true,
     val pushEnabled: Boolean = true,
+    val reduceMotionEnabled: Boolean = false,
 )
 
 /**

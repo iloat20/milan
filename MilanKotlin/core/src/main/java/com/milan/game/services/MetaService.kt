@@ -59,6 +59,13 @@ class MetaService(private val core: ServiceCore) : MetaApi {
         newValue = enabled,
     )
 
+    /** 动效减弱（无障碍）：true=关闭高负载演出。UI 经 CompositionLocal 消费。 */
+    override suspend fun setReduceMotionEnabled(enabled: Boolean): WriteOutcome = persistSetting(
+        read = { saveData.reduceMotionEnabled },
+        write = { saveData.reduceMotionEnabled = it },
+        newValue = enabled,
+    )
+
     /**
      * 重置存档为新档：删除存档文件并重载默认档，整体替换 saveData 引用，
      * 成功后广播货币/养成变更（各页面据此刷新）。

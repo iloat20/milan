@@ -57,7 +57,7 @@ import kotlinx.coroutines.launch
 /**
  * 设置页（C# SettingsPage 翻译）。
  *
- * 结构：音频与体验（音效/振动/推送三开关）→ 数据管理（重置存档、崩溃日志导出）→ 关于。
+ * 结构：音频与体验（音效/振动/推送/动效减弱）→ 数据管理（重置存档、崩溃日志导出）→ 关于。
  * 写操作与推荐派生经 [SettingsViewModel]（组合根注入）；平台副作用
  * （MilanAudio 音量、WorkManager、通知权限）留在本 Screen 以回调注入。
  */
@@ -147,6 +147,14 @@ fun SettingsScreen(
                                 }
                             }
                         },
+                    )
+                }
+                EntranceItem(index = 3) {
+                    SettingSwitchRow(
+                        title = "动效减弱",
+                        subtitle = "关闭抽卡仪式等高负载演出（无障碍）",
+                        checked = meta.reduceMotionEnabled,
+                        onCheckedChange = { enabled -> vm.setReduceMotionEnabled(enabled) },
                     )
                 }
 

@@ -132,6 +132,9 @@ fun BattleSkillVignette(
     modifier: Modifier = Modifier,
     durationMs: Int = 360,
 ) {
+    // 动效减弱：不闪全屏 vignette
+    if (com.milan.game.ui.effects.LocalReduceMotion.current) return
+
     val alpha = remember { Animatable(0f) }
     val color = remember(pulse?.id) {
         if (pulse == null) Color.Transparent

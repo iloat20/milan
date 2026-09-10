@@ -141,10 +141,15 @@ internal fun MilanNavHost(openGachaOnStart: Boolean = false) {
     // 替代各处 Toast/局部 toast 四套写法。Snackbar 浮层置于底部导航之上。
     val snackbarHost = remember { SnackbarHostState() }
     val feedback = remember { Feedback(snackbarHost) }
+    // 动效减弱（无障碍）：全树注入，高负载演出读取后降级
+    val reduceMotion by com.milan.game.di.AppGraph.service.meta
+        .collectAsStateWithLifecycle()
+    val reduceMotionOn = reduceMotion.reduceMotionEnabled
     CompositionLocalProvider(
         LocalFeedback provides feedback,
         // ResourceBar 等 Chrome 组件订阅经济切片（2026-09-10：消除 AppGraph.service 泄漏）
         LocalEconomySlice provides com.milan.game.di.AppGraph.service.economy,
+        com.milan.game.ui.effects.LocalReduceMotion provides reduceMotionOn,
     ) {
         Box(Modifier.fillMaxSize()) {
             SharedTransitionLayout(Modifier.fillMaxSize()) {

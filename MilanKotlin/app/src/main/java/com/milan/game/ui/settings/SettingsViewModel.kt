@@ -70,6 +70,11 @@ class SettingsViewModel(
         mapWrite(service.setVibrationEnabled(enabled))
     }
 
+    /** 动效减弱（无障碍）：true=关闭高负载演出。 */
+    fun setReduceMotionEnabled(enabled: Boolean) = runWrite {
+        mapWrite(service.setReduceMotionEnabled(enabled))
+    }
+
     /**
      * 推送开关。[onSuccess] 由 Screen 排程 WorkManager / 请求通知权限
      *（权限拒绝不回滚开关，与原实现一致）。

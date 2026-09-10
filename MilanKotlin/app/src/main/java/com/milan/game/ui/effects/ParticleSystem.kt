@@ -95,6 +95,9 @@ fun ParticleSystem(
     emitFromCenter: Boolean = false,
     emitFromCenterBottom: Boolean = false,
 ) {
+    // 动效减弱：整层粒子直接不组合（设计语言 P3 无障碍）
+    if (LocalReduceMotion.current) return
+
     val particles = remember { mutableStateListOf<Particle>() }
     val random = remember { Random(System.currentTimeMillis()) }
 

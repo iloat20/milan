@@ -83,6 +83,11 @@ class SaveData(
     @SerialName("SoundEnabled") var soundEnabled: Boolean = true,
     @SerialName("VibrationEnabled") var vibrationEnabled: Boolean = true,
     @SerialName("PushEnabled") var pushEnabled: Boolean = true,
+    /**
+     * 动效减弱（无障碍，设计语言 P3）：true = 关闭高负载演出（抽卡仪式/粒子/视差等），
+     * 只保留必要信息动画。旧档无此键 → false（全量动效）。
+     */
+    @SerialName("ReduceMotionEnabled") var reduceMotionEnabled: Boolean = false,
 
     // ─────────── 商店与成就领取 ───────────
     /** 每日商店归属的 UTC 日序号字符串（与当日不一致 = 跨日，已购列表作废重置）。 */

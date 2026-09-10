@@ -137,6 +137,7 @@ class ServiceCore(
             soundEnabled = saveData.soundEnabled,
             vibrationEnabled = saveData.vibrationEnabled,
             pushEnabled = saveData.pushEnabled,
+            reduceMotionEnabled = saveData.reduceMotionEnabled,
             pityByPool = pools.associate { it.poolId to saveData.getGachaCounter(it.poolId) },
             ownedSaves = ownedSaves,
             formation = saveData.getFormationIds(),
@@ -172,7 +173,14 @@ class ServiceCore(
             )
         )
         _gachaSlice.setIfChanged(GachaSlice(snap.pityByPool, snap.featuredLostByPool))
-        _meta.setIfChanged(MetaSlice(snap.soundEnabled, snap.vibrationEnabled, snap.pushEnabled))
+        _meta.setIfChanged(
+            MetaSlice(
+                snap.soundEnabled,
+                snap.vibrationEnabled,
+                snap.pushEnabled,
+                snap.reduceMotionEnabled,
+            )
+        )
     }
 
     /** 角色养成指纹（列表类 VM 的重建门控；不含装备——装备写走 Detail 页全量快照）。 */

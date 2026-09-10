@@ -19,6 +19,9 @@ interface MetaApi {
     /** 推送开关持久化。 */
     suspend fun setPushEnabled(enabled: Boolean): WriteOutcome
 
+    /** 动效减弱开关持久化（无障碍；true=关闭高负载演出）。 */
+    suspend fun setReduceMotionEnabled(enabled: Boolean): WriteOutcome
+
     /** 重置存档为新档（删除失败返回 false 且不动内存）。 */
     suspend fun resetSave(): Boolean
 

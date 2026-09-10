@@ -289,6 +289,9 @@ private fun RewardRow(
  */
 @Composable
 private fun BattleParticles(victory: Boolean, modifier: Modifier = Modifier) {
+    // 动效减弱：结算只保留文字/淡入，不播粒子
+    if (com.milan.game.ui.effects.LocalReduceMotion.current) return
+
     val particleCount = if (victory) 24 else 12
     val particles = remember(victory) {
         List(particleCount) { i ->
