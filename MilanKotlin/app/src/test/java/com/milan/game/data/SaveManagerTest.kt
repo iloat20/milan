@@ -52,6 +52,22 @@ class SaveManagerTest {
     }
 
     @Test
+    fun load_missingMain_recoversFromBackup() {
+        // R6-P0-3：save() 先 main→bak 再 tmp→main，窗口被杀只剩 bak。
+        // exists()==false 时旧逻辑直接默认档，从不读备份 → 静默抹档。
+        val provider = FakeProvider(
+            main = null,
+            backup = """{"SoftCurrency":888}""",
+        )
+        val manager = SaveManager(provider, onTrace = provider.traces::add)
+
+        val data = manager.load()
+
+        assertEquals(888, data.softCurrency)
+        assertEquals(listOf("save.load.recovered.from.backup.missing.main"), provider.traces)
+    }
+
+    @Test
     fun load_allSourcesCorrupt_fallsBackToDefaultWithTrace() {
         val provider = FakeProvider(
             main = "这不是 json{{{",

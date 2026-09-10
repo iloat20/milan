@@ -173,6 +173,15 @@ fun StrategicBattleScreen(
                 }
 
                 Spacer(Modifier.height(8.dp))
+                if (ui.enemyActing) {
+                    Text(
+                        text = "敌方行动中…",
+                        fontSize = 12.sp,
+                        color = AppTheme.Danger,
+                        fontWeight = FontWeight.Bold,
+                    )
+                    Spacer(Modifier.height(6.dp))
+                }
                 Text("我方", fontSize = 12.sp, color = AppTheme.Frost, fontWeight = FontWeight.Bold)
                 Spacer(Modifier.height(6.dp))
                 Row(
@@ -202,7 +211,7 @@ fun StrategicBattleScreen(
 
                 // 技能条
                 val actor = st.playerTeam.getOrNull(ui.currentActor)
-                if (actor != null && actor.hp > 0 && !ui.finished) {
+                if (actor != null && actor.hp > 0 && !ui.finished && !ui.enemyActing) {
                     Text(
                         text = "行动：${actor.stats.characterId.ifEmpty { "单位${ui.currentActor + 1}" }} · 能量 ${actor.energy}/${actor.maxEnergy}",
                         fontSize = 12.sp,

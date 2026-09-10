@@ -169,5 +169,7 @@ class TalentEngine {
         const val BRANCH_POWER = "branch_power"
         const val BRANCH_DEFENSE = "branch_defense"
         const val BRANCH_UTILITY = "branch_utility"
+        /** 终极分支（t13；data.json 节点有，树 BranchIds 历史漏写——UI 取并集兜底）。 */
+        const val BRANCH_ULTIMATE = "branch_ultimate"
     }
 }

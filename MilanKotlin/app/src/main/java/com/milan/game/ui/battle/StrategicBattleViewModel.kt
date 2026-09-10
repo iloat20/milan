@@ -27,6 +27,8 @@ data class StrategicBattleUi(
     val settling: Boolean = false,
     val outcome: TowerOutcome? = null,
     val finished: Boolean = false,
+    /** 敌方回合进行中：技能栏必须禁用，防 delay 期间玩家再出招覆盖状态（R6-P0-4）。 */
+    val enemyActing: Boolean = false,
     /** 本批新打击演出脉冲（Screen 播完后 clearFx）。 */
     val fxPulses: List<StrikeFxPulse> = emptyList(),
     /** 最近一条技能脉冲（vignette / 红闪用，不清空）。 */
@@ -88,6 +90,7 @@ class StrategicBattleViewModel(
     }
 
     fun selectSkill(skillId: String) {
+        if (_ui.value.enemyActing || _ui.value.finished || _ui.value.settling) return
         val st = _ui.value.state ?: return
         val actor = st.playerTeam.getOrNull(_ui.value.currentActor) ?: return
         val skill = actor.skills.firstOrNull { it.skillId == skillId } ?: return
@@ -107,6 +110,7 @@ class StrategicBattleViewModel(
     }
 
     fun selectTarget(index: Int) {
+        if (_ui.value.enemyActing) return
         _ui.value = _ui.value.copy(selectedTarget = index)
     }
 
@@ -114,7 +118,8 @@ class StrategicBattleViewModel(
     fun confirm() {
         val cur = _ui.value
         val st = cur.state ?: return
-        if (cur.finished || cur.settling) return
+        // R6-P0-4：敌方回合 / 结算中禁止再出招，否则用旧 st 双执行并被敌方结果覆盖
+        if (cur.finished || cur.settling || cur.enemyActing) return
         val skillId = cur.selectedSkillId ?: return
         val actor = st.playerTeam.getOrNull(cur.currentActor) ?: return
         if (actor.hp <= 0) {
@@ -152,9 +157,15 @@ class StrategicBattleViewModel(
             _ui.value = _ui.value.copy(currentActor = next)
             return
         }
-        // 玩家阶段结束 → 敌方回合
+        // 玩家阶段结束 → 敌方回合（先上锁，防 delay 窗口双击）
+        _ui.value = _ui.value.copy(
+            enemyActing = true,
+            selectedSkillId = null,
+            selectedTarget = null,
+            needTarget = false,
+            logLines = _ui.value.logLines + "—— 敌方回合 ——",
+        )
         viewModelScope.launch {
-            _ui.value = _ui.value.copy(logLines = _ui.value.logLines + "—— 敌方回合 ——")
             delay(350)
             var s = service.executeStrategicEnemyTurn(st)
             val eEvents = s.log.drop(st.log.size)
@@ -184,6 +195,7 @@ class StrategicBattleViewModel(
                 currentActor = firstAlivePlayer(s) ?: 0,
                 selectedSkillId = null,
                 needTarget = false,
+                enemyActing = false,
                 fxPulses = ePulses,
                 lastFx = ePulses.lastOrNull() ?: _ui.value.lastFx,
             )

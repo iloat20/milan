@@ -445,9 +445,21 @@ internal fun TalentPanel(
     val save = view.save
     val characterId = save.characterId
     val tree = queries.talentTree()
-    // C# 空树回退三分支；树节点为 null 时对应分支为空列（防养成界面静默空白）
-    val branches = tree?.branchIds
-        ?: listOf(TalentEngine.BRANCH_POWER, TalentEngine.BRANCH_DEFENSE, TalentEngine.BRANCH_UTILITY)
+    // C# 空树回退三分支；树节点为 null 时对应分支为空列（防养成界面静默空白）。
+    // 2026-09-10 R6-P0-2：data.json 各树 BranchIds 历史漏写 branch_ultimate，但 t13 节点
+    // 均挂在该分支——只读 tree.branchIds 会导致终极天赋整列不可见。这里取
+    // BranchIds ∪ 节点 branchId 并集（保序、去重），内容修好后行为不变。
+    val branches = run {
+        val declared = tree?.branchIds.orEmpty()
+        val fromNodes = tree?.nodes.orEmpty().map { it.branchId }.filter { it.isNotBlank() }
+        (declared + fromNodes).distinct()
+    }.ifEmpty {
+        listOf(
+            TalentEngine.BRANCH_POWER,
+            TalentEngine.BRANCH_DEFENSE,
+            TalentEngine.BRANCH_UTILITY,
+        )
+    }
 
     GlassPanel(modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 14.dp)) {
@@ -510,6 +522,7 @@ private fun branchColor(br: String): Color = when (br) {
     TalentEngine.BRANCH_POWER -> AppTheme.Danger
     TalentEngine.BRANCH_DEFENSE -> AppTheme.Frost
     TalentEngine.BRANCH_UTILITY -> AppTheme.Violet
+    TalentEngine.BRANCH_ULTIMATE -> AppTheme.Gold
     else -> AppTheme.Text2
 }
 
@@ -518,6 +531,7 @@ private fun branchName(br: String): String = when (br) {
     TalentEngine.BRANCH_POWER -> "强攻"
     TalentEngine.BRANCH_DEFENSE -> "坚壁"
     TalentEngine.BRANCH_UTILITY -> "灵动"
+    TalentEngine.BRANCH_ULTIMATE -> "终极"
     else -> br
 }
 

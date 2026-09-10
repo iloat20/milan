@@ -236,6 +236,7 @@ internal object GameContent {
         val treesById = mapOf(
         "tree_baihu" to TalentTreeData(
             treeId = "tree_baihu",
+            branchIds = listOf("branch_power", "branch_defense", "branch_utility", "branch_ultimate"),
             nodes = listOf(
                 TalentNodeData(
                     nodeId = "char_ssr_baihu_t1",
@@ -358,6 +359,7 @@ internal object GameContent {
         ),
         "tree_bifang" to TalentTreeData(
             treeId = "tree_bifang",
+            branchIds = listOf("branch_power", "branch_defense", "branch_utility", "branch_ultimate"),
             nodes = listOf(
                 TalentNodeData(
                     nodeId = "char_sr_bifang_t1",
@@ -480,6 +482,7 @@ internal object GameContent {
         ),
         "tree_chiyou" to TalentTreeData(
             treeId = "tree_chiyou",
+            branchIds = listOf("branch_power", "branch_defense", "branch_utility", "branch_ultimate"),
             nodes = listOf(
                 TalentNodeData(
                     nodeId = "char_ssr_chiyou_t1",
@@ -602,6 +605,7 @@ internal object GameContent {
         ),
         "tree_dangang" to TalentTreeData(
             treeId = "tree_dangang",
+            branchIds = listOf("branch_power", "branch_defense", "branch_utility", "branch_ultimate"),
             nodes = listOf(
                 TalentNodeData(
                     nodeId = "char_r_dangang_t1",
@@ -724,6 +728,7 @@ internal object GameContent {
         ),
         "tree_feilian" to TalentTreeData(
             treeId = "tree_feilian",
+            branchIds = listOf("branch_power", "branch_defense", "branch_utility", "branch_ultimate"),
             nodes = listOf(
                 TalentNodeData(
                     nodeId = "char_ssr_feilian_t1",
@@ -846,6 +851,7 @@ internal object GameContent {
         ),
         "tree_fenghuang" to TalentTreeData(
             treeId = "tree_fenghuang",
+            branchIds = listOf("branch_power", "branch_defense", "branch_utility", "branch_ultimate"),
             nodes = listOf(
                 TalentNodeData(
                     nodeId = "char_ssr_fenghuang_t1",
@@ -968,6 +974,7 @@ internal object GameContent {
         ),
         "tree_huayao" to TalentTreeData(
             treeId = "tree_huayao",
+            branchIds = listOf("branch_power", "branch_defense", "branch_utility", "branch_ultimate"),
             nodes = listOf(
                 TalentNodeData(
                     nodeId = "char_sr_huayao_t1",
@@ -1090,6 +1097,7 @@ internal object GameContent {
         ),
         "tree_ironman" to TalentTreeData(
             treeId = "tree_ironman",
+            branchIds = listOf("branch_power", "branch_defense", "branch_utility", "branch_ultimate"),
             nodes = listOf(
                 TalentNodeData(
                     nodeId = "char_ur_ironman_t1",
@@ -1212,6 +1220,7 @@ internal object GameContent {
         ),
         "tree_jingwei" to TalentTreeData(
             treeId = "tree_jingwei",
+            branchIds = listOf("branch_power", "branch_defense", "branch_utility", "branch_ultimate"),
             nodes = listOf(
                 TalentNodeData(
                     nodeId = "char_sr_jingwei_t1",
@@ -1334,6 +1343,7 @@ internal object GameContent {
         ),
         "tree_jinwu" to TalentTreeData(
             treeId = "tree_jinwu",
+            branchIds = listOf("branch_power", "branch_defense", "branch_utility", "branch_ultimate"),
             nodes = listOf(
                 TalentNodeData(
                     nodeId = "char_ur_jinwu_t1",
@@ -1456,6 +1466,7 @@ internal object GameContent {
         ),
         "tree_keqing" to TalentTreeData(
             treeId = "tree_keqing",
+            branchIds = listOf("branch_power", "branch_defense", "branch_utility", "branch_ultimate"),
             nodes = listOf(
                 TalentNodeData(
                     nodeId = "char_ur_keqing_t1",
@@ -1578,6 +1589,7 @@ internal object GameContent {
         ),
         "tree_kikyo" to TalentTreeData(
             treeId = "tree_kikyo",
+            branchIds = listOf("branch_power", "branch_defense", "branch_utility", "branch_ultimate"),
             nodes = listOf(
                 TalentNodeData(
                     nodeId = "char_ur_kikyo_t1",
@@ -1700,6 +1712,7 @@ internal object GameContent {
         ),
         "tree_leishen" to TalentTreeData(
             treeId = "tree_leishen",
+            branchIds = listOf("branch_power", "branch_defense", "branch_utility", "branch_ultimate"),
             nodes = listOf(
                 TalentNodeData(
                     nodeId = "char_ssr_leishen_t1",
@@ -1822,6 +1835,7 @@ internal object GameContent {
         ),
         "tree_lili" to TalentTreeData(
             treeId = "tree_lili",
+            branchIds = listOf("branch_power", "branch_defense", "branch_utility", "branch_ultimate"),
             nodes = listOf(
                 TalentNodeData(
                     nodeId = "char_r_lili_t1",
@@ -1944,6 +1958,7 @@ internal object GameContent {
         ),
         "tree_luoyu" to TalentTreeData(
             treeId = "tree_luoyu",
+            branchIds = listOf("branch_power", "branch_defense", "branch_utility", "branch_ultimate"),
             nodes = listOf(
                 TalentNodeData(
                     nodeId = "char_r_luoyu_t1",
@@ -2066,6 +2081,7 @@ internal object GameContent {
         ),
         "tree_nuwa" to TalentTreeData(
             treeId = "tree_nuwa",
+            branchIds = listOf("branch_power", "branch_defense", "branch_utility", "branch_ultimate"),
             nodes = listOf(
                 TalentNodeData(
                     nodeId = "char_ur_nuwa_t1",
@@ -2188,6 +2204,7 @@ internal object GameContent {
         ),
         "tree_qinyuan" to TalentTreeData(
             treeId = "tree_qinyuan",
+            branchIds = listOf("branch_power", "branch_defense", "branch_utility", "branch_ultimate"),
             nodes = listOf(
                 TalentNodeData(
                     nodeId = "char_r_qinyuan_t1",
@@ -2310,6 +2327,7 @@ internal object GameContent {
         ),
         "tree_qiongqi" to TalentTreeData(
             treeId = "tree_qiongqi",
+            branchIds = listOf("branch_power", "branch_defense", "branch_utility", "branch_ultimate"),
             nodes = listOf(
                 TalentNodeData(
                     nodeId = "char_sr_qiongqi_t1",
@@ -2432,6 +2450,7 @@ internal object GameContent {
         ),
         "tree_shangyang" to TalentTreeData(
             treeId = "tree_shangyang",
+            branchIds = listOf("branch_power", "branch_defense", "branch_utility", "branch_ultimate"),
             nodes = listOf(
                 TalentNodeData(
                     nodeId = "char_ssr_shangyang_t1",
@@ -2554,6 +2573,7 @@ internal object GameContent {
         ),
         "tree_shanxiao" to TalentTreeData(
             treeId = "tree_shanxiao",
+            branchIds = listOf("branch_power", "branch_defense", "branch_utility", "branch_ultimate"),
             nodes = listOf(
                 TalentNodeData(
                     nodeId = "char_r_shanxiao_t1",
@@ -2676,6 +2696,7 @@ internal object GameContent {
         ),
         "tree_sishu" to TalentTreeData(
             treeId = "tree_sishu",
+            branchIds = listOf("branch_power", "branch_defense", "branch_utility", "branch_ultimate"),
             nodes = listOf(
                 TalentNodeData(
                     nodeId = "char_r_sishu_t1",
@@ -2798,6 +2819,7 @@ internal object GameContent {
         ),
         "tree_strange" to TalentTreeData(
             treeId = "tree_strange",
+            branchIds = listOf("branch_power", "branch_defense", "branch_utility", "branch_ultimate"),
             nodes = listOf(
                 TalentNodeData(
                     nodeId = "char_ur_strange_t1",
@@ -2920,6 +2942,7 @@ internal object GameContent {
         ),
         "tree_suanni" to TalentTreeData(
             treeId = "tree_suanni",
+            branchIds = listOf("branch_power", "branch_defense", "branch_utility", "branch_ultimate"),
             nodes = listOf(
                 TalentNodeData(
                     nodeId = "char_sr_suanni_t1",
@@ -3042,6 +3065,7 @@ internal object GameContent {
         ),
         "tree_taotie" to TalentTreeData(
             treeId = "tree_taotie",
+            branchIds = listOf("branch_power", "branch_defense", "branch_utility", "branch_ultimate"),
             nodes = listOf(
                 TalentNodeData(
                     nodeId = "char_sr_taotie_t1",
@@ -3164,6 +3188,7 @@ internal object GameContent {
         ),
         "tree_thor" to TalentTreeData(
             treeId = "tree_thor",
+            branchIds = listOf("branch_power", "branch_defense", "branch_utility", "branch_ultimate"),
             nodes = listOf(
                 TalentNodeData(
                     nodeId = "char_ur_thor_t1",
@@ -3286,6 +3311,7 @@ internal object GameContent {
         ),
         "tree_wuxu" to TalentTreeData(
             treeId = "tree_wuxu",
+            branchIds = listOf("branch_power", "branch_defense", "branch_utility", "branch_ultimate"),
             nodes = listOf(
                 TalentNodeData(
                     nodeId = "char_ur_wuxu_t1",
@@ -3408,6 +3434,7 @@ internal object GameContent {
         ),
         "tree_xiangliu" to TalentTreeData(
             treeId = "tree_xiangliu",
+            branchIds = listOf("branch_power", "branch_defense", "branch_utility", "branch_ultimate"),
             nodes = listOf(
                 TalentNodeData(
                     nodeId = "char_ssr_xiangliu_t1",
@@ -3530,6 +3557,7 @@ internal object GameContent {
         ),
         "tree_xingtian" to TalentTreeData(
             treeId = "tree_xingtian",
+            branchIds = listOf("branch_power", "branch_defense", "branch_utility", "branch_ultimate"),
             nodes = listOf(
                 TalentNodeData(
                     nodeId = "char_ur_xingtian_t1",
@@ -3652,6 +3680,7 @@ internal object GameContent {
         ),
         "tree_xuanwu" to TalentTreeData(
             treeId = "tree_xuanwu",
+            branchIds = listOf("branch_power", "branch_defense", "branch_utility", "branch_ultimate"),
             nodes = listOf(
                 TalentNodeData(
                     nodeId = "char_sr_xuanwu_t1",
@@ -3774,6 +3803,7 @@ internal object GameContent {
         ),
         "tree_yecha" to TalentTreeData(
             treeId = "tree_yecha",
+            branchIds = listOf("branch_power", "branch_defense", "branch_utility", "branch_ultimate"),
             nodes = listOf(
                 TalentNodeData(
                     nodeId = "char_r_yecha_t1",
@@ -3896,6 +3926,7 @@ internal object GameContent {
         ),
         "tree_zhulong" to TalentTreeData(
             treeId = "tree_zhulong",
+            branchIds = listOf("branch_power", "branch_defense", "branch_utility", "branch_ultimate"),
             nodes = listOf(
                 TalentNodeData(
                     nodeId = "char_ur_zhulong_t1",

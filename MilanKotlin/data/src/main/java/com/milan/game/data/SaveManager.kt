@@ -34,7 +34,17 @@ class SaveManager(
     fun load(): SaveData {
         val result = try {
             val data = if (!provider.exists()) {
-                SaveData.createDefault()
+                // 2026-09-10 R6-P0-3：AndroidSaveProvider.save() 先 main→bak rename 再 tmp→main。
+                // 窗口内进程被杀会只剩 bak、主档缺失。旧逻辑直接 createDefault()，
+                // 从不 loadBackup → 静默整档回默认。主档缺失时必须先试备份链。
+                val backup = provider.loadBackup()
+                val recovered = if (backup != null) SaveData.tryParse(backup) else null
+                if (recovered != null) {
+                    onTrace("save.load.recovered.from.backup.missing.main")
+                    recovered
+                } else {
+                    SaveData.createDefault()
+                }
             } else {
                 val parsed = SaveData.tryParse(provider.load())
                 if (parsed != null) {

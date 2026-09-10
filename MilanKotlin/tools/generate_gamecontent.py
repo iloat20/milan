@@ -118,6 +118,14 @@ def generate_build_talent_trees(talent_trees: list) -> str:
 
         lines.append(f'        "{tree_id}" to TalentTreeData(')
         lines.append(f'            treeId = "{tree_id}",')
+        # BranchIds：与 data.json 对齐；并集节点 branchId 防历史漏写导致终极列空白
+        branch_ids = list(tree.get("BranchIds") or [])
+        for n in tree.get("Nodes") or []:
+            b = n.get("BranchId") or ""
+            if b and b not in branch_ids:
+                branch_ids.append(b)
+        branches_str = ", ".join(f'"{b}"' for b in branch_ids)
+        lines.append(f'            branchIds = listOf({branches_str}),')
         lines.append(f'            nodes = listOf(')
         lines.append(",\n".join(node_lines))
         lines.append(f'            ),')
