@@ -41,6 +41,8 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.ColorMatrix
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -117,6 +119,23 @@ fun BattleResultOverlay(
     val primaryColor = if (victory) AppTheme.Gold else AppTheme.Text2
     val accentColor = if (victory) AppTheme.GoldHi else AppTheme.Text3
 
+    // 失败去饱和（设计语言 P3）：内容层 ColorMatrix 从 1 动画到 0.15
+    val saturate = remember { Animatable(1f) }
+    LaunchedEffect(victory) {
+        if (!victory) {
+            saturate.animateTo(0.12f, tween(400))
+        } else {
+            saturate.snapTo(1f)
+        }
+    }
+    val contentColorFilter = if (!victory) {
+        ColorFilter.colorMatrix(
+            ColorMatrix().apply { setToSaturation(saturate.value) },
+        )
+    } else {
+        null
+    }
+
     Box(
         modifier = modifier
             .fillMaxSize()
@@ -139,7 +158,9 @@ fun BattleResultOverlay(
             DamageFloatingText(
                 events = log,
                 active = true,
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier.fillMaxSize().graphicsLayer {
+                    colorFilter = contentColorFilter
+                },
                 eventDelayMs = 120L,
                 floatDurationMs = 700L,
             )
@@ -147,7 +168,9 @@ fun BattleResultOverlay(
 
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.padding(horizontal = 32.dp),
+            modifier = Modifier
+                .padding(horizontal = 32.dp)
+                .graphicsLayer { colorFilter = contentColorFilter },
         ) {
             // ── 结果标题 ──
             Text(

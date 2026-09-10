@@ -162,7 +162,8 @@ class GachaViewModel(
                 )
                 kotlinx.coroutines.delay(chargeMs)
                 if (token != _reveal.value.token) { finishReveal(); return@launch }
-                // 阶段二：光柱爆发
+                // 阶段二：光柱爆发 — 落印仪式音（设计语言 P3）
+                onSfx("gacha_ritual")
                 _reveal.value = _reveal.value.copy(stage = RevealStage.Beam, flashVisible = true)
                 kotlinx.coroutines.delay(beamMs)
                 if (token != _reveal.value.token) { finishReveal(); return@launch }

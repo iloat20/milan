@@ -12,13 +12,14 @@
 | `battle_death.ogg` | 单位阵亡 |
 | `battle_victory.ogg` | 战斗胜利（结算层） |
 | `battle_defeat.ogg` | 战斗失败（结算层） |
+| `gacha_ritual.ogg` | 抽卡落印 / 光柱爆发（设计语言 P3） |
 
 背景乐：`assets/audio/bgm/battle.ogg`（策略战斗进入时 `playBgm("battle")`，
 退出恢复 `theme`）。
 
 ## 资产形态
 
-- 上述 7 条 SFX 与 `bgm/battle.ogg` 为 **程序合成 + libvorbis 编码的真 Ogg Vorbis**（`OggS` magic）。
+- battle_* 与 `gacha_ritual`、`bgm/battle.ogg` 为 **程序合成 + libvorbis 编码的真 Ogg Vorbis**（`OggS` magic）。
 - 时长：SFX 0.14–0.55s（≤ 0.8s）；战斗 BGM 约 24s 可循环。
 - 响度对齐 `gacha_*.ogg`。
 
