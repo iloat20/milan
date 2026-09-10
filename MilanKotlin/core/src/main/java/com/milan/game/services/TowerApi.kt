@@ -48,8 +48,17 @@ interface TowerApi {
         actorIndex: Int,
     ): List<com.milan.game.domain.battle.PlayerAction>
 
-    /** 结算战略战斗（写盘 + 奖励，与一次性结算共用 TowerOutcome 语义）。 */
-    suspend fun settleStrategicBattle(floor: Int, victory: Boolean, turns: Int): TowerOutcome
+    /**
+     * 结算战略战斗（写盘 + 奖励，与一次性结算共用 TowerOutcome 语义）。
+     * @param battleLog 本场 StrikeEvent 日志——服务端据此做胜利可信度校验（R6-P2），
+     * 禁止无日志空断言 victory=true。
+     */
+    suspend fun settleStrategicBattle(
+        floor: Int,
+        victory: Boolean,
+        turns: Int,
+        battleLog: List<com.milan.game.domain.battle.StrikeEvent> = emptyList(),
+    ): TowerOutcome
 
     // ── 扫荡 ──
     // ⚠️ P2-11 (B12) 死功能：以下 3 个扫荡/统计方法 UI 层零调用。

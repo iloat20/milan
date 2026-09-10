@@ -408,22 +408,23 @@ class TowerService(private val core: ServiceCore) : TowerApi {
     
     /**
      * 结算策略战斗奖励。
-     * 
+     *
      * R5-I1（2026-09-03 审查修复）：补 floor 上下界 + 空编队校验，并统一胜利好感发放
      * （对齐 [runTowerFloor] 口径）——此前三者皆无，floor=巨值可把 towerBestFloor 刷到
      * 存档级损坏（此后 1..N 层「刷新纪录」恒 false、爬塔奖励/返票永久锁死）。
-     * 注：`victory` 仍由调用方断言（策略战斗状态机在 UI 侧维护），服务端不重放战斗；
-     * 该项的彻底收口依赖策略战斗状态机下沉到领域层，属后续接线项。
-     * 
+     * R6-P2：可达性（best+1）+ [StrategicSettleGuard] 日志胜利一致性。
+     *
      * @param floor 无尽之塔层数
      * @param victory 是否胜利
      * @param turns 回合数
+     * @param battleLog 本场攻击日志（胜利必须与日志最后一记击杀阵营一致）
      * @return 塔挑战结果
      */
     override suspend fun settleStrategicBattle(
         floor: Int,
         victory: Boolean,
         turns: Int,
+        battleLog: List<com.milan.game.domain.battle.StrikeEvent>,
     ): TowerOutcome = core.withWriteLock {
         // R5-I1：补层数上下界（复用 runTowerFloor 的 M6 校验口径）
         if (floor < 1 || floor > EconomyFormulas.towerMaxFloor()) return@withWriteLock TowerOutcome.Rejected
@@ -433,6 +434,17 @@ class TowerService(private val core: ServiceCore) : TowerApi {
         // 允许：复刷已通层 / 挑战 best+1；拒绝：跳跃超过一层。
         val bestAtCheck = saveData.towerBestFloor
         if (floor > bestAtCheck + 1) return@withWriteLock TowerOutcome.Rejected
+
+        // R6-P2：日志与胜负弱一致性——无日志称胜利 / 末刀杀我方仍称胜 → 拒绝
+        val playerIds = saveData.getFormationIds().toSet()
+        if (!com.milan.game.domain.battle.StrategicSettleGuard.isVictoryPlausible(
+                log = battleLog,
+                playerTeamIds = playerIds,
+                victory = victory,
+            )
+        ) {
+            return@withWriteLock TowerOutcome.Rejected
+        }
 
         // 复用原有runTowerFloor的结算逻辑
         val ticketCost = EconomyFormulas.towerTicketCost()

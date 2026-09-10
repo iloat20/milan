@@ -375,8 +375,13 @@ class GameService constructor(
     }
 
     /** 策略战斗结算。胜利时勾新手引导「首战」步（与自动爬塔口径一致）。 */
-    override suspend fun settleStrategicBattle(floor: Int, victory: Boolean, turns: Int): TowerOutcome {
-        val result = towerService.settleStrategicBattle(floor, victory, turns)
+    override suspend fun settleStrategicBattle(
+        floor: Int,
+        victory: Boolean,
+        turns: Int,
+        battleLog: List<com.milan.game.domain.battle.StrikeEvent>,
+    ): TowerOutcome {
+        val result = towerService.settleStrategicBattle(floor, victory, turns, battleLog)
         if (result is TowerOutcome.Completed && result.victory) {
             metaService.completeTutorialStep(com.milan.game.data.TutorialSteps.FIRST_BATTLE)
         }

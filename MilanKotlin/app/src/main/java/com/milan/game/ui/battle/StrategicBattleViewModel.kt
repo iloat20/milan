@@ -222,7 +222,13 @@ class StrategicBattleViewModel(
         val victory = st.phase == BattlePhase.VICTORY
         viewModelScope.launch {
             _ui.value = _ui.value.copy(settling = true)
-            val outcome = service.settleStrategicBattle(_ui.value.floor, victory, st.turn)
+            // R6-P2：必须带日志，服务端 StrategicSettleGuard 校验末刀阵营
+            val outcome = service.settleStrategicBattle(
+                floor = _ui.value.floor,
+                victory = victory,
+                turns = st.turn,
+                battleLog = st.log,
+            )
             _ui.value = _ui.value.copy(settling = false, outcome = outcome, finished = true)
         }
     }
