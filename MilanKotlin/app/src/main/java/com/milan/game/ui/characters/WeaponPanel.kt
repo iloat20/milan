@@ -40,7 +40,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.milan.game.services.CharacterDataEntry
-import com.milan.game.ui.components.GlassPanel
+import com.milan.game.ui.components.ArtifactPanel
 import com.milan.game.ui.theme.AppTheme
 import com.milan.game.ui.theme.ElementTheme
 import com.milan.game.ui.theme.WorldPalette
@@ -60,7 +60,7 @@ internal fun WeaponPanel(
 ) {
     val (eFrom, _, _, eGlyph) = ElementTheme.forElement(view.element)
 
-    GlassPanel(modifier = Modifier.fillMaxWidth(), highlighted = owned) {
+    ArtifactPanel(modifier = Modifier.fillMaxWidth(), highlighted = owned) {
         Column(Modifier.padding(horizontal = 16.dp, vertical = 14.dp)) {
             // 武器舞台：全稀有度展示专属武器（SR/R 武器现已补齐 lore）
             if (def.weaponVfx.isNotBlank()) {

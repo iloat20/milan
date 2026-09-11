@@ -22,7 +22,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.milan.game.ui.components.GlassPanel
+import com.milan.game.ui.components.ArtifactPanel
 import com.milan.game.ui.components.PageBackground
 import com.milan.game.ui.nav.AppTopBar
 import com.milan.game.ui.theme.AppTheme
@@ -106,7 +106,7 @@ private fun ActivityProgressBar(
     points: Int,
     claimedChests: List<Int?>,
 ) {
-    GlassPanel(modifier = Modifier.fillMaxWidth()) {
+    ArtifactPanel(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -161,7 +161,7 @@ private fun ActivityChests(
     statuses: List<ChestStatus>,
     onClaim: (Int) -> Unit,
 ) {
-    GlassPanel(modifier = Modifier.fillMaxWidth()) {
+    ArtifactPanel(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
                 text = "活跃度奖励",
@@ -256,7 +256,7 @@ private fun MissionCard(mission: DailyMissionStatus) {
         mission.progress.toFloat() / mission.def.targetCount
     } else 0f
 
-    GlassPanel(modifier = Modifier.fillMaxWidth()) {
+    ArtifactPanel(modifier = Modifier.fillMaxWidth()) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()

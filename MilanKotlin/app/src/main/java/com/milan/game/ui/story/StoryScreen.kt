@@ -23,7 +23,7 @@ import com.milan.game.data.StoryChapterDef
 import com.milan.game.data.StoryStageDef
 import com.milan.game.data.StoryStageType
 import com.milan.game.di.AppGraph
-import com.milan.game.ui.components.GlassPanel
+import com.milan.game.ui.components.ArtifactPanel
 import com.milan.game.ui.components.PageBackground
 import com.milan.game.ui.components.PortraitImage
 import com.milan.game.ui.feedback.LocalFeedback
@@ -145,7 +145,7 @@ private fun StoryChapterCard(
             }
         }
 
-        GlassPanel(
+        ArtifactPanel(
             modifier = Modifier.fillMaxWidth(),
         ) {
             Column(

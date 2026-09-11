@@ -23,7 +23,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.milan.game.data.EquipmentSaveState
-import com.milan.game.ui.components.GlassPanel
+import com.milan.game.ui.components.ArtifactPanel
 import com.milan.game.ui.feedback.LocalFeedback
 import com.milan.game.ui.theme.AppTheme
 import kotlinx.coroutines.launch
@@ -62,7 +62,7 @@ internal fun EquipmentPanel(
     val feedback = LocalFeedback.current
     val scope = rememberCoroutineScope()
 
-    GlassPanel(modifier = Modifier.fillMaxWidth(), highlighted = owned) {
+    ArtifactPanel(modifier = Modifier.fillMaxWidth(), highlighted = owned) {
         Column(Modifier.padding(horizontal = 14.dp, vertical = 12.dp)) {
             Text(
                 text = "穿戴槽位",

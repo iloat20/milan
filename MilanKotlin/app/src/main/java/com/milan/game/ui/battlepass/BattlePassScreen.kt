@@ -23,7 +23,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.milan.game.data.BattlePassReward
 import com.milan.game.ui.components.GlassDialog
-import com.milan.game.ui.components.GlassPanel
+import com.milan.game.ui.components.ArtifactPanel
 import com.milan.game.ui.components.GoldButton
 import com.milan.game.ui.components.InkButton
 import com.milan.game.ui.components.PageBackground
@@ -129,7 +129,7 @@ private fun BattlePassHeader(
     enabled: Boolean = true,
     onPurchasePremium: () -> Unit,
 ) {
-    GlassPanel(modifier = Modifier.fillMaxWidth()) {
+    ArtifactPanel(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -225,7 +225,7 @@ private fun RewardRow(
     val isUnlocked = currentLevel >= reward.level
     val isClaimed = claimedLevels.contains(reward.level)
 
-    GlassPanel(
+    ArtifactPanel(
         modifier = Modifier.fillMaxWidth(),
         highlighted = isUnlocked && !isClaimed,
     ) {

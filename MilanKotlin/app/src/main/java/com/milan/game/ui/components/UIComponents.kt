@@ -104,7 +104,7 @@ enum class PanelMaterial {
 
 /**
  * 典藏展陈面板 `ArtifactPanel`（v3 §6.1）。
- * 旧名 [GlassPanel] 保留调用点；材质默认 Ink，与 v3「界面向卡牌供奉」一致。
+ * 材质默认 Ink，与 v3「界面向卡牌供奉」一致；旧名 GlassPanel 已全量迁移。
  */
 @Composable
 fun ArtifactPanel(
@@ -174,24 +174,6 @@ fun ArtifactPanel(
         content()
     }
 }
-
-/** @deprecated 旧名；请用 [ArtifactPanel]。 */
-@Deprecated("v3 改名为 ArtifactPanel", ReplaceWith("ArtifactPanel(modifier, radius, highlighted, nested, material, content)"))
-@Composable
-fun GlassPanel(
-    modifier: Modifier = Modifier,
-    radius: Dp = AppTheme.Roundness.lg,
-    highlighted: Boolean = false,
-    nested: Boolean = false,
-    content: @Composable BoxScope.() -> Unit,
-) = ArtifactPanel(
-    modifier = modifier,
-    radius = radius,
-    highlighted = highlighted,
-    nested = nested,
-    material = PanelMaterial.Glass,
-    content = content,
-)
 
 /**
  * 展廊底 `GalleryBackdrop`（v3 §6.1）：玄墨三阶 + 世界 ambient 氛围层。

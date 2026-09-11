@@ -32,7 +32,7 @@ import com.milan.game.data.ArenaOpponent
 import com.milan.game.data.ArenaSaveData
 import com.milan.game.services.ArenaChallengeOutcome
 import com.milan.game.ui.components.GlassDialog
-import com.milan.game.ui.components.GlassPanel
+import com.milan.game.ui.components.ArtifactPanel
 import com.milan.game.ui.components.GoldButton
 import com.milan.game.ui.components.InkButton
 import com.milan.game.ui.components.PageBackground
@@ -176,7 +176,7 @@ private fun ArenaRankCard(
     winCount: Int,
     loseCount: Int,
 ) {
-    GlassPanel(modifier = Modifier.fillMaxWidth()) {
+    ArtifactPanel(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -217,7 +217,7 @@ private fun OpponentCard(
     canChallenge: Boolean,
     onChallenge: () -> Unit,
 ) {
-    GlassPanel(modifier = Modifier.fillMaxWidth()) {
+    ArtifactPanel(modifier = Modifier.fillMaxWidth()) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -264,7 +264,7 @@ private fun OpponentCard(
 /** 赛季奖励行。 */
 @Composable
 private fun SeasonRewardRow(reward: com.milan.game.data.SeasonReward) {
-    GlassPanel(modifier = Modifier.fillMaxWidth()) {
+    ArtifactPanel(modifier = Modifier.fillMaxWidth()) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()

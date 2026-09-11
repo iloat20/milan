@@ -30,7 +30,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.milan.game.ui.components.GlassPanel
+import com.milan.game.ui.components.ArtifactPanel
 import com.milan.game.ui.components.PageBackground
 import com.milan.game.ui.feedback.LocalFeedback
 import com.milan.game.ui.nav.AppTopBar
@@ -99,7 +99,7 @@ fun EventScreen(
 /** 活动代币余额条。 */
 @Composable
 private fun EventCurrencyBar(balances: Map<String, Int>) {
-    GlassPanel(modifier = Modifier.fillMaxWidth()) {
+    ArtifactPanel(modifier = Modifier.fillMaxWidth()) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -135,7 +135,7 @@ private fun EventCard(
     onRedeem: (String) -> Unit,
 ) {
     val event = card.event
-    GlassPanel(modifier = Modifier.fillMaxWidth()) {
+    ArtifactPanel(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -299,7 +299,7 @@ private fun EventCountdown(endTime: Long) {
 /** 无活动占位卡片。 */
 @Composable
 private fun EmptyEventCard() {
-    GlassPanel(modifier = Modifier.fillMaxWidth()) {
+    ArtifactPanel(modifier = Modifier.fillMaxWidth()) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()

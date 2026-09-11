@@ -28,7 +28,7 @@ import com.milan.game.data.StoryChoice
 import com.milan.game.data.StoryStageDef
 import com.milan.game.data.StoryStageType
 import com.milan.game.services.CharacterDataEntry
-import com.milan.game.ui.components.GlassPanel
+import com.milan.game.ui.components.ArtifactPanel
 import com.milan.game.ui.components.PortraitImage
 import com.milan.game.ui.theme.AppTheme
 import kotlinx.coroutines.delay
@@ -269,7 +269,7 @@ fun DialogueScreen(
             Spacer(Modifier.height(8.dp))
 
             // 对话框
-            GlassPanel(
+            ArtifactPanel(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clickable {

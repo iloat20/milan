@@ -22,7 +22,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.milan.game.services.AffinityFormulas
-import com.milan.game.ui.components.GlassPanel
+import com.milan.game.ui.components.ArtifactPanel
 import com.milan.game.ui.components.PageBackground
 import com.milan.game.ui.components.PortraitImage
 import com.milan.game.ui.feedback.LocalFeedback
@@ -100,7 +100,7 @@ fun AffinityScreen(
  */
 @Composable
 private fun AffinityInfoCard() {
-    GlassPanel(modifier = Modifier.fillMaxWidth()) {
+    ArtifactPanel(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
                 text = "好感度系统",
@@ -179,7 +179,7 @@ private fun AffinityCard(
         it.level <= level && it.level !in claimedLevels
     }
 
-    GlassPanel(
+    ArtifactPanel(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick),

@@ -30,7 +30,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.milan.game.data.PullLogEntry
 import com.milan.game.ui.components.EntranceItem
-import com.milan.game.ui.components.GlassPanel
+import com.milan.game.ui.components.ArtifactPanel
 import com.milan.game.ui.components.GlyphBadge
 import com.milan.game.ui.components.PageBackground
 import com.milan.game.ui.nav.AppTopBar
@@ -76,7 +76,7 @@ fun PullHistoryScreen(
 
             // 统计头：窗口内总抽数 / SSR+ 次数（对标 pity 追踪类工具的核心指标）
             val ssrPlus = entries.count { it.rarity >= 3 }
-            GlassPanel(modifier = Modifier.padding(horizontal = 18.dp)) {
+            ArtifactPanel(modifier = Modifier.padding(horizontal = 18.dp)) {
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 12.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,

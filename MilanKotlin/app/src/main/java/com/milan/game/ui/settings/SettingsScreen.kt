@@ -40,7 +40,7 @@ import com.milan.game.infrastructure.MilanAudio
 import com.milan.game.di.AppGraph
 import com.milan.game.ui.components.EntranceItem
 import com.milan.game.ui.components.GlassDialog
-import com.milan.game.ui.components.GlassPanel
+import com.milan.game.ui.components.ArtifactPanel
 import com.milan.game.ui.components.GoldSwitch
 import com.milan.game.ui.components.InkButton
 import com.milan.game.ui.components.PageBackground
@@ -190,7 +190,7 @@ fun SettingsScreen(
 
                 SectionTitle("数据管理")
                 EntranceItem(index = 3) {
-                    GlassPanel {
+                    ArtifactPanel {
                         Row(
                             modifier = Modifier.fillMaxWidth().padding(14.dp),
                             horizontalArrangement = Arrangement.SpaceBetween,
@@ -236,7 +236,7 @@ fun SettingsScreen(
                     val recs by produceState(initialValue = emptyList<CharacterRecommendation>()) {
                         value = vm.recommendCharacters()
                     }
-                    GlassPanel(modifier = Modifier.fillMaxWidth()) {
+                    ArtifactPanel(modifier = Modifier.fillMaxWidth()) {
                         Column(Modifier.padding(14.dp)) {
                             Text("角色培养推荐", color = AppTheme.Gold, style = MaterialTheme.typography.titleSmall)
                             Spacer(Modifier.height(8.dp))
@@ -275,7 +275,7 @@ fun SettingsScreen(
                     val gachaRec by produceState(initialValue = null as GachaRecommendation?) {
                         value = vm.recommendGacha()
                     }
-                    GlassPanel(modifier = Modifier.fillMaxWidth()) {
+                    ArtifactPanel(modifier = Modifier.fillMaxWidth()) {
                         Column(Modifier.padding(14.dp)) {
                             Text("抽卡策略", color = AppTheme.Gold, style = MaterialTheme.typography.titleSmall)
                             Spacer(Modifier.height(8.dp))
@@ -309,7 +309,7 @@ fun SettingsScreen(
 
                 SectionTitle("关于")
                 EntranceItem(index = 5) {
-                    GlassPanel {
+                    ArtifactPanel {
                         Row(
                             modifier = Modifier.fillMaxWidth().padding(14.dp),
                             horizontalArrangement = Arrangement.SpaceBetween,
@@ -379,7 +379,7 @@ private fun SettingSwitchRow(
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
 ) {
-    GlassPanel {
+    ArtifactPanel {
         Row(
             modifier = Modifier.fillMaxWidth().padding(14.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -401,7 +401,7 @@ private fun SettingSwitchRow(
 private fun CrashLogCard(onExport: () -> Unit) {
     // P0-C4：崩溃计数脱离主线程读取（crashCount 已挂起），挂载时一次性拉取
     val crashCount by produceState(initialValue = 0) { value = CrashReporter.crashCount() }
-    GlassPanel {
+    ArtifactPanel {
         Row(
             modifier = Modifier.fillMaxWidth().padding(14.dp),
             horizontalArrangement = Arrangement.SpaceBetween,

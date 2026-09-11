@@ -28,7 +28,7 @@ import com.milan.game.domain.progression.EconomyFormulas
 import com.milan.game.services.DailyOffer
 import com.milan.game.services.DailyOfferKind
 import com.milan.game.ui.components.EntranceItem
-import com.milan.game.ui.components.GlassPanel
+import com.milan.game.ui.components.ArtifactPanel
 import com.milan.game.ui.components.GlyphBadge
 import com.milan.game.ui.components.GoldButton
 import com.milan.game.ui.formatCount
@@ -142,7 +142,7 @@ fun ShopScreen(
 /** 资源一览：星尘 / 钻石 / 星魂碎片 / 战票四行，水墨国风渐变徽章。 */
 @Composable
 private fun ResourcePanel(soft: Int, hard: Int, frags: Int, tickets: Int) {
-    GlassPanel {
+    ArtifactPanel {
         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             ResourceRow("星尘", "✦", formatCount(soft), AppTheme.Gold, AppTheme.GoldDeep)
             ResourceRow("钻石", "◆", formatCount(hard), AppTheme.GoldHi, AppTheme.Violet)
@@ -177,7 +177,7 @@ private fun DailyOfferCard(
     enabled: Boolean = true,
     onBuy: () -> Unit,
 ) {
-    GlassPanel(highlighted = offer.kind == DailyOfferKind.FREE_SUPPLY) {
+    ArtifactPanel(highlighted = offer.kind == DailyOfferKind.FREE_SUPPLY) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(14.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -234,7 +234,7 @@ private fun FragmentPackCard(
     enabled: Boolean = true,
     onBuy: () -> Unit,
 ) {
-    GlassPanel(highlighted = pack == 2) {
+    ArtifactPanel(highlighted = pack == 2) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(14.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -263,7 +263,7 @@ private fun DiamondCard(
     enabled: Boolean = true,
     onExchange: () -> Unit,
 ) {
-    GlassPanel {
+    ArtifactPanel {
         Row(
             modifier = Modifier.fillMaxWidth().padding(14.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -289,7 +289,7 @@ private fun FragmentExchangeCard(
     enabled: Boolean = true,
     onExchange: () -> Unit,
 ) {
-    GlassPanel {
+    ArtifactPanel {
         Row(
             modifier = Modifier.fillMaxWidth().padding(14.dp),
             horizontalArrangement = Arrangement.SpaceBetween,

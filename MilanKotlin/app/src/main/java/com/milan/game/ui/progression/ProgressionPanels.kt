@@ -38,7 +38,7 @@ import com.milan.game.domain.battle.UnitStats
 import com.milan.game.domain.progression.TalentEngine
 import com.milan.game.services.TalentNodeData
 import com.milan.game.OwnedCharacterView
-import com.milan.game.ui.components.GlassPanel
+import com.milan.game.ui.components.ArtifactPanel
 import com.milan.game.ui.components.GoldButton
 import com.milan.game.ui.components.InkButton
 import com.milan.game.ui.components.WoWDivider
@@ -112,7 +112,7 @@ internal fun LevelPanel(
 
     val canLevel = owned && save.level < cap && soft >= queries.levelCost(save.level)
 
-    GlassPanel(modifier = Modifier.fillMaxWidth()) {
+    ArtifactPanel(modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 14.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
@@ -244,7 +244,7 @@ internal fun AscendPanel(
     val aSoft = queries.ascendSoft(save.stage)
     val canAscend = owned && !atMax && frags >= aFrag && soft >= aSoft
 
-    GlassPanel(modifier = Modifier.fillMaxWidth()) {
+    ArtifactPanel(modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 14.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
@@ -299,7 +299,7 @@ internal fun StarPanel(
     val filled = "★".repeat(save.stars.coerceAtLeast(0))
     val empty = "☆".repeat((defMaxStars - save.stars).coerceAtLeast(0))
 
-    GlassPanel(modifier = Modifier.fillMaxWidth()) {
+    ArtifactPanel(modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 14.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
@@ -389,7 +389,7 @@ internal fun StatsPanel(
         StatRow("速度", cur.spd, nextLv?.spd, nextStg?.spd, nextStar?.spd),
     )
 
-    GlassPanel(modifier = Modifier.fillMaxWidth()) {
+    ArtifactPanel(modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 14.dp)) {
             rows.forEach { r ->
                 Row(
@@ -455,7 +455,7 @@ internal fun TalentPanel(
         )
     }
 
-    GlassPanel(modifier = Modifier.fillMaxWidth()) {
+    ArtifactPanel(modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 14.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text("天赋点", style = MaterialTheme.typography.bodyMedium, color = AppTheme.Text2)

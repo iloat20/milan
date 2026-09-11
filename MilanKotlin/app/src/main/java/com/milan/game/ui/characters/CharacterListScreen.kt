@@ -44,7 +44,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.milan.game.services.CharacterDataEntry
 import com.milan.game.ui.components.CharacterCard
-import com.milan.game.ui.components.GlassPanel
+import com.milan.game.ui.components.ArtifactPanel
 import com.milan.game.ui.components.ListFilter
 import com.milan.game.ui.components.ListFilterBar
 import com.milan.game.ui.components.ListSortMode
@@ -193,7 +193,7 @@ private fun CompletionPanel(
     val totalRoster = roster.size
     val ownedCount = roster.count { it.characterId in ownedIds }
     val pct = if (totalRoster == 0) 0 else ownedCount * 100 / totalRoster
-    GlassPanel(modifier = modifier) {
+    ArtifactPanel(modifier = modifier) {
         Column(
             Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),

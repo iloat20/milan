@@ -30,7 +30,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.milan.game.infrastructure.SpeechPlayer
 import com.milan.game.services.SkillData
-import com.milan.game.ui.components.GlassPanel
+import com.milan.game.ui.components.ArtifactPanel
 import com.milan.game.ui.theme.AppTheme
 import com.milan.game.ui.theme.ElementTheme
 import com.milan.game.ui.theme.WorldPalette
@@ -43,7 +43,7 @@ internal fun SkillPanel(
     skills: List<SkillData>,
     worldColor: WorldPalette,
 ) {
-    GlassPanel(modifier = Modifier.fillMaxWidth()) {
+    ArtifactPanel(modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(horizontal = 16.dp, vertical = 14.dp)) {
             if (skills.isEmpty()) {
                 Text("暂无技能", style = MaterialTheme.typography.bodyMedium, color = worldColor.textSecondary)
@@ -89,7 +89,7 @@ internal fun StoryPanel(
     view: OwnedCharacterView,
     worldColor: WorldPalette,
 ) {
-    GlassPanel(modifier = Modifier.fillMaxWidth()) {
+    ArtifactPanel(modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(horizontal = 16.dp, vertical = 14.dp)) {
             // ── 题记（lore）：金箔竖条 + 淡墨引言 ──
             if (view.lore.isNotBlank()) {
@@ -223,7 +223,7 @@ internal fun VoicePanel(
     worldColor: WorldPalette,
 ) {
     val context = LocalContext.current
-    GlassPanel(modifier = Modifier.fillMaxWidth()) {
+    ArtifactPanel(modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(horizontal = 16.dp, vertical = 14.dp)) {
             if (voices.isEmpty()) {
                 Text("暂无语音", style = MaterialTheme.typography.bodyMedium, color = worldColor.textSecondary)
