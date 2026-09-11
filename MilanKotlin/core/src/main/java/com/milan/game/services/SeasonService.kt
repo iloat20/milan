@@ -52,6 +52,9 @@ class SeasonService(
         val origCurrentStreak = data.currentWinStreak
         val origPoints = data.seasonPoints
         val origClaimed = data.claimedSeasonRewards.toList()
+        // R7-P1：结算会 addCurrencyDelta，rollback 必须镜像还原
+        val origSC = core.saveData.softCurrency
+        val origHC = core.saveData.hardCurrency
 
         return core.transaction(
             tag = "season.startNew",
@@ -88,6 +91,8 @@ class SeasonService(
                 data.currentWinStreak = origCurrentStreak
                 data.seasonPoints = origPoints
                 data.claimedSeasonRewards = origClaimed
+                core.saveData.softCurrency = origSC
+                core.saveData.hardCurrency = origHC
             },
             onCommit = { core.refreshSnapshot() },
         )
@@ -164,35 +169,36 @@ class SeasonService(
      * 领取赛季奖励。
      */
     override suspend fun claimSeasonReward(milestoneIndex: Int): WriteOutcome {
-        val data = getData()
         val milestones = SeasonSaveData.SEASON_REWARD_MILESTONES
         if (milestoneIndex !in milestones.indices) return WriteOutcome.Rejected
+        // R7-P1：claimed/积分校验入锁
+        return core.withWriteLock {
+            val data = getData()
+            val seasonKey = data.seasonNumber * 100 + milestoneIndex
+            if (data.claimedSeasonRewards.contains(seasonKey)) return@withWriteLock WriteOutcome.Rejected
+            if (data.seasonPoints < milestones[milestoneIndex]) return@withWriteLock WriteOutcome.Rejected
 
-        val seasonKey = data.seasonNumber * 100 + milestoneIndex
-        if (data.claimedSeasonRewards.contains(seasonKey)) return WriteOutcome.Rejected
+            val origClaimed = data.claimedSeasonRewards.toList()
+            val origSC = core.saveData.softCurrency
+            val origHC = core.saveData.hardCurrency
 
-        if (data.seasonPoints < milestones[milestoneIndex]) return WriteOutcome.Rejected
-
-        val origClaimed = data.claimedSeasonRewards.toList()
-        val origSC = core.saveData.softCurrency
-        val origHC = core.saveData.hardCurrency
-
-        return core.transaction(
-            tag = "season.claimReward",
-            mutate = {
-                data.claimedSeasonRewards = data.claimedSeasonRewards + seasonKey
-                core.addCurrencyDelta(
-                    SeasonSaveData.SEASON_SOFT_REWARDS.getOrElse(milestoneIndex) { 5000 },
-                    SeasonSaveData.SEASON_HARD_REWARDS.getOrElse(milestoneIndex) { 50 }
-                )
-            },
-            rollback = {
-                data.claimedSeasonRewards = origClaimed
-                core.saveData.softCurrency = origSC
-                core.saveData.hardCurrency = origHC
-            },
-            onCommit = { core.publishCurrencyChanged() },
-        )
+            core.transactionLocked(
+                tag = "season.claimReward",
+                mutate = {
+                    data.claimedSeasonRewards = data.claimedSeasonRewards + seasonKey
+                    core.addCurrencyDelta(
+                        SeasonSaveData.SEASON_SOFT_REWARDS.getOrElse(milestoneIndex) { 5000 },
+                        SeasonSaveData.SEASON_HARD_REWARDS.getOrElse(milestoneIndex) { 50 }
+                    )
+                },
+                rollback = {
+                    data.claimedSeasonRewards = origClaimed
+                    core.saveData.softCurrency = origSC
+                    core.saveData.hardCurrency = origHC
+                },
+                onCommit = { core.publishCurrencyChanged() },
+            )
+        }
     }
 
     /**

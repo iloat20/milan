@@ -97,4 +97,46 @@ class TalentEngineTest {
         assertEquals(0f, m.hp, 1e-6f)
         assertEquals(0f, m.spd, 1e-6f)
     }
+
+    // ── R7-P1：状态天赋 Chance=0 时从 Value 回退 ──
+
+    @Test
+    fun statusChance_explicitChanceWins() {
+        val e = TalentEffect(TalentEffectType.Burn, value = 30f, chance = 0.25f, duration = 3)
+        assertEquals(0.25f, engine.statusChanceOf(e), 1e-6f)
+    }
+
+    @Test
+    fun statusChance_valueAsFraction() {
+        val e = TalentEffect(TalentEffectType.Poison, value = 0.03f, chance = 0f, duration = 0)
+        assertEquals(0.03f, engine.statusChanceOf(e), 1e-6f)
+    }
+
+    @Test
+    fun statusChance_valueAsPercent() {
+        val e = TalentEffect(TalentEffectType.Burn, value = 30f, chance = 0f, duration = 0)
+        assertEquals(0.30f, engine.statusChanceOf(e), 1e-6f)
+    }
+
+    @Test
+    fun statusChance_zeroBoth_staysZero() {
+        val e = TalentEffect(TalentEffectType.Stun, value = 0f, chance = 0f, duration = 0)
+        assertEquals(0f, engine.statusChanceOf(e), 1e-6f)
+    }
+
+    @Test
+    fun statusDuration_zeroDefaultsToTwo() {
+        val e = TalentEffect(TalentEffectType.Chill, value = 0.2f, chance = 0f, duration = 0)
+        assertEquals(2, engine.statusDurationOf(e))
+    }
+
+    @Test
+    fun talentEffects_legacyValueOnlyStatus_applies() {
+        val map = mapOf(
+            "n1" to listOf(TalentEffect(TalentEffectType.Burn, value = 30f, chance = 0f, duration = 0)),
+        )
+        val r = engine.talentEffects(listOf("n1"), map)
+        assertEquals(0.30f, r.burnChance, 1e-6f)
+        assertEquals(2, r.burnDuration)
+    }
 }

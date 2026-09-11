@@ -26,6 +26,11 @@ class DailyCheckInSaveData(
     @SerialName("CurrentStreakDays") var currentStreakDays: Int = 0,
     /** 已领取的周期序号列表（防重复领取周期大奖）。 */
     @SerialName("ClaimedCycleRewards") var claimedCycleRewards: List<Long?> = emptyList(),
+    /**
+     * 最近一次成功签到的 UTC 日序号（R7-P0-2：同日不可连签）。
+     * -1 = 从未签到 / 旧档缺字段（kotlinx 默认）。旧档迁移后当日可再签一次，可接受。
+     */
+    @SerialName("LastSignDay") var lastSignDay: Long = -1L,
 ) {
     companion object {
         /** 每周期天数 */

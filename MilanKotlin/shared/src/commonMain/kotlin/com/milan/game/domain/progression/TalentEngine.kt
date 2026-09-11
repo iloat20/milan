@@ -50,6 +50,22 @@ class TalentEngine {
     // ── 天赋效果系统（新系统：基于节点 Effects 数组）──
 
     /**
+     * 状态类天赋有效施加概率（R7-P1 兼容契约）：
+     * 优先 [TalentEffect.chance]；为 0 时回退 [TalentEffect.value]——
+     * data.json 历史 81 处把概率写在 Value（0.03=3% 或 30=30%）。
+     */
+    fun statusChanceOf(effect: TalentEffect): Float = when {
+        effect.chance > 0f -> effect.chance
+        effect.value > 0f && effect.value <= 1f -> effect.value
+        effect.value > 1f && effect.value <= 100f -> effect.value / 100f
+        else -> 0f
+    }
+
+    /** 状态持续回合；0/负数默认 2（内容侧历史大量 Duration=0）。 */
+    fun statusDurationOf(effect: TalentEffect): Int =
+        if (effect.duration > 0) effect.duration else 2
+
+    /**
      * 由已点亮节点的 Effects 计算天赋效果总和。
      *
      * @param allocatedNodes 已分配的节点 ID 列表
@@ -97,29 +113,40 @@ class TalentEngine {
                     TalentEffectType.Thorn -> thorn = (thorn + effect.value).coerceAtMost(1f)
 
                     // ── 状态施加（取同类型最大值）──
+                    // R7-P1：data.json 历史把概率写在 Value、Chance=0（81 处），引擎只认 chance
+                    // 会导致状态天赋全部失效。契约：优先 Chance；否则 Value∈(0,1] 当概率，
+                    // Value∈(1,100] 当百分比；Duration=0 时默认 2 回合。
                     TalentEffectType.Poison -> {
-                        if (effect.chance > poisonChance) { poisonChance = effect.chance; poisonDuration = effect.duration }
+                        val c = statusChanceOf(effect); val d = statusDurationOf(effect)
+                        if (c > poisonChance) { poisonChance = c; poisonDuration = d }
                     }
                     TalentEffectType.Burn -> {
-                        if (effect.chance > burnChance) { burnChance = effect.chance; burnDuration = effect.duration }
+                        val c = statusChanceOf(effect); val d = statusDurationOf(effect)
+                        if (c > burnChance) { burnChance = c; burnDuration = d }
                     }
                     TalentEffectType.Bleed -> {
-                        if (effect.chance > bleedChance) { bleedChance = effect.chance; bleedDuration = effect.duration }
+                        val c = statusChanceOf(effect); val d = statusDurationOf(effect)
+                        if (c > bleedChance) { bleedChance = c; bleedDuration = d }
                     }
                     TalentEffectType.Disarm -> {
-                        if (effect.chance > disarmChance) { disarmChance = effect.chance; disarmDuration = effect.duration }
+                        val c = statusChanceOf(effect); val d = statusDurationOf(effect)
+                        if (c > disarmChance) { disarmChance = c; disarmDuration = d }
                     }
                     TalentEffectType.Stun -> {
-                        if (effect.chance > stunChance) { stunChance = effect.chance; stunDuration = effect.duration }
+                        val c = statusChanceOf(effect); val d = statusDurationOf(effect)
+                        if (c > stunChance) { stunChance = c; stunDuration = d }
                     }
                     TalentEffectType.Chill -> {
-                        if (effect.chance > chillChance) { chillChance = effect.chance; chillDuration = effect.duration }
+                        val c = statusChanceOf(effect); val d = statusDurationOf(effect)
+                        if (c > chillChance) { chillChance = c; chillDuration = d }
                     }
                     TalentEffectType.Stiff -> {
-                        if (effect.chance > stiffChance) { stiffChance = effect.chance; stiffDuration = effect.duration }
+                        val c = statusChanceOf(effect); val d = statusDurationOf(effect)
+                        if (c > stiffChance) { stiffChance = c; stiffDuration = d }
                     }
                     TalentEffectType.Taunt -> {
-                        if (effect.chance > tauntChance) { tauntChance = effect.chance; tauntDuration = effect.duration }
+                        val c = statusChanceOf(effect); val d = statusDurationOf(effect)
+                        if (c > tauntChance) { tauntChance = c; tauntDuration = d }
                     }
                     TalentEffectType.Unstoppable -> unstoppable = true
 

@@ -53,7 +53,8 @@ class StoryViewModel(
         viewModelScope.launch {
             try {
                 service.completeStoryStage(stageId)
-            } catch (_: Exception) {
+            } catch (e: Exception) {
+                if (e is kotlinx.coroutines.CancellationException) throw e
             }
         }
     }
@@ -63,7 +64,8 @@ class StoryViewModel(
         viewModelScope.launch {
             try {
                 service.grantAffinity(characterId, amount)
-            } catch (_: Exception) {
+            } catch (e: Exception) {
+                if (e is kotlinx.coroutines.CancellationException) throw e
             }
         }
     }
@@ -73,7 +75,8 @@ class StoryViewModel(
         viewModelScope.launch {
             try {
                 service.setStoryEndingBranch(branchId)
-            } catch (_: Exception) {
+            } catch (e: Exception) {
+                if (e is kotlinx.coroutines.CancellationException) throw e
             }
         }
     }

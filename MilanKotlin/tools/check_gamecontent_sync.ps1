@@ -16,7 +16,8 @@ $ErrorActionPreference = "Stop"
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $projectRoot = Split-Path -Parent $scriptDir
 $generator = Join-Path $scriptDir "generate_gamecontent.py"
-$gameContentPath = Join-Path $projectRoot "app\src\main\java\com\milan\game\services\GameContent.kt"
+# R7-P1：GameContent 已迁入 :core，旧路径 app/... 会让 Copy-Item 失败、守门失效
+$gameContentPath = Join-Path $projectRoot "core\src\main\java\com\milan\game\services\GameContent.kt"
 
 # 找 Python
 $python = $null

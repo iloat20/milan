@@ -94,50 +94,47 @@ class EventRhythmService(
 
     /** 领取任务奖励。 */
     override suspend fun claimEventTaskReward(eventId: String, taskId: String): WriteOutcome {
-        val data = getEventRhythmData()
-        val event = data.activeEvents.firstOrNull { it?.eventId == eventId }
+        val data0 = getEventRhythmData()
+        val event = data0.activeEvents.firstOrNull { it?.eventId == eventId }
             ?: return WriteOutcome.Rejected
         val task = event.tasks.firstOrNull { it?.taskId == taskId }
             ?: return WriteOutcome.Rejected
+        // R7-P1：progress/claimed 校验入锁
+        return core.withWriteLock {
+            val data = getEventRhythmData()
+            val currentProgress = data.eventTaskProgress[eventId]?.get(taskId) ?: 0
+            if (currentProgress < task.target) return@withWriteLock WriteOutcome.Rejected
+            val claimed = data.claimedTaskRewards[eventId] ?: emptyList()
+            if (claimed.contains(taskId)) return@withWriteLock WriteOutcome.Rejected
 
-        val currentProgress = data.eventTaskProgress[eventId]?.get(taskId) ?: 0
-        if (currentProgress < task.target) return WriteOutcome.Rejected
-        // 已领取门控：防无限重复领取（永动机）
-        val claimed = data.claimedTaskRewards[eventId] ?: emptyList()
-        if (claimed.contains(taskId)) return WriteOutcome.Rejected
+            val origSC = core.saveData.softCurrency
+            val origHC = core.saveData.hardCurrency
+            val origEventProgress = data.eventTaskProgress.toMap()
+            val origClaimed = data.claimedTaskRewards
+            val origBalances = data.eventCurrencyBalances.toMap()
 
-        val origSC = core.saveData.softCurrency
-        val origHC = core.saveData.hardCurrency
-        val origEventProgress = data.eventTaskProgress.toMap()
-        val origClaimed = data.claimedTaskRewards
-        val origBalances = data.eventCurrencyBalances.toMap()
-
-        return core.transaction(
-            tag = "event.claimTask",
-            mutate = {
-                // R5-C1：按 rewardType 分别入账。原 `else` 分支把 EVENT_CURRENCY /
-                // ACTIVITY_POINTS / COLLABORATION_TOKENS 三种活动代币**一律当星尘发放**，
-                // 而商店侧（旧实现）也只扣星尘 —— 活动商店因此退化为「星尘商店」，
-                // 且物品定价（五星装备 3000）是按代币规模设计的，换成星尘后性价比失衡。
-                when (task.rewardType) {
-                    "HARD_CURRENCY" -> core.addCurrencyDelta(0, task.rewardAmount)
-                    "SOFT_CURRENCY" -> core.addCurrencyDelta(task.rewardAmount, 0)
-                    else -> addEventCurrency(task.rewardType, task.rewardAmount)
-                }
-                // 标记已领取
-                data.claimedTaskRewards = data.claimedTaskRewards + (eventId to (claimed + taskId))
-            },
-            rollback = {
-                core.saveData.softCurrency = origSC
-                core.saveData.hardCurrency = origHC
-                data.eventTaskProgress = origEventProgress
-                data.claimedTaskRewards = origClaimed
-                data.eventCurrencyBalances = origBalances
-            },
-            onCommit = {
-                core.publishCurrencyChanged()
-            },
-        )
+            core.transactionLocked(
+                tag = "event.claimTask",
+                mutate = {
+                    when (task.rewardType) {
+                        "HARD_CURRENCY" -> core.addCurrencyDelta(0, task.rewardAmount)
+                        "SOFT_CURRENCY" -> core.addCurrencyDelta(task.rewardAmount, 0)
+                        else -> addEventCurrency(task.rewardType, task.rewardAmount)
+                    }
+                    data.claimedTaskRewards = data.claimedTaskRewards + (eventId to (claimed + taskId))
+                },
+                rollback = {
+                    core.saveData.softCurrency = origSC
+                    core.saveData.hardCurrency = origHC
+                    data.eventTaskProgress = origEventProgress
+                    data.claimedTaskRewards = origClaimed
+                    data.eventCurrencyBalances = origBalances
+                },
+                onCommit = {
+                    core.publishCurrencyChanged()
+                },
+            )
+        }
     }
 
     // ─────────────────── 活动商店 ───────────────────
@@ -154,59 +151,57 @@ class EventRhythmService(
         // 数量下界校验（负数会让 totalCost 翻负 → 扣款变加钱）
         if (amount <= 0) return WriteOutcome.Rejected
 
-        val currentRedemptions = data.shopRedemptions[eventId]?.get(itemId) ?: 0
-        if (currentRedemptions + amount > shopItem.maxRedemptions) {
-            return WriteOutcome.Rejected
-        }
-
         // Long 中介防 Int 溢出翻负
         val totalCost = shopItem.price.toLong() * amount
         if (totalCost > Int.MAX_VALUE) return WriteOutcome.Rejected
         val cost = totalCost.toInt()
 
         val currencyType = shopItem.currencyType
-        val origSC = core.saveData.softCurrency
-        val origHC = core.saveData.hardCurrency
-        val origRedemptions = data.shopRedemptions.toMap()
-        val origBalances = data.eventCurrencyBalances.toMap()
-        val origEquipments = core.saveData.ownedEquipments.toList()
-
-        // 余额预检（锁外快照仍可能竞态，锁内再兜底）。
-        // R5-C1：按商品自身标注的 currencyType 查余额——旧实现一律查/扣星尘，
-        // 与 [EventShopItem.currencyType] 默认 `EVENT_CURRENCY` 的语义不符，
-        // 导致活动商店实际是「星尘商店」。
-        if (balanceOf(currencyType) < cost) return WriteOutcome.Rejected
-
-        // C3：装备类商品（itemId 前缀 eq_ 或名称含装备语义）兑换后入库
         val equipmentTemplate = resolveEquipmentTemplate(shopItem)
 
-        return core.transaction(
-            tag = "event.shopRedeem",
-            mutate = {
-                spendCurrency(currencyType, cost)
-                if (equipmentTemplate != null) {
-                    repeat(amount) {
-                        val drop = core.rollEquipmentFromTemplate(equipmentTemplate, level = 1)
-                        core.saveData.ownedEquipments = core.saveData.ownedEquipments + listOf(drop)
+        // R7-P1：限购/余额校验入锁（锁外 TOCTOU 可双兑）
+        return core.withWriteLock {
+            val data = getEventRhythmData()
+            val currentRedemptions = data.shopRedemptions[eventId]?.get(itemId) ?: 0
+            if (currentRedemptions + amount > shopItem.maxRedemptions) {
+                return@withWriteLock WriteOutcome.Rejected
+            }
+            if (balanceOf(currencyType) < cost) return@withWriteLock WriteOutcome.Rejected
+
+            val origSC = core.saveData.softCurrency
+            val origHC = core.saveData.hardCurrency
+            val origRedemptions = data.shopRedemptions.toMap()
+            val origBalances = data.eventCurrencyBalances.toMap()
+            val origEquipments = core.saveData.ownedEquipments.toList()
+
+            core.transactionLocked(
+                tag = "event.shopRedeem",
+                mutate = {
+                    spendCurrency(currencyType, cost)
+                    if (equipmentTemplate != null) {
+                        repeat(amount) {
+                            val drop = core.rollEquipmentFromTemplate(equipmentTemplate, level = 1)
+                            core.saveData.ownedEquipments = core.saveData.ownedEquipments + listOf(drop)
+                        }
                     }
-                }
-                val currentEventRedemptions = data.shopRedemptions[eventId]?.toMutableMap()
-                    ?: mutableMapOf()
-                currentEventRedemptions[itemId] = (currentEventRedemptions[itemId] ?: 0) + amount
-                data.shopRedemptions = data.shopRedemptions + (eventId to currentEventRedemptions)
-            },
-            rollback = {
-                core.saveData.softCurrency = origSC
-                core.saveData.hardCurrency = origHC
-                data.shopRedemptions = origRedemptions
-                data.eventCurrencyBalances = origBalances
-                core.saveData.ownedEquipments = origEquipments
-            },
-            onCommit = {
-                core.publishCurrencyChanged()
-                core.publishProgressionChanged()
-            },
-        )
+                    val currentEventRedemptions = data.shopRedemptions[eventId]?.toMutableMap()
+                        ?: mutableMapOf()
+                    currentEventRedemptions[itemId] = (currentEventRedemptions[itemId] ?: 0) + amount
+                    data.shopRedemptions = data.shopRedemptions + (eventId to currentEventRedemptions)
+                },
+                rollback = {
+                    core.saveData.softCurrency = origSC
+                    core.saveData.hardCurrency = origHC
+                    data.shopRedemptions = origRedemptions
+                    data.eventCurrencyBalances = origBalances
+                    core.saveData.ownedEquipments = origEquipments
+                },
+                onCommit = {
+                    core.publishCurrencyChanged()
+                    core.publishProgressionChanged()
+                },
+            )
+        }
     }
 
     /**
@@ -246,34 +241,37 @@ class EventRhythmService(
 
     /** 签到。 */
     override suspend fun signIn(eventId: String): WriteOutcome {
-        val data = getEventRhythmData()
-        val event = data.activeEvents.firstOrNull { it?.eventId == eventId }
-            ?: return WriteOutcome.Rejected
+        // R7-P1：已签/上限校验入锁
+        return core.withWriteLock {
+            val data = getEventRhythmData()
+            val event = data.activeEvents.firstOrNull { it?.eventId == eventId }
+                ?: return@withWriteLock WriteOutcome.Rejected
 
-        if (event.eventType != EventType.SIGN_IN.name) return WriteOutcome.Rejected
+            if (event.eventType != EventType.SIGN_IN.name) return@withWriteLock WriteOutcome.Rejected
 
-        val currentDays = data.signInProgress[eventId] ?: 0
-        if (currentDays >= event.signInDays) return WriteOutcome.Rejected
+            val currentDays = data.signInProgress[eventId] ?: 0
+            if (currentDays >= event.signInDays) return@withWriteLock WriteOutcome.Rejected
 
-        val origProgress = data.signInProgress.toMap()
-        val origHard = core.saveData.hardCurrency
-        val rewardAmount = 100 + currentDays * 20 // 递增奖励
+            val origProgress = data.signInProgress.toMap()
+            val origHard = core.saveData.hardCurrency
+            val rewardAmount = 100 + currentDays * 20 // 递增奖励
 
-        return core.transaction(
-            tag = "event.signIn",
-            mutate = {
-                data.signInProgress = data.signInProgress + (eventId to (currentDays + 1))
-                core.addCurrencyDelta(0, rewardAmount)
-            },
-            rollback = {
-                data.signInProgress = origProgress
-                core.saveData.hardCurrency = origHard
-            },
-            onCommit = {
-                core.publishCurrencyChanged()
-                core.publishProgressionChanged()
-            },
-        )
+            core.transactionLocked(
+                tag = "event.signIn",
+                mutate = {
+                    data.signInProgress = data.signInProgress + (eventId to (currentDays + 1))
+                    core.addCurrencyDelta(0, rewardAmount)
+                },
+                rollback = {
+                    data.signInProgress = origProgress
+                    core.saveData.hardCurrency = origHard
+                },
+                onCommit = {
+                    core.publishCurrencyChanged()
+                    core.publishProgressionChanged()
+                },
+            )
+        }
     }
 
     /** 获取签到进度。 */

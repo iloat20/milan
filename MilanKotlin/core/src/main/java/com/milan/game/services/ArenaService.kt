@@ -37,20 +37,21 @@ class ArenaService(
      * 设置防守阵容。
      */
     override suspend fun setDefenseTeam(characterIds: List<String>): WriteOutcome {
-        val arenaData = getArenaData()
         val ids = characterIds.distinct().take(5)
-        
-        // 验证角色已拥有
-        val ownedIds = core.saveData.ownedCharacters.filterNotNull().mapTo(HashSet()) { it.characterId }
-        if (ids.any { it !in ownedIds }) return WriteOutcome.Rejected
-        
-        val original = arenaData.defenseTeam
-        return core.transaction(
-            tag = "arena.defense",
-            mutate = { arenaData.defenseTeam = ids },
-            rollback = { arenaData.defenseTeam = original },
-            onCommit = { core.publishProgressionChanged() },
-        )
+        // R7-P1：拥有权校验入锁
+        return core.withWriteLock {
+            val arenaData = getArenaData()
+            val ownedIds = core.saveData.ownedCharacters.filterNotNull().mapTo(HashSet()) { it.characterId }
+            if (ids.any { it !in ownedIds }) return@withWriteLock WriteOutcome.Rejected
+
+            val original = arenaData.defenseTeam
+            core.transactionLocked(
+                tag = "arena.defense",
+                mutate = { arenaData.defenseTeam = ids },
+                rollback = { arenaData.defenseTeam = original },
+                onCommit = { core.publishProgressionChanged() },
+            )
+        }
     }
     
     /**

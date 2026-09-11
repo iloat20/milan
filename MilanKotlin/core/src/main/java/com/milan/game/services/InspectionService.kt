@@ -206,21 +206,24 @@ class InspectionService(
      * 解锁特殊动作（R5-I6 由锁外直改改为事务 + 落盘）。
      */
     override suspend fun unlockAction(actionId: String): WriteOutcome {
-        val data = getInspectionData()
-        if (data.unlockedActions.contains(actionId)) return WriteOutcome.Rejected
-        
-        val original = data.unlockedActions.toList()
-        return core.transaction(
-            tag = "inspection.unlock",
-            mutate = {
-                data.unlockedActions = data.unlockedActions + actionId
-            },
-            rollback = {
-                data.unlockedActions = original
-            },
-            onCommit = {
-                core.publishProgressionChanged()
-            },
-        )
+        // R7-P1：已解锁校验入锁
+        return core.withWriteLock {
+            val data = getInspectionData()
+            if (data.unlockedActions.contains(actionId)) return@withWriteLock WriteOutcome.Rejected
+
+            val original = data.unlockedActions.toList()
+            core.transactionLocked(
+                tag = "inspection.unlock",
+                mutate = {
+                    data.unlockedActions = data.unlockedActions + actionId
+                },
+                rollback = {
+                    data.unlockedActions = original
+                },
+                onCommit = {
+                    core.publishProgressionChanged()
+                },
+            )
+        }
     }
 }

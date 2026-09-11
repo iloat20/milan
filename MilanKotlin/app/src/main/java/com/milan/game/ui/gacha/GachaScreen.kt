@@ -127,7 +127,10 @@ fun GachaScreen(
         } catch (_: Exception) { }
     }
 
-    BackHandler(enabled = reveal.visible) { vm.skipReveal() }
+    // R7-P1：Charge/Beam 也可 skip（visible 从 Charge 起为 true）
+    BackHandler(enabled = reveal.visible || reveal.stage == RevealStage.Charge || reveal.stage == RevealStage.Beam) {
+        vm.skipReveal()
+    }
 
     fun doPull(tenPull: Boolean) {
         val p = pool ?: return

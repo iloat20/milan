@@ -63,28 +63,31 @@ class CollectionService(
      * 领取收集里程碑奖励（契约名 [CollectionApi.claimCollectionMilestone]）。
      */
     override suspend fun claimCollectionMilestone(required: Int): WriteOutcome {
-        val data = getData()
-        if (data.claimedMilestones.contains(required)) return WriteOutcome.Rejected
-        if (getCollectionUnlockedCount() < required) return WriteOutcome.Rejected
+        // R7-P1：claimed/解锁数校验入锁
+        return core.withWriteLock {
+            val data = getData()
+            if (data.claimedMilestones.contains(required)) return@withWriteLock WriteOutcome.Rejected
+            if (getCollectionUnlockedCount() < required) return@withWriteLock WriteOutcome.Rejected
 
-        val origClaimed = data.claimedMilestones.toList()
-        val origSC = saveData.softCurrency
+            val origClaimed = data.claimedMilestones.toList()
+            val origSC = saveData.softCurrency
 
-        return core.transaction(
-            tag = "collection.claimMilestone",
-            mutate = {
-                data.claimedMilestones = data.claimedMilestones + required
-                val milestone = COLLECTION_MILESTONES.firstOrNull { it.required == required }
-                if (milestone != null && milestone.softBonus > 0) {
-                    core.addCurrencyDelta(milestone.softBonus, 0)
-                }
-            },
-            rollback = {
-                data.claimedMilestones = origClaimed
-                saveData.softCurrency = origSC
-            },
-            onCommit = { core.publishCurrencyChanged() },
-        )
+            core.transactionLocked(
+                tag = "collection.claimMilestone",
+                mutate = {
+                    data.claimedMilestones = data.claimedMilestones + required
+                    val milestone = COLLECTION_MILESTONES.firstOrNull { it.required == required }
+                    if (milestone != null && milestone.softBonus > 0) {
+                        core.addCurrencyDelta(milestone.softBonus, 0)
+                    }
+                },
+                rollback = {
+                    data.claimedMilestones = origClaimed
+                    saveData.softCurrency = origSC
+                },
+                onCommit = { core.publishCurrencyChanged() },
+            )
+        }
     }
 
     /**

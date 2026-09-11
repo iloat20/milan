@@ -6,6 +6,8 @@ import java.io.File
 import kotlin.random.Random
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
@@ -39,24 +41,27 @@ class CheckInSeasonPersistenceTest {
         override fun loadBackup(): String? = null
     }
 
-    /** 固定「今天」，保证两个实例看到同一签到/赛季周期。 */
-    private fun newService(provider: MemoryProvider) =
-        GameService(provider, dataJson, {}, Random(42), today = { 20_000L })
+    /** 固定「今天」，保证两个实例看到同一签到/赛季周期。 [day] 可推进以模拟跨日。 */
+    private fun newService(provider: MemoryProvider, day: Long = 20_000L) =
+        GameService(provider, dataJson, {}, Random(42), today = { day })
 
     @Test
     fun `每日签到状态跨重载持久`() = runTest {
         val provider = MemoryProvider()
 
-        val first = newService(provider)
+        val first = newService(provider, day = 20_000L)
         assertEquals("首次签到应成功", WriteOutcome.Success, first.signToday())
         assertEquals("签到后累计应 1", 1, first.getCheckInStatus().totalDays)
+        assertTrue("同日已签", first.getCheckInStatus().signedToday)
+        assertEquals("同日重复签到应拒绝", WriteOutcome.Rejected, first.signToday())
 
-        // 模拟重启：同一 provider 重载存档
-        val reloaded = newService(provider)
+        // 模拟重启：同一 provider 重载存档（推进一天，R7-P0-2 同日不可连签）
+        val reloaded = newService(provider, day = 20_001L)
+        assertFalse("跨日应显示今日未签", reloaded.getCheckInStatus().signedToday)
         assertEquals("重载后累计签到应保留", 1, reloaded.getCheckInStatus().totalDays)
 
-        assertEquals("重载后二次签到应成功", WriteOutcome.Success, reloaded.signToday())
-        assertEquals("重载后二次签到应计入下一天（累计 2）", 2, reloaded.getCheckInStatus().totalDays)
+        assertEquals("跨日二次签到应成功", WriteOutcome.Success, reloaded.signToday())
+        assertEquals("跨日二次签到应计入下一天（累计 2）", 2, reloaded.getCheckInStatus().totalDays)
     }
 
     @Test

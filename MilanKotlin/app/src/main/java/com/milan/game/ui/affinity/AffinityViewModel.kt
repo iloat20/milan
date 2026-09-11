@@ -100,7 +100,8 @@ class AffinityViewModel(
                     WriteOutcome.SaveFailed -> "保存失败，请重试"
                 }
                 _toasts.send(msg)
-            } catch (_: Exception) {
+            } catch (e: Exception) {
+                if (e is kotlinx.coroutines.CancellationException) throw e
                 _toasts.send("操作异常，请重试")
             } finally {
                 busy.value = false
@@ -129,7 +130,8 @@ class AffinityViewModel(
                     WriteOutcome.SaveFailed -> "保存失败，请重试"
                 }
                 _toasts.send(msg)
-            } catch (_: Exception) {
+            } catch (e: Exception) {
+                if (e is kotlinx.coroutines.CancellationException) throw e
                 _toasts.send("操作异常，请重试")
             } finally {
                 busy.value = false

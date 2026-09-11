@@ -40,6 +40,9 @@ class DailyCheckInService(
         val origSignedDays = data.signedDaysInCycle
         val origCurrentStreak = data.currentStreakDays
         val origClaimed = data.claimedCycleRewards.toList()
+        // R7-P1：全勤奖会 addCurrencyDelta，rollback 必须镜像还原，否则落盘失败留下幽灵货币
+        val origSC = core.saveData.softCurrency
+        val origHC = core.saveData.hardCurrency
 
         return core.transaction(
             tag = "dailyCheckIn.ensureTodayReset",
@@ -70,6 +73,8 @@ class DailyCheckInService(
                 data.signedDaysInCycle = origSignedDays
                 data.currentStreakDays = origCurrentStreak
                 data.claimedCycleRewards = origClaimed
+                core.saveData.softCurrency = origSC
+                core.saveData.hardCurrency = origHC
             },
             onCommit = { core.refreshSnapshot() },
         )
@@ -82,52 +87,56 @@ class DailyCheckInService(
      */
     override suspend fun signToday(): WriteOutcome {
         ensureTodayReset()
-        val data = getData()
         val today = core.today()
-        val cycleStartDay = today / DailyCheckInSaveData.CYCLE_LENGTH * DailyCheckInSaveData.CYCLE_LENGTH
+        // R7-P1：同日/签满校验入锁，防并发双签
+        return core.withWriteLock {
+            val data = getData()
+            // R7-P0-2：必须按「今日是否已签」判定，不能只看周期是否签满
+            if (data.signedDaysInCycle >= DailyCheckInSaveData.CYCLE_LENGTH) return@withWriteLock WriteOutcome.Rejected
+            if (data.lastSignDay == today) return@withWriteLock WriteOutcome.Rejected
 
-        // 检查今日是否已签到（通过检查 signedDaysInCycle 是否已达今日应签数）
-        // 简化判断：如果 cycleStartDay 正确且 signedDaysInCycle >= CYCLE_LENGTH 则已签满
-        if (data.signedDaysInCycle >= DailyCheckInSaveData.CYCLE_LENGTH) return WriteOutcome.Rejected
+            val origSignedDays = data.signedDaysInCycle
+            val origTotalDays = data.totalSignedDays
+            val origMaxStreak = data.maxStreakDays
+            val origCurrentStreak = data.currentStreakDays
+            val origLastSignDay = data.lastSignDay
+            val origSC = core.saveData.softCurrency
+            val origHC = core.saveData.hardCurrency
 
-        val origSignedDays = data.signedDaysInCycle
-        val origTotalDays = data.totalSignedDays
-        val origMaxStreak = data.maxStreakDays
-        val origCurrentStreak = data.currentStreakDays
-        val origSC = core.saveData.softCurrency
-        val origHC = core.saveData.hardCurrency
+            val dayIndex = data.signedDaysInCycle // 0-based index for today
+            val softReward = DailyCheckInSaveData.DAILY_SOFT_REWARDS.getOrElse(dayIndex) { 1000 }
+            val hardReward = DailyCheckInSaveData.DAILY_HARD_REWARDS.getOrElse(dayIndex) { 0 }
 
-        val dayIndex = data.signedDaysInCycle // 0-based index for today
-        val softReward = DailyCheckInSaveData.DAILY_SOFT_REWARDS.getOrElse(dayIndex) { 1000 }
-        val hardReward = DailyCheckInSaveData.DAILY_HARD_REWARDS.getOrElse(dayIndex) { 0 }
+            core.transactionLocked(
+                tag = "dailyCheckIn.sign",
+                mutate = {
+                    data.signedDaysInCycle += 1
+                    data.totalSignedDays += 1
+                    data.lastSignDay = today
 
-        return core.transaction(
-            tag = "dailyCheckIn.sign",
-            mutate = {
-                data.signedDaysInCycle += 1
-                data.totalSignedDays += 1
+                    // 更新连续签到
+                    val newStreak = data.currentStreakDays + 1
+                    data.currentStreakDays = newStreak
+                    if (newStreak > data.maxStreakDays) {
+                        data.maxStreakDays = newStreak
+                    }
 
-                // 更新连续签到
-                val newStreak = data.currentStreakDays + 1
-                data.currentStreakDays = newStreak
-                if (newStreak > data.maxStreakDays) {
-                    data.maxStreakDays = newStreak
-                }
-
-                // 发放奖励
-                if (softReward > 0) core.addCurrencyDelta(softReward, 0)
-                if (hardReward > 0) core.addCurrencyDelta(0, hardReward)
-            },
-            rollback = {
-                data.signedDaysInCycle = origSignedDays
-                data.totalSignedDays = origTotalDays
-                data.currentStreakDays = origCurrentStreak
-                data.maxStreakDays = origMaxStreak
-                core.saveData.softCurrency = origSC
-                core.saveData.hardCurrency = origHC
-            },
-            onCommit = { core.publishCurrencyChanged() },
-        )
+                    // 发放奖励
+                    if (softReward > 0) core.addCurrencyDelta(softReward, 0)
+                    if (hardReward > 0) core.addCurrencyDelta(0, hardReward)
+                },
+                rollback = {
+                    data.signedDaysInCycle = origSignedDays
+                    data.totalSignedDays = origTotalDays
+                    data.currentStreakDays = origCurrentStreak
+                    data.maxStreakDays = origMaxStreak
+                    data.lastSignDay = origLastSignDay
+                    core.saveData.softCurrency = origSC
+                    core.saveData.hardCurrency = origHC
+                },
+                onCommit = { core.publishCurrencyChanged() },
+            )
+        }
     }
 
     /** 今日是否已签到。 */
@@ -137,7 +146,7 @@ class DailyCheckInService(
         val today = core.today()
         val cycleStartDay = today / DailyCheckInSaveData.CYCLE_LENGTH * DailyCheckInSaveData.CYCLE_LENGTH
         if (data.cycleStartDay != cycleStartDay) return false
-        return data.signedDaysInCycle >= DailyCheckInSaveData.CYCLE_LENGTH
+        return data.lastSignDay == today
     }
 
     /** 获取今日签到状态（用于 UI 展示；契约名 [DailyCheckInApi.getCheckInStatus]）。 */
@@ -146,7 +155,8 @@ class DailyCheckInService(
         val today = core.today()
         val cycleStartDay = today / DailyCheckInSaveData.CYCLE_LENGTH * DailyCheckInSaveData.CYCLE_LENGTH
         val isCurrentCycle = data.cycleStartDay == cycleStartDay
-        val signedToday = isCurrentCycle && data.signedDaysInCycle >= DailyCheckInSaveData.CYCLE_LENGTH
+        // R7-P0-2：signedToday 必须是「今天签过」，不是「周期已签满」
+        val signedToday = isCurrentCycle && data.lastSignDay == today
 
         return CheckInDayStatus(
             signedToday = signedToday,

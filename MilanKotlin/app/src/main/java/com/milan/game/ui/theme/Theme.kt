@@ -11,19 +11,15 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.compositionLocalOf
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontVariation
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.milan.game.R
 
 // 丹青典藏 v3 · Material 3 Expressive 配色
@@ -101,31 +97,23 @@ fun MilanTheme(
         else -> InkColors
     }
 
-    // 字号档位（设计语言 P3 §5.7）：经 LocalDensity.fontScale 全局放大 sp，
-    // 不改 275 处裸 fontSize。0=标准 1=+10% 2=+20%。
-    val fontScaleTier by com.milan.game.di.AppGraph.service.meta
-        .collectAsStateWithLifecycle()
-    val density = LocalDensity.current
-    val scale = when (fontScaleTier.fontScaleTier) {
-        1 -> 1.1f
-        2 -> 1.2f
-        else -> 1f
-    }
-
-    androidx.compose.runtime.CompositionLocalProvider(
-        LocalDensity provides Density(
-            density = density.density,
-            fontScale = density.fontScale * scale,
-        ),
-    ) {
-        MaterialTheme(
-            colorScheme = colorScheme,
-            shapes = GameShapes,
-            typography = GameTypography,
-            content = content,
-        )
-    }
+    // R7-P0-1：字号档位不在 Theme 读 AppGraph.service。
+    // MilanTheme 在 MainActivity.setContent 的最外层，Application 异步 ensureInitialized
+    // 未完成时 AppGraph.service 会 checkNotNull 闪退；且 Theme 不在 ui/nav 例外包内。
+    // 档位经 LocalFontScaleTier 由 ready 门控后的 MilanNavHost 注入（见 WithFontScale）。
+    MaterialTheme(
+        colorScheme = colorScheme,
+        shapes = GameShapes,
+        typography = GameTypography,
+        content = content,
+    )
 }
+
+/**
+ * 字号档位（0=标准 1=+10% 2=+20%，设计语言 P3 §5.7）。
+ * 默认 0：Theme/启动帧不依赖 GameService；就绪后由 ui/nav 的 WithFontScale 注入。
+ */
+val LocalFontScaleTier = compositionLocalOf { 0 }
 
 /**
  * 简化版主题入口（保持向后兼容）。

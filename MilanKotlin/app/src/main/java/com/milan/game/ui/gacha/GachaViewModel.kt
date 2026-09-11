@@ -76,9 +76,13 @@ class GachaViewModel(
         _busy.value = false
     }
 
-    /** 跳过演出：仅递增 token 作废挂起编排。 */
+    /** 跳过演出：仅递增 token 作废挂起编排（Charge/Beam/Reveal 全阶段可跳，R7-P1）。 */
     fun skipReveal() {
-        if (!_busy.value || !_reveal.value.visible) return
+        if (!_busy.value) return
+        val st = _reveal.value.stage
+        if (st != RevealStage.Charge && st != RevealStage.Beam &&
+            st != RevealStage.Single && st != RevealStage.Ten
+        ) return
         _reveal.value = _reveal.value.copy(token = _reveal.value.token + 1)
     }
 
@@ -159,6 +163,9 @@ class GachaViewModel(
                     rarity = best.rarity,
                     stage = RevealStage.Charge,
                     fortune = fortune,
+                    // R7-P1：Charge/Beam 也必须 visible——旧逻辑 Charge 段 visible=false
+                    // 导致 ChargeCore 不可达且无法 skip
+                    visible = true,
                 )
                 kotlinx.coroutines.delay(chargeMs)
                 if (token != _reveal.value.token) { finishReveal(); return@launch }
@@ -182,6 +189,8 @@ class GachaViewModel(
                 // 阶段四：结果
                 finishReveal()
             } catch (e: Exception) {
+                // R7-P1：CancellationException 必须 rethrow，否则污染结构化取消
+                if (e is kotlinx.coroutines.CancellationException) throw e
                 _busy.value = false
                 onError("抽卡异常，请重试")
             }

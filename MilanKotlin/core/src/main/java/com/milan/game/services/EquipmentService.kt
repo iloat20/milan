@@ -93,13 +93,14 @@ class EquipmentService(
         for (i in 0 until actualTimes) {
             totalCost += getEnhanceCost(equipment.level + i)
         }
-        if (saveData.softCurrency < totalCost) return EquipmentEnhanceOutcome.Rejected
-
-        val origLevel = equipment.level
-        val origSubStats = equipment.subStats.toList()
-        val origSC = saveData.softCurrency
-
+        // R7-P1：余额复检入锁
         return core.withWriteLock {
+            if (saveData.softCurrency < totalCost) return@withWriteLock EquipmentEnhanceOutcome.Rejected
+
+            val origLevel = equipment.level
+            val origSubStats = equipment.subStats.toList()
+            val origSC = saveData.softCurrency
+
             core.transactionLocked(
                 tag = "equipment.enhance",
                 mutate = {
@@ -136,20 +137,18 @@ class EquipmentService(
 
     override suspend fun equipItem(characterId: String, equipmentId: String, slot: String): WriteOutcome {
         if (slot !in EquipmentSaveState.ALL_SLOTS) return WriteOutcome.Rejected
-
-        val equipment = saveData.ownedEquipments.firstOrNull { it?.equipmentId == equipmentId }
-            ?: return WriteOutcome.Rejected
-
-        val save = saveData.ownedCharacters.firstOrNull { it?.characterId == characterId }
-            ?: return WriteOutcome.Rejected
-
-        // 检查装备类型是否匹配槽位
-        val template = core.equipmentTemplates.firstOrNull { it.equipmentId == equipment.templateId }
-        if (template != null && !isSlotCompatible(slot, template.type)) return WriteOutcome.Rejected
-
-        val origEquipment = save.equipment.toMap()
-
+        // R7-P1：装备/角色存在性与槽位兼容入锁
         return core.withWriteLock {
+            val equipment = saveData.ownedEquipments.firstOrNull { it?.equipmentId == equipmentId }
+                ?: return@withWriteLock WriteOutcome.Rejected
+            val save = saveData.ownedCharacters.firstOrNull { it?.characterId == characterId }
+                ?: return@withWriteLock WriteOutcome.Rejected
+            val template = core.equipmentTemplates.firstOrNull { it.equipmentId == equipment.templateId }
+            if (template != null && !isSlotCompatible(slot, template.type)) {
+                return@withWriteLock WriteOutcome.Rejected
+            }
+
+            val origEquipment = save.equipment.toMap()
             core.transactionLocked(
                 tag = "equipment.equip",
                 mutate = { save.setEquipment(slot, equipmentId) },
@@ -161,13 +160,12 @@ class EquipmentService(
 
     override suspend fun unequipItem(characterId: String, slot: String): WriteOutcome {
         if (slot !in EquipmentSaveState.ALL_SLOTS) return WriteOutcome.Rejected
-
-        val save = saveData.ownedCharacters.firstOrNull { it?.characterId == characterId }
-            ?: return WriteOutcome.Rejected
-
-        val origEquipment = save.equipment.toMap()
-
+        // R7-P1：角色存在性入锁
         return core.withWriteLock {
+            val save = saveData.ownedCharacters.firstOrNull { it?.characterId == characterId }
+                ?: return@withWriteLock WriteOutcome.Rejected
+
+            val origEquipment = save.equipment.toMap()
             core.transactionLocked(
                 tag = "equipment.unequip",
                 mutate = { save.setEquipment(slot, null) },
@@ -180,26 +178,27 @@ class EquipmentService(
     // ─────────────────────────── 装备分解 ───────────────────────────
 
     override suspend fun dismantleEquipment(equipmentId: String): EquipmentDismantleOutcome {
-        val equipment = saveData.ownedEquipments.firstOrNull { it?.equipmentId == equipmentId }
-            ?: return EquipmentDismantleOutcome.Rejected
-
-        if (equipment.locked) return EquipmentDismantleOutcome.Rejected
-
-        // 不能分解正在穿戴的装备
-        val isEquipped = saveData.ownedCharacters.filterNotNull()
-            .any { it.getEquippedIds().contains(equipmentId) }
-        if (isEquipped) return EquipmentDismantleOutcome.Rejected
-
-        val template = core.equipmentTemplates.firstOrNull { it.equipmentId == equipment.templateId }
-        val rarity = template?.rarity ?: 1
-        val level = equipment.level
-        val softReward = rarity * level * 50 + rarity * 100
-        val fragmentReward = rarity * level * 2
-
-        val origEquipments = saveData.ownedEquipments
-        val origSC = saveData.softCurrency
-
+        // R7-P1：locked/已穿戴校验入锁
         return core.withWriteLock {
+            val equipment = saveData.ownedEquipments.firstOrNull { it?.equipmentId == equipmentId }
+                ?: return@withWriteLock EquipmentDismantleOutcome.Rejected
+            if (equipment.locked) return@withWriteLock EquipmentDismantleOutcome.Rejected
+
+            val isEquipped = saveData.ownedCharacters.filterNotNull()
+                .any { it.getEquippedIds().contains(equipmentId) }
+            if (isEquipped) return@withWriteLock EquipmentDismantleOutcome.Rejected
+
+            val template = core.equipmentTemplates.firstOrNull { it.equipmentId == equipment.templateId }
+            val rarity = template?.rarity ?: 1
+            val level = equipment.level
+            val softReward = rarity * level * 50 + rarity * 100
+            val fragmentReward = rarity * level * 2
+
+            val origEquipments = saveData.ownedEquipments
+            val origSC = saveData.softCurrency
+            val fragExisted = saveData.items.any { it?.itemId == ServiceCore.StarFragmentItemId }
+            val origFrags = core.itemCount(ServiceCore.StarFragmentItemId)
+
             core.transactionLocked(
                 tag = "equipment.dismantle",
                 mutate = {
@@ -210,6 +209,7 @@ class EquipmentService(
                 rollback = {
                     saveData.ownedEquipments = origEquipments
                     saveData.softCurrency = origSC
+                    core.restoreItemCount(ServiceCore.StarFragmentItemId, fragExisted, origFrags)
                 },
                 onCommit = { core.publishCurrencyChanged() },
             )

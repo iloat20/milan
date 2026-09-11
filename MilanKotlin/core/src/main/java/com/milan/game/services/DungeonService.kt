@@ -23,6 +23,60 @@ class DungeonService(
 
     private val saveData get() = core.saveData
 
+    /**
+     * R7-P1：深渊/日常副本每日次数跨日重置。
+     * `lastResetTime` 字段一直存在但从未写入——用完 3 次后永久 Rejected。
+     * 语义：存「今日日序号」（core.today()），与 DailyMission 同口径。
+     */
+    suspend fun ensureDailyReset(): WriteOutcome {
+        val today = core.today()
+        val abyss = saveData.abyssData
+        val dungeon = saveData.dailyDungeonData
+        val abyssDue = abyss != null && abyss.lastResetTime != today
+        val dungeonDue = dungeon != null && dungeon.lastResetTime != today
+        if (!abyssDue && !dungeonDue) return WriteOutcome.Success
+
+        val origAbyssCount = abyss?.challengeCount
+        val origAbyssReset = abyss?.lastResetTime
+        val origDungeonCounts = dungeon?.challengeCounts
+        val origDungeonReset = dungeon?.lastResetTime
+
+        return core.withWriteLock {
+            core.transactionLocked(
+                tag = "dungeon.ensureDailyReset",
+                mutate = {
+                    saveData.abyssData?.let { d ->
+                        if (d.lastResetTime != today) {
+                            d.challengeCount = 0
+                            d.lastResetTime = today
+                        }
+                    }
+                    saveData.dailyDungeonData?.let { d ->
+                        if (d.lastResetTime != today) {
+                            d.challengeCounts = emptyMap()
+                            d.lastResetTime = today
+                        }
+                    }
+                },
+                rollback = {
+                    saveData.abyssData?.let { d ->
+                        origAbyssCount?.let { d.challengeCount = it }
+                        origAbyssReset?.let { d.lastResetTime = it }
+                    }
+                    saveData.dailyDungeonData?.let { d ->
+                        origDungeonCounts?.let { d.challengeCounts = it }
+                        origDungeonReset?.let { d.lastResetTime = it }
+                    }
+                },
+                onCommit = { core.refreshSnapshot() },
+            )
+        }
+    }
+
+    /** 读路径：是否因跨日应视为已重置（不落盘，供状态展示）。 */
+    private fun isDailyResetDue(lastResetTime: Long): Boolean =
+        lastResetTime != core.today()
+
     // ─────────────────────────── 日常副本 ───────────────────────────
 
     fun getDailyDungeonData(): DailyDungeonSaveData =
@@ -30,7 +84,7 @@ class DungeonService(
 
     fun getRemainingChallenges(type: DailyDungeonType): Int {
         val data = getDailyDungeonData()
-        val used = data.challengeCounts[type.name] ?: 0
+        val used = if (isDailyResetDue(data.lastResetTime)) 0 else (data.challengeCounts[type.name] ?: 0)
         return (DailyDungeonSaveData.MAX_CHALLENGES_PER_TYPE - used).coerceAtLeast(0)
     }
 
@@ -45,6 +99,8 @@ class DungeonService(
      */
     override suspend fun sweepDungeon(type: DailyDungeonType, times: Int): DungeonSweepOutcome {
         if (times <= 0) return DungeonSweepOutcome.Rejected
+        // R7-P1：先跨日重置，再取剩余次数（否则用完永久锁死）
+        ensureDailyReset()
         val remaining = getRemainingChallenges(type)
         val actualTimes = times.coerceAtMost(remaining)
         if (actualTimes <= 0) return DungeonSweepOutcome.Rejected
@@ -52,6 +108,7 @@ class DungeonService(
         val data = getDailyDungeonData()
         val origCounts = data.challengeCounts.toMap()
         val origTotal = data.totalChallenges
+        val origReset = data.lastResetTime
         val origSC = saveData.softCurrency
         val origHC = saveData.hardCurrency
 
@@ -73,6 +130,7 @@ class DungeonService(
                 rollback = {
                     data.challengeCounts = origCounts
                     data.totalChallenges = origTotal
+                    data.lastResetTime = origReset
                     saveData.softCurrency = origSC
                     saveData.hardCurrency = origHC
                 },
@@ -103,28 +161,40 @@ class DungeonService(
 
     override fun getAbyssStatus(): AbyssStatus {
         val data = getAbyssData()
+        // R7-P1：跨日视为次数已重置（读路径不落盘）
+        val usedToday =
+            if (isDailyResetDue(data.lastResetTime)) 0 else data.challengeCount
         return AbyssStatus(
             currentFloor = data.currentFloor,
             bestFloor = data.bestFloor,
             totalStars = data.totalStars,
-            challengeCount = data.challengeCount,
+            challengeCount = usedToday,
             maxChallenges = AbyssSaveData.DAILY_FREE_CHALLENGES,
-            remainingChallenges = (AbyssSaveData.DAILY_FREE_CHALLENGES - data.challengeCount).coerceAtLeast(0),
+            remainingChallenges = (AbyssSaveData.DAILY_FREE_CHALLENGES - usedToday).coerceAtLeast(0),
         )
     }
 
     override suspend fun challengeAbyss(floor: Int): AbyssChallengeOutcome {
+        ensureDailyReset()
         val data = getAbyssData()
         if (floor != data.currentFloor) return AbyssChallengeOutcome.Rejected
         if (data.challengeCount >= AbyssSaveData.DAILY_FREE_CHALLENGES) return AbyssChallengeOutcome.Rejected
         if (floor > AbyssSaveData.MAX_FLOORS) return AbyssChallengeOutcome.Rejected
 
         val origChallengeCount = data.challengeCount
+        val origReset = data.lastResetTime
         return core.withWriteLock {
             core.transactionLocked(
                 tag = "abyss.challenge",
-                mutate = { data.challengeCount += 1 },
-                rollback = { data.challengeCount = origChallengeCount },
+                mutate = {
+                    data.challengeCount += 1
+                    // 今日首次挑战写入日戳（ensure 可能已写；此处幂等兜底）
+                    data.lastResetTime = core.today()
+                },
+                rollback = {
+                    data.challengeCount = origChallengeCount
+                    data.lastResetTime = origReset
+                },
                 onCommit = { core.refreshSnapshot() },
             )
             AbyssChallengeOutcome.Success(floor)
@@ -133,6 +203,7 @@ class DungeonService(
 
     override suspend fun completeAbyssStage(floor: Int, stars: Int): WriteOutcome {
         val data = getAbyssData()
+        if (floor < 1 || floor > AbyssSaveData.MAX_FLOORS) return WriteOutcome.Rejected
         val clampedStars = stars.coerceIn(0, AbyssSaveData.MAX_STARS_PER_FLOOR)
 
         val origStars = data.stars.toList()
@@ -142,8 +213,15 @@ class DungeonService(
         val origSC = saveData.softCurrency
         val origHC = saveData.hardCurrency
 
-        val softReward = floor * 500 * clampedStars
-        val hardReward = if (floor % 5 == 0 && clampedStars >= 2) floor * 10 else 0
+        // R7-P0-3：仅「本层首次通关」或「星数刷新纪录」才发奖。
+        // 旧逻辑每次都发 floor*500*stars，可反复 completeAbyssStage(1,3) 刷星尘。
+        val prevStars = data.stars.getOrNull(floor - 1) ?: 0
+        val isNewClear = prevStars <= 0 && clampedStars >= 1
+        val isNewBestStars = clampedStars > prevStars
+        val shouldReward = isNewClear || isNewBestStars
+        val softReward = if (shouldReward) floor * 500 * clampedStars else 0
+        val hardReward =
+            if (shouldReward && floor % 5 == 0 && clampedStars >= 2) floor * 10 else 0
 
         return core.transaction(
             tag = "abyss.complete",

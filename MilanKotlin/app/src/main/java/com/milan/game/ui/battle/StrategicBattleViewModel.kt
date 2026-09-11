@@ -48,8 +48,12 @@ class StrategicBattleViewModel(
 
     private var actedThisTurn = mutableSetOf<Int>()
     private var fxSeq = 0L
+    /** 本局敌方回合/结算协程（R7-P0-4：重进必须取消旧局，防止覆盖新状态）。 */
+    private var battleJob: kotlinx.coroutines.Job? = null
 
     fun start(floor: Int) {
+        battleJob?.cancel()
+        battleJob = null
         val state = service.initializeStrategicBattle(floor)
         actedThisTurn = mutableSetOf()
         fxSeq = 0L
@@ -162,7 +166,7 @@ class StrategicBattleViewModel(
             needTarget = false,
             logLines = _ui.value.logLines + "—— 敌方回合 ——",
         )
-        viewModelScope.launch {
+        battleJob = viewModelScope.launch {
             delay(350)
             var s = service.executeStrategicEnemyTurn(st)
             val eEvents = s.log.drop(st.log.size)
@@ -220,7 +224,7 @@ class StrategicBattleViewModel(
     private fun settle() {
         val st = _ui.value.state ?: return
         val victory = st.phase == BattlePhase.VICTORY
-        viewModelScope.launch {
+        battleJob = viewModelScope.launch {
             _ui.value = _ui.value.copy(settling = true)
             // R6-P2：必须带日志，服务端 StrategicSettleGuard 校验末刀阵营
             val outcome = service.settleStrategicBattle(
@@ -234,7 +238,15 @@ class StrategicBattleViewModel(
     }
 
     fun dismiss() {
+        battleJob?.cancel()
+        battleJob = null
         _ui.value = _ui.value.copy(outcome = null, finished = false, state = null)
+    }
+
+    override fun onCleared() {
+        battleJob?.cancel()
+        battleJob = null
+        super.onCleared()
     }
 
     private fun firstAlivePlayer(st: BattleState): Int? =

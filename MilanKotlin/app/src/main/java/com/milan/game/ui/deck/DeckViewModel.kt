@@ -83,7 +83,8 @@ class DeckViewModel(
                         _toasts.send("编队已满（${SaveData.MAX_FORMATION_SIZE} 人），请先移出一名角色")
                     WriteOutcome.SaveFailed -> _toasts.send("保存失败，请重试")
                 }
-            } catch (_: Exception) {
+            } catch (e: Exception) {
+                if (e is kotlinx.coroutines.CancellationException) throw e
                 _toasts.send("操作异常，请重试")
             } finally {
                 _busy.value = false

@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
@@ -52,16 +53,17 @@ fun DamageFloatingText(
     val progresses = remember(events) { List(events.size) { Animatable(0f) } }
 
     LaunchedEffect(active, events) {
-        progresses.forEachIndexed { index, animatable ->
-            // 等待前一条事件的间隔
-            if (index > 0) {
-                kotlinx.coroutines.delay(eventDelayMs)
+        // R7-P1：并行推进而非串行 delay+animateTo——旧实现 30 条日志会拖到 ~25s
+        kotlinx.coroutines.coroutineScope {
+            progresses.forEachIndexed { index, animatable ->
+                launch {
+                    kotlinx.coroutines.delay(index * eventDelayMs)
+                    animatable.animateTo(
+                        targetValue = 1f,
+                        animationSpec = tween(durationMillis = floatDurationMs.toInt(), easing = LinearEasing),
+                    )
+                }
             }
-            // 播放当前条的飘出动画
-            animatable.animateTo(
-                targetValue = 1f,
-                animationSpec = tween(durationMillis = floatDurationMs.toInt(), easing = LinearEasing),
-            )
         }
     }
 

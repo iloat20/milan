@@ -33,6 +33,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -147,6 +149,8 @@ internal fun MilanNavHost(openGachaOnStart: Boolean = false) {
     val reduceMotion by com.milan.game.di.AppGraph.service.meta
         .collectAsStateWithLifecycle()
     val reduceMotionOn = reduceMotion.reduceMotionEnabled
+    // R7-P0-1：字号档位在 ready 门控后注入（Theme 不可碰 AppGraph.service，防启动竞态闪退）
+    WithFontScale {
     CompositionLocalProvider(
         LocalFeedback provides feedback,
         // ResourceBar 等 Chrome 组件订阅经济切片（2026-09-10：消除 AppGraph.service 泄漏）
@@ -373,6 +377,32 @@ internal fun MilanNavHost(openGachaOnStart: Boolean = false) {
     )
 }
 }
+}
+}
+
+/**
+ * 经 [LocalDensity.fontScale] 全局放大 sp（R7-P0-1）。
+ * 必须放在 GameState.ready 门控之后（本文件为架构规则允许的 AppGraph.service 例外包）。
+ */
+@Composable
+internal fun WithFontScale(content: @Composable () -> Unit) {
+    val meta by com.milan.game.di.AppGraph.service.meta
+        .collectAsStateWithLifecycle()
+    val density = LocalDensity.current
+    val scale = when (meta.fontScaleTier) {
+        1 -> 1.1f
+        2 -> 1.2f
+        else -> 1f
+    }
+    CompositionLocalProvider(
+        com.milan.game.ui.theme.LocalFontScaleTier provides meta.fontScaleTier,
+        LocalDensity provides Density(
+            density = density.density,
+            fontScale = density.fontScale * scale,
+        ),
+    ) {
+        content()
+    }
 }
 
 /**

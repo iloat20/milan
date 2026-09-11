@@ -172,36 +172,38 @@ class StoryService(
      */
     @Deprecated("P2-11: UI层零调用", level = DeprecationLevel.WARNING)
     override suspend fun claimStoryReward(stageId: String): WriteOutcome {
-        val data = getStoryData()
-        if (!data.isStageCompleted(stageId)) return WriteOutcome.Rejected
-        if (data.isRewardClaimed(stageId)) return WriteOutcome.Rejected
-
         val stage = findStoryStageDef(stageId) ?: return WriteOutcome.Rejected
+        // R7-P1：completed/claimed 校验必须在锁内复检（防并发双领）
+        return core.withWriteLock {
+            val data = getStoryData()
+            if (!data.isStageCompleted(stageId)) return@withWriteLock WriteOutcome.Rejected
+            if (data.isRewardClaimed(stageId)) return@withWriteLock WriteOutcome.Rejected
 
-        val origClaimed = data.claimedRewards.toList()
-        val origSoft = core.saveData.softCurrency
-        val origHard = core.saveData.hardCurrency
+            val origClaimed = data.claimedRewards.toList()
+            val origSoft = core.saveData.softCurrency
+            val origHard = core.saveData.hardCurrency
 
-        return core.transaction(
-            tag = "story.claimReward",
-            mutate = {
-                data.claimedRewards = data.claimedRewards + stageId
-                stage.rewards?.forEach { reward ->
-                    when (reward.type) {
-                        "soft_currency" -> core.addCurrencyDelta(reward.amount, 0)
-                        "hard_currency" -> core.addCurrencyDelta(0, reward.amount)
+            core.transactionLocked(
+                tag = "story.claimReward",
+                mutate = {
+                    data.claimedRewards = data.claimedRewards + stageId
+                    stage.rewards?.forEach { reward ->
+                        when (reward.type) {
+                            "soft_currency" -> core.addCurrencyDelta(reward.amount, 0)
+                            "hard_currency" -> core.addCurrencyDelta(0, reward.amount)
+                        }
                     }
-                }
-            },
-            rollback = {
-                data.claimedRewards = origClaimed
-                core.saveData.softCurrency = origSoft
-                core.saveData.hardCurrency = origHard
-            },
-            onCommit = {
-                core.publishCurrencyChanged()
-            },
-        )
+                },
+                rollback = {
+                    data.claimedRewards = origClaimed
+                    core.saveData.softCurrency = origSoft
+                    core.saveData.hardCurrency = origHard
+                },
+                onCommit = {
+                    core.publishCurrencyChanged()
+                },
+            )
+        }
     }
 
     // ─────────────────────────── 扫荡（已通关关卡一键重刷）──────────────────────────
@@ -215,49 +217,54 @@ class StoryService(
     @Deprecated("P2-11: UI层零调用", level = DeprecationLevel.WARNING)
     override suspend fun sweepStoryStage(stageId: String, times: Int): StorySweepOutcome {
         if (times <= 0) return StorySweepOutcome.Rejected
-        val data = getStoryData()
-        if (!data.isStageCompleted(stageId)) return StorySweepOutcome.Rejected
 
         val stage = findStoryStageDef(stageId) ?: return StorySweepOutcome.Rejected
-        val sweepCost = times * 10 // 每次扫荡 10 星尘
+        // R7-P1：times*10 可 Int 溢出为负 → 扣费变加钱。Long 预算 + 上界钳制。
+        val sweepCostLong = times.toLong() * 10L
+        if (sweepCostLong > Int.MAX_VALUE) return StorySweepOutcome.Rejected
+        val sweepCost = sweepCostLong.toInt()
 
-        if (core.saveData.softCurrency < sweepCost) return StorySweepOutcome.Rejected
-
-        val origSC = core.saveData.softCurrency
-        // R6-P1：扫荡可发 hard_currency，rollback 必须一并还原，否则落盘失败白嫖钻石
-        val origHC = core.saveData.hardCurrency
         var totalSoft = 0
         var totalHard = 0
+        // R7-P1：通关/余额校验入锁
+        return core.withWriteLock {
+            val data = getStoryData()
+            if (!data.isStageCompleted(stageId)) return@withWriteLock StorySweepOutcome.Rejected
+            if (core.saveData.softCurrency < sweepCost) return@withWriteLock StorySweepOutcome.Rejected
 
-        return core.transaction(
-            tag = "story.sweep",
-            mutate = {
-                core.addCurrencyDelta(-sweepCost, 0) // 扣除扫荡费用
-                repeat(times) {
-                    stage.rewards?.forEach { reward ->
-                        when (reward.type) {
-                            "soft_currency" -> {
-                                core.addCurrencyDelta(reward.amount, 0)
-                                totalSoft += reward.amount
-                            }
-                            "hard_currency" -> {
-                                core.addCurrencyDelta(0, reward.amount)
-                                totalHard += reward.amount
+            val origSC = core.saveData.softCurrency
+            val origHC = core.saveData.hardCurrency
+
+            core.transactionLocked(
+                tag = "story.sweep",
+                mutate = {
+                    core.addCurrencyDelta(-sweepCost, 0) // 扣除扫荡费用
+                    repeat(times) {
+                        stage.rewards?.forEach { reward ->
+                            when (reward.type) {
+                                "soft_currency" -> {
+                                    core.addCurrencyDelta(reward.amount, 0)
+                                    totalSoft += reward.amount
+                                }
+                                "hard_currency" -> {
+                                    core.addCurrencyDelta(0, reward.amount)
+                                    totalHard += reward.amount
+                                }
                             }
                         }
                     }
+                },
+                rollback = {
+                    core.saveData.softCurrency = origSC
+                    core.saveData.hardCurrency = origHC
+                },
+                onCommit = { core.publishCurrencyChanged() },
+            ).let {
+                when (it) {
+                    WriteOutcome.Success -> StorySweepOutcome.Success(times, totalSoft, totalHard, sweepCost)
+                    WriteOutcome.SaveFailed -> StorySweepOutcome.Rejected
+                    WriteOutcome.Rejected -> StorySweepOutcome.Rejected
                 }
-            },
-            rollback = {
-                core.saveData.softCurrency = origSC
-                core.saveData.hardCurrency = origHC
-            },
-            onCommit = { core.publishCurrencyChanged() },
-        ).let {
-            when (it) {
-                WriteOutcome.Success -> StorySweepOutcome.Success(times, totalSoft, totalHard, sweepCost)
-                WriteOutcome.SaveFailed -> StorySweepOutcome.Rejected
-                WriteOutcome.Rejected -> StorySweepOutcome.Rejected
             }
         }
     }
@@ -274,56 +281,60 @@ class StoryService(
     @Deprecated("P2-11: UI层零调用", level = DeprecationLevel.WARNING)
     override suspend fun sweepStoryStageHard(stageId: String, times: Int): StorySweepOutcome {
         if (times <= 0) return StorySweepOutcome.Rejected
-        val data = getStoryData()
-        if (!data.isStageCompleted(stageId)) return StorySweepOutcome.Rejected
 
         val stage = findStoryStageDef(stageId) ?: return StorySweepOutcome.Rejected
-        val sweepCost = times * 20 // 困难模式 20 星尘/次
+        // R7-P1：times*20 同样可 Int 溢出
+        val sweepCostLong = times.toLong() * 20L
+        if (sweepCostLong > Int.MAX_VALUE) return StorySweepOutcome.Rejected
+        val sweepCost = sweepCostLong.toInt()
 
-        if (core.saveData.softCurrency < sweepCost) return StorySweepOutcome.Rejected
-
-        val origSC = core.saveData.softCurrency
-        // R6-P1：困难扫荡同样可发 hard，rollback 需还原 hardCurrency
-        val origHC = core.saveData.hardCurrency
-        val origHard = data.hardModeCompleted.toList()
         var totalSoft = 0
         var totalHard = 0
-        val isFirstHard = !data.isHardModeCompleted(stageId)
+        // R7-P1：通关/余额校验入锁
+        return core.withWriteLock {
+            val data = getStoryData()
+            if (!data.isStageCompleted(stageId)) return@withWriteLock StorySweepOutcome.Rejected
+            if (core.saveData.softCurrency < sweepCost) return@withWriteLock StorySweepOutcome.Rejected
 
-        return core.transaction(
-            tag = "story.sweepHard",
-            mutate = {
-                core.addCurrencyDelta(-sweepCost, 0)
-                repeat(times) {
-                    stage.rewards?.forEach { reward ->
-                        when (reward.type) {
-                            "soft_currency" -> {
-                                core.addCurrencyDelta(reward.amount * 2, 0) // 困难模式 2 倍
-                                totalSoft += reward.amount * 2
-                            }
-                            "hard_currency" -> {
-                                core.addCurrencyDelta(0, reward.amount * 2)
-                                totalHard += reward.amount * 2
+            val origSC = core.saveData.softCurrency
+            val origHC = core.saveData.hardCurrency
+            val origHard = data.hardModeCompleted.toList()
+            val isFirstHard = !data.isHardModeCompleted(stageId)
+
+            core.transactionLocked(
+                tag = "story.sweepHard",
+                mutate = {
+                    core.addCurrencyDelta(-sweepCost, 0)
+                    repeat(times) {
+                        stage.rewards?.forEach { reward ->
+                            when (reward.type) {
+                                "soft_currency" -> {
+                                    core.addCurrencyDelta(reward.amount * 2, 0)
+                                    totalSoft += reward.amount * 2
+                                }
+                                "hard_currency" -> {
+                                    core.addCurrencyDelta(0, reward.amount * 2)
+                                    totalHard += reward.amount * 2
+                                }
                             }
                         }
                     }
+                    if (isFirstHard) {
+                        data.hardModeCompleted = data.hardModeCompleted + stageId
+                    }
+                },
+                rollback = {
+                    core.saveData.softCurrency = origSC
+                    core.saveData.hardCurrency = origHC
+                    data.hardModeCompleted = origHard
+                },
+                onCommit = { core.publishCurrencyChanged() },
+            ).let {
+                when (it) {
+                    WriteOutcome.Success -> StorySweepOutcome.Success(times, totalSoft, totalHard, sweepCost)
+                    WriteOutcome.SaveFailed -> StorySweepOutcome.Rejected
+                    WriteOutcome.Rejected -> StorySweepOutcome.Rejected
                 }
-                // 首次困难通关标记
-                if (isFirstHard) {
-                    data.hardModeCompleted = data.hardModeCompleted + stageId
-                }
-            },
-            rollback = {
-                core.saveData.softCurrency = origSC
-                core.saveData.hardCurrency = origHC
-                data.hardModeCompleted = origHard
-            },
-            onCommit = { core.publishCurrencyChanged() },
-        ).let {
-            when (it) {
-                WriteOutcome.Success -> StorySweepOutcome.Success(times, totalSoft, totalHard, sweepCost)
-                WriteOutcome.SaveFailed -> StorySweepOutcome.Rejected
-                WriteOutcome.Rejected -> StorySweepOutcome.Rejected
             }
         }
     }
@@ -342,40 +353,38 @@ class StoryService(
      */
     @Deprecated("P2-11: UI层零调用", level = DeprecationLevel.WARNING)
     override suspend fun claimStoryChapterReward(chapterId: String): WriteOutcome {
-        val data = getStoryData()
         val chapter = getStoryChapter(chapterId) ?: return WriteOutcome.Rejected
+        // R7-P1：claimed/全通校验移入锁内
+        return core.withWriteLock {
+            val data = getStoryData()
+            if (data.claimedChapterRewards.contains(chapterId)) return@withWriteLock WriteOutcome.Rejected
+            val totalStages = chapter.stages.size
+            val completedCount = chapter.stages.count { data.isStageCompleted(it.stageId) }
+            if (completedCount < totalStages) return@withWriteLock WriteOutcome.Rejected
 
-        // 已领取过
-        if (data.claimedChapterRewards.contains(chapterId)) return WriteOutcome.Rejected
+            val origClaimed = data.claimedChapterRewards.toList()
+            val origSC = core.saveData.softCurrency
+            val origHC = core.saveData.hardCurrency
 
-        // 章节未全通关
-        val totalStages = chapter.stages.size
-        val completedCount = chapter.stages.count { data.isStageCompleted(it.stageId) }
-        if (completedCount < totalStages) return WriteOutcome.Rejected
+            val chapterIndex = STORY_CHAPTERS.indexOfFirst { it.chapterId == chapterId }
+            val chapterNumber = chapterIndex + 1
+            val softReward = 2000 * chapterNumber
+            val hardReward = 30 * chapterNumber
 
-        val origClaimed = data.claimedChapterRewards.toList()
-        val origSC = core.saveData.softCurrency
-        val origHC = core.saveData.hardCurrency
-
-        // 章节全通奖励：基于章节数的阶梯奖励
-        val chapterIndex = STORY_CHAPTERS.indexOfFirst { it.chapterId == chapterId }
-        val chapterNumber = chapterIndex + 1
-        val softReward = 2000 * chapterNumber
-        val hardReward = 30 * chapterNumber
-
-        return core.transaction(
-            tag = "story.claimChapterReward",
-            mutate = {
-                data.claimedChapterRewards = data.claimedChapterRewards + chapterId
-                core.addCurrencyDelta(softReward, hardReward)
-            },
-            rollback = {
-                data.claimedChapterRewards = origClaimed
-                core.saveData.softCurrency = origSC
-                core.saveData.hardCurrency = origHC
-            },
-            onCommit = { core.publishCurrencyChanged() },
-        )
+            core.transactionLocked(
+                tag = "story.claimChapterReward",
+                mutate = {
+                    data.claimedChapterRewards = data.claimedChapterRewards + chapterId
+                    core.addCurrencyDelta(softReward, hardReward)
+                },
+                rollback = {
+                    data.claimedChapterRewards = origClaimed
+                    core.saveData.softCurrency = origSC
+                    core.saveData.hardCurrency = origHC
+                },
+                onCommit = { core.publishCurrencyChanged() },
+            )
+        }
     }
 
     // ─────────────────────────── 剧情进度统计 ───────────────────────────

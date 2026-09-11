@@ -593,42 +593,46 @@ class ServiceCore(
         var spd = 0
         var critRate = 0.0
         var critDmg = 0.0
-        
+        var atkPct = 0f
+        var defPct = 0f
+        var hpPct = 0f
+
         // 收集所有装备的属性
         for (equipId in save.getEquippedIds()) {
             val equipment = saveData.ownedEquipments.firstOrNull { it?.equipmentId == equipId }
                 ?: continue
-            
-            // 主属性
-            when (equipment.mainStat.statType) {
-                StatValue.STAT_ATTACK -> atk += equipment.mainStat.value
-                StatValue.STAT_DEFENSE -> def += equipment.mainStat.value
-                StatValue.STAT_HP -> hp += equipment.mainStat.value
-                StatValue.STAT_SPEED -> spd += equipment.mainStat.value
-                StatValue.STAT_CRIT_RATE -> critRate += equipment.mainStat.value / 100.0
-                StatValue.STAT_CRIT_DMG -> critDmg += equipment.mainStat.value / 100.0
-                else -> {}
-            }
-            
-            // 副属性
-            for (subStat in equipment.subStats.filterNotNull()) {
-                when (subStat.statType) {
-                    StatValue.STAT_ATTACK -> atk += subStat.value
-                    StatValue.STAT_DEFENSE -> def += subStat.value
-                    StatValue.STAT_HP -> hp += subStat.value
-                    StatValue.STAT_SPEED -> spd += subStat.value
-                    StatValue.STAT_CRIT_RATE -> critRate += subStat.value / 100.0
-                    StatValue.STAT_CRIT_DMG -> critDmg += subStat.value / 100.0
+
+            // R7-P1：主/副词条 isPercentage 与套装同口径——true 时按基数百分比记账
+            fun applyStat(statType: String, value: Int, isPercentage: Boolean) {
+                when (statType) {
+                    StatValue.STAT_ATTACK ->
+                        if (isPercentage) atkPct += value / 100f else atk += value
+                    StatValue.STAT_DEFENSE ->
+                        if (isPercentage) defPct += value / 100f else def += value
+                    StatValue.STAT_HP ->
+                        if (isPercentage) hpPct += value / 100f else hp += value
+                    StatValue.STAT_SPEED -> spd += value
+                    StatValue.STAT_CRIT_RATE -> critRate += value / 100.0
+                    StatValue.STAT_CRIT_DMG -> critDmg += value / 100.0
                     else -> {}
                 }
             }
+
+            // 主属性
+            applyStat(
+                equipment.mainStat.statType,
+                equipment.mainStat.value,
+                equipment.mainStat.isPercentage,
+            )
+
+            // 副属性
+            for (subStat in equipment.subStats.filterNotNull()) {
+                applyStat(subStat.statType, subStat.value, subStat.isPercentage)
+            }
         }
-        
+
         // 计算套装效果
         val setBonuses = calculateSetBonuses(characterId)
-        var atkPct = 0f
-        var defPct = 0f
-        var hpPct = 0f
         for (bonus in setBonuses) {
             // R6-P1：isPercentage 必须按百分比记账；此前一律当 flat 加，「攻击力+15%」变成 +15 点。
             when (bonus.statType) {

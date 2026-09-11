@@ -580,32 +580,35 @@ class TowerService(private val core: ServiceCore) : TowerApi {
     override suspend fun sweepTower(floor: Int, times: Int): TowerSweepOutcome {
         if (floor < 1 || floor > EconomyFormulas.towerMaxFloor()) return TowerSweepOutcome.Rejected
         if (times <= 0) return TowerSweepOutcome.Rejected
-        if (floor > saveData.towerBestFloor) return TowerSweepOutcome.Rejected
 
-        val ticketCost = EconomyFormulas.towerTicketCost() * times
-        val ticketsExisted = saveData.items.any { it?.itemId == ServiceCore.BattleTicketItemId }
-        val origTickets = core.itemCount(ServiceCore.BattleTicketItemId)
-        if (origTickets < ticketCost) return TowerSweepOutcome.Rejected
+        val ticketCostLong = EconomyFormulas.towerTicketCost().toLong() * times.toLong()
+        if (ticketCostLong > Int.MAX_VALUE) return TowerSweepOutcome.Rejected
+        val ticketCost = ticketCostLong.toInt()
 
-        val teamIds = saveData.getFormationIds()
-        if (teamIds.isEmpty()) return TowerSweepOutcome.Rejected
-
-        val baseExp = EconomyFormulas.towerRewardExp(floor)
-        val affinityPerWin = AffinityFormulas.BATTLE_WIN_AFFINITY
-
-        // 事务前快照
-        val originalSoft = saveData.softCurrency
-        val originalHard = saveData.hardCurrency
-        val originalRecords = saveData.battleRecords
-        val origAffinity = saveData.characterAffinityData
-        val expSnapshots = teamIds.mapNotNull { id ->
-            core.getSave(id)?.let { ExpSnapshot(it, it.totalExp, it.level, it.unspentPoints) }
-        }
-
-        // 连胜奖励计算：每3层额外+50%经验（1层无加成，3层+50%，6层+100%）
-        val streakBonusMultiplier = 1.0 + ((times - 1) / 3) * 0.5
-
+        // R7-P1：best/票/编队校验入锁
         return core.withWriteLock {
+            if (floor > saveData.towerBestFloor) return@withWriteLock TowerSweepOutcome.Rejected
+
+            val ticketsExisted = saveData.items.any { it?.itemId == ServiceCore.BattleTicketItemId }
+            val origTickets = core.itemCount(ServiceCore.BattleTicketItemId)
+            if (origTickets < ticketCost) return@withWriteLock TowerSweepOutcome.Rejected
+
+            val teamIds = saveData.getFormationIds()
+            if (teamIds.isEmpty()) return@withWriteLock TowerSweepOutcome.Rejected
+
+            val baseExp = EconomyFormulas.towerRewardExp(floor)
+            val affinityPerWin = AffinityFormulas.BATTLE_WIN_AFFINITY
+
+            val originalSoft = saveData.softCurrency
+            val originalHard = saveData.hardCurrency
+            val originalRecords = saveData.battleRecords
+            val origAffinity = saveData.characterAffinityData
+            val expSnapshots = teamIds.mapNotNull { id ->
+                core.getSave(id)?.let { ExpSnapshot(it, it.totalExp, it.level, it.unspentPoints) }
+            }
+
+            val streakBonusMultiplier = 1.0 + ((times - 1) / 3) * 0.5
+
             val outcome = core.transactionLocked(
                 tag = "tower.sweep",
                 mutate = {
