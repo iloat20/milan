@@ -309,6 +309,7 @@ internal fun MilanNavHost(openGachaOnStart: Boolean = false) {
                                 }
                             },
                             onGrantAffinity = storyVm::grantAffinity,
+                            onSelectEnding = storyVm::setEndingBranch,
                             characterOf = storyVm::characterOf,
                             onBack = { navController.popBackStack() },
                         )

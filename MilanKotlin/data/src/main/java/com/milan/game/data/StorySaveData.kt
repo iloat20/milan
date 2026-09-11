@@ -29,6 +29,12 @@ class StorySaveData(
     /** 已通关困难模式的关卡 ID 列表。 */
     @SerialName("HardModeCompleted")
     var hardModeCompleted: List<String?> = emptyList(),
+    /**
+     * 第一纪元结局分支 ID（ch08 三道光选择落档；null = 未选）。
+     * 可选字段带默认值，旧档缺键时反序列化为 null，不破坏兼容。
+     */
+    @SerialName("EndingBranchId")
+    var endingBranchId: String? = null,
 ) {
     /** 检查关卡是否已完成。 */
     fun isStageCompleted(stageId: String): Boolean =
@@ -97,6 +103,9 @@ data class DialogueLine(
 
 /**
  * 剧情选择分支。
+ *
+ * [affinityCharacterId] 为空时，好感记到「该选项所在对白行的说话者」头上
+ * （DialogueScreen 既有语义）。需要给同屏其他角色加好感时显式指定。
  */
 @Serializable
 data class StoryChoice(
@@ -109,6 +118,12 @@ data class StoryChoice(
     /** 选择后增加的好感度。 */
     @SerialName("AffinityBonus")
     val affinityBonus: Int = 0,
+    /** 好感入账角色（null = 当前行说话者）。 */
+    @SerialName("AffinityCharacterId")
+    val affinityCharacterId: String? = null,
+    /** 结局分支 ID（非空时写入 StorySaveData.endingBranchId，覆盖先前选择）。 */
+    @SerialName("EndingBranchId")
+    val endingBranchId: String? = null,
 )
 
 /**
@@ -184,4 +199,13 @@ data class StoryChapterDef(
     /** 章节封面角色 ID（展示用）。 */
     @SerialName("CoverCharacterId")
     val coverCharacterId: String? = null,
+    /**
+     * 好感外传门槛：目标角色 ID（null = 主线章，走「前一章全通」解锁）。
+     * 与 [requiredAffinityLevel] 成对使用。
+     */
+    @SerialName("RequiredAffinityCharacterId")
+    val requiredAffinityCharacterId: String? = null,
+    /** 好感外传门槛：所需好感等级（0 = 只要求拥有该角色）。 */
+    @SerialName("RequiredAffinityLevel")
+    val requiredAffinityLevel: Int = 0,
 )

@@ -66,9 +66,8 @@ fun StoryScreen(
                             revision = revision,
                             chapter = chapter,
                             index = index,
-                            // 锁定提示：点名前置章节（index>0 时必有前章；首章恒解锁不会走到该分支）。
-                            unlockHint = chapters.getOrNull(index - 1)
-                                ?.let { "通关「${it.title}」全部关卡后解锁" },
+                            // 解锁提示：主线=前一章；外传=好感门槛（Side 章不走前章链）。
+                            unlockHint = unlockHintFor(chapters, index, chapter, vm),
                             onOpenStage = onOpenStage,
                         )
                     }
@@ -158,7 +157,7 @@ private fun StoryChapterCard(
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "第${getChapterNumber(index)}章",
+                            text = chapterLabel(chapter, index),
                             color = AppTheme.Text3,
                             fontSize = 11.sp,
                         )
@@ -307,6 +306,27 @@ private fun StageRow(
             )
         }
     }
+}
+
+/** 章节标签：主线第 X 章；好感外传统一「外传」。 */
+private fun chapterLabel(chapter: StoryChapterDef, index: Int): String =
+    if (chapter.requiredAffinityCharacterId != null) "外传"
+    else "第${getChapterNumber(index)}章"
+
+/**
+ * 章节解锁提示。
+ * 主线：点名前一章；外传：点名角色与好感等级（subtitle 已带等级，这里补角色名）。
+ */
+private fun unlockHintFor(
+    chapters: List<StoryChapterDef>,
+    index: Int,
+    chapter: StoryChapterDef,
+    vm: StoryViewModel,
+): String? {
+    val affinityChar = chapter.requiredAffinityCharacterId ?: return chapters.getOrNull(index - 1)
+        ?.let { "通关「${it.title}」全部关卡后解锁" }
+    val name = vm.characterOf(affinityChar)?.displayName ?: "该角色"
+    return "将「$name」好感提升至 Lv.${chapter.requiredAffinityLevel} 后解锁"
 }
 
 /** 章节中文编号。 */

@@ -60,6 +60,8 @@ fun DialogueScreen(
     onNavigateStage: (String) -> Unit = {},
     /** 好感选项落账（默认 no-op；生产由 NavHost 注入 StoryViewModel.grantAffinity）。 */
     onGrantAffinity: (characterId: String, amount: Int) -> Unit = { _, _ -> },
+    /** 结局分支落档（默认 no-op；生产由 NavHost 注入 StoryViewModel.setEndingBranch）。 */
+    onSelectEnding: (branchId: String) -> Unit = {},
     /** 说话者内容查找（生产由 NavHost 注入 StoryViewModel.characterOf）。 */
     characterOf: (String) -> CharacterDataEntry? = { null },
 ) {
@@ -337,13 +339,16 @@ fun DialogueScreen(
                                 choice = choice,
                                 onClick = {
                                     // 2026-09-02：好感选项落账——affinityBonus 此前只渲染
-                                    // "+N" 标签从未写存档（零接线）。现给当前说话角色入账；
+                                    // "+N" 标签从未写存档（零接线）。默认记到当前说话角色；
+                                    // StoryChoice.affinityCharacterId 可改记到同屏其他角色。
                                     // 满级/落盘失败等 Rejected 静默忽略（剧情产出不打断流程）。
                                     // 旁白（narrator）没有好感归属，跳过。
-                                    val speaker = currentLine.speakerId
-                                    if (choice.affinityBonus > 0 && speaker != "narrator") {
-                                        onGrantAffinity(speaker, choice.affinityBonus)
+                                    val target = choice.affinityCharacterId ?: currentLine.speakerId
+                                    if (choice.affinityBonus > 0 && target != "narrator") {
+                                        onGrantAffinity(target, choice.affinityBonus)
                                     }
+                                    // P3：结局分支落档（ch08 三道光等）；失败静默不打断对话。
+                                    choice.endingBranchId?.takeIf { it.isNotBlank() }?.let(onSelectEnding)
                                     val gotoStage = choice.nextStageId
                                     if (gotoStage != null) {
                                         // M3 修复：此前「暂不支持，直接退出」→ 点分支选项直接结束整关，

@@ -68,6 +68,19 @@ class StoryViewModel(
         }
     }
 
+    /** 结局分支落档（ch08 三道光）；异常静默。 */
+    fun setEndingBranch(branchId: String) {
+        viewModelScope.launch {
+            try {
+                service.setStoryEndingBranch(branchId)
+            } catch (_: Exception) {
+            }
+        }
+    }
+
+    /** 当前结局分支（null = 未选）。 */
+    fun endingBranchId(): String? = service.getStoryEndingBranchId()
+
     /**
      * 说话者内容查询（2026-09-10）：DialogueScreen 私有 helper 此前直接摸
      * `AppGraph.service`（服务定位器泄漏）。改为由本 VM 提供查找函数注入。

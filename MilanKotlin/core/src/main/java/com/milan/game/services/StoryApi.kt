@@ -23,11 +23,17 @@ interface StoryApi {
     /** 按 ID 取章节定义。 */
     fun getStoryChapter(chapterId: String): StoryChapterDef?
 
-    /** 章节是否已解锁（前一章通关）。 */
+    /** 章节是否已解锁（主线：前一章通关；外传：好感门槛）。 */
     fun isStoryChapterUnlocked(chapterId: String): Boolean
 
     /** 章节通关进度（0.0~1.0）。 */
     fun getStoryChapterProgress(chapterId: String): Float
+
+    /** 第一纪元结局分支 ID（null = 未选）。 */
+    fun getStoryEndingBranchId(): String?
+
+    /** 写入结局分支（ch08 三道光；空串 Rejected；重复写覆盖）。 */
+    suspend fun setStoryEndingBranch(branchId: String): WriteOutcome
 
     /** 关卡是否已通关（含困难模式）。 */
     fun isStoryStageCompleted(stageId: String): Boolean
