@@ -1,5 +1,7 @@
 package com.milan.game.ui.components
 
+import androidx.compose.material3.MaterialTheme
+
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -91,7 +93,7 @@ fun GlyphBadge(
     ) {
         Text(
             text = glyph,
-            fontSize = 12.sp,
+            style = MaterialTheme.typography.labelLarge,
             fontWeight = FontWeight.Bold,
             color = glyphColor,
         )

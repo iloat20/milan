@@ -1,5 +1,7 @@
 package com.milan.game.ui.characters
 
+import androidx.compose.material3.MaterialTheme
+
 import com.milan.game.OwnedCharacterView
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
@@ -113,7 +115,7 @@ internal fun StatsPanel(
             Text(
                 "等级 Lv.${view.save.level}   ·   星级 ${"★".repeat(view.save.stars.coerceAtLeast(1))}" +
                     "   ·   天赋点 ${view.save.unspentPoints}" + if (owned) "" else "   ·   未拥有",
-                fontSize = 12.sp,
+                style = MaterialTheme.typography.labelLarge,
                 color = AppTheme.Text2,
                 modifier = Modifier.align(Alignment.CenterHorizontally),
             )
@@ -169,14 +171,13 @@ private fun WoWStatRow(
         ) {
             StatBadge(glyph, col)
             Column(Modifier.padding(start = 12.dp)) {
-                Text(cn, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = AppTheme.Text1)
-                Text(en, fontSize = 10.sp, color = AppTheme.Text3, letterSpacing = 0.08.em)
+                Text(cn, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold, color = AppTheme.Text1)
+                Text(en, style = MaterialTheme.typography.labelSmall, color = AppTheme.Text3, letterSpacing = 0.08.em)
             }
             Spacer(Modifier.weight(1f))
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     valueText,
-                    fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
                     color = AppTheme.Text1,
                     style = Tabular,
@@ -187,7 +188,6 @@ private fun WoWStatRow(
                     val arrow = if (isPositive) "↑" else "↓"
                     Text(
                         " $arrow${kotlin.math.abs(bonus)}",
-                        fontSize = 13.sp,
                         fontWeight = FontWeight.Bold,
                         color = indicatorColor,
                         style = Tabular,
@@ -225,7 +225,7 @@ private fun WoWStatRow(
 private fun StatBadge(glyph: String, col: Color) {
     Text(
         glyph,
-        fontSize = 16.sp,
+        style = MaterialTheme.typography.titleMedium,
         fontWeight = FontWeight.Bold,
         color = col,
         textAlign = TextAlign.Center,
@@ -244,20 +244,18 @@ private fun WoWSectionHeader(title: String) {
         LineGold(Modifier.weight(1f))
         Text(
             "◆",
-            fontSize = 10.sp,
             color = AppTheme.Gold,
             modifier = Modifier.padding(horizontal = 6.dp),
         )
         Text(
             title,
-            fontSize = 13.sp,
+            style = MaterialTheme.typography.bodyMedium,
             fontWeight = FontWeight.Bold,
             color = AppTheme.Gold,
             letterSpacing = 0.2.em,
         )
         Text(
             "◆",
-            fontSize = 10.sp,
             color = AppTheme.Gold,
             modifier = Modifier.padding(horizontal = 6.dp),
         )
@@ -290,7 +288,7 @@ private fun WoWGroupDivider() {
         LineGold(Modifier.weight(1f))
         Text(
             "◆",
-            fontSize = 11.sp,
+            style = MaterialTheme.typography.labelMedium,
             color = AppTheme.Gold,
             modifier = Modifier.padding(horizontal = 12.dp),
         )

@@ -1,5 +1,7 @@
 package com.milan.game.ui.arena
 
+import androidx.compose.material3.MaterialTheme
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -32,7 +34,7 @@ import com.milan.game.services.ArenaChallengeOutcome
 import com.milan.game.ui.components.GlassDialog
 import com.milan.game.ui.components.GlassPanel
 import com.milan.game.ui.components.GoldButton
-import com.milan.game.ui.components.NeonButton
+import com.milan.game.ui.components.InkButton
 import com.milan.game.ui.components.PageBackground
 import com.milan.game.ui.feedback.LocalFeedback
 import com.milan.game.ui.nav.AppTopBar
@@ -97,7 +99,7 @@ fun ArenaScreen(
                         Text(
                             text = "可挑战对手",
                             color = AppTheme.Text1,
-                            fontSize = 14.sp,
+                            style = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.Bold,
                         )
                     }
@@ -117,7 +119,6 @@ fun ArenaScreen(
                         Text(
                             text = "赛季奖励",
                             color = AppTheme.Text1,
-                            fontSize = 14.sp,
                             fontWeight = FontWeight.Bold,
                         )
                     }
@@ -186,25 +187,22 @@ private fun ArenaRankCard(
                     Text(
                         text = rankTitle,
                         color = AppTheme.Gold,
-                        fontSize = 20.sp,
+                        style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold,
                     )
                     Text(
                         text = "积分 $points",
                         color = AppTheme.Text2,
-                        fontSize = 12.sp,
                     )
                 }
                 Column(horizontalAlignment = Alignment.End) {
                     Text(
                         text = "剩余次数 $attacksLeft / ${ArenaSaveData.DAILY_FREE_ATTACKS}",
                         color = if (attacksLeft > 0) AppTheme.Text2 else AppTheme.Danger,
-                        fontSize = 12.sp,
                     )
                     Text(
                         text = "胜 $winCount / 负 $loseCount",
                         color = AppTheme.Text3,
-                        fontSize = 11.sp,
                     )
                 }
             }
@@ -231,14 +229,13 @@ private fun OpponentCard(
                     Text(
                         text = opponent.name,
                         color = AppTheme.Text1,
-                        fontSize = 14.sp,
+                        style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.Bold,
                     )
                     Spacer(Modifier.width(8.dp))
                     Text(
                         text = "Lv.${opponent.level}",
                         color = AppTheme.Text3,
-                        fontSize = 11.sp,
                     )
                 }
                 Spacer(Modifier.height(4.dp))
@@ -246,17 +243,16 @@ private fun OpponentCard(
                     Text(
                         text = "积分 ${opponent.points}",
                         color = AppTheme.Text2,
-                        fontSize = 11.sp,
                     )
                     Spacer(Modifier.width(12.dp))
                     Text(
                         text = "战力 ${opponent.teamPower}",
                         color = AppTheme.Text2,
-                        fontSize = 11.sp,
+                        style = MaterialTheme.typography.labelMedium,
                     )
                 }
             }
-            NeonButton(
+            InkButton(
                 text = "挑战",
                 enabled = canChallenge,
                 onClick = onChallenge,
@@ -278,26 +274,23 @@ private fun SeasonRewardRow(reward: com.milan.game.data.SeasonReward) {
             Text(
                 text = "Top ${reward.rank}",
                 color = AppTheme.Gold,
-                fontSize = 12.sp,
+                style = MaterialTheme.typography.labelLarge,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.width(60.dp),
             )
             Text(
                 text = reward.title,
                 color = AppTheme.Text1,
-                fontSize = 12.sp,
                 modifier = Modifier.weight(1f),
             )
             Text(
                 text = "${reward.softCurrency} 金",
                 color = AppTheme.Text2,
-                fontSize = 11.sp,
             )
             Spacer(Modifier.width(8.dp))
             Text(
                 text = "${reward.hardCurrency} 碎片",
                 color = AppTheme.Text2,
-                fontSize = 11.sp,
             )
         }
     }

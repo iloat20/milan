@@ -1,5 +1,7 @@
 package com.milan.game.ui.nav
 
+import androidx.compose.material3.MaterialTheme
+
 import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
@@ -392,12 +394,12 @@ private fun InkErrorScreen(reason: String, onRetry: () -> Unit) {
         ) {
             Text(
                 text = "启 动 失 败",
-                fontSize = 20.sp,
+                style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
                 color = AppTheme.Text1,
             )
             Spacer(Modifier.height(14.dp))
-            Text(text = reason, fontSize = 13.sp, color = AppTheme.Text3)
+            Text(text = reason, style = MaterialTheme.typography.bodyMedium, color = AppTheme.Text3)
             Spacer(Modifier.height(28.dp))
             Box(
                 modifier = Modifier
@@ -408,7 +410,6 @@ private fun InkErrorScreen(reason: String, onRetry: () -> Unit) {
             ) {
                 Text(
                     text = "重 试",
-                    fontSize = 15.sp,
                     fontWeight = FontWeight.Bold,
                     color = AppTheme.Gold,
                 )

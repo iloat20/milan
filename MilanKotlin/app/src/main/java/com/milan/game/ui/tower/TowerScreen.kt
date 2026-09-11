@@ -48,7 +48,7 @@ import com.milan.game.ui.components.EntranceItem
 import com.milan.game.ui.components.FormationBar
 import com.milan.game.ui.components.GlyphBadge
 import com.milan.game.ui.components.GoldButton
-import com.milan.game.ui.components.NeonButton
+import com.milan.game.ui.components.InkButton
 import com.milan.game.ui.components.PageBackground
 import com.milan.game.ui.battle.StrategicBattleScreen
 import com.milan.game.ui.nav.AppTopBar
@@ -116,7 +116,6 @@ fun TowerScreen(
                     Row(verticalAlignment = Alignment.Bottom) {
                         Text(
                             text = if (best == 0) "未挑战" else "第 $best 层",
-                            fontSize = 24.sp,
                             fontWeight = FontWeight.Bold,
                             style = androidx.compose.ui.text.TextStyle(
                                 brush = if (best > 0) {
@@ -198,7 +197,7 @@ fun TowerScreen(
                     // 策略挑战：可操作回合制（选技能/选目标）
                     if (canChallenge && !running && members.isNotEmpty()) {
                         Spacer(Modifier.height(8.dp))
-                        NeonButton(
+                        InkButton(
                             text = "策略挑战第 $nextFloor 层（可操作）",
                             onClick = { showStrategic = true },
                             modifier = Modifier.fillMaxWidth(),
@@ -208,7 +207,7 @@ fun TowerScreen(
                     // 已通层的复刷入口：低层速刷拿保底星尘收益（数值线性，低层仍有意义）。
                     if (best > 0) {
                         Spacer(Modifier.height(8.dp))
-                        NeonButton(
+                        InkButton(
                             text = "复刷第 $best 层（⚔$ticketCost）",
                             onClick = { vm.retryBest() },
                             modifier = Modifier.fillMaxWidth(),
@@ -369,7 +368,6 @@ private fun StrikeRow(e: StrikeEvent, names: Map<String, String>) {
         ) {
             Text(
                 text = attackerEi.glyph,
-                fontSize = 11.sp,
                 color = attackerEi.glow,
                 modifier = Modifier
                     .size(16.dp)
@@ -391,7 +389,6 @@ private fun StrikeRow(e: StrikeEvent, names: Map<String, String>) {
         // 箭头
         Text(
             text = "→",
-            fontSize = 10.sp,
             color = AppTheme.Text3,
             modifier = Modifier.padding(horizontal = 4.dp),
         )
@@ -403,7 +400,7 @@ private fun StrikeRow(e: StrikeEvent, names: Map<String, String>) {
         ) {
             Text(
                 text = targetEi.glyph,
-                fontSize = 11.sp,
+                style = MaterialTheme.typography.labelMedium,
                 color = targetEi.glow,
                 modifier = Modifier
                     .size(16.dp)
@@ -438,7 +435,6 @@ private fun StrikeRow(e: StrikeEvent, names: Map<String, String>) {
             if (counter) {
                 Text(
                     text = " 克",
-                    fontSize = 9.sp,
                     fontWeight = FontWeight.Bold,
                     color = AppTheme.Gold,
                     modifier = Modifier
@@ -451,7 +447,7 @@ private fun StrikeRow(e: StrikeEvent, names: Map<String, String>) {
             if (defeated) {
                 Text(
                     text = " †",
-                    fontSize = 12.sp,
+                    style = MaterialTheme.typography.labelLarge,
                     fontWeight = FontWeight.Bold,
                     color = AppTheme.SealRed,
                     modifier = Modifier.padding(start = 2.dp),
@@ -575,21 +571,19 @@ private fun BattlePreviewCard(
         ) {
             Text(
                 text = "我方",
-                fontSize = 12.sp,
+                style = MaterialTheme.typography.labelLarge,
                 fontWeight = FontWeight.Bold,
                 color = AppTheme.Frost,
             )
             Spacer(Modifier.weight(1f))
             Text(
                 text = "⚔ VS ⚔",
-                fontSize = 14.sp,
                 fontWeight = FontWeight.Bold,
                 color = AppTheme.Gold,
             )
             Spacer(Modifier.weight(1f))
             Text(
                 text = "敌方",
-                fontSize = 12.sp,
                 fontWeight = FontWeight.Bold,
                 color = AppTheme.Danger,
             )
@@ -604,10 +598,9 @@ private fun BattlePreviewCard(
         ) {
             Text(
                 text = "$myPower",
-                fontSize = 11.sp,
+                style = MaterialTheme.typography.labelMedium.copy(fontFeatureSettings = "tnum"),
                 fontWeight = FontWeight.Bold,
                 color = AppTheme.Frost,
-                style = androidx.compose.ui.text.TextStyle(fontFeatureSettings = "tnum"),
             )
             Spacer(Modifier.width(8.dp))
             // 对比条
@@ -645,10 +638,9 @@ private fun BattlePreviewCard(
             Spacer(Modifier.width(8.dp))
             Text(
                 text = "$enemyPower",
-                fontSize = 11.sp,
+                style = MaterialTheme.typography.labelMedium.copy(fontFeatureSettings = "tnum"),
                 fontWeight = FontWeight.Bold,
                 color = AppTheme.Danger,
-                style = androidx.compose.ui.text.TextStyle(fontFeatureSettings = "tnum"),
             )
         }
 
@@ -663,7 +655,6 @@ private fun BattlePreviewCard(
             Column {
                 Text(
                     text = "元素分布",
-                    fontSize = 10.sp,
                     color = AppTheme.Text3,
                 )
                 Spacer(Modifier.height(4.dp))
@@ -678,7 +669,7 @@ private fun BattlePreviewCard(
             Column(horizontalAlignment = Alignment.End) {
                 Text(
                     text = "敌方元素",
-                    fontSize = 10.sp,
+                    style = MaterialTheme.typography.labelSmall,
                     color = AppTheme.Text3,
                 )
                 Spacer(Modifier.height(4.dp))
@@ -705,7 +696,7 @@ private fun BattlePreviewCard(
             val (myEl, _) = counterElements.first()
             Text(
                 text = "✦ 你的${ElementTheme.forElement(myEl).glyph}元素对敌方有克制优势",
-                fontSize = 10.sp,
+                style = MaterialTheme.typography.labelSmall,
                 color = AppTheme.Gold,
             )
         }
@@ -714,7 +705,6 @@ private fun BattlePreviewCard(
         Spacer(Modifier.height(4.dp))
         Text(
             text = "第 $floor 层 · 敌方 ×$enemyCount · 属性倍率 ×${"%.1f".format(enemyScale)}",
-            fontSize = 10.sp,
             color = AppTheme.Text3,
         )
     }
@@ -730,9 +720,9 @@ private fun ElementBadge(glyph: String, color: Color, count: Int) {
             .background(color.copy(alpha = 0.15f))
             .padding(horizontal = 4.dp, vertical = 2.dp),
     ) {
-        Text(text = glyph, fontSize = 10.sp, color = color)
+        Text(text = glyph, style = MaterialTheme.typography.labelSmall, color = color)
         if (count > 1) {
-            Text(text = "×$count", fontSize = 9.sp, color = color, modifier = Modifier.padding(start = 2.dp))
+            Text(text = "×$count", style = MaterialTheme.typography.labelSmall, color = color, modifier = Modifier.padding(start = 2.dp))
         }
     }
 }

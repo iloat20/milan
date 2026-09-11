@@ -1,5 +1,7 @@
 package com.milan.game.ui.components
 
+import androidx.compose.material3.MaterialTheme
+
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
@@ -175,7 +177,7 @@ fun BattleResultOverlay(
             // ── 结果标题 ──
             Text(
                 text = if (victory) "✦ 攻克！" else "✖ 止步于此",
-                fontSize = 36.sp,
+                style = MaterialTheme.typography.displayLarge,
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center,
                 color = primaryColor,
@@ -194,7 +196,6 @@ fun BattleResultOverlay(
 
             Text(
                 text = "用时 $turns 回合",
-                fontSize = 14.sp,
                 color = accentColor,
                 modifier = Modifier.alpha(contentAlpha.value),
             )
@@ -214,7 +215,7 @@ fun BattleResultOverlay(
                 ) {
                     Text(
                         text = "战利品",
-                        fontSize = 12.sp,
+                        style = MaterialTheme.typography.labelLarge,
                         color = AppTheme.Text3,
                     )
                     Spacer(Modifier.height(8.dp))
@@ -241,7 +242,7 @@ fun BattleResultOverlay(
                         Spacer(Modifier.height(8.dp))
                         Text(
                             text = "纪录推进至第 $bestFloorAfter 层",
-                            fontSize = 12.sp,
+                            style = MaterialTheme.typography.labelLarge,
                             color = AppTheme.GoldHi,
                             fontWeight = FontWeight.Bold,
                         )
@@ -257,13 +258,19 @@ fun BattleResultOverlay(
                     log = log,
                     modifier = Modifier.alpha(contentAlpha.value),
                 )
-                Spacer(Modifier.height(16.dp))
+                Spacer(Modifier.height(10.dp))
+                // v3 §7.4：战局重演时间轴
+                BattleReplayTimeline(
+                    log = log,
+                    modifier = Modifier.alpha(contentAlpha.value),
+                )
+                Spacer(Modifier.height(10.dp))
             }
 
             // ── 操作提示 ──
             Text(
                 text = "点击任意位置继续",
-                fontSize = 12.sp,
+                style = MaterialTheme.typography.labelLarge,
                 color = AppTheme.Text3,
                 modifier = Modifier.alpha(buttonAlpha.value),
             )
@@ -291,15 +298,13 @@ private fun RewardRow(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        Text(text = icon, fontSize = 18.sp, color = color)
+        Text(text = icon, style = MaterialTheme.typography.titleLarge, color = color)
         Text(
             text = label,
-            fontSize = 13.sp,
             color = AppTheme.Text2,
         )
         Text(
             text = "+$animatedAmount",
-            fontSize = 18.sp,
             fontWeight = FontWeight.Bold,
             color = color,
         )
@@ -402,7 +407,7 @@ private fun BattleStatsPanel(
     ) {
         Text(
             text = "战 斗 统 计",
-            fontSize = 11.sp,
+            style = MaterialTheme.typography.labelMedium,
             fontWeight = FontWeight.Bold,
             color = AppTheme.Text3,
             letterSpacing = 0.15.sp,
@@ -443,14 +448,12 @@ private fun StatItem(
     ) {
         Text(
             text = value,
-            fontSize = 16.sp,
+            style = MaterialTheme.typography.titleMedium.copy(fontFeatureSettings = "tnum"),
             fontWeight = FontWeight.Bold,
             color = color,
-            style = TextStyle(fontFeatureSettings = "tnum"),
         )
         Text(
             text = label,
-            fontSize = 9.sp,
             color = AppTheme.Text3,
         )
     }

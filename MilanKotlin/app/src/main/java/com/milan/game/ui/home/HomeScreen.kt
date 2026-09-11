@@ -36,6 +36,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -69,7 +70,7 @@ import kotlinx.coroutines.withContext
 import com.milan.game.services.CharacterDataEntry
 import com.milan.game.ui.components.GlassDialog
 import com.milan.game.ui.components.GoldButton
-import com.milan.game.ui.components.NeonButton
+import com.milan.game.ui.components.InkButton
 import com.milan.game.ui.components.PortraitImage
 import com.milan.game.ui.components.PortraitTarget
 import com.milan.game.ui.components.CardMetrics
@@ -80,6 +81,8 @@ import com.milan.game.ui.effects.FluidBackground
 import com.milan.game.ui.effects.inkSplash
 import com.milan.game.ui.theme.AppTheme
 import com.milan.game.ui.theme.BrandType
+import com.milan.game.ui.theme.LocalWorldPalette
+import com.milan.game.ui.theme.WorldTheme
 
 /**
  * 主页 · 丹青典藏馆大厅（2026-09-09 重设计）。
@@ -114,6 +117,11 @@ fun HomeScreen(
     )
 
     Box(modifier = modifier.fillMaxSize()) {
+        // v3：主页氛围随镇馆展品世界切换（只染背景光，不下渗控件）
+        val featuredWorld = WorldTheme.forWorld(homeUi.featured.world)
+        androidx.compose.runtime.CompositionLocalProvider(
+            LocalWorldPalette provides featuredWorld,
+        ) {
         FluidBackground(Modifier.fillMaxSize())
         Column(Modifier.fillMaxSize()) {
             // ── 品牌条：左 Logo + 右资源 ──
@@ -133,7 +141,6 @@ fun HomeScreen(
                 Spacer(Modifier.width(8.dp))
                 Text(
                     text = "COLLECTION",
-                    fontSize = 9.sp,
                     color = AppTheme.Text3,
                     letterSpacing = 2.sp,
                     modifier = Modifier.padding(top = 10.dp),
@@ -193,7 +200,7 @@ fun HomeScreen(
                     item {
                         Text(
                             text = "立绘皆源自山海经与中国上古神话，依各自背景故事创作",
-                            fontSize = 10.sp,
+                            style = MaterialTheme.typography.labelSmall,
                             color = AppTheme.Text3,
                             modifier = Modifier.padding(horizontal = 2.dp),
                         )
@@ -206,6 +213,7 @@ fun HomeScreen(
                 onSelect = onNav,
                 modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
             )
+        }
         }
 
         CrashDialogIfAny()
@@ -263,7 +271,6 @@ private fun Hero(
                     Spacer(Modifier.width(10.dp))
                     Text(
                         text = AppTheme.rarityName(def.baseRarity),
-                        fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
                         color = if (def.baseRarity >= 4) AppTheme.GoldTextOn else AppTheme.BgDeepest,
                         modifier = Modifier
@@ -280,7 +287,6 @@ private fun Hero(
                 )
                 Text(
                     text = "查看详情 ›",
-                    fontSize = 12.sp,
                     fontWeight = FontWeight.Medium,
                     color = AppTheme.Gold,
                     modifier = Modifier.padding(top = 8.dp),
@@ -391,7 +397,7 @@ private fun QuickActions(
             val interaction = remember { MutableInteractionSource() }
             Text(
                 text = a.label,
-                fontSize = 13.sp,
+                style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.Medium,
                 color = AppTheme.Text1,
                 modifier = Modifier
@@ -455,12 +461,12 @@ private fun AvatarStrip(
                 AvatarCircle(e.def, Modifier.size(58.dp))
                 Text(
                     text = e.name,
-                    fontSize = 10.sp,
+                    style = MaterialTheme.typography.labelSmall,
                     fontWeight = FontWeight.Bold,
                     color = AppTheme.Text1,
                     modifier = Modifier.padding(top = 3.dp),
                 )
-                Text(text = e.source, fontSize = 8.sp, color = AppTheme.Text2)
+                Text(text = e.source, style = MaterialTheme.typography.labelSmall, color = AppTheme.Text2)
             }
         }
         // 尾部「查看更多」指示器：进神谱图鉴（勿再走空 id 详情，会落到 MissingCharacter）
@@ -485,14 +491,13 @@ private fun AvatarStrip(
                 ) {
                     Text(
                         text = "›",
-                        fontSize = 24.sp,
+                        style = MaterialTheme.typography.headlineMedium,
                         fontWeight = FontWeight.Bold,
                         color = AppTheme.Gold,
                     )
                 }
                 Text(
                     text = "查看全部",
-                    fontSize = 10.sp,
                     fontWeight = FontWeight.Bold,
                     color = AppTheme.Gold,
                     modifier = Modifier.padding(top = 3.dp),
@@ -570,14 +575,13 @@ private fun HomeSectionTitle(title: String, en: String) {
         )
         Text(
             text = title,
-            fontSize = 13.sp,
+            style = MaterialTheme.typography.bodyMedium,
             fontWeight = FontWeight.Bold,
             color = AppTheme.Text1,
             modifier = Modifier.padding(horizontal = 8.dp, vertical = 0.dp),
         )
         Text(
             text = en,
-            fontSize = 9.sp,
             color = AppTheme.Text2,
             letterSpacing = 1.sp,
         )
@@ -617,7 +621,7 @@ private fun CrashDialogIfAny() {
         Row(
             horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
         ) {
-            NeonButton(
+            InkButton(
                 text = "复制",
                 color = AppTheme.Frost,
                 onClick = {
@@ -630,7 +634,7 @@ private fun CrashDialogIfAny() {
                     show = false
                 },
             )
-            NeonButton(text = "关闭", color = AppTheme.Text2, onClick = { show = false })
+            InkButton(text = "关闭", color = AppTheme.Text2, onClick = { show = false })
         }
     }
 }

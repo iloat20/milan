@@ -137,7 +137,6 @@ private fun DrawScope.drawDamageText(
     textMeasurer: androidx.compose.ui.text.TextMeasurer,
 ) {
     val style = TextStyle(
-        fontSize = 16.sp,
         fontWeight = FontWeight.Bold,
         color = color.copy(alpha = alpha),
         shadow = Shadow(

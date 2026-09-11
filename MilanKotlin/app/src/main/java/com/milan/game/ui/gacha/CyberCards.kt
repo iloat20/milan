@@ -1,5 +1,7 @@
 package com.milan.game.ui.gacha
 
+import androidx.compose.material3.MaterialTheme
+
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
@@ -54,6 +56,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.milan.game.services.CharacterDataEntry
 import com.milan.game.services.PullResult
+import com.milan.game.ui.components.CodexCard
 import com.milan.game.ui.components.PortraitImage
 import com.milan.game.ui.components.PortraitTarget
 import com.milan.game.ui.theme.AppTheme
@@ -78,7 +81,7 @@ internal fun CyberCardBack(
         modifier = modifier
             .clip(shape)
             .background(
-                Brush.verticalGradient(listOf(Color(0xFF1A1E28), Color(0xFF0C0E14))),
+                Brush.verticalGradient(listOf(AppTheme.SurfaceNested, AppTheme.BgDeepest)),
                 shape,
             )
             .border(1.dp, AppTheme.Gold.copy(alpha = 0.45f), shape),
@@ -151,11 +154,6 @@ internal fun SingleCard(
     } else {
         remember { mutableFloatStateOf(0f) }
     }
-    val innerBorderColor = when {
-        isUr -> AppTheme.GoldHi.copy(alpha = 0.75f)
-        isSsr -> Color(0xFFC0C0C0).copy(alpha = 0.55f)
-        else -> AppTheme.Gold.copy(alpha = 0.3f)
-    }
     Column(
         modifier = modifier
             .graphicsLayer {
@@ -173,26 +171,13 @@ internal fun SingleCard(
                 .height(320.dp),
             contentAlignment = Alignment.Center,
         ) {
-            Box(
-                Modifier
-                    .matchParentSize()
-                    .clip(RoundedCornerShape(AppTheme.Roundness.lg))
-                    .background(frame, RoundedCornerShape(AppTheme.Roundness.lg))
-                    .border(1.5.dp, frame, RoundedCornerShape(AppTheme.Roundness.lg))
-                    .padding(2.5.dp)
-                    .clip(RoundedCornerShape(AppTheme.Roundness.md))
-                    .border(
-                        if (isUr) 1.5.dp else 1.dp,
-                        innerBorderColor,
-                        RoundedCornerShape(AppTheme.Roundness.md),
-                    ),
+            // v3：卡壳统一 CodexCard 工艺（R 素线 / SR 釉 / SSR 鎏金 / UR 箔+AGSL）
+            CodexCard(
+                tier = rarity,
+                modifier = Modifier.fillMaxSize(),
+                onClick = null,
             ) {
-                Box(
-                    Modifier
-                        .fillMaxSize()
-                        .padding(3.dp)
-                        .clip(RoundedCornerShape(AppTheme.Roundness.md)),
-                ) {
+                Box(Modifier.fillMaxSize()) {
                     PortraitImage(
                         characterId = def?.characterId.orEmpty(),
                         rarity = rarity,
@@ -208,23 +193,23 @@ internal fun SingleCard(
                             .height(72.dp)
                             .background(
                                 Brush.verticalGradient(
-                                    listOf(Color.Transparent, Color.Black.copy(alpha = 0.78f)),
+                                    listOf(Color.Transparent, AppTheme.ScrimBottom),
                                 ),
                             ),
                     )
                     Text(
                         text = def?.displayName.orEmpty(),
                         modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 10.dp),
-                        color = Color.White,
-                        fontSize = 20.sp,
+                        color = AppTheme.Text1,
+                        style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold,
                     )
                 }
                 Text(
                     text = rarityLabel(rarity),
                     color = if (isUr) AppTheme.GoldTextOn else AppTheme.BgDeepest,
-                    fontSize = 12.sp,
                     fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.labelSmall,
                     modifier = Modifier
                         .align(Alignment.TopEnd)
                         .padding(12.dp)
@@ -232,8 +217,8 @@ internal fun SingleCard(
                         .background(AppTheme.rarityColor(rarity))
                         .padding(horizontal = 7.dp, vertical = 2.dp),
                 )
-
             }
+            // 保留仪式层：UR 边框环绕流光（CodexCard 内已有箔面，这里叠更明显的描边流）
             if (isUr) {
                 Canvas(Modifier.matchParentSize().padding(0.5.dp)) {
                     val strokeW = 2f.dp.toPx()
@@ -282,10 +267,10 @@ internal fun SingleCard(
         if (fortune.isNotEmpty()) {
             Text(
                 text = fortune,
-                color = Color.White.copy(alpha = 0.82f),
-                fontSize = 13.sp,
+                color = AppTheme.Text1.copy(alpha = 0.82f),
                 textAlign = TextAlign.Center,
                 maxLines = 2,
+                style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier.padding(top = 8.dp, start = 24.dp, end = 24.dp),
             )
         }
@@ -527,94 +512,83 @@ private fun TenCardFace(
     Box(
         Modifier
             .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    listOf(frame.copy(alpha = if (isUr) 0.42f else 0.32f), Color(0xFF0A0C10)),
-                ),
-                shape,
-            )
-            .border(
-                width = if (isUr) 1.6.dp else 1.25.dp,
-                color = frame.copy(alpha = if (isUr) idleGlow else 0.85f),
-                shape = shape,
-            )
-            .padding(2.dp)
-            .clip(shape)
-            .border(0.5.dp, AppTheme.Gold.copy(alpha = if (isUr) 0.5f else 0.32f), shape),
+            .clip(shape),
     ) {
-        Box(
-            Modifier
-                .fillMaxSize()
-                .padding(1.5.dp)
-                .clip(RoundedCornerShape(5.dp)),
+        CodexCard(
+            tier = rarity,
+            modifier = Modifier.fillMaxSize(),
+            shape = shape,
+            edge = 2.dp,
+            onClick = null,
         ) {
-            PortraitImage(
-                characterId = result.characterId.orEmpty(),
-                rarity = rarity,
-                name = result.characterName,
-                aura = rarity >= 3,
-                target = PortraitTarget.Full,
-                modifier = Modifier.fillMaxSize(),
-            )
-            Box(
-                Modifier
-                    .align(Alignment.BottomCenter)
-                    .fillMaxWidth()
-                    .height(26.dp)
-                    .background(
-                        Brush.verticalGradient(
-                            listOf(Color.Transparent, Color(0xD908090C)),
-                        ),
-                    ),
-            )
-            Text(
-                text = result.characterName,
-                color = AppTheme.Text1,
-                fontSize = 9.sp,
-                fontWeight = FontWeight.Bold,
-                maxLines = 1,
-                textAlign = TextAlign.Center,
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .fillMaxWidth()
-                    .padding(bottom = 4.dp, start = 2.dp, end = 2.dp),
-            )
-            Text(
-                text = rarityLabel(rarity),
-                color = if (isUr) AppTheme.GoldTextOn else AppTheme.BgDeepest,
-                fontSize = 8.sp,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier
-                    .align(Alignment.TopStart)
-                    .padding(3.dp)
-                    .background(frame.copy(alpha = 0.95f), RoundedCornerShape(2.dp))
-                    .padding(horizontal = 3.dp, vertical = 1.dp),
-            )
-            if (result.isNew) {
-                Box(
-                    Modifier
-                        .align(Alignment.TopEnd)
-                        .padding(3.dp)
-                        .background(AppTheme.Gold, RoundedCornerShape(2.dp))
-                        .padding(horizontal = 3.dp, vertical = 1.dp),
-                ) {
-                    Text("NEW", fontSize = 7.sp, fontWeight = FontWeight.Bold, color = AppTheme.GoldTextOn)
-                }
-            }
-            if (rarity >= 3) {
-                // 高稀有度底部光晕条
+            Box(Modifier.fillMaxSize()) {
+                PortraitImage(
+                    characterId = result.characterId.orEmpty(),
+                    rarity = rarity,
+                    name = result.characterName,
+                    aura = rarity >= 3,
+                    target = PortraitTarget.Full,
+                    modifier = Modifier.fillMaxSize(),
+                )
                 Box(
                     Modifier
                         .align(Alignment.BottomCenter)
                         .fillMaxWidth()
-                        .height(3.dp)
+                        .height(26.dp)
                         .background(
-                            Brush.horizontalGradient(
-                                listOf(Color.Transparent, frame.copy(alpha = 0.85f), Color.Transparent),
+                            Brush.verticalGradient(
+                                listOf(Color.Transparent, AppTheme.ScrimBottom),
                             ),
                         ),
                 )
+                Text(
+                    text = result.characterName,
+                    color = AppTheme.Text1,
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .fillMaxWidth()
+                        .padding(horizontal = 2.dp, vertical = 4.dp),
+                )
+                Text(
+                    text = rarityLabel(rarity),
+                    color = if (isUr) AppTheme.GoldTextOn else AppTheme.BgDeepest,
+                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.labelSmall,
+                    modifier = Modifier
+                        .align(Alignment.TopStart)
+                        .padding(3.dp)
+                        .background(AppTheme.rarityColor(rarity), RoundedCornerShape(2.dp))
+                        .padding(horizontal = 3.dp, vertical = 1.dp),
+                )
+                if (result.isNew) {
+                    Box(
+                        Modifier
+                            .align(Alignment.TopEnd)
+                            .padding(3.dp)
+                            .background(AppTheme.Gold, RoundedCornerShape(2.dp))
+                            .padding(horizontal = 3.dp, vertical = 1.dp),
+                    ) {
+                        Text(
+                            "NEW",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = AppTheme.GoldTextOn,
+                        )
+                    }
+                }
             }
+        }
+        // UR 翻开后边框呼吸（CodexCard 箔面之外的仪式层）
+        if (isUr) {
+            Box(
+                Modifier
+                    .fillMaxSize()
+                    .border(1.5.dp, AppTheme.GoldHi.copy(alpha = idleGlow), shape),
+            )
         }
     }
 }
@@ -639,7 +613,6 @@ internal fun TenCurtainCall(
         Text(
             text = title,
             style = RitualType.copy(
-                fontSize = 28.sp,
                 lineHeight = 36.sp,
                 color = AppTheme.rarityColor(maxR),
             ),
@@ -649,7 +622,6 @@ internal fun TenCurtainCall(
                 append("SSR+ × $ssrPlus")
                 if (ur > 0) append("   ·   UR × $ur")
             },
-            fontSize = 12.sp,
             color = AppTheme.Text2,
             modifier = Modifier.padding(top = 4.dp),
         )

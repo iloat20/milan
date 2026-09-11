@@ -1,5 +1,7 @@
 package com.milan.game.ui.battlepass
 
+import androidx.compose.material3.MaterialTheme
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -23,7 +25,7 @@ import com.milan.game.data.BattlePassReward
 import com.milan.game.ui.components.GlassDialog
 import com.milan.game.ui.components.GlassPanel
 import com.milan.game.ui.components.GoldButton
-import com.milan.game.ui.components.NeonButton
+import com.milan.game.ui.components.InkButton
 import com.milan.game.ui.components.PageBackground
 import com.milan.game.ui.nav.AppTopBar
 import com.milan.game.ui.theme.AppTheme
@@ -97,7 +99,7 @@ fun BattlePassScreen(
             body = "将消耗 ${BattlePassViewModel.PREMIUM_COST_HARD} 钻石解锁豪华奖励轨。是否继续？",
             buttons = {
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    NeonButton(
+                    InkButton(
                         text = "取 消",
                         onClick = { showPremiumConfirm = false },
                         modifier = Modifier.weight(1f),
@@ -138,12 +140,11 @@ private fun BattlePassHeader(
                     Text(
                         text = "纪行等级",
                         color = AppTheme.Text3,
-                        fontSize = 12.sp,
+                        style = MaterialTheme.typography.labelLarge,
                     )
                     Text(
                         text = "Lv.$level",
                         color = AppTheme.Gold,
-                        fontSize = 28.sp,
                         fontWeight = FontWeight.Bold,
                     )
                 }
@@ -163,7 +164,7 @@ private fun BattlePassHeader(
                         Text(
                             text = "购买豪华版 680💎",
                             color = Color.White,
-                            fontSize = 12.sp,
+                            style = MaterialTheme.typography.labelLarge,
                             fontWeight = FontWeight.Bold,
                         )
                     }
@@ -176,7 +177,6 @@ private fun BattlePassHeader(
                         Text(
                             text = "豪华版 ✅",
                             color = AppTheme.Gold,
-                            fontSize = 12.sp,
                             fontWeight = FontWeight.Bold,
                         )
                     }
@@ -202,7 +202,7 @@ private fun BattlePassHeader(
                 Text(
                     text = "$exp / 1000",
                     color = AppTheme.Text3,
-                    fontSize = 10.sp,
+                    style = MaterialTheme.typography.labelSmall,
                 )
             }
         }
@@ -248,7 +248,7 @@ private fun RewardRow(
                 Text(
                     text = "${reward.level}",
                     color = if (isUnlocked) AppTheme.Gold else AppTheme.Text3,
-                    fontSize = 12.sp,
+                    style = MaterialTheme.typography.labelLarge,
                     fontWeight = FontWeight.Bold,
                 )
             }
@@ -322,12 +322,11 @@ private fun RewardItem(
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
                         text = rewardItemIdToEmoji(reward.itemId),
-                        fontSize = 18.sp,
+                        style = MaterialTheme.typography.titleLarge,
                     )
                     Text(
                         text = formatRewardAmount(reward.amount),
                         color = if (isUnlocked) AppTheme.Text1 else AppTheme.Text3,
-                        fontSize = 10.sp,
                     )
                 }
             }
@@ -336,7 +335,6 @@ private fun RewardItem(
         Text(
             text = label,
             color = if (isPremium) AppTheme.Frost else AppTheme.Text3,
-            fontSize = 9.sp,
         )
     }
 }

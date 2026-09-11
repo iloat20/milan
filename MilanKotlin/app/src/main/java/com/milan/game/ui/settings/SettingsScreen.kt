@@ -42,7 +42,7 @@ import com.milan.game.ui.components.EntranceItem
 import com.milan.game.ui.components.GlassDialog
 import com.milan.game.ui.components.GlassPanel
 import com.milan.game.ui.components.GoldSwitch
-import com.milan.game.ui.components.NeonButton
+import com.milan.game.ui.components.InkButton
 import com.milan.game.ui.components.PageBackground
 import com.milan.game.ui.components.SectionTitle
 import com.milan.game.ui.nav.AppTopBar
@@ -161,13 +161,12 @@ fun SettingsScreen(
                     Column {
                         Text(
                             text = "字号",
-                            fontSize = 15.sp,
+                            style = MaterialTheme.typography.bodyLarge,
                             fontWeight = FontWeight.Bold,
                             color = AppTheme.Text1,
                         )
                         Text(
                             text = "全局文字缩放（标准 / +10% / +20%）",
-                            fontSize = 12.sp,
                             color = AppTheme.Text3,
                         )
                         Spacer(Modifier.height(8.dp))
@@ -178,7 +177,7 @@ fun SettingsScreen(
                                 2 to "+20%",
                             ).forEach { (tier, label) ->
                                 val selected = meta.fontScaleTier == tier
-                                NeonButton(
+                                InkButton(
                                     text = label,
                                     color = if (selected) AppTheme.Gold else AppTheme.Text3,
                                     onClick = { vm.setFontScaleTier(tier) },
@@ -212,7 +211,7 @@ fun SettingsScreen(
                                 )
                             }
                             Spacer(Modifier.width(12.dp))
-                            NeonButton(
+                            InkButton(
                                 text = "重 置",
                                 color = AppTheme.Danger,
                                 onClick = { showResetDialog = true },
@@ -254,19 +253,17 @@ fun SettingsScreen(
                                                 rec.characterName,
                                                 color = AppTheme.Text1,
                                                 fontWeight = FontWeight.Bold,
-                                                fontSize = 13.sp,
                                             )
                                             Spacer(Modifier.height(2.dp))
                                             Text(
                                                 rec.reasons.firstOrNull() ?: "",
                                                 color = AppTheme.Text2,
-                                                fontSize = 11.sp,
                                             )
                                         }
                                         Text(
                                             "评分 ${rec.score}",
                                             color = AppTheme.Gold,
-                                            fontSize = 12.sp,
+                                            style = MaterialTheme.typography.labelLarge,
                                         )
                                     }
                                 }
@@ -287,14 +284,12 @@ fun SettingsScreen(
                                 Text(
                                     "累计 ${g.currentPity} 抽 · 可抽 ${g.pullsAvailable} 次",
                                     color = AppTheme.Text2,
-                                    fontSize = 12.sp,
                                 )
                                 Spacer(Modifier.height(4.dp))
                                 g.recommendations.take(2).forEach { tip ->
                                     Text(
                                         "· $tip",
                                         color = AppTheme.Text1,
-                                        fontSize = 11.sp,
                                         modifier = Modifier.padding(top = 2.dp),
                                     )
                                 }
@@ -302,7 +297,7 @@ fun SettingsScreen(
                                 Text(
                                     "建议: ${g.suggestedPool}",
                                     color = AppTheme.Frost,
-                                    fontSize = 11.sp,
+                                    style = MaterialTheme.typography.labelMedium,
                                     fontWeight = FontWeight.Bold,
                                 )
                             } else {
@@ -370,8 +365,8 @@ private fun ResetSaveDialog(
             horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            NeonButton(text = "取 消", color = AppTheme.Text2, onClick = onDismiss)
-            NeonButton(text = "确 定", color = AppTheme.Danger, onClick = onConfirm)
+            InkButton(text = "取 消", color = AppTheme.Text2, onClick = onDismiss)
+            InkButton(text = "确 定", color = AppTheme.Danger, onClick = onConfirm)
         }
     }
 }
@@ -423,7 +418,7 @@ private fun CrashLogCard(onExport: () -> Unit) {
                 )
             }
             Spacer(Modifier.width(12.dp))
-            NeonButton(
+            InkButton(
                 text = "导 出",
                 color = AppTheme.FrostDeep,
                 onClick = onExport,

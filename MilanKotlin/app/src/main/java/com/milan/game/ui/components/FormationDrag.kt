@@ -1,5 +1,7 @@
 package com.milan.game.ui.components
 
+import androidx.compose.material3.MaterialTheme
+
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
@@ -180,7 +182,7 @@ fun FormationDragGhost(
             Text(
                 text = "松手入队",
                 color = AppTheme.Gold,
-                fontSize = 12.sp,
+                style = MaterialTheme.typography.labelLarge,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier
                     .align(Alignment.TopCenter)

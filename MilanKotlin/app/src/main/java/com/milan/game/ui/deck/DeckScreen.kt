@@ -57,7 +57,7 @@ import com.milan.game.ui.components.FormationDragGhost
 import com.milan.game.ui.components.formationDragSource
 import com.milan.game.ui.components.formationDropTarget
 import com.milan.game.ui.components.rememberFormationDragState
-import com.milan.game.ui.components.NeonButton
+import com.milan.game.ui.components.InkButton
 import com.milan.game.ui.components.PageBackground
 import com.milan.game.ui.components.PortraitImage
 import com.milan.game.ui.feedback.LocalFeedback
@@ -108,12 +108,36 @@ fun DeckScreen(
         Column(Modifier.fillMaxSize()) {
             AppTopBar(title = "卡 组", onBack = { onNav(NavItem.Home) })
             Spacer(Modifier.height(14.dp))
-            Text(
-                text = "已拥有  ${owned.size}  位角色",
-                style = MaterialTheme.typography.bodyLarge,
-                color = AppTheme.Text2,
-                modifier = Modifier.padding(horizontal = 18.dp),
-            )
+            // v3 §7.3：收藏册页眉——世界标签脊线
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 18.dp),
+            ) {
+                Text(
+                    text = "收藏册",
+                    style = MaterialTheme.typography.titleLarge,
+                    color = AppTheme.Text1,
+                )
+                Spacer(Modifier.width(10.dp))
+                Box(
+                    Modifier
+                        .weight(1f)
+                        .height(1.dp)
+                        .background(
+                            Brush.horizontalGradient(
+                                listOf(AppTheme.Gold.copy(alpha = 0.45f), Color.Transparent),
+                            ),
+                        ),
+                )
+                Spacer(Modifier.width(10.dp))
+                Text(
+                    text = "已拥有 ${owned.size}",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = AppTheme.Text2,
+                )
+            }
             Spacer(Modifier.height(12.dp))
 
             if (owned.isNotEmpty()) {
@@ -330,13 +354,13 @@ private fun DeckPreviewOverlay(
                     }
                 }
                 if (onToggleFormation != null) {
-                    NeonButton(
+                    InkButton(
                         text = if (inFormation) "移出编队" else "加入编队",
                         onClick = onToggleFormation,
                         modifier = Modifier.padding(top = 20.dp),
                     )
                 }
-                NeonButton(
+                InkButton(
                     text = "查看详情",
                     onClick = {
                         val id = preview.save.characterId

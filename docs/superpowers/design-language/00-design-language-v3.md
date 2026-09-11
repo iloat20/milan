@@ -362,8 +362,10 @@ GlassDialog / InkBottomSheet / InkSnackbar / InkSkeleton 保留，统一 xl 圆�
 > ✅ **2026-09-09 已完成**：新建 `ui/effects/EffectPalettes.kt` 统一取色口（MeshGradients/ParticleSystem/DynamicTheme 三处旧色表全部改为从 AppTheme/ElementTheme 派生）；圆角 token 补 xxs/xs 档并全站替换 163 处字面量（GameShapes 改由 Roundness 派生）；EmptyState 换 ImageVector、HeroButtons 清除 emoji（其余屏幕彩色 emoji 归 P2 逐页清理）；四份旧规范已加废弃标注。另提前完成 §6.1 `CodexCard(tier)` 组件（纯 Compose 实现，AGSL 全息箔留待后续增强）+ `CodexCardTest`。全量 389 测试通过。
 
 **P1 换芯（2 周）**：§8 表 4-7。验收：MaterialTheme.typography 接管全部文字；`CodexCard` 单测 + 截图基线（Robolectric 渲染测试，文本断言内容无关）；compositionLocal 化后 21 处服务写入口回归绿。
+> 🟡 **2026-09-10 大部分落地**：全 ui/ 约 250+ 处裸 `fontSize` 收敛至 `MaterialTheme.typography`（仪式标题 `RitualType`/按钮参数化字号/印章计算式等刻意保留）；`GalleryBackdrop`/`ArtifactPanel`/`GildedButton`/`InkButton` 接入并保留旧名兼容；`LocalWorldPalette` 已接主页 Hero 与角色详情氛围层；`FluidBackground` 叠世界 glow；ParticleSystem/BattleStrikeFx/CyberCards 残留硬编码改走 `AppTheme`；**抽卡单抽/十连卡面已接 `CodexCard`**；UR 叠 **AGSL 全息箔 `HolographicFoilOverlay`**（API33+，旧机 Compose sweep 兜底，触摸跟手）。编译 + `testDebugUnitTest` 全绿。**未完**：`AppTheme` object→CompositionLocal 全量、六页 §7 逐页 judge 截图验收、BattleReplay 接线、仪式音资产。
 
 **P2 页面（3 周）**：§8 表 8-9，每页合入后跑 judge 视觉验收（渲染 PNG 对照本规范 §7 逐条）。验收：六页全部达标 + 对比度预算 checklist 全过。
+> 🟡 **2026-09-10 关键路径落地**：`BattleReplayTimeline` 新建并接入 `BattleResultOverlay`（回合柱 + 元素 glyph 明细）；角色详情「对视时刻」触摸光响应 + SSR/UR 箔叠层；卡组页收藏册页眉。**待真机截图验收**与逐页像素级对照。
 
 **P3 演出（1-2 周）**：§8 表 10。验收：首抽 ≤ 3 分钟可达（新号埋点）；UR 全息箔在 96px 缩略图可辨（§5.2 原则 4）；动效减弱开关生效。
 

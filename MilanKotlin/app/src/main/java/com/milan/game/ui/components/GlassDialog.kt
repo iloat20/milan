@@ -1,5 +1,7 @@
 package com.milan.game.ui.components
 
+import androidx.compose.material3.MaterialTheme
+
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
@@ -94,7 +96,7 @@ fun GlassDialog(
                     ) {
                         Text(
                             text = title,
-                            fontSize = 18.sp,
+                            style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Bold,
                             color = AppTheme.Text1,
                         )
@@ -106,7 +108,6 @@ fun GlassDialog(
                         ) {
                             Text(
                                 text = body,
-                                fontSize = 13.sp,
                                 color = AppTheme.Text2,
                                 lineHeight = 20.sp,
                             )

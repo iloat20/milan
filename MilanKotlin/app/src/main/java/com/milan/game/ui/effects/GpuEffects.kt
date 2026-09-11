@@ -5,6 +5,7 @@ import android.os.Build
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableFloatState
@@ -19,6 +20,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.repeatOnLifecycle
 import com.milan.game.ui.theme.AppTheme
+import com.milan.game.ui.theme.LocalWorldPalette
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
 
@@ -141,17 +143,21 @@ private fun rememberShaderTime(active: Boolean, minFrameIntervalMs: Long = 0L): 
 
 /**
  * 主页程序化水墨流体背景（墨色 + 石青 + 金箔微光）。
+ * 读 [LocalWorldPalette] 叠一层世界氛围 glow（v3 §5.1：只作用于背景氛围）。
  * 低于 API 33 退化为静态墨色渐变。
  */
 @Composable
 fun FluidBackground(modifier: Modifier = Modifier, active: Boolean = true) {
+    val world = LocalWorldPalette.current
     if (!supportsRuntimeShader()) {
         Box(
-            modifier.background(
-                Brush.verticalGradient(
-                    listOf(AppTheme.BgMid, AppTheme.BgDeepest),
+            modifier
+                .background(Brush.verticalGradient(listOf(AppTheme.BgMid, AppTheme.BgDeepest)))
+                .background(
+                    Brush.verticalGradient(
+                        listOf(world.glow.copy(alpha = 0.06f), Color.Transparent, world.glow.copy(alpha = 0.03f)),
+                    ),
                 ),
-            ),
         )
         return
     }
@@ -159,9 +165,90 @@ fun FluidBackground(modifier: Modifier = Modifier, active: Boolean = true) {
     val brush = remember { ShaderBrush(shader) }
     val time = rememberShaderTime(active, minFrameIntervalMs = 45L)
 
+    Box(modifier) {
+        Canvas(Modifier.fillMaxSize()) {
+            shader.setFloatUniform("u_time", time.value)
+            shader.setFloatUniform("u_resolution", size.width, size.height)
+            drawRect(brush)
+        }
+        Box(
+            Modifier
+                .matchParentSize()
+                .background(
+                    Brush.verticalGradient(
+                        listOf(world.glow.copy(alpha = 0.05f), Color.Transparent, world.glow.copy(alpha = 0.025f)),
+                    ),
+                ),
+        )
+    }
+}
+
+// ── UR 全息箔（v3 §5.2 / §5.6）──
+
+/**
+ * 全息箔 AGSL：虹彩扫光 + 金箔偏色。仅 API 33+；旧设备由 [HolographicFoilOverlay] 自动 Compose 兜底。
+ * 性能纪律：常驻流光仅限 UR，同屏由调用方控制实例数（设计语言性能预算）。
+ */
+private const val FOIL_AGSL = """
+uniform float2 u_resolution;
+uniform float u_time;
+uniform float2 u_touch; // 0..1，触摸点（默认中心）
+half4 main(float2 fragCoord){
+    float2 uv = fragCoord / u_resolution;
+    float2 t = u_touch;
+    // 以触摸点为极心的斜向扫光
+    float2 d = uv - t;
+    float ang = atan(d.y, d.x);
+    float rad = length(d);
+    float band = fract(ang / 6.2831853 + u_time * 0.07 + rad * 0.35);
+    // 窄高光带
+    float hi = smoothstep(0.0, 0.08, band) * (1.0 - smoothstep(0.18, 0.38, band));
+    // 虹彩：金箔主调 + 轻微色相偏移
+    half3 gold = half3(0.94, 0.82, 0.48);
+    half3 teal = half3(0.55, 0.85, 0.82);
+    half3 mag = half3(0.92, 0.55, 0.72);
+    half3 tint = mix(gold, teal, sin(band * 6.283) * 0.5 + 0.5);
+    tint = mix(tint, mag, sin(band * 3.14 + 1.2) * 0.25 + 0.25);
+    float a = hi * 0.28;
+    return half4(tint, a);
+}
+"""
+
+/**
+ * UR 全息箔叠层：API33+ 走 AGSL，否则 Compose sweep 兜底。
+ * [touchX]/[touchY] 为 0..1 相对坐标；默认中心。
+ */
+@Composable
+fun HolographicFoilOverlay(
+    modifier: Modifier = Modifier,
+    active: Boolean = true,
+    touchX: Float = 0.5f,
+    touchY: Float = 0.42f,
+) {
+    if (!supportsRuntimeShader() || !active) {
+        // Compose 兜底：静态虹彩扫光（不跟帧）
+        Box(
+            modifier.background(
+                Brush.sweepGradient(
+                    0f to Color.Transparent,
+                    0.15f to AppTheme.GoldHi.copy(alpha = 0.10f),
+                    0.28f to AppTheme.Frost.copy(alpha = 0.06f),
+                    0.42f to Color.Transparent,
+                    0.62f to AppTheme.GoldHi.copy(alpha = 0.08f),
+                    0.78f to Color.Transparent,
+                    1f to Color.Transparent,
+                ),
+            ),
+        )
+        return
+    }
+    val shader = remember { RuntimeShader(FOIL_AGSL) }
+    val brush = remember { ShaderBrush(shader) }
+    val time = rememberShaderTime(active, minFrameIntervalMs = 48L)
     Canvas(modifier) {
         shader.setFloatUniform("u_time", time.value)
         shader.setFloatUniform("u_resolution", size.width, size.height)
+        shader.setFloatUniform("u_touch", touchX, touchY)
         drawRect(brush)
     }
 }

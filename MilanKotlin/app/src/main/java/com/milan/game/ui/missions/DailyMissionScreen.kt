@@ -1,5 +1,7 @@
 package com.milan.game.ui.missions
 
+import androidx.compose.material3.MaterialTheme
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -113,13 +115,12 @@ private fun ActivityProgressBar(
                 Text(
                     text = "活跃度",
                     color = AppTheme.Text1,
-                    fontSize = 14.sp,
+                    style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.Bold,
                 )
                 Text(
                     text = "$points / 100",
                     color = AppTheme.Gold,
-                    fontSize = 14.sp,
                     fontWeight = FontWeight.Bold,
                 )
             }
@@ -144,7 +145,7 @@ private fun ActivityProgressBar(
                     Text(
                         text = "$milestone",
                         color = if (claimed) AppTheme.Gold else AppTheme.Text3,
-                        fontSize = 10.sp,
+                        style = MaterialTheme.typography.labelSmall,
                     )
                 }
             }
@@ -165,7 +166,7 @@ private fun ActivityChests(
             Text(
                 text = "活跃度奖励",
                 color = AppTheme.Text1,
-                fontSize = 14.sp,
+                style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.Bold,
             )
             Spacer(Modifier.height(12.dp))
@@ -229,20 +230,18 @@ private fun ChestItem(
         ) {
             Text(
                 text = if (status.claimed) "✅" else "🎁",
-                fontSize = 24.sp,
+                style = MaterialTheme.typography.headlineMedium,
             )
         }
         Spacer(Modifier.height(4.dp))
         Text(
             text = "${status.milestone}",
             color = if (status.unlocked) AppTheme.Gold else AppTheme.Text3,
-            fontSize = 10.sp,
         )
         if (status.hardReward > 0) {
             Text(
                 text = "+${status.hardReward}💎",
                 color = AppTheme.Frost,
-                fontSize = 8.sp,
             )
         }
     }
@@ -276,7 +275,7 @@ private fun MissionCard(mission: DailyMissionStatus) {
             ) {
                 Text(
                     text = mission.def.icon,
-                    fontSize = 20.sp,
+                    style = MaterialTheme.typography.titleLarge,
                 )
             }
 
@@ -287,13 +286,11 @@ private fun MissionCard(mission: DailyMissionStatus) {
                 Text(
                     text = mission.def.title,
                     color = if (mission.completed) AppTheme.Gold else AppTheme.Text1,
-                    fontSize = 13.sp,
                     fontWeight = FontWeight.Medium,
                 )
                 Text(
                     text = mission.def.description,
                     color = AppTheme.Text3,
-                    fontSize = 11.sp,
                 )
                 Spacer(Modifier.height(6.dp))
                 // 进度条
@@ -313,7 +310,7 @@ private fun MissionCard(mission: DailyMissionStatus) {
                     Text(
                         text = "${mission.progress}/${mission.def.targetCount}",
                         color = AppTheme.Text3,
-                        fontSize = 10.sp,
+                        style = MaterialTheme.typography.labelSmall,
                     )
                 }
             }
@@ -332,7 +329,6 @@ private fun MissionCard(mission: DailyMissionStatus) {
                 Text(
                     text = "+${mission.def.activityReward}",
                     color = if (mission.completed) AppTheme.Gold else AppTheme.Text3,
-                    fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
                 )
             }

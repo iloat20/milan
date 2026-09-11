@@ -1,5 +1,7 @@
 package com.milan.game.ui.nav
 
+import androidx.compose.material3.MaterialTheme
+
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
@@ -184,7 +186,7 @@ private fun NavCell(
             )
             Text(
                 text = item.label,
-                fontSize = 10.sp,
+                style = MaterialTheme.typography.labelSmall,
                 fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
                 color = labelColor,
                 textAlign = TextAlign.Center,

@@ -21,6 +21,7 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import com.milan.game.ui.theme.AppTheme
 import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.random.Random
@@ -297,10 +298,11 @@ fun BattleHitSparks(
     active: Boolean,
     modifier: Modifier = Modifier
 ) {
+    // v3：打击火花从权威色板派生（金箔/朱砂），禁止原神风硬编码
     val colors = if (isCritical) {
-        listOf(Color(0xFFFFD700), Color(0xFFFF4500), Color.White)
+        listOf(AppTheme.GoldHi, AppTheme.SealRed, Color.White)
     } else {
-        listOf(Color(0xFFFF6347), Color(0xFFFFA500), Color.White)
+        listOf(AppTheme.SealRed, AppTheme.Warning, Color.White)
     }
 
     val config = EmitterConfig(

@@ -1,5 +1,7 @@
 package com.milan.game.ui.gacha
 
+import androidx.compose.material3.MaterialTheme
+
 import android.os.Build
 import android.view.HapticFeedbackConstants
 import androidx.activity.compose.BackHandler
@@ -63,7 +65,7 @@ import com.milan.game.services.PullResult
 import com.milan.game.ui.components.GlassDialog
 import com.milan.game.ui.components.GoldButton
 import com.milan.game.ui.feedback.LocalFeedback
-import com.milan.game.ui.components.NeonButton
+import com.milan.game.ui.components.InkButton
 import com.milan.game.ui.components.PageBackground
 import com.milan.game.ui.components.PortraitImage
 import com.milan.game.ui.components.PortraitTarget
@@ -170,7 +172,7 @@ fun GachaScreen(
             Row(Modifier.statusBarsPadding().fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     text = "丹青寻访",
-                    fontSize = 22.sp,
+                    style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.Bold,
                     color = AppTheme.Gold,
                     letterSpacing = 3.sp,
@@ -188,7 +190,6 @@ fun GachaScreen(
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                 Text(
                                     text = p.displayName.ifEmpty { "常驻卡池" },
-                                    fontSize = 12.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = if (selected) AppTheme.GoldTextOn else AppTheme.Text2,
                                     modifier = Modifier
@@ -241,7 +242,7 @@ fun GachaScreen(
 
             Text(
                 text = "─ 敕令開陣 ─",
-                fontSize = 11.sp,
+                style = MaterialTheme.typography.labelMedium,
                 color = AppTheme.Gold.copy(alpha = 0.65f),
                 letterSpacing = 4.sp,
                 modifier = Modifier.align(Alignment.CenterHorizontally),
@@ -280,7 +281,7 @@ fun GachaScreen(
                     body = "将消耗 ${p.tenCost} 星尘进行十次召唤。是否继续？",
                     buttons = {
                         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                            NeonButton(
+                            InkButton(
                                 text = "取 消",
                                 onClick = { showTenConfirm = false },
                                 modifier = Modifier.weight(1f),
@@ -305,7 +306,7 @@ fun GachaScreen(
             ) {
                 Text(
                     text = summary.ifEmpty { "尚未寻访 · 机缘未至" },
-                    fontSize = 11.sp,
+                    style = MaterialTheme.typography.labelMedium,
                     color = AppTheme.Text2,
                     modifier = Modifier.weight(1f),
                     maxLines = 2,
@@ -315,7 +316,6 @@ fun GachaScreen(
                     val shareInteraction = remember { MutableInteractionSource() }
                     Text(
                         text = "分享",
-                        fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
                         color = AppTheme.Gold,
                         modifier = Modifier
@@ -329,7 +329,7 @@ fun GachaScreen(
                 }
                 Text(
                     text = "历 史 ›",
-                    fontSize = 12.sp,
+                    style = MaterialTheme.typography.labelLarge,
                     fontWeight = FontWeight.Bold,
                     color = AppTheme.Frost,
                     modifier = Modifier
@@ -475,7 +475,7 @@ private fun PoolHeroCard(
                     .background(AppTheme.Gold)
                     .padding(horizontal = 6.dp, vertical = 2.dp),
             ) {
-                Text("UP", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = AppTheme.GoldTextOn)
+                Text("UP", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = AppTheme.GoldTextOn)
             }
             Box(
                 Modifier
@@ -489,7 +489,6 @@ private fun PoolHeroCard(
             Text(
                 text = featured?.displayName ?: "典藏",
                 color = Color.White,
-                fontSize = 13.sp,
                 fontWeight = FontWeight.Bold,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
@@ -502,12 +501,12 @@ private fun PoolHeroCard(
         Column(Modifier.weight(1f)) {
             Text(
                 text = pool.displayName.ifEmpty { "常驻卡池" },
-                fontSize = 15.sp,
+                style = MaterialTheme.typography.bodyLarge,
                 fontWeight = FontWeight.Bold,
                 color = AppTheme.Gold,
             )
             Spacer(Modifier.height(6.dp))
-            Text(ratesLabel(pool), fontSize = 11.sp, color = AppTheme.Text2, lineHeight = 15.sp)
+            Text(ratesLabel(pool), style = MaterialTheme.typography.labelMedium, color = AppTheme.Text2, lineHeight = 15.sp)
             if (pool.hardPity > 0) {
                 Spacer(Modifier.height(10.dp))
                 val softStart = EconomyFormulas.softPityStart(pool.hardPity)
@@ -536,7 +535,7 @@ private fun PoolHeroCard(
                             nearSoft -> append(" · 差 ${softStart - pity} 抽进软保底")
                         }
                     },
-                    fontSize = 11.sp,
+                    style = MaterialTheme.typography.labelMedium,
                     color = pityColor,
                 )
             }
@@ -544,7 +543,6 @@ private fun PoolHeroCard(
                 Spacer(Modifier.height(6.dp))
                 Text(
                     text = "上次歪了 · 下次必中",
-                    fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
                     color = AppTheme.Frost,
                 )
@@ -567,12 +565,12 @@ private fun PullCtaButton(
         if (primary) {
             GoldButton(text = label, modifier = Modifier.fillMaxWidth(), enabled = enabled, onClick = onClick)
         } else {
-            NeonButton(text = label, modifier = Modifier.fillMaxWidth(), enabled = enabled, onClick = onClick)
+            InkButton(text = label, modifier = Modifier.fillMaxWidth(), enabled = enabled, onClick = onClick)
         }
         Spacer(Modifier.height(4.dp))
         Text(
             text = "星尘 $cost",
-            fontSize = 11.sp,
+            style = MaterialTheme.typography.labelMedium,
             color = if (enabled) AppTheme.Text2 else AppTheme.Text3,
         )
     }
@@ -591,14 +589,13 @@ private fun ResultGridHeader(
     Row(modifier = modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Text(
             text = "本次 ${results.size} 抽",
-            fontSize = 13.sp,
             fontWeight = FontWeight.Bold,
             color = AppTheme.Gold,
         )
         Spacer(Modifier.width(10.dp))
         Text(
             text = "最高 ${AppTheme.rarityName(best)}",
-            fontSize = 12.sp,
+            style = MaterialTheme.typography.labelLarge,
             fontWeight = FontWeight.Bold,
             color = AppTheme.rarityColor(best),
         )
@@ -608,7 +605,6 @@ private fun ResultGridHeader(
             if (c > 0) {
                 Text(
                     text = "${"★".repeat(r)}×$c",
-                    fontSize = 11.sp,
                     color = AppTheme.rarityColor(r),
                     modifier = Modifier.padding(start = 6.dp),
                 )
@@ -746,10 +742,9 @@ private fun GachaChip(
             }
         }
         Spacer(Modifier.height(6.dp))
-        Text(AppTheme.rarityName(r.rarity), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = rc)
+        Text(AppTheme.rarityName(r.rarity), style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold, color = rc)
         Text(
             text = r.characterName,
-            fontSize = 11.sp,
             color = AppTheme.Text1,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,

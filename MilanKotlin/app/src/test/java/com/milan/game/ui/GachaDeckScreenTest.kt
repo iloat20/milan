@@ -351,6 +351,6 @@ class GachaDeckScreenTest {
                 }
             }
         }
-        composeRule.onNodeWithText("已拥有  0  位角色").assertIsDisplayed()
+        composeRule.onNodeWithText("已拥有 0").assertIsDisplayed()
     }
 }

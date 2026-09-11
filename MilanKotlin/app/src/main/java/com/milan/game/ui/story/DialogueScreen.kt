@@ -1,5 +1,7 @@
 package com.milan.game.ui.story
 
+import androidx.compose.material3.MaterialTheme
+
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -166,7 +168,7 @@ fun DialogueScreen(
                             ),
                         contentAlignment = Alignment.Center,
                     ) {
-                        Text(text = "📖", fontSize = 36.sp)
+                        Text(text = "📖", style = MaterialTheme.typography.displayLarge)
                     }
                 }
             }
@@ -194,7 +196,7 @@ fun DialogueScreen(
                     Text(
                         text = if (autoPlay) "⏸ 自动" else "▶ 自动",
                         color = if (autoPlay) AppTheme.Gold else AppTheme.Text3,
-                        fontSize = 11.sp,
+                        style = MaterialTheme.typography.labelMedium,
                     )
                 }
 
@@ -209,7 +211,6 @@ fun DialogueScreen(
                         Text(
                             text = "${autoPlaySpeed}秒/句",
                             color = AppTheme.Text2,
-                            fontSize = 11.sp,
                         )
                     }
                 }
@@ -224,7 +225,7 @@ fun DialogueScreen(
                     Text(
                         text = "⏭ 跳过",
                         color = AppTheme.Danger,
-                        fontSize = 11.sp,
+                        style = MaterialTheme.typography.labelMedium,
                     )
                 }
             }
@@ -258,7 +259,7 @@ fun DialogueScreen(
                             Text(
                                 text = "${speed}秒",
                                 color = if (autoPlaySpeed == speed) AppTheme.Gold else AppTheme.Text3,
-                                fontSize = 11.sp,
+                                style = MaterialTheme.typography.labelMedium,
                             )
                         }
                     }
@@ -314,7 +315,7 @@ fun DialogueScreen(
                             Text(
                                 text = getSpeakerName(currentLine.speakerId, characterOf),
                                 color = getSpeakerColor(currentLine.speakerId, characterOf),
-                                fontSize = 13.sp,
+                                style = MaterialTheme.typography.bodyMedium,
                                 fontWeight = FontWeight.Bold,
                             )
                         }
@@ -325,7 +326,6 @@ fun DialogueScreen(
                     Text(
                         text = displayedText,
                         color = AppTheme.Text1,
-                        fontSize = 15.sp,
                         lineHeight = 22.sp,
                         modifier = Modifier.fillMaxWidth(),
                     )
@@ -378,7 +378,7 @@ fun DialogueScreen(
                         Text(
                             text = if (isTyping) "点击跳过..." else "点击继续...",
                             color = AppTheme.Text3,
-                            fontSize = 11.sp,
+                            style = MaterialTheme.typography.labelMedium,
                             textAlign = TextAlign.End,
                             modifier = Modifier.fillMaxWidth(),
                         )
@@ -401,7 +401,7 @@ fun DialogueScreen(
             Text(
                 text = "← 返回",
                 color = AppTheme.Text2,
-                fontSize = 12.sp,
+                style = MaterialTheme.typography.labelLarge,
             )
         }
 
@@ -416,7 +416,6 @@ fun DialogueScreen(
             Text(
                 text = "${currentIndex + 1} / ${dialogue.size}",
                 color = AppTheme.Text2,
-                fontSize = 12.sp,
             )
         }
 
@@ -465,21 +464,19 @@ private fun ChoiceCard(
             Text(
                 text = "▸",
                 color = AppTheme.Gold,
-                fontSize = 14.sp,
+                style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.Bold,
             )
             Spacer(Modifier.width(8.dp))
             Text(
                 text = choice.text,
                 color = AppTheme.Text1,
-                fontSize = 13.sp,
                 modifier = Modifier.weight(1f),
             )
             if (choice.affinityBonus > 0) {
                 Text(
                     text = "+${choice.affinityBonus}",
                     color = AppTheme.Frost,
-                    fontSize = 11.sp,
                 )
             }
         }

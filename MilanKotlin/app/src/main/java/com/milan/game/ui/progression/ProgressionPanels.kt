@@ -1,5 +1,7 @@
 package com.milan.game.ui.progression
 
+import androidx.compose.material3.MaterialTheme
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -38,7 +40,7 @@ import com.milan.game.services.TalentNodeData
 import com.milan.game.OwnedCharacterView
 import com.milan.game.ui.components.GlassPanel
 import com.milan.game.ui.components.GoldButton
-import com.milan.game.ui.components.NeonButton
+import com.milan.game.ui.components.InkButton
 import com.milan.game.ui.components.WoWDivider
 import com.milan.game.ui.theme.AppTheme
 import java.util.Locale
@@ -81,10 +83,9 @@ internal fun ResourceBar(
 @Composable
 private fun Chip(glyph: String, col: Color, value: String) {
     Row(verticalAlignment = Alignment.CenterVertically) {
-        Text(glyph, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = col)
+        Text(glyph, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = col)
         Text(
             value,
-            fontSize = 15.sp,
             fontWeight = FontWeight.Bold,
             color = col,
             style = Tabular,
@@ -116,14 +117,12 @@ internal fun LevelPanel(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     "Lv.${save.level}",
-                    fontSize = 30.sp,
+                    style = MaterialTheme.typography.displayMedium.merge(Tabular),
                     fontWeight = FontWeight.Bold,
                     color = AppTheme.Gold,
-                    style = Tabular,
                 )
                 Text(
                     "/ $cap",
-                    fontSize = 14.sp,
                     color = AppTheme.Text2,
                     style = Tabular,
                     modifier = Modifier.padding(start = 8.dp),
@@ -131,7 +130,6 @@ internal fun LevelPanel(
                 Spacer(Modifier.weight(1f))
                 Text(
                     "$cur / $need EXP",
-                    fontSize = 12.sp,
                     color = AppTheme.Text3,
                     style = Tabular,
                 )
@@ -214,7 +212,7 @@ private fun RowScope.LevelButton(
                 enabled = enabled,
             )
         } else {
-            NeonButton(
+            InkButton(
                 text = text,
                 modifier = Modifier.fillMaxWidth(),
                 onClick = onClick,
@@ -252,14 +250,13 @@ internal fun AscendPanel(
                 Text(
                     if (atMax) "突破阶段 ${save.stage} / $defMaxStage（已满）"
                     else "突破阶段 ${save.stage} / $defMaxStage",
-                    fontSize = 18.sp,
+                    style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
                     color = AppTheme.Frost,
                 )
                 Spacer(Modifier.weight(1f))
                 Text(
                     if (atMax) "—" else "❖ ${n0(aFrag)}  +  ✦ ${n0(aSoft)}",
-                    fontSize = 13.sp,
                     color = AppTheme.Text2,
                     style = Tabular,
                 )
@@ -307,14 +304,13 @@ internal fun StarPanel(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     if (starMax) "$filled 满星" else "$filled$empty  ${save.stars}/$defMaxStars",
-                    fontSize = 18.sp,
+                    style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
                     color = AppTheme.Frost,
                 )
                 Spacer(Modifier.weight(1f))
                 Text(
                     if (starMax) "—" else "❖ ${n0(sFrag)}",
-                    fontSize = 13.sp,
                     color = AppTheme.Text2,
                     style = Tabular,
                 )
@@ -400,11 +396,10 @@ internal fun StatsPanel(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.padding(top = 7.dp, bottom = 7.dp),
                 ) {
-                    Text(r.cn, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = AppTheme.Text2)
+                    Text(r.cn, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold, color = AppTheme.Text2)
                     Spacer(Modifier.weight(1f))
                     Text(
                         n0(r.value),
-                        fontSize = 17.sp,
                         fontWeight = FontWeight.Bold,
                         color = AppTheme.Text1,
                         style = Tabular,
@@ -420,7 +415,6 @@ internal fun StatsPanel(
                 if (parts.isNotEmpty()) {
                     Text(
                         parts.joinToString("   ·   "),
-                        fontSize = 12.sp,
                         color = AppTheme.Frost,
                         style = Tabular,
                     )
@@ -464,10 +458,9 @@ internal fun TalentPanel(
     GlassPanel(modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 14.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("天赋点", fontSize = 13.sp, color = AppTheme.Text2)
+                Text("天赋点", style = MaterialTheme.typography.bodyMedium, color = AppTheme.Text2)
                 Text(
                     "× ${save.unspentPoints}",
-                    fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
                     color = AppTheme.Gold,
                     style = Tabular,
@@ -487,7 +480,6 @@ internal fun TalentPanel(
                     ) {
                         Text(
                             branchName(br),
-                            fontSize = 13.sp,
                             fontWeight = FontWeight.Bold,
                             color = col,
                             textAlign = TextAlign.Center,
@@ -569,14 +561,13 @@ private fun TalentNode(
     ) {
         Text(
             node.displayName + if (allocated) " ✓" else "",
-            fontSize = 13.sp,
+            style = MaterialTheme.typography.bodyMedium,
             fontWeight = FontWeight.Bold,
             color = if (allocated || canAlloc) col else AppTheme.Text3,
             textAlign = TextAlign.Center,
         )
         Text(
             "耗费 ${node.cost}",
-            fontSize = 11.sp,
             color = if (allocated || canAlloc) AppTheme.Text2 else AppTheme.Text3,
             style = Tabular,
             textAlign = TextAlign.Center,

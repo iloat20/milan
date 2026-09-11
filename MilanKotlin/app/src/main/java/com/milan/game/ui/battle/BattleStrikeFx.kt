@@ -16,6 +16,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import com.milan.game.domain.battle.StrikeEvent
 import com.milan.game.infrastructure.MilanAudio
+import com.milan.game.ui.theme.AppTheme
 import com.milan.game.ui.theme.ElementTheme
 import kotlin.math.PI
 import kotlin.math.sin
@@ -184,15 +185,17 @@ fun BattleHurtFlash(
         val w = size.width
         val h = size.height
         val stroke = h * 0.08f
-        drawRect(Color(0xFFE34234).copy(alpha = a), size = Size(w, stroke))
+        // v3：危险 vignette 统一朱砂行动色
+        val vignette = AppTheme.SealRed
+        drawRect(vignette.copy(alpha = a), size = Size(w, stroke))
         drawRect(
-            Color(0xFFE34234).copy(alpha = a),
+            vignette.copy(alpha = a),
             topLeft = Offset(0f, h - stroke),
             size = Size(w, stroke),
         )
-        drawRect(Color(0xFFE34234).copy(alpha = a), size = Size(stroke, h))
+        drawRect(vignette.copy(alpha = a), size = Size(stroke, h))
         drawRect(
-            Color(0xFFE34234).copy(alpha = a),
+            vignette.copy(alpha = a),
             topLeft = Offset(w - stroke, 0f),
             size = Size(stroke, h),
         )

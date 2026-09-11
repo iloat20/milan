@@ -1,5 +1,7 @@
 package com.milan.game.ui.characters
 
+import androidx.compose.material3.MaterialTheme
+
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
@@ -59,6 +61,7 @@ import com.milan.game.ui.components.SectionTitle
 import com.milan.game.ui.components.SubPageHero
 import com.milan.game.ui.theme.AppTheme
 import com.milan.game.ui.theme.ElementTheme
+import com.milan.game.ui.theme.LocalWorldPalette
 import com.milan.game.ui.theme.WorldTheme
 import kotlin.math.max
 
@@ -166,6 +169,10 @@ fun CharacterDetailScreen(
         label = "heroScale",
     )
 
+    // v3 §5.1：详情页随角色世界渐变氛围层（GalleryBackdrop 读 LocalWorldPalette）
+    androidx.compose.runtime.CompositionLocalProvider(
+        LocalWorldPalette provides world,
+    ) {
     PageBackground(modifier = modifier) {
         Column(
             Modifier
@@ -233,7 +240,7 @@ fun CharacterDetailScreen(
                         ) {
                             Text(
                                 text = label,
-                                fontSize = 13.sp,
+                                style = MaterialTheme.typography.bodyMedium,
                                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
                                 color = if (isSelected) AppTheme.Gold else AppTheme.Text2,
                             )
@@ -260,7 +267,7 @@ fun CharacterDetailScreen(
                                 if (def.weapon.isNotBlank()) {
                                     WeaponPanel(def = def, view = view, owned = owned, rarityCol = rarityCol, worldColor = world)
                                 } else {
-                                    Text("暂无专属武器", fontSize = 14.sp, color = AppTheme.Text3)
+                                    Text("暂无专属武器", style = MaterialTheme.typography.bodyMedium, color = AppTheme.Text3)
                                 }
                             }
                             1 -> {
@@ -298,5 +305,6 @@ fun CharacterDetailScreen(
 
             Spacer(Modifier.height(24.dp))
         }
+    }
     }
 }

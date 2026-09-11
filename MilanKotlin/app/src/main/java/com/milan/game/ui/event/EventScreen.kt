@@ -1,5 +1,7 @@
 package com.milan.game.ui.event
 
+import androidx.compose.material3.MaterialTheme
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -108,7 +110,7 @@ private fun EventCurrencyBar(balances: Map<String, Int>) {
                 Text(
                     text = "${currencyLabel(type)} $amount",
                     color = AppTheme.Gold,
-                    fontSize = 12.sp,
+                    style = MaterialTheme.typography.labelLarge,
                     fontWeight = FontWeight.Bold,
                 )
             }
@@ -144,14 +146,13 @@ private fun EventCard(
                     Text(
                         text = event.name.ifEmpty { event.eventId },
                         color = AppTheme.Text1,
-                        fontSize = 14.sp,
+                        style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.Bold,
                     )
                     Spacer(Modifier.height(4.dp))
                     Text(
                         text = event.description.ifEmpty { "限时活动" },
                         color = AppTheme.Text2,
-                        fontSize = 11.sp,
                     )
                 }
                 EventCountdown(endTime = event.endTime)
@@ -164,7 +165,6 @@ private fun EventCard(
                     Text(
                         text = "已签 ${card.signInProgress} / ${event.signInDays.coerceAtLeast(1)} 天",
                         color = AppTheme.Text2,
-                        fontSize = 12.sp,
                         modifier = Modifier.weight(1f),
                     )
                     ActionChip(
@@ -181,7 +181,7 @@ private fun EventCard(
                 Text(
                     text = "活动任务",
                     color = AppTheme.Gold,
-                    fontSize = 12.sp,
+                    style = MaterialTheme.typography.labelLarge,
                     fontWeight = FontWeight.Bold,
                 )
                 card.tasks.forEach { taskUi ->
@@ -194,7 +194,6 @@ private fun EventCard(
                         Text(
                             text = taskUi.task.name.ifEmpty { taskUi.task.taskId },
                             color = AppTheme.Text2,
-                            fontSize = 11.sp,
                             modifier = Modifier.weight(1f),
                         )
                         Text(
@@ -205,7 +204,7 @@ private fun EventCard(
                                 taskUi.reachedTarget -> AppTheme.Success
                                 else -> AppTheme.Text3
                             },
-                            fontSize = 10.sp,
+                            style = MaterialTheme.typography.labelSmall,
                         )
                         if (taskUi.canClaim) {
                             Spacer(Modifier.width(8.dp))
@@ -225,7 +224,6 @@ private fun EventCard(
                 Text(
                     text = "活动商店",
                     color = AppTheme.Gold,
-                    fontSize = 12.sp,
                     fontWeight = FontWeight.Bold,
                 )
                 card.shop.forEach { shopUi ->
@@ -239,12 +237,11 @@ private fun EventCard(
                             Text(
                                 text = shopUi.item.name.ifEmpty { shopUi.item.itemId },
                                 color = AppTheme.Text2,
-                                fontSize = 11.sp,
+                                style = MaterialTheme.typography.labelMedium,
                             )
                             Text(
                                 text = "价格 ${shopUi.item.price} · 已兑 ${shopUi.redeemed}/${shopUi.item.maxRedemptions}",
                                 color = AppTheme.Text3,
-                                fontSize = 10.sp,
                             )
                         }
                         val canRedeem = shopUi.redeemed < shopUi.item.maxRedemptions
@@ -279,7 +276,7 @@ private fun ActionChip(
         Text(
             text = label,
             color = if (enabled) AppTheme.Gold else AppTheme.Text3,
-            fontSize = 11.sp,
+            style = MaterialTheme.typography.labelMedium,
             fontWeight = FontWeight.Bold,
         )
     }
@@ -296,7 +293,6 @@ private fun EventCountdown(endTime: Long) {
     Text(
         text = text,
         color = if (days <= 1) AppTheme.Danger else AppTheme.Text3,
-        fontSize = 10.sp,
     )
 }
 
@@ -313,14 +309,13 @@ private fun EmptyEventCard() {
             Text(
                 text = "暂无活动",
                 color = AppTheme.Text1,
-                fontSize = 14.sp,
+                style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.Bold,
             )
             Spacer(Modifier.height(8.dp))
             Text(
                 text = "精彩活动即将开启，敬请期待！",
                 color = AppTheme.Text3,
-                fontSize = 12.sp,
             )
         }
     }

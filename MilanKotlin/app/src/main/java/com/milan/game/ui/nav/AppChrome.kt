@@ -1,5 +1,7 @@
 package com.milan.game.ui.nav
 
+import androidx.compose.material3.MaterialTheme
+
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.SizeTransform
 import androidx.compose.animation.core.InfiniteRepeatableSpec
@@ -91,7 +93,7 @@ fun AppTopBar(
         ) {
             Text(
                 text = "‹",
-                fontSize = 24.sp,
+                style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Bold,
                 color = AppTheme.Gold,
             )
@@ -117,24 +119,22 @@ fun AppTopBar(
             )
             Text(
                 text = t,
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold,
-                color = AppTheme.Text1,
-                letterSpacing = 0.5.sp,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.graphicsLayer {
-                    // 水墨呼吸：透明度在 0.84~1.0 间波动，替代原 translationY 浮动
-                    // （translate 浮动会让标题与底栏重叠产生闪烁，alpha 更稳定）
-                    alpha = 0.92f + sin(phase) * 0.08f
-                },
-                style = TextStyle(
+                style = MaterialTheme.typography.titleLarge.copy(
                     shadow = Shadow(
                         color = AppTheme.Gold.copy(alpha = 0.6f),
                         blurRadius = 8f,
                         offset = androidx.compose.ui.geometry.Offset(0f, 2f),
                     ),
                 ),
+                fontWeight = FontWeight.Bold,
+                color = AppTheme.Text1,
+                letterSpacing = 0.5.sp,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.graphicsLayer {
+                    // 水墨呼吸：透明度在 0.84~1.0 间波动
+                    alpha = 0.92f + sin(phase) * 0.08f
+                },
             )
         }
         if (showResource) {
@@ -191,14 +191,13 @@ private fun Chip(glyph: String, value: Int, color: Color) {
     ) {
         Text(
             text = glyph,
-            fontSize = 14.sp,
+            style = MaterialTheme.typography.bodyMedium,
             fontWeight = FontWeight.Bold,
             color = color,
             modifier = Modifier.padding(end = 4.dp),
         )
         Text(
             text = formatCount(animated),
-            fontSize = 14.sp,
             fontWeight = FontWeight.Bold,
             color = AppTheme.Text1,
         )

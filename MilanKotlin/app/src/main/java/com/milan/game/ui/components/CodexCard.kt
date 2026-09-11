@@ -18,9 +18,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithContent
@@ -34,6 +37,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.milan.game.ui.effects.HolographicFoilOverlay
 import com.milan.game.ui.theme.AppTheme
 import kotlinx.coroutines.launch
 
@@ -106,6 +110,9 @@ fun CodexCard(
     val scale = remember { Animatable(1f) }
     val scope = rememberCoroutineScope()
     val currentOnClick by rememberUpdatedState(onClick)
+    // UR 全息箔：触摸点跟随（0..1 相对坐标）
+    var foilX by remember { mutableFloatStateOf(0.5f) }
+    var foilY by remember { mutableFloatStateOf(0.42f) }
 
     val innerShape = RoundedCornerShape(CardMetrics.Corner - edge)
 
@@ -124,8 +131,8 @@ fun CodexCard(
                 Brush.verticalGradient(
                     listOf(
                         rarityCol.copy(alpha = 0.22f),
-                        Color(0xFF0E1016),
-                        Color(0xFF08090C),
+                        AppTheme.SurfaceNested,
+                        AppTheme.BgDeepest,
                     )
                 ),
                 shape,
@@ -134,7 +141,10 @@ fun CodexCard(
                 if (currentOnClick != null) {
                     Modifier.pointerInput(Unit) {
                         detectTapGestures(
-                            onPress = {
+                            onPress = { offset ->
+                                // 光响应：按住时箔光跟手
+                                foilX = (offset.x / size.width.toFloat().coerceAtLeast(1f)).coerceIn(0f, 1f)
+                                foilY = (offset.y / size.height.toFloat().coerceAtLeast(1f)).coerceIn(0f, 1f)
                                 scope.launch { scale.animateTo(0.965f, spring()) }
                                 tryAwaitRelease()
                                 scope.launch { scale.animateTo(1f, spring()) }
@@ -203,6 +213,15 @@ fun CodexCard(
                 },
         ) {
             content()
+            // UR 全息箔叠层（画心之上，不挡点击语义——外层已有 pointerInput）
+            if (tier >= 4) {
+                HolographicFoilOverlay(
+                    modifier = Modifier.fillMaxSize(),
+                    active = true,
+                    touchX = foilX,
+                    touchY = foilY,
+                )
+            }
         }
     }
 }

@@ -1,5 +1,7 @@
 package com.milan.game.ui.tutorial
 
+import androidx.compose.material3.MaterialTheme
+
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -134,14 +136,13 @@ fun TutorialOverlay(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
                         text = copy.title,
-                        fontSize = 16.sp,
+                        style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = AppTheme.Gold,
                     )
                     Spacer(Modifier.weight(1f))
                     Text(
                         text = "跳过",
-                        fontSize = 12.sp,
                         color = AppTheme.Text3,
                         modifier = Modifier.clickable {
                             composableScope.launch { vm.skip() }
@@ -151,7 +152,6 @@ fun TutorialOverlay(
                 Spacer(Modifier.height(8.dp))
                 Text(
                     text = copy.body,
-                    fontSize = 13.sp,
                     color = AppTheme.Text1,
                     lineHeight = 18.sp,
                 )

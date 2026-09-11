@@ -108,7 +108,7 @@ fun FormationBar(
                     if (ch == null) {
                         Text(
                             text = "＋",
-                            fontSize = 18.sp,
+                            style = MaterialTheme.typography.titleLarge,
                             color = if (highlight) AppTheme.Gold else AppTheme.Text3,
                         )
                     } else {
@@ -140,11 +140,10 @@ fun FormationBar(
                                 .padding(horizontal = 4.dp, vertical = 3.dp),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
-                            Text(text = ei.glyph, fontSize = 9.sp, color = ei.glow)
+                            Text(text = ei.glyph, style = MaterialTheme.typography.labelSmall, color = ei.glow)
                             Spacer(Modifier.width(2.dp))
                             Text(
                                 text = ch.name,
-                                fontSize = 9.sp,
                                 color = AppTheme.Text1,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,

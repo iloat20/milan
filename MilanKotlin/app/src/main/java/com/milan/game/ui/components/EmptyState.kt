@@ -1,5 +1,7 @@
 package com.milan.game.ui.components
 
+import androidx.compose.material3.MaterialTheme
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -57,7 +59,7 @@ fun EmptyState(
         Text(
             text = title,
             color = AppTheme.Text2,
-            fontSize = 16.sp,
+            style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Medium,
             textAlign = TextAlign.Center,
         )
@@ -67,14 +69,13 @@ fun EmptyState(
             Text(
                 text = subtitle,
                 color = AppTheme.Text3,
-                fontSize = 13.sp,
                 textAlign = TextAlign.Center,
             )
         }
 
         if (actionText != null && onAction != null) {
             Spacer(Modifier.height(AppTheme.Spacing.lg))
-            NeonButton(
+            InkButton(
                 text = actionText,
                 onClick = onAction,
                 color = AppTheme.Gold,

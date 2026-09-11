@@ -1,5 +1,7 @@
 package com.milan.game.ui.components
 
+import androidx.compose.material3.MaterialTheme
+
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.Spring
@@ -107,18 +109,16 @@ fun HealthBar(
             Spacer(Modifier.width(6.dp))
             Text(
                 text = "$currentHp/$maxHp",
-                fontSize = 10.sp,
+                style = MaterialTheme.typography.labelSmall.copy(fontFeatureSettings = "tnum"),
                 fontWeight = FontWeight.Bold,
                 color = AppTheme.Text2,
-                style = TextStyle(fontFeatureSettings = "tnum"),
             )
             if (shield > 0) {
                 Text(
                     text = " +$shield",
-                    fontSize = 10.sp,
                     fontWeight = FontWeight.Bold,
                     color = AppTheme.Frost,
-                    style = TextStyle(fontFeatureSettings = "tnum"),
+                    style = MaterialTheme.typography.labelMedium.copy(fontFeatureSettings = "tnum"),
                 )
             }
         }
@@ -258,13 +258,12 @@ fun LabeledHealthBar(
         ) {
             Text(
                 text = label,
-                fontSize = 11.sp,
+                style = MaterialTheme.typography.labelMedium,
                 color = AppTheme.Text2,
             )
             Spacer(Modifier.weight(1f))
             Text(
                 text = "$currentHp/$maxHp",
-                fontSize = 10.sp,
                 fontWeight = FontWeight.Bold,
                 color = AppTheme.Text1,
                 style = TextStyle(fontFeatureSettings = "tnum"),
@@ -272,7 +271,6 @@ fun LabeledHealthBar(
             if (shield > 0) {
                 Text(
                     text = " 🛡$shield",
-                    fontSize = 10.sp,
                     color = AppTheme.Frost,
                 )
             }

@@ -1,5 +1,7 @@
 package com.milan.game.ui.gacha
 
+import androidx.compose.material3.MaterialTheme
+
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
@@ -524,7 +526,7 @@ fun CyberRevealLayer(
         Text(
             text = "点击跳过",
             color = Color.White.copy(alpha = 0.38f),
-            fontSize = 12.sp,
+            style = MaterialTheme.typography.labelLarge,
             fontWeight = FontWeight.Medium,
             modifier = Modifier
                 .align(Alignment.BottomEnd)

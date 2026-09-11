@@ -1,5 +1,7 @@
 package com.milan.game.ui.characters
 
+import androidx.compose.material3.MaterialTheme
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -64,7 +66,7 @@ internal fun EquipmentPanel(
         Column(Modifier.padding(horizontal = 14.dp, vertical = 12.dp)) {
             Text(
                 text = "穿戴槽位",
-                fontSize = 13.sp,
+                style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.Bold,
                 color = AppTheme.Gold,
             )
@@ -72,7 +74,6 @@ internal fun EquipmentPanel(
             if (!owned) {
                 Text(
                     text = "尚未拥有该角色，无法穿戴装备。",
-                    fontSize = 12.sp,
                     color = AppTheme.Text3,
                 )
             } else {
@@ -89,7 +90,7 @@ internal fun EquipmentPanel(
             Spacer(Modifier.height(12.dp))
             Text(
                 text = "背包装备（${bag.size}）",
-                fontSize = 13.sp,
+                style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.Bold,
                 color = AppTheme.Gold,
             )
@@ -97,7 +98,6 @@ internal fun EquipmentPanel(
             if (bag.isEmpty()) {
                 Text(
                     text = "背包为空。爬塔每 10 层刷新纪录可获得装备。",
-                    fontSize = 12.sp,
                     color = AppTheme.Text3,
                 )
             } else {
@@ -153,25 +153,23 @@ private fun SlotRow(
     ) {
         Text(
             text = slotLabel(slotView.slot),
-            fontSize = 12.sp,
+            style = MaterialTheme.typography.labelLarge,
             color = AppTheme.Text2,
             modifier = Modifier.width(56.dp),
         )
         if (equip == null) {
-            Text(text = "— 空 —", fontSize = 12.sp, color = AppTheme.Text3)
+            Text(text = "— 空 —", style = MaterialTheme.typography.labelLarge, color = AppTheme.Text3)
             Spacer(Modifier.weight(1f))
         } else {
             Column(Modifier.weight(1f)) {
                 Text(
                     text = "${rarityLabel(slotView.rarity)} ${slotView.displayName}",
-                    fontSize = 12.sp,
                     fontWeight = FontWeight.Bold,
                     color = AppTheme.rarityColor(slotView.rarity),
                 )
                 Text(
                     text = "+${equip.level} · ${equip.mainStat.statType} ${equip.mainStat.value}" +
                         if (equip.mainStat.isPercentage) "%" else "",
-                    fontSize = 10.sp,
                     color = AppTheme.Text2,
                 )
             }
@@ -204,7 +202,7 @@ private fun BagRow(
         Column(Modifier.weight(1f)) {
             Text(
                 text = "${rarityLabel(row.rarity)} ${row.displayName}",
-                fontSize = 12.sp,
+                style = MaterialTheme.typography.labelLarge,
                 fontWeight = FontWeight.Bold,
                 color = AppTheme.rarityColor(row.rarity),
             )
@@ -212,7 +210,6 @@ private fun BagRow(
                 text = "+${equip.level} · ${equip.mainStat.statType} ${equip.mainStat.value}" +
                     (if (equip.mainStat.isPercentage) "%" else "") +
                     " · 副词条 ${equip.subStats.size}",
-                fontSize = 10.sp,
                 color = AppTheme.Text2,
             )
         }
@@ -230,7 +227,7 @@ private fun BagRow(
 private fun ActionChip(label: String, danger: Boolean = false, onClick: () -> Unit) {
     Text(
         text = label,
-        fontSize = 11.sp,
+        style = MaterialTheme.typography.labelMedium,
         fontWeight = FontWeight.Bold,
         color = if (danger) AppTheme.Text3 else AppTheme.Gold,
         modifier = Modifier

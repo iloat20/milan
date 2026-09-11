@@ -1,5 +1,7 @@
 package com.milan.game.ui.characters
 
+import androidx.compose.material3.MaterialTheme
+
 import com.milan.game.OwnedCharacterView
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -44,7 +46,7 @@ internal fun SkillPanel(
     GlassPanel(modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(horizontal = 16.dp, vertical = 14.dp)) {
             if (skills.isEmpty()) {
-                Text("暂无技能", fontSize = 14.sp, color = worldColor.textSecondary)
+                Text("暂无技能", style = MaterialTheme.typography.bodyMedium, color = worldColor.textSecondary)
                 return@Column
             }
             skills.forEach { sk ->
@@ -60,21 +62,19 @@ internal fun SkillPanel(
                 ) {
                     Text(
                         "[${sk.type}]",
-                        fontSize = 10.sp,
                         fontWeight = FontWeight.Bold,
                         color = typeColor,
                         modifier = Modifier.padding(end = 8.dp),
                     )
                     Text(
                         sk.displayName,
-                        fontSize = 14.sp,
+                        style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.Bold,
                         color = worldColor.textPrimary,
                     )
                 }
                 Text(
                     sk.description,
-                    fontSize = 12.sp,
                     color = worldColor.textSecondary,
                     lineHeight = 16.sp,
                     modifier = Modifier.padding(start = 16.dp, top = 2.dp, bottom = 6.dp),
@@ -107,7 +107,7 @@ internal fun StoryPanel(
                     )
                     Text(
                         view.lore,
-                        fontSize = 14.sp,
+                        style = MaterialTheme.typography.bodyMedium,
                         color = worldColor.textSecondary,
                         lineHeight = 19.sp,
                         modifier = Modifier.padding(start = 12.dp),
@@ -126,7 +126,6 @@ internal fun StoryPanel(
                     }
                     Text(
                         body,
-                        fontSize = 14.sp,
                         color = worldColor.textPrimary,
                         lineHeight = 20.sp,
                     )
@@ -142,13 +141,12 @@ internal fun StoryPanel(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
                         "所属势力",
-                        fontSize = 11.sp,
+                        style = MaterialTheme.typography.labelMedium,
                         color = worldColor.textSecondary,
                     )
                     Spacer(Modifier.width(8.dp))
                     Text(
                         view.def.faction,
-                        fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
                         color = worldColor.glow,
                         modifier = Modifier
@@ -180,7 +178,7 @@ private fun StorySectionHeader(name: String, accent: Color) {
         )
         Text(
             name,
-            fontSize = 13.sp,
+            style = MaterialTheme.typography.bodyMedium,
             fontWeight = FontWeight.Bold,
             color = accent,
             modifier = Modifier.padding(start = 8.dp),
@@ -228,7 +226,7 @@ internal fun VoicePanel(
     GlassPanel(modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(horizontal = 16.dp, vertical = 14.dp)) {
             if (voices.isEmpty()) {
-                Text("暂无语音", fontSize = 14.sp, color = worldColor.textSecondary)
+                Text("暂无语音", style = MaterialTheme.typography.bodyMedium, color = worldColor.textSecondary)
                 return@Column
             }
             voices.forEach { v ->
@@ -238,14 +236,12 @@ internal fun VoicePanel(
                 ) {
                     Text(
                         "▸",
-                        fontSize = 14.sp,
                         fontWeight = FontWeight.Bold,
                         color = worldColor.glow,
                         modifier = Modifier.padding(end = 10.dp),
                     )
                     Text(
                         v,
-                        fontSize = 14.sp,
                         color = worldColor.textSecondary,
                         lineHeight = 17.sp,
                         modifier = Modifier.weight(1f),
@@ -253,7 +249,7 @@ internal fun VoicePanel(
                     // TTS 播报（2026-08：面板从纯文本升级为可播；引擎惰性初始化，失败静默）
                     Text(
                         "▶",
-                        fontSize = 13.sp,
+                        style = MaterialTheme.typography.bodyMedium,
                         color = AppTheme.Gold,
                         modifier = Modifier
                             .padding(start = 10.dp)

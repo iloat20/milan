@@ -1,5 +1,7 @@
 package com.milan.game.ui.story
 
+import androidx.compose.material3.MaterialTheme
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -159,20 +161,18 @@ private fun StoryChapterCard(
                         Text(
                             text = chapterLabel(chapter, index),
                             color = AppTheme.Text3,
-                            fontSize = 11.sp,
+                            style = MaterialTheme.typography.labelMedium,
                         )
                         Spacer(Modifier.height(4.dp))
                         Text(
                             text = chapter.title,
                             color = if (isUnlocked) AppTheme.Text1 else AppTheme.Text3,
-                            fontSize = 16.sp,
                             fontWeight = FontWeight.Bold,
                         )
                         Spacer(Modifier.height(2.dp))
                         Text(
                             text = chapter.subtitle,
                             color = if (isUnlocked) AppTheme.Text2 else AppTheme.Text3,
-                            fontSize = 12.sp,
                         )
                     }
 
@@ -183,7 +183,7 @@ private fun StoryChapterCard(
                             Text(
                                 text = "${(progress * 100).toInt()}%",
                                 color = AppTheme.Gold,
-                                fontSize = 14.sp,
+                                style = MaterialTheme.typography.bodyMedium,
                                 fontWeight = FontWeight.Bold,
                             )
                             Spacer(Modifier.height(4.dp))
@@ -200,7 +200,6 @@ private fun StoryChapterCard(
                     } else {
                         Text(
                             text = "🔒",
-                            fontSize = 20.sp,
                         )
                     }
                 }
@@ -270,7 +269,7 @@ private fun StageRow(
     ) {
         Text(
             text = if (isCompleted) "✅" else stageIcon,
-            fontSize = 16.sp,
+            style = MaterialTheme.typography.titleMedium,
         )
 
         Spacer(Modifier.width(12.dp))
@@ -279,14 +278,12 @@ private fun StageRow(
             Text(
                 text = stage.title,
                 color = if (canEnter) AppTheme.Text1 else AppTheme.Text3,
-                fontSize = 13.sp,
                 fontWeight = FontWeight.Medium,
             )
             if (stage.recommendedLevel > 1) {
                 Text(
                     text = "推荐等级 Lv.${stage.recommendedLevel}",
                     color = AppTheme.Text3,
-                    fontSize = 10.sp,
                 )
             }
         }
@@ -302,7 +299,7 @@ private fun StageRow(
                     }
                 },
                 color = AppTheme.Text2,
-                fontSize = 10.sp,
+                style = MaterialTheme.typography.labelSmall,
             )
         }
     }

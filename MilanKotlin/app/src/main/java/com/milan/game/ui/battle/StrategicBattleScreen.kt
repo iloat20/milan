@@ -43,7 +43,7 @@ import com.milan.game.services.TowerOutcome
 import com.milan.game.ui.components.BattleResultOverlay
 import com.milan.game.ui.components.GlassDialog
 import com.milan.game.ui.components.GoldButton
-import com.milan.game.ui.components.NeonButton
+import com.milan.game.ui.components.InkButton
 import com.milan.game.ui.components.PageBackground
 import com.milan.game.ui.theme.AppTheme
 import com.milan.game.ui.theme.ElementTheme
@@ -95,7 +95,7 @@ fun StrategicBattleScreen(
                         color = AppTheme.Gold,
                     )
                     Spacer(Modifier.width(12.dp))
-                    NeonButton(
+                    InkButton(
                         text = "退出",
                         color = AppTheme.Text3,
                         onClick = onExit,
@@ -137,7 +137,7 @@ fun StrategicBattleScreen(
                 )
 
                 Spacer(Modifier.height(6.dp))
-                Text("敌方", fontSize = 12.sp, color = AppTheme.Danger, fontWeight = FontWeight.Bold)
+                Text("敌方", style = MaterialTheme.typography.labelLarge, color = AppTheme.Danger, fontWeight = FontWeight.Bold)
                 Spacer(Modifier.height(6.dp))
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -183,7 +183,7 @@ fun StrategicBattleScreen(
                         items(ui.logLines.asReversed()) { line ->
                             Text(
                                 text = line,
-                                fontSize = 11.sp,
+                                style = MaterialTheme.typography.labelMedium,
                                 color = AppTheme.Text2,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
@@ -197,13 +197,12 @@ fun StrategicBattleScreen(
                 if (ui.enemyActing) {
                     Text(
                         text = "敌方行动中…",
-                        fontSize = 12.sp,
                         color = AppTheme.Danger,
                         fontWeight = FontWeight.Bold,
                     )
                     Spacer(Modifier.height(6.dp))
                 }
-                Text("我方", fontSize = 12.sp, color = AppTheme.Frost, fontWeight = FontWeight.Bold)
+                Text("我方", style = MaterialTheme.typography.labelLarge, color = AppTheme.Frost, fontWeight = FontWeight.Bold)
                 Spacer(Modifier.height(6.dp))
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -237,7 +236,7 @@ fun StrategicBattleScreen(
                 if (actor != null && actor.hp > 0 && !ui.finished && !ui.enemyActing) {
                     Text(
                         text = "行动：${actor.stats.characterId.ifEmpty { "单位${ui.currentActor + 1}" }} · 能量 ${actor.energy}/${actor.maxEnergy}",
-                        fontSize = 12.sp,
+                        style = MaterialTheme.typography.labelLarge,
                         color = AppTheme.Text2,
                     )
                     Spacer(Modifier.height(6.dp))
@@ -278,7 +277,7 @@ fun StrategicBattleScreen(
                             ) {
                                 Text(
                                     text = label,
-                                    fontSize = 11.sp,
+                                    style = MaterialTheme.typography.labelMedium,
                                     fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
                                     color = if (ready) AppTheme.Text1 else AppTheme.Text3,
                                     textAlign = androidx.compose.ui.text.style.TextAlign.Center,
@@ -373,12 +372,11 @@ private fun UnitTile(
                         .background(elem.from.copy(alpha = 0.5f)),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Text(elem.glyph, fontSize = 10.sp, color = elem.glow, fontWeight = FontWeight.Bold)
+                    Text(elem.glyph, style = MaterialTheme.typography.labelSmall, color = elem.glow, fontWeight = FontWeight.Bold)
                 }
                 Spacer(Modifier.width(4.dp))
                 Text(
                     text = unit.stats.characterId.substringAfterLast('_').ifEmpty { "?" },
-                    fontSize = 10.sp,
                     color = if (dead) AppTheme.Text3 else AppTheme.Text1,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
@@ -393,7 +391,6 @@ private fun UnitTile(
             )
             Text(
                 text = "${unit.hp.coerceAtLeast(0)}/${unit.maxHp}",
-                fontSize = 9.sp,
                 color = AppTheme.Text3,
                 modifier = Modifier.padding(top = 2.dp),
             )

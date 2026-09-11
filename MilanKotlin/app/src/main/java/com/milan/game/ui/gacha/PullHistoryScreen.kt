@@ -157,7 +157,6 @@ private fun HistoryRow(entry: PullLogEntry, timeText: String) {
             Spacer(Modifier.width(6.dp))
             Text(
                 text = "NEW",
-                fontSize = 9.sp,
                 fontWeight = FontWeight.Bold,
                 color = AppTheme.GoldTextOn,
                 modifier = Modifier

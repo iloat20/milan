@@ -83,6 +83,16 @@ private fun pressScale(interactionSource: MutableInteractionSource): Float {
     ).value
 }
 
+/** v3 鎏金主 CTA（与 [GoldButton] 同实现，规范命名）。 */
+@Composable
+fun GildedButton(
+    text: String,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit,
+    textSize: TextUnit = 16.sp,
+    enabled: Boolean = true,
+) = GoldButton(text, modifier, onClick, textSize, enabled)
+
 /** 金色主按钮：召唤 / 出战 / 购买确认（熔金渐变 + 发丝高光 + 深金收边；C# ThemeButtons.Gold）。 */
 @Composable
 fun GoldButton(
@@ -128,9 +138,21 @@ fun GoldButton(
     }
 }
 
-/** 霓虹描边次按钮：透明底 + 描边 + 内发光（C# ThemeButtons.Neon，默认霜蓝）。 */
+/** @deprecated v3 命名为 [InkButton]。 */
+@Deprecated("v3 改名为 InkButton", ReplaceWith("InkButton(text, modifier, onClick, textSize, color, enabled)"))
 @Composable
 fun NeonButton(
+    text: String,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit,
+    textSize: TextUnit = 14.sp,
+    color: Color = AppTheme.Frost,
+    enabled: Boolean = true,
+) = InkButton(text, modifier, onClick, textSize, color, enabled)
+
+/** 次级文字/描边按钮（原 NeonButton，v3 降为展厅次级操作，默认石青）。 */
+@Composable
+fun InkButton(
     text: String,
     modifier: Modifier = Modifier,
     onClick: () -> Unit,

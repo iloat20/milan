@@ -1,5 +1,7 @@
 package com.milan.game.ui.characters
 
+import androidx.compose.material3.MaterialTheme
+
 import com.milan.game.OwnedCharacterView
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -69,7 +71,7 @@ internal fun WeaponPanel(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     eGlyph,
-                    fontSize = 16.sp,
+                    style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = eFrom,
                     textAlign = TextAlign.Center,
@@ -80,7 +82,6 @@ internal fun WeaponPanel(
                 )
                 Text(
                     def.weapon,
-                    fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
                     color = AppTheme.Gold,
                     style = TextStyle(
@@ -103,7 +104,6 @@ internal fun WeaponPanel(
                 }
                 Text(
                     ownTag,
-                    fontSize = 10.sp,
                     fontWeight = FontWeight.Bold,
                     color = rarityCol,
                     modifier = Modifier
@@ -117,7 +117,7 @@ internal fun WeaponPanel(
             if (def.weaponVfx.isNotBlank()) {
                 Text(
                     "专属武器特效",
-                    fontSize = 12.sp,
+                    style = MaterialTheme.typography.labelLarge,
                     color = worldColor.glow,
                     modifier = Modifier.padding(top = 6.dp),
                 )
@@ -125,7 +125,6 @@ internal fun WeaponPanel(
 
             Text(
                 def.weaponDesc,
-                fontSize = 14.sp,
                 color = worldColor.textSecondary,
                 lineHeight = 18.sp,
                 modifier = Modifier.padding(top = 10.dp),
@@ -202,7 +201,7 @@ private fun WeaponStage(
             // 回退：居中武器名（C# Canvas 几何绘制为 P2）
             Text(
                 weaponName,
-                fontSize = 18.sp,
+                style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
                 color = AppTheme.Gold.copy(alpha = 0.85f),
                 textAlign = TextAlign.Center,

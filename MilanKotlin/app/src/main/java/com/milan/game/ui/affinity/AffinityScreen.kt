@@ -1,5 +1,7 @@
 package com.milan.game.ui.affinity
 
+import androidx.compose.material3.MaterialTheme
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -103,14 +105,13 @@ private fun AffinityInfoCard() {
             Text(
                 text = "好感度系统",
                 color = AppTheme.Text1,
-                fontSize = 14.sp,
+                style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.Bold,
             )
             Spacer(Modifier.height(8.dp))
             Text(
                 text = "通过赠送礼物、出战战斗提升角色好感度。达到档位后可在角色行领取等级奖励。",
                 color = AppTheme.Text2,
-                fontSize = 12.sp,
             )
             Spacer(Modifier.height(8.dp))
             // 等级奖励预览
@@ -142,7 +143,7 @@ private fun AffinityLevelReward(level: Int, reward: String) {
             Text(
                 text = "$level",
                 color = AppTheme.Gold,
-                fontSize = 12.sp,
+                style = MaterialTheme.typography.labelLarge,
                 fontWeight = FontWeight.Bold,
             )
         }
@@ -150,7 +151,6 @@ private fun AffinityLevelReward(level: Int, reward: String) {
         Text(
             text = reward,
             color = AppTheme.Text3,
-            fontSize = 8.sp,
         )
     }
 }
@@ -211,14 +211,13 @@ private fun AffinityCard(
                     Text(
                         text = name,
                         color = AppTheme.Text1,
-                        fontSize = 14.sp,
+                        style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.Bold,
                     )
                     Spacer(Modifier.width(8.dp))
                     Text(
                         text = "好感 Lv.$level",
                         color = AppTheme.Frost,
-                        fontSize = 11.sp,
                     )
                 }
                 Spacer(Modifier.height(6.dp))
@@ -239,7 +238,7 @@ private fun AffinityCard(
                     Text(
                         text = "$expInLevel / ${AffinityFormulas.EXP_PER_LEVEL}",
                         color = AppTheme.Text3,
-                        fontSize = 10.sp,
+                        style = MaterialTheme.typography.labelSmall,
                     )
                 }
             }
@@ -252,11 +251,10 @@ private fun AffinityCard(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(2.dp),
                 ) {
-                    Text(text = "❤️", fontSize = 16.sp)
+                    Text(text = "❤️", style = MaterialTheme.typography.titleMedium)
                     Text(
                         text = "已满级",
                         color = AppTheme.Text3,
-                        fontSize = 9.sp,
                     )
                 }
             } else {
@@ -279,14 +277,13 @@ private fun AffinityCard(
                         Text(
                             text = "🎁 赠送",
                             color = if (giftEnabled) AppTheme.Gold else AppTheme.Text3,
-                            fontSize = 11.sp,
+                            style = MaterialTheme.typography.labelMedium,
                             fontWeight = FontWeight.Bold,
                         )
                     }
                     Text(
                         text = "${AffinityFormulas.GIFT_COST_SOFT} 星尘",
                         color = AppTheme.Text3,
-                        fontSize = 9.sp,
                     )
                 }
             }
@@ -311,7 +308,7 @@ private fun AffinityCard(
                         Text(
                             text = "领取 Lv.${reward.level}",
                             color = AppTheme.Gold,
-                            fontSize = 10.sp,
+                            style = MaterialTheme.typography.labelSmall,
                             fontWeight = FontWeight.Bold,
                         )
                     }

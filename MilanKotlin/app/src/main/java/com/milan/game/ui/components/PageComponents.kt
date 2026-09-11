@@ -1,5 +1,7 @@
 package com.milan.game.ui.components
 
+import androidx.compose.material3.MaterialTheme
+
 import com.milan.game.OwnedCharacterView
 // 从 CharacterDetailScreen.kt / ProgressionScreen.kt 提取的角色页共享组件。
 // 2026-08 水墨国风重构：视觉风格从暗紫+熔金切换到墨色+金箔+朱砂。
@@ -21,13 +23,20 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shadow
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
@@ -54,7 +63,7 @@ fun MissingCharacter(onBack: () -> Unit, modifier: Modifier = Modifier) {
         contentAlignment = Alignment.Center,
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text("未找到该角色", fontSize = 16.sp, color = AppTheme.Text2)
+            Text("未找到该角色", style = MaterialTheme.typography.titleMedium, color = AppTheme.Text2)
             BackCapsule(onClick = onBack, modifier = Modifier.padding(top = 16.dp))
         }
     }
@@ -65,7 +74,6 @@ fun MissingCharacter(onBack: () -> Unit, modifier: Modifier = Modifier) {
 fun BackCapsule(onClick: () -> Unit, modifier: Modifier = Modifier, text: String = "‹ 返 回") {
     Text(
         text,
-        fontSize = 16.sp,
         fontWeight = FontWeight.Bold,
         color = AppTheme.Gold,
         modifier = modifier
@@ -113,15 +121,65 @@ fun SubPageHero(
     } else {
         Modifier
     }
+    // 「对视时刻」（v3 §7.5）：立绘触摸光响应（径向高光跟手）
+    var lightX by remember { mutableFloatStateOf(0.5f) }
+    var lightY by remember { mutableFloatStateOf(0.38f) }
+    var lightOn by remember { mutableStateOf(false) }
+
     Box(modifier.fillMaxWidth().height(heroHeight)) {
         PortraitImage(
             characterId = view.save.characterId,
             rarity = view.rarity,
             name = view.name,
-            modifier = Modifier.fillMaxSize().then(sharedPortraitMod).then(portraitModifier),
+            modifier = Modifier
+                .fillMaxSize()
+                .then(sharedPortraitMod)
+                .then(portraitModifier)
+                .pointerInput(view.save.characterId) {
+                    awaitPointerEventScope {
+                        while (true) {
+                            val event = awaitPointerEvent()
+                            val change = event.changes.firstOrNull() ?: continue
+                            lightX = (change.position.x / size.width.toFloat().coerceAtLeast(1f)).coerceIn(0f, 1f)
+                            lightY = (change.position.y / size.height.toFloat().coerceAtLeast(1f)).coerceIn(0f, 1f)
+                            lightOn = change.pressed
+                        }
+                    }
+                },
             contentScale = ContentScale.Crop,
             aura = true,
         )
+
+        // 触摸光晕：聚光灯式径向高光（只在按住时显现）
+        if (lightOn) {
+            Box(
+                Modifier
+                    .fillMaxSize()
+                    .drawBehind {
+                        drawCircle(
+                            brush = Brush.radialGradient(
+                                colors = listOf(
+                                    AppTheme.Text1.copy(alpha = 0.16f),
+                                    AppTheme.Gold.copy(alpha = 0.06f),
+                                    Color.Transparent,
+                                ),
+                                radius = size.minDimension * 0.55f,
+                            ),
+                            radius = size.minDimension * 0.55f,
+                            center = Offset(lightX * size.width, lightY * size.height),
+                        )
+                    },
+            )
+            // 高稀有度叠极淡全息箔
+            if (view.rarity >= 3) {
+                com.milan.game.ui.effects.HolographicFoilOverlay(
+                    modifier = Modifier.fillMaxSize(),
+                    active = true,
+                    touchX = lightX,
+                    touchY = lightY,
+                )
+            }
+        }
 
         // 底部渐隐遮罩：立绘下缘柔和融入墨色背景
         Box(
@@ -141,7 +199,7 @@ fun SubPageHero(
             )
             Text(
                 "🔒 未获得",
-                fontSize = 18.sp,
+                style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
                 color = AppTheme.Text2,
                 modifier = Modifier.align(Alignment.Center),
@@ -168,7 +226,7 @@ fun SubPageHero(
         if (owned && onOpenProgression != null) {
             Text(
                 "养 成 ▲",
-                fontSize = 16.sp,
+                style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
                 color = AppTheme.Gold,
                 modifier = Modifier
@@ -195,7 +253,7 @@ fun GlassArrow(
     val desc = contentDescription ?: if (text == "‹") "上一个" else "下一个"
     Text(
         text,
-        fontSize = 32.sp,
+        style = MaterialTheme.typography.displayMedium,
         fontWeight = FontWeight.Bold,
         color = AppTheme.Gold,
         textAlign = TextAlign.Center,
@@ -230,7 +288,7 @@ fun HeroNameplate(
             // 稀有度徽章：圆角 7 底色 α45 + 描边 α150
             Text(
                 AppTheme.rarityName(view.rarity),
-                fontSize = 13.sp,
+                style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.Bold,
                 color = rarityCol,
                 modifier = Modifier
@@ -241,16 +299,14 @@ fun HeroNameplate(
             )
             Text(
                 view.name,
-                fontSize = 27.sp,
-                fontWeight = FontWeight.Bold,
-                color = AppTheme.Text1,
-                style = TextStyle(
-                    shadow = Shadow(
+                style = MaterialTheme.typography.headlineMedium.copy(shadow = Shadow(
                         color = Color.Black.copy(alpha = 160f / 255f),
                         offset = Offset(0f, 2f),
                         blurRadius = 8f,
                     ),
                 ),
+                fontWeight = FontWeight.Bold,
+                color = AppTheme.Text1,
                 modifier = Modifier
                     .weight(1f)
                     .padding(horizontal = 14.dp),
@@ -258,7 +314,6 @@ fun HeroNameplate(
             // 元素字形圆形图标
             Text(
                 eGlyph,
-                fontSize = 15.sp,
                 fontWeight = FontWeight.Bold,
                 color = eFrom,
                 textAlign = TextAlign.Center,
@@ -271,7 +326,7 @@ fun HeroNameplate(
         if (view.title.isNotBlank()) {
             Text(
                 view.title,
-                fontSize = 14.sp,
+                style = MaterialTheme.typography.bodyMedium,
                 color = rarityCol,
                 modifier = Modifier.padding(start = 2.dp, top = 6.dp),
             )
@@ -294,7 +349,7 @@ fun SectionTitle(text: String) {
         )
         Text(
             text,
-            fontSize = 14.sp,
+            style = MaterialTheme.typography.bodyMedium,
             fontWeight = FontWeight.Bold,
             color = AppTheme.Text1,
             letterSpacing = 0.18.em,
