@@ -57,8 +57,15 @@ object EventBus {
         }
     }
 
+    /** 该类型当前是否有订阅者。 */
+    fun hasSubscribers(type: Class<*>): Boolean =
+        synchronized(gate) { !subs[type].isNullOrEmpty() }
+
     /** 低层入队：无人 dispatch 时丢弃最旧事件，避免队列无界增长。 */
     fun publishRaw(type: Class<*>, event: Any) {
+        // 2026-09-12：生产 UI 零订阅、全走 StateFlow——无订阅者时直接丢弃，写路径不空入队。
+        // 须先 subscribe 再 publish；测试亦按此顺序。
+        if (!hasSubscribers(type)) return
         synchronized(gate) {
             while (queue.size >= MAX_QUEUED) queue.removeFirst()
             queue.addLast(type to event)

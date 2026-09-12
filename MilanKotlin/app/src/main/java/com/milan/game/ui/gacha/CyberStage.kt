@@ -143,12 +143,8 @@ private fun InkWashBackdrop(
     modifier: Modifier = Modifier,
     rarity: Int = 1,
 ) {
-    var time by remember { mutableFloatStateOf(0f) }
-    LaunchedEffect(Unit) {
-        while (isActive) {
-            withFrameNanos { nano -> time = nano / 1_000_000_000f }
-        }
-    }
+    // 2026-09-12：仅 RESUMED 推进，避免后台 infinite 空转
+    val time = com.milan.game.ui.effects.rememberAnimTime()
     val dust = remember {
         val r = Random(20260903)
         List(36) {

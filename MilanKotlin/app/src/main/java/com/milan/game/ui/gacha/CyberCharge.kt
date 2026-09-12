@@ -32,12 +32,8 @@ import kotlinx.coroutines.isActive
  */
 @Composable
 internal fun ChargeCore(rarity: Int = 1, modifier: Modifier = Modifier) {
-    var time by remember { mutableFloatStateOf(0f) }
-    LaunchedEffect(Unit) {
-        while (isActive) {
-            withFrameNanos { nano -> time = nano / 1_000_000_000f }
-        }
-    }
+    // 2026-09-12：仅 RESUMED 推进
+    val time = com.milan.game.ui.effects.rememberAnimTime()
     val particleCount = when {
         rarity >= 4 -> 56; rarity == 3 -> 44; rarity == 2 -> 32; else -> 22
     }

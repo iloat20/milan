@@ -18,6 +18,10 @@
 - **内容 Chance/Duration**（2026-09-12）：data.json 状态天赋已归一（`tools/normalize_status_chance.py`）；`generate_gamecontent.py` 生成时按 `TalentEngine.statusChanceOf` 同契约补 Chance/Duration，勿再透传 0。
 - **Dungeon keep**（2026-09-12）：`DungeonApi` 已去死功能标记；`ui/dungeon/` + 主页「深渊」入口。深渊走 `StrategicBattleMode.ABYSS` 真战斗，胜利后按阵亡数结算星级并 `completeAbyssStage`；日常副本扫荡仍在同页。
 - **经济属性测试**：`EconomyFormulasPropertyTest`（Kotest property）锁非负/单调/预算不超支/累计经验一致性。
+- **EventBus**（2026-09-12）：生产 UI 零订阅（全走 StateFlow/snapshot）；`publishRaw` 无订阅者直接丢弃。保留给测试与未来命令通道。
+- **检视深化**（2026-09-12）：拍照模式（姿势/背景/滤镜 + savePhoto）已接；手势视差在 `InspectHero`。
+- **动画时钟**：`ui/effects/AnimClock.kt` `rememberAnimTime` 仅 RESUMED 推进；抽卡 Charge/Backdrop 已接。
+- **Robolectric 4.17**：已升；Compose UI 测试仍 `@Config(sdk=[34])`（JDK17 沙箱限制，4.17 具备 SDK 37 能力，升 JDK 21 后可抬档）。
 - **技术栈 B 批（2026-09-12 完成）**：Gradle wrapper **9.7.1**、AGP **9.4.0**、Nav 2.10.1、Work 2.11.2、Glance 1.2.0、Benchmark 1.5.0、Konsist 0.17.3。沙箱若再遇 wrapper 下载 SSL 失败，可把发行包放进 `.gradle-home/wrapper/dists/gradle-9.7.1-bin/<hash>/` 并去掉 `.part`。
 - 产物：`MilanKotlin/app/build/outputs/apk/debug/app-debug.apk`（~90MB）/ `release/app-release.apk`（~49MB）。需 JDK 17+（PATH 上有 Temurin 17 即可）。
 - **DSH 沙箱环境专用**：`%USERPROFILE%\.gradle` 与 `%USERPROFILE%\.android` 不可写，必须用

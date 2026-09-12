@@ -39,6 +39,8 @@ class MilanApp : Application() {
         // 不再由每个 PortraitImage 各自注册/注销——Context.registerComponentCallbacks
         // 非引用计数，多实例场景下首个 dispose 会误删仍被其他实例需要的回调。
         registerComponentCallbacks(PortraitLoader.memoryCallbacks)
+        // 2026-09-12：武器图 LRU 同挂内存压力（此前不在 onTrimMemory 链路）
+        registerComponentCallbacks(com.milan.game.ui.characters.WeaponArtMemoryCallbacks)
 
         // P3-11 启动性能：data.json（~50KB）读取/解析/enrich 与存档载入/sanitize 移出
         // 主线程冷启动关键路径。ensureInitialized 幂等且线程安全（双检锁 + @Volatile）；

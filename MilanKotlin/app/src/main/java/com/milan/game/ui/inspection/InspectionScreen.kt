@@ -44,10 +44,9 @@ import androidx.compose.foundation.gestures.detectDragGestures
 import kotlin.math.abs
 
 /**
- * 360° 角色检视页（2026-09-11 死功能接线骨架）。
+ * 360° 角色检视页（2026-09-11 骨架；2026-09-12 拍照模式）。
  *
- * 本批交付：立绘手势视差（水平拖动旋转感）+ 记录检视次数 + 互动动作列表。
- * 拍照模式 / 真 3D 视差立绘迁移为后续批次。
+ * 立绘手势视差 + 记录检视 + 互动动作 + 姿势/背景/滤镜拍照收藏。
  */
 @Composable
 fun InspectionScreen(
@@ -108,8 +107,107 @@ fun InspectionScreen(
                         )
                     }
                 }
+
+                Spacer(Modifier.height(20.dp))
+                Text(
+                    "拍照模式",
+                    color = AppTheme.Text3,
+                    style = androidx.compose.material3.MaterialTheme.typography.labelLarge,
+                )
+                Spacer(Modifier.height(8.dp))
+                PhotoModeSection(
+                    poses = ui.poses,
+                    backgrounds = ui.backgrounds,
+                    filters = ui.filters,
+                    selectedPoseId = ui.selectedPoseId,
+                    selectedBackgroundId = ui.selectedBackgroundId,
+                    selectedFilterId = ui.selectedFilterId,
+                    photoCount = ui.photoCount,
+                    owned = ui.owned,
+                    onSelectPose = vm::selectPose,
+                    onSelectBackground = vm::selectBackground,
+                    onSelectFilter = vm::selectFilter,
+                    onSave = vm::savePhoto,
+                )
                 Spacer(Modifier.height(32.dp))
             }
+        }
+    }
+}
+
+@Composable
+private fun PhotoModeSection(
+    poses: List<com.milan.game.data.PhotoPose>,
+    backgrounds: List<com.milan.game.data.PhotoBackground>,
+    filters: List<com.milan.game.data.PhotoFilter>,
+    selectedPoseId: String,
+    selectedBackgroundId: String,
+    selectedFilterId: String,
+    photoCount: Int,
+    owned: Boolean,
+    onSelectPose: (String) -> Unit,
+    onSelectBackground: (String) -> Unit,
+    onSelectFilter: (String) -> Unit,
+    onSave: () -> Unit,
+) {
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(AppTheme.Roundness.md))
+            .background(AppTheme.Surface.copy(alpha = 0.5f))
+            .border(1.dp, AppTheme.Stroke, RoundedCornerShape(AppTheme.Roundness.md))
+            .padding(12.dp),
+    ) {
+        Text("已收藏 $photoCount 张", color = AppTheme.Text3)
+        Spacer(Modifier.height(8.dp))
+        Text("姿势", color = AppTheme.Text2)
+        ChipRow(poses.map { it.poseId to it.name }, selectedPoseId, onSelectPose)
+        Spacer(Modifier.height(8.dp))
+        Text("背景", color = AppTheme.Text2)
+        ChipRow(backgrounds.map { it.backgroundId to it.name }, selectedBackgroundId, onSelectBackground)
+        Spacer(Modifier.height(8.dp))
+        Text("滤镜", color = AppTheme.Text2)
+        ChipRow(filters.map { it.filterId to it.name }, selectedFilterId, onSelectFilter)
+        Spacer(Modifier.height(12.dp))
+        Text(
+            "保 存 照 片",
+            color = if (owned) AppTheme.Gold else AppTheme.Text3,
+            modifier = Modifier
+                .clip(RoundedCornerShape(AppTheme.Roundness.xl))
+                .background(AppTheme.BgMid)
+                .border(1.dp, AppTheme.Gold.copy(alpha = 0.55f), RoundedCornerShape(AppTheme.Roundness.xl))
+                .clickable(enabled = owned, onClick = onSave)
+                .padding(horizontal = 18.dp, vertical = 10.dp),
+        )
+    }
+}
+
+@Composable
+private fun ChipRow(
+    options: List<Pair<String, String>>,
+    selectedId: String,
+    onSelect: (String) -> Unit,
+) {
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        for ((id, label) in options) {
+            val selected = id == selectedId
+            Text(
+                label,
+                color = if (selected) AppTheme.Gold else AppTheme.Text2,
+                modifier = Modifier
+                    .clip(RoundedCornerShape(AppTheme.Roundness.xl))
+                    .background(if (selected) AppTheme.BgDeepest else AppTheme.Surface)
+                    .border(
+                        1.dp,
+                        if (selected) AppTheme.Gold else AppTheme.Stroke,
+                        RoundedCornerShape(AppTheme.Roundness.xl),
+                    )
+                    .clickable { onSelect(id) }
+                    .padding(horizontal = 10.dp, vertical = 6.dp),
+            )
         }
     }
 }

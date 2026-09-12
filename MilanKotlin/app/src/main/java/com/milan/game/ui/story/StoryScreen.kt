@@ -43,7 +43,7 @@ fun StoryScreen(
     onOpenStage: (String) -> Unit,
 ) {
     val vm: StoryViewModel = viewModel(factory = AppGraph.factory)
-    val revision by vm.revision.collectAsStateWithLifecycle()
+    val chapterUiList by vm.chapterUiList.collectAsStateWithLifecycle()
     val chapters = remember { vm.chapters }
 
     Box(
@@ -63,11 +63,13 @@ fun StoryScreen(
                     contentPadding = PaddingValues(vertical = 16.dp),
                 ) {
                     itemsIndexed(chapters) { index, chapter ->
+                        val ui = chapterUiList.getOrNull(index)
                         StoryChapterCard(
                             vm = vm,
-                            revision = revision,
                             chapter = chapter,
                             index = index,
+                            unlocked = ui?.unlocked == true,
+                            progress = ui?.progress ?: 0f,
                             // 解锁提示：主线=前一章；外传=好感门槛（Side 章不走前章链）。
                             unlockHint = unlockHintFor(chapters, index, chapter, vm),
                             onOpenStage = onOpenStage,
@@ -84,29 +86,27 @@ fun StoryScreen(
  *
  * 2026-09-02（按钮审查收口）：锁定章节点击不再静默——Snackbar 提示解锁条件
  * （[unlockHint] 由父层按前置章节标题生成）。
+ * 2026-09-12：解锁/进度由父层从 `chapterUiList` 注入，去掉 remember(revision)。
  */
 @Composable
 private fun StoryChapterCard(
     vm: StoryViewModel,
-    revision: Long,
     chapter: StoryChapterDef,
     index: Int,
+    unlocked: Boolean,
+    progress: Float,
     unlockHint: String?,
     onOpenStage: (String) -> Unit,
 ) {
     val feedback = LocalFeedback.current
     val scope = rememberCoroutineScope()
-    // key=revision：关卡完成推进 snapshot 后强制重取解锁/进度，避免 remember 永久缓存旧值
-    val isUnlocked = remember(revision) { vm.isChapterUnlocked(chapter.chapterId) }
-    val progress = remember(revision) { vm.chapterProgress(chapter.chapterId) }
-
     var expanded by remember { mutableStateOf(false) }
 
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .clickable {
-                if (isUnlocked) {
+                if (unlocked) {
                     expanded = !expanded
                 } else {
                     scope.launch {
@@ -116,7 +116,7 @@ private fun StoryChapterCard(
             }
     ) {
         // 背景角色立绘（半透明）
-        if (isUnlocked && chapter.coverCharacterId != null) {
+        if (unlocked && chapter.coverCharacterId != null) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -166,17 +166,17 @@ private fun StoryChapterCard(
                         Spacer(Modifier.height(4.dp))
                         Text(
                             text = chapter.title,
-                            color = if (isUnlocked) AppTheme.Text1 else AppTheme.Text3,
+                            color = if (unlocked) AppTheme.Text1 else AppTheme.Text3,
                             fontWeight = FontWeight.Bold,
                         )
                         Spacer(Modifier.height(2.dp))
                         Text(
                             text = chapter.subtitle,
-                            color = if (isUnlocked) AppTheme.Text2 else AppTheme.Text3,
+                            color = if (unlocked) AppTheme.Text2 else AppTheme.Text3,
                         )
                     }
 
-                    if (isUnlocked) {
+                    if (unlocked) {
                         Column(
                             horizontalAlignment = Alignment.End,
                         ) {
@@ -205,12 +205,11 @@ private fun StoryChapterCard(
                 }
 
                 // 展开关卡列表
-                if (expanded && isUnlocked) {
+                if (expanded && unlocked) {
                     Spacer(Modifier.height(12.dp))
                     chapter.stages.forEach { stage ->
                         StageRow(
                             vm = vm,
-                            revision = revision,
                             stage = stage,
                             onOpenStage = onOpenStage,
                         )
@@ -229,12 +228,12 @@ private fun StoryChapterCard(
 @Composable
 private fun StageRow(
     vm: StoryViewModel,
-    revision: Long,
     stage: StoryStageDef,
     onOpenStage: (String) -> Unit,
 ) {
     val feedback = LocalFeedback.current
     val scope = rememberCoroutineScope()
+    val revision by vm.revision.collectAsStateWithLifecycle()
     val isCompleted = remember(revision) { vm.isStageCompleted(stage.stageId) }
     val canEnter = remember(revision) { vm.canEnterStage(stage.stageId) }
 

@@ -13,10 +13,18 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
+/** 章节行 UI 派生（随 snapshot revision 重算，替代 Screen 侧 remember(revision)）。 */
+data class StoryChapterUi(
+    val chapterId: String,
+    val unlocked: Boolean,
+    val progress: Float,
+)
+
 /**
  * 剧情页 ViewModel：章节列表 / 解锁与进度 / 关卡完结。
  *
  * Screen 不再直呼进程单例——章节卡与对话路由共用本 VM 的只读查询与写入口。
+ * 2026-09-12：`chapterUiList` 随 snapshot 推进重算，消灭 Screen `remember(revision)`。
  */
 class StoryViewModel(
     private val service: GameService,
@@ -26,8 +34,7 @@ class StoryViewModel(
     val chapters: List<StoryChapterDef> = service.getStoryChapters()
 
     /**
-     * 存档 revision。关卡完结会推进 snapshot.revision，Screen 用它作 remember key，
-     * 使章节进度/完成态在返回本页时重组刷新（此前 remember 不带 key，进度会卡在首次取值）。
+     * 存档 revision。关卡完结会推进 snapshot.revision。
      */
     val revision: StateFlow<Long> = service.snapshot
         .map { it.revision }
@@ -36,6 +43,29 @@ class StoryViewModel(
             scope = viewModelScope,
             started = SharingStarted.Eagerly,
             initialValue = service.snapshot.value.revision,
+        )
+
+    /** 章节解锁/进度列表（任意成功写后 snapshot 推进即刷新）。 */
+    val chapterUiList: StateFlow<List<StoryChapterUi>> = service.snapshot
+        .map {
+            chapters.map { ch ->
+                StoryChapterUi(
+                    chapterId = ch.chapterId,
+                    unlocked = service.isStoryChapterUnlocked(ch.chapterId),
+                    progress = service.getStoryChapterProgress(ch.chapterId),
+                )
+            }
+        }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.Eagerly,
+            initialValue = chapters.map { ch ->
+                StoryChapterUi(
+                    chapterId = ch.chapterId,
+                    unlocked = service.isStoryChapterUnlocked(ch.chapterId),
+                    progress = service.getStoryChapterProgress(ch.chapterId),
+                )
+            },
         )
 
     fun isChapterUnlocked(chapterId: String): Boolean = service.isStoryChapterUnlocked(chapterId)

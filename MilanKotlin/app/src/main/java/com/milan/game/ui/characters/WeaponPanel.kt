@@ -137,8 +137,25 @@ internal fun WeaponPanel(
  * 武器概念图内存缓存：详情页左右切换角色会高频重进 [WeaponStage]，
  * 无缓存时每次都重复 IO 解码 512² WebP（约 1MB/张）。LRU 上限 8 张 ≈ 8MB，
  * 超出自动驱逐最旧；键为武器 vfx 名。
+ * 2026-09-12：随 PortraitLoader 同一套 ComponentCallbacks2 收缩（米兰 App 统一注册）。
  */
 private val WeaponArtCache = LruCache<String, Bitmap>(8)
+
+/** 供 MilanApp.registerComponentCallbacks：内存压力时清空武器图。 */
+val WeaponArtMemoryCallbacks = object : android.content.ComponentCallbacks2 {
+    override fun onConfigurationChanged(newConfig: android.content.res.Configuration) = Unit
+    override fun onLowMemory() {
+        WeaponArtCache.evictAll()
+    }
+    override fun onTrimMemory(level: Int) {
+        if (level >= android.content.ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW) {
+            WeaponArtCache.evictAll()
+        } else if (level >= android.content.ComponentCallbacks2.TRIM_MEMORY_BACKGROUND) {
+            val max = WeaponArtCache.maxSize() / 2
+            if (max > 0) WeaponArtCache.trimToSize(max)
+        }
+    }
+}
 
 /**
  * 武器舞台：圆角暗底 + 元素径向晕染 + 稀有度描边光环（C# WeaponPreviewView 静态帧）。
