@@ -1,7 +1,6 @@
 [versions]
-# AGP：9.4.0 需更新 Gradle wrapper；沙箱下载 Gradle 9.7.1 失败（SSL），暂留 9.3.2。
-# 升 wrapper 可达后再跟 AGP minor（见 upgrade report Wave B）。
-agp = "9.3.2"
+# AGP 9.4.0（2026-09 minor）；wrapper 已升 9.7.1
+agp = "9.4.0"
 kotlin = "2.4.20"
 coreKtx = "1.19.0"
 lifecycle = "2.11.0"

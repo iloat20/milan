@@ -5,7 +5,7 @@
 
 ## 构建与测试（环境事实）
 
-- 工程在 `MilanKotlin/`（Gradle 9 系 + AGP 9.3.2 + Kotlin 2.4.20，AGP 9 内置 built-in Kotlin，不再应用 kotlin-android 插件），用 wrapper，无需本地安装 Gradle：
+- 工程在 `MilanKotlin/`（Gradle 9.7.1 + AGP 9.4.0 + Kotlin 2.4.20，AGP 9 内置 built-in Kotlin，不再应用 kotlin-android 插件），用 wrapper，无需本地安装 Gradle：
   ```powershell
   .\gradlew.bat :app:assembleDebug          # 构建 Debug APK
   .\gradlew.bat :app:assembleRelease        # 构建 Release APK（minify+shrinkResources）
@@ -14,13 +14,13 @@
   ```
 - **CI**：`.github/workflows/ci.yml`（GitHub Actions，main push/PR）。任务序：`checkArchitecture` → `:app:testDebugUnitTest` → `:app:assembleDebug`；失败上传测试报告，成功上传 Debug APK。需真机的 Macrobenchmark / baseline profile **不在** CI 内。
 - **Konsist**（2026-09-12）：`app/src/test/.../arch/ArchitectureKonsistTest.kt` 用编译期 API 锁层规则（shared domain / data / core services 无 android.*；VM 无 GameState 默认注入；ui 除 nav 无 AppGraph.service）。路径相对 **工程根** `MilanKotlin/`（如 `shared/src`）。与根任务 `checkArchitecture` 正则门禁互补，随单测进 CI。
-- **技术栈 B 批备注**：Nav 2.10.1 / Work 2.11.2 / Glance 1.2.0 / Benchmark 1.5.0 / Konsist 0.17.3 已升。**Gradle wrapper 仍 9.5.0、AGP 9.3.2**——沙箱下载 Gradle 9.7.1 失败（SSL），且 AGP 9.4.0 需更新 wrapper；网络可达后先升 wrapper 再跟 AGP minor。
+- **技术栈 B 批（2026-09-12 完成）**：Gradle wrapper **9.7.1**、AGP **9.4.0**、Nav 2.10.1、Work 2.11.2、Glance 1.2.0、Benchmark 1.5.0、Konsist 0.17.3。沙箱若再遇 wrapper 下载 SSL 失败，可把发行包放进 `.gradle-home/wrapper/dists/gradle-9.7.1-bin/<hash>/` 并去掉 `.part`。
 - 产物：`MilanKotlin/app/build/outputs/apk/debug/app-debug.apk`（~90MB）/ `release/app-release.apk`（~49MB）。需 JDK 17+（PATH 上有 Temurin 17 即可）。
 - **DSH 沙箱环境专用**：`%USERPROFILE%\.gradle` 与 `%USERPROFILE%\.android` 不可写，必须用
   `pwsh -NoProfile -File .\run-gradle.ps1 <gradle 参数>`（内部把 GRADLE_USER_HOME / ANDROID_USER_HOME
   重定向到 workspace 内 `.gradle-home/`、`.android-home/`，两者已入根 .gitignore）。Kotlin daemon
   标记写入 `%LOCALAPPDATA%\kotlin\daemon` 被拒会自动回退 in-process 编译（有噪音，构建仍成功）。
-- 版本号集中在 `MilanKotlin/gradle/libs.versions.toml`（AGP 9.3.2 / Kotlin 2.4.20 / Compose BOM 2026.09.00 / kotlinx-serialization 1.11.0 / coroutines 1.11.0 / navigation-compose 2.9.8 / media3 1.11.1 / glance 1.1.1 / lifecycle 2.11.0）；`minSdk=29, targetSdk=37, compileSdk=37`，JVM target 17。
+- 版本号集中在 `MilanKotlin/gradle/libs.versions.toml`（AGP 9.4.0 / Kotlin 2.4.20 / Compose BOM 2026.09.00 / kotlinx-serialization 1.11.0 / coroutines 1.11.0 / navigation-compose 2.10.1 / media3 1.11.1 / glance 1.2.0 / lifecycle 2.11.0）；`minSdk=29, targetSdk=37, compileSdk=37`，JVM target 17。
 - Release 构建开 minify + shrinkResources。`MilanKotlin/app/proguard-rules.pro` 除 kotlinx.serialization 规则外，**必须保留 WorkManager keep 规则**（`androidx.work.impl.WorkDatabase_Impl` + `ListenableWorker` 构造器）：AGP 9 R8 严格化会把反射实例化的 WorkDatabase_Impl 裁掉，导致 release 启动闪退 `Failed to create an instance of androidx.work.impl.WorkDatabase`（debug 正常；Google Issue 348590028，2026-02 社区 workaround）。
 
 ## Compose 编译陷阱（高频踩坑）
