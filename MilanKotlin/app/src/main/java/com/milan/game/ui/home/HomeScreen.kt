@@ -104,6 +104,7 @@ fun HomeScreen(
     onOpenAffinity: () -> Unit = {},
     onOpenArena: () -> Unit = {},
     onOpenEvent: () -> Unit = {},
+    onOpenDungeon: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val vm: HomeViewModel = viewModel(factory = com.milan.game.di.AppGraph.factory)
@@ -187,7 +188,7 @@ fun HomeScreen(
                         QuickActions(
                             onOpenCollection, onOpenTower, onOpenStory,
                             onOpenDailyMissions, onOpenBattlePass, onOpenAffinity,
-                            onOpenAchievements, onOpenArena, onOpenEvent,
+                            onOpenAchievements, onOpenArena, onOpenEvent, onOpenDungeon,
                         )
                     }
                     item { Spacer(Modifier.height(18.dp)) }
@@ -375,6 +376,7 @@ private fun QuickActions(
     onOpenAchievements: () -> Unit,
     onOpenArena: () -> Unit,
     onOpenEvent: () -> Unit,
+    onOpenDungeon: () -> Unit,
 ) {
     data class Action(val label: String, val onClick: () -> Unit)
     val actions = listOf(
@@ -387,6 +389,7 @@ private fun QuickActions(
         Action("成就", onOpenAchievements),
         Action("竞技", onOpenArena),
         Action("活动", onOpenEvent),
+        Action("深渊", onOpenDungeon),
     )
     LazyRow(
         horizontalArrangement = Arrangement.spacedBy(8.dp),

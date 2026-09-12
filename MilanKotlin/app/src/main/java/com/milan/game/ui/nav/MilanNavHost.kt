@@ -54,6 +54,7 @@ import com.milan.game.ui.characters.CharacterDetailScreen
 import com.milan.game.ui.characters.CharacterListScreen
 import com.milan.game.ui.collection.CollectionScreen
 import com.milan.game.ui.deck.DeckScreen
+import com.milan.game.ui.dungeon.DungeonScreen
 import com.milan.game.ui.gacha.GachaScreen
 import com.milan.game.ui.gacha.PullHistoryScreen
 import com.milan.game.ui.home.HomeScreen
@@ -191,6 +192,7 @@ internal fun MilanNavHost(openGachaOnStart: Boolean = false) {
                         onOpenAffinity = { navController.navigate(AffinityRoute) },
                         onOpenArena = { navController.navigate(ArenaRoute) },
                         onOpenEvent = { navController.navigate(EventRoute) },
+                        onOpenDungeon = { navController.navigate(DungeonRoute) },
                     )
                 }
                 composable<GachaRoute>(
@@ -265,6 +267,9 @@ internal fun MilanNavHost(openGachaOnStart: Boolean = false) {
                         characterId = route.characterId,
                         onBack = { navController.popBackStack() },
                     )
+                }
+                composable<DungeonRoute> {
+                    DungeonScreen(onBack = { navController.popBackStack() })
                 }
                 composable<ProgressionRoute> { entry ->
                     val route = entry.toRoute<ProgressionRoute>()

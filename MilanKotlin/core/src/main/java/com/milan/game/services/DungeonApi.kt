@@ -5,10 +5,9 @@ import com.milan.game.data.DailyDungeonType
 /**
  * 日常副本与深渊契约（2026-09-08 P1-5 接口化）。
  *
- * ⚠️ **P2-11 (B12) 死功能**：副本/深渊系统 UI 层零调用，
- * 本接口全部方法无生产调用点。待后续接线或移除。
+ * 2026-09-12 Dungeon keep：UI 已接 `ui/dungeon/`（扫荡 + 深渊挑战/手动结算骨架）；
+ * 完整策略战斗闭环接入后可去掉手动 complete 入口。
  */
-@Deprecated("P2-11: 副本深渊系统UI零调用，待接线或移除", level = DeprecationLevel.WARNING)
 interface DungeonApi {
     /** 今日日常副本挑战状态（剩余次数 / 已扫荡）。 */
     fun getDailyDungeonStatuses(): List<DailyDungeonStatus>

@@ -50,6 +50,10 @@ data class ProgressionRoute(val characterId: String)
 @Serializable
 data class InspectionRoute(val characterId: String)
 
+/** 日常副本 + 深渊（2026-09-12 Dungeon keep 接线）。 */
+@Serializable
+data object DungeonRoute
+
 /** 无尽之塔（2026-08 终局内容）：子页，盖住底部 tab，返回逐层退出。 */
 @Serializable
 data object TowerRoute

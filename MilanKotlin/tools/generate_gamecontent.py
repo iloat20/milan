@@ -93,11 +93,33 @@ def generate_build_talent_trees(talent_trees: list) -> str:
             )
             effects = node.get("Effects", [])
             effect_lines = []
+            STATUS_TYPES = {
+                "Burn", "Poison", "Bleed", "Stun", "Chill", "Disarm", "Stiff", "Taunt",
+            }
+
+            def status_chance(eff_type: str, value: float, chance: float) -> float:
+                # 与 TalentEngine.statusChanceOf 同契约；生成器透传历史 Chance=0 会续债
+                if chance and chance > 0:
+                    return chance
+                if eff_type not in STATUS_TYPES:
+                    return chance or 0
+                if value <= 0:
+                    return 0
+                if value <= 1:
+                    return value
+                if value <= 100:
+                    return value / 100
+                return 0
+
             for eff in effects:
                 eff_type = eff.get("Type", "")
                 eff_val = eff.get("Value", 0)
                 eff_chance = eff.get("Chance", 0)
                 eff_dur = eff.get("Duration", 0)
+                if eff_type in STATUS_TYPES:
+                    eff_chance = status_chance(eff_type, float(eff_val or 0), float(eff_chance or 0))
+                    if not eff_dur or int(eff_dur) <= 0:
+                        eff_dur = 2
                 effect_lines.append(
                     f'TalentEffect(type = TalentEffectType.{eff_type}, value = {eff_val}f, '
                     f'chance = {eff_chance}f, duration = {eff_dur})'

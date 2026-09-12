@@ -14,6 +14,7 @@ import com.milan.game.ui.characters.CharacterDetailViewModel
 import com.milan.game.ui.characters.CharacterListViewModel
 import com.milan.game.ui.collection.CollectionViewModel
 import com.milan.game.ui.deck.DeckViewModel
+import com.milan.game.ui.dungeon.DungeonViewModel
 import com.milan.game.ui.event.EventViewModel
 import com.milan.game.ui.gacha.GachaViewModel
 import com.milan.game.ui.gacha.PullHistoryViewModel
@@ -83,6 +84,7 @@ object AppGraph {
         initializer { EventViewModel(service) }
         initializer { StrategicBattleViewModel(service) }
         initializer { TutorialViewModel(service) }
+        initializer { DungeonViewModel(service) }
     }
 
     /** 角色详情：按 characterId 建实例（切角色 = 换 key = 新 VM）。 */
