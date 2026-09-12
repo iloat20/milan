@@ -104,6 +104,15 @@ fun DungeonScreen(onBack: () -> Unit) {
                             "星级：无阵亡 3★ · 1 人阵亡 2★ · 其余胜局 1★；首通/新星发奖。",
                             color = AppTheme.Text3,
                         )
+                        if (com.milan.game.domain.progression.EconomyFormulas
+                                .isAbyssEliteFloor(abyss.currentFloor, isAbyss = true)
+                        ) {
+                            Spacer(Modifier.height(4.dp))
+                            Text(
+                                "本层为精英层：0 号位精英（属性 ×1.35 + 焚心词缀）",
+                                color = AppTheme.Gold,
+                            )
+                        }
                     }
                 }
                 Spacer(Modifier.height(32.dp))

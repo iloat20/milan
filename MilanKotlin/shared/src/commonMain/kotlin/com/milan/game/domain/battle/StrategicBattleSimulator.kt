@@ -68,10 +68,11 @@ class StrategicBattleSimulator(private val rng: Random) {
     
     /**
      * 获取默认技能（根据角色ID）。
+     * characterId 含 `elite` 时追加深渊词缀技能（2026-09-12 深渊精英层）。
      */
     private fun getDefaultSkills(characterId: String): List<BattleSkill> {
         // 暂时返回通用技能，后续可以根据角色ID返回特定技能
-        return listOf(
+        val base = listOf(
             BattleSkill(
                 skillId = "normal_attack",
                 name = "普通攻击",
@@ -121,6 +122,21 @@ class StrategicBattleSimulator(private val rng: Random) {
                     SkillEffect(EffectType.DAMAGE, 200, 1, 100),
                     SkillEffect(EffectType.DEBUFF_DEF, 20, 2, 80),
                 ),
+            ),
+        )
+        if (!characterId.contains("elite", ignoreCase = true)) return base
+        return base + BattleSkill(
+            skillId = "abyss_elite_mutation",
+            name = "深渊词缀·焚心",
+            description = "精英词缀：高倍率单体并附加灼烧",
+            type = SkillType.ACTIVE,
+            energyCost = 40,
+            cooldown = 3,
+            power = 180,
+            target = SkillTarget.SINGLE_ENEMY,
+            effects = listOf(
+                SkillEffect(EffectType.DAMAGE, 180, 1, 100),
+                SkillEffect(EffectType.BURN, 8, 2, 70),
             ),
         )
     }

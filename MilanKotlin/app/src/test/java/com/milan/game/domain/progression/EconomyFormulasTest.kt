@@ -1,6 +1,7 @@
 package com.milan.game.domain.progression
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -41,6 +42,15 @@ class EconomyFormulasTest {
         val abyss = EconomyFormulas.floorEnemyStatScale(10, isAbyss = true)
         assertEquals(tower * EconomyFormulas.ABYSS_ENEMY_STAT_SCALE_MUL, abyss, 1e-9)
         assertTrue(abyss > tower)
+    }
+
+    @Test
+    fun abyssElite_everyFiveFloors() {
+        assertTrue(EconomyFormulas.isAbyssEliteFloor(5, isAbyss = true))
+        assertTrue(EconomyFormulas.isAbyssEliteFloor(10, isAbyss = true))
+        assertFalse(EconomyFormulas.isAbyssEliteFloor(4, isAbyss = true))
+        assertFalse(EconomyFormulas.isAbyssEliteFloor(5, isAbyss = false))
+        assertTrue(EconomyFormulas.ABYSS_ELITE_STAT_MUL > 1.0)
     }
 
     // [Theory] (1,20,500) (3,60,1500) (0,20,500)

@@ -130,6 +130,16 @@ object EconomyFormulas {
      */
     const val ABYSS_ENEMY_STAT_SCALE_MUL = 1.25
 
+    /** 深渊精英层间隔（每 5 层出现一名精英，2026-09-12）。 */
+    const val ABYSS_ELITE_FLOOR_INTERVAL = 5
+
+    /** 深渊精英相对同层普通怪的额外属性倍率。 */
+    const val ABYSS_ELITE_STAT_MUL = 1.35
+
+    /** 该层是否为深渊精英层。 */
+    fun isAbyssEliteFloor(floor: Int, isAbyss: Boolean): Boolean =
+        isAbyss && floor.coerceAtLeast(1) % ABYSS_ELITE_FLOOR_INTERVAL == 0
+
     /** 统一层敌人数：塔走 [towerEnemyCount]；深渊 +1 后仍封顶 5。 */
     fun floorEnemyCount(floor: Int, isAbyss: Boolean): Int {
         val base = towerEnemyCount(floor)

@@ -296,6 +296,8 @@ class TowerService(private val core: ServiceCore) : TowerApi {
      * 元素按 floor 派生的 seed 随机分布——同层完全可复现，克制关系成为爬塔的策略维度。
      *
      * @param isAbyss 深渊层：更高属性/人数、不同 seed 盐（2026-09-12 Dungeon keep）。
+     *   深渊每 [EconomyFormulas.ABYSS_ELITE_FLOOR_INTERVAL] 层：0 号位精英（属性再乘
+     *   [EconomyFormulas.ABYSS_ELITE_STAT_MUL]，characterId 含 elite，触发词缀技能）。
      */
     private fun buildFloorEnemies(floor: Int, isAbyss: Boolean): Array<UnitStats> {
         val seedSalt = if (isAbyss) 13L else 7L
@@ -304,14 +306,17 @@ class TowerService(private val core: ServiceCore) : TowerApi {
         val base = EconomyFormulas.towerEnemyBaseStats()
         val elements = listOf("Metal", "Wood", "Water", "Flame", "Earth", "Light", "Shadow", "Thunder")
         val idPrefix = if (isAbyss) "abyss" else "tower"
+        val eliteFloor = EconomyFormulas.isAbyssEliteFloor(floor, isAbyss)
         return Array(EconomyFormulas.floorEnemyCount(floor, isAbyss)) { i ->
+            val isElite = eliteFloor && i == 0
+            val unitScale = if (isElite) scale * EconomyFormulas.ABYSS_ELITE_STAT_MUL else scale
             UnitStats(
-                atk = (base[0] * scale).toInt(),
-                def = (base[1] * scale).toInt(),
-                hp = (base[2] * scale).toInt(),
+                atk = (base[0] * unitScale).toInt(),
+                def = (base[1] * unitScale).toInt(),
+                hp = (base[2] * unitScale).toInt(),
                 // P3-7：速度也随层数缩放，否则玩家永远先手、克制定位被架空
-                spd = (base[3] * scale).toInt(),
-                characterId = "${idPrefix}_f${floor}_e$i",
+                spd = (base[3] * unitScale).toInt(),
+                characterId = if (isElite) "${idPrefix}_f${floor}_elite" else "${idPrefix}_f${floor}_e$i",
                 element = elements[floorRng.nextInt(elements.size)],
             )
         }
