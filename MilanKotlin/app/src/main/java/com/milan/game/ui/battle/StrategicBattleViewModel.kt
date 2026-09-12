@@ -15,9 +15,13 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
+/** 战斗场景：塔层 vs 深渊层（2026-09-12 Dungeon keep 接真战斗）。 */
+enum class StrategicBattleMode { TOWER, ABYSS }
+
 /** 战斗 UI 状态（供 Screen 纯渲染）。 */
 data class StrategicBattleUi(
     val floor: Int = 0,
+    val mode: StrategicBattleMode = StrategicBattleMode.TOWER,
     val state: BattleState? = null,
     val currentActor: Int = 0,
     val selectedSkillId: String? = null,
@@ -31,6 +35,10 @@ data class StrategicBattleUi(
     val enemyActing: Boolean = false,
     /** 本批新打击演出脉冲（Screen 播完后 clearFx）。 */
     val fxPulses: List<StrikeFxPulse> = emptyList(),
+    /** 深渊局结算星级（塔局为 null）。 */
+    val abyssStars: Int? = null,
+    /** 深渊局写档结果。 */
+    val abyssWrite: com.milan.game.services.WriteOutcome? = null,
 )
 
 /**
@@ -51,17 +59,34 @@ class StrategicBattleViewModel(
     /** 本局敌方回合/结算协程（R7-P0-4：重进必须取消旧局，防止覆盖新状态）。 */
     private var battleJob: kotlinx.coroutines.Job? = null
 
-    fun start(floor: Int) {
+    fun start(floor: Int, mode: StrategicBattleMode = StrategicBattleMode.TOWER) {
         battleJob?.cancel()
         battleJob = null
+        if (mode == StrategicBattleMode.ABYSS) {
+            // 深渊：先计入挑战次数，再开策略战斗（结算在 settle 里 completeAbyssStage）
+            viewModelScope.launch {
+                service.challengeAbyss(floor)
+                openBattle(floor, mode)
+            }
+        } else {
+            openBattle(floor, mode)
+        }
+    }
+
+    private fun openBattle(floor: Int, mode: StrategicBattleMode) {
+        // 敌队生成沿用塔层曲线：深渊层数与塔层数值同源，后续可单独调系数
         val state = service.initializeStrategicBattle(floor)
         actedThisTurn = mutableSetOf()
         fxSeq = 0L
         _ui.value = StrategicBattleUi(
             floor = floor,
+            mode = mode,
             state = state,
             currentActor = firstAlivePlayer(state) ?: 0,
-            logLines = listOf("第 ${floor} 层 · 战斗开始"),
+            logLines = listOf(
+                if (mode == StrategicBattleMode.ABYSS) "深渊第 $floor 层 · 战斗开始"
+                else "第 $floor 层 · 战斗开始",
+            ),
         )
     }
 
@@ -224,16 +249,55 @@ class StrategicBattleViewModel(
     private fun settle() {
         val st = _ui.value.state ?: return
         val victory = st.phase == BattlePhase.VICTORY
+        val floor = _ui.value.floor
+        val mode = _ui.value.mode
         battleJob = viewModelScope.launch {
             _ui.value = _ui.value.copy(settling = true)
-            // R6-P2：必须带日志，服务端 StrategicSettleGuard 校验末刀阵营
-            val outcome = service.settleStrategicBattle(
-                floor = _ui.value.floor,
-                victory = victory,
-                turns = st.turn,
-                battleLog = st.log,
-            )
-            _ui.value = _ui.value.copy(settling = false, outcome = outcome, finished = true)
+            if (mode == StrategicBattleMode.ABYSS) {
+                // 星级：无阵亡 3★ / 1 人阵亡 2★ / 其余胜局 1★；失败不发奖
+                val dead = st.playerTeam.count { it.hp <= 0 }
+                val stars = when {
+                    !victory -> 0
+                    dead == 0 -> 3
+                    dead == 1 -> 2
+                    else -> 1
+                }
+                val write = if (victory && stars > 0) {
+                    service.completeAbyssStage(floor, stars)
+                } else {
+                    com.milan.game.services.WriteOutcome.Rejected
+                }
+                // 结算 UI 复用 BattleResultOverlay：用合成 Completed 展示星尘/星级语义
+                val rewardSoft = if (write == com.milan.game.services.WriteOutcome.Success && stars > 0) {
+                    floor * 500 * stars
+                } else 0
+                val synthetic = TowerOutcome.Completed(
+                    victory = victory,
+                    turns = st.turn,
+                    rewardSoft = rewardSoft,
+                    rewardHard = 0,
+                    bestFloorAfter = floor,
+                    log = st.log,
+                    rewardExp = 0,
+                    recordAdvanced = victory && stars > 0,
+                )
+                _ui.value = _ui.value.copy(
+                    settling = false,
+                    outcome = synthetic,
+                    finished = true,
+                    abyssStars = stars,
+                    abyssWrite = write,
+                )
+            } else {
+                // R6-P2：必须带日志，服务端 StrategicSettleGuard 校验末刀阵营
+                val outcome = service.settleStrategicBattle(
+                    floor = floor,
+                    victory = victory,
+                    turns = st.turn,
+                    battleLog = st.log,
+                )
+                _ui.value = _ui.value.copy(settling = false, outcome = outcome, finished = true)
+            }
         }
     }
 

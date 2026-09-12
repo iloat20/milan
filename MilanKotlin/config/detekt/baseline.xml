@@ -33,7 +33,7 @@
     <ID>CyclomaticComplexMethod:SettingsScreen.kt$@Composable fun SettingsScreen( onNav: (NavItem) -&gt; Unit, )</ID>
     <ID>CyclomaticComplexMethod:StatsCalculator.kt$StatsCalculator$fun compute( baseStats: List&lt;Int&gt;, level: Int, stage: Int, stars: Int, branchIds: List&lt;String&gt;, characterId: String, progression: ProgressionEngine, talent: TalentEngine, nodeEffectsMap: Map&lt;String, List&lt;TalentEffect&gt;&gt;? = null, allocatedNodes: List&lt;String&gt; = emptyList(), ): UnitStats</ID>
     <ID>CyclomaticComplexMethod:StoryScreen.kt$@Composable private fun StageRow( vm: StoryViewModel, revision: Long, stage: StoryStageDef, onOpenStage: (String) -&gt; Unit, )</ID>
-    <ID>CyclomaticComplexMethod:StrategicBattleScreen.kt$@Composable fun StrategicBattleScreen( floor: Int, onExit: () -&gt; Unit, modifier: Modifier = Modifier, )</ID>
+    <ID>CyclomaticComplexMethod:StrategicBattleScreen.kt$@Composable fun StrategicBattleScreen( floor: Int, onExit: () -&gt; Unit, modifier: Modifier = Modifier, mode: StrategicBattleMode = StrategicBattleMode.TOWER, )</ID>
     <ID>CyclomaticComplexMethod:StrategicBattleScreen.kt$@Composable private fun UnitTile( unit: BattleUnitState, selected: Boolean, modifier: Modifier = Modifier, isActor: Boolean = false, onClick: () -&gt; Unit = {}, )</ID>
     <ID>CyclomaticComplexMethod:StrategicBattleSimulator.kt$StrategicBattleSimulator$fun executePlayerAction(state: BattleState, action: PlayerAction): BattleState</ID>
     <ID>CyclomaticComplexMethod:StrategicBattleSimulator.kt$StrategicBattleSimulator$fun getAvailableActions(state: BattleState, actorIndex: Int): List&lt;PlayerAction&gt;</ID>
@@ -116,7 +116,7 @@
     <ID>LongMethod:SettingsScreen.kt$@Composable fun SettingsScreen( onNav: (NavItem) -&gt; Unit, )</ID>
     <ID>LongMethod:ShopScreen.kt$@Composable fun ShopScreen( onNav: (NavItem) -&gt; Unit, )</ID>
     <ID>LongMethod:StoryScreen.kt$@Composable private fun StoryChapterCard( vm: StoryViewModel, revision: Long, chapter: StoryChapterDef, index: Int, unlockHint: String?, onOpenStage: (String) -&gt; Unit, )</ID>
-    <ID>LongMethod:StrategicBattleScreen.kt$@Composable fun StrategicBattleScreen( floor: Int, onExit: () -&gt; Unit, modifier: Modifier = Modifier, )</ID>
+    <ID>LongMethod:StrategicBattleScreen.kt$@Composable fun StrategicBattleScreen( floor: Int, onExit: () -&gt; Unit, modifier: Modifier = Modifier, mode: StrategicBattleMode = StrategicBattleMode.TOWER, )</ID>
     <ID>LongMethod:TalentEngine.kt$TalentEngine$fun talentEffects( allocatedNodes: List&lt;String&gt;, nodeEffectsMap: Map&lt;String, List&lt;TalentEffect&gt;&gt;, ): TalentEffectResult</ID>
     <ID>LongMethod:TowerScreen.kt$@Composable fun TowerScreen( onBack: () -&gt; Unit, onOpenDeck: () -&gt; Unit, modifier: Modifier = Modifier, )</ID>
     <ID>LongMethod:TowerScreen.kt$@Composable private fun BattlePreviewCard( myTeam: List&lt;UnitStats&gt;, myElements: List&lt;String&gt;, floor: Int, myPower: Int, enemy: TowerEnemyPreview?, )</ID>

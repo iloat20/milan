@@ -3,12 +3,10 @@ package com.milan.game.ui.dungeon
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.milan.game.data.DailyDungeonType
-import com.milan.game.services.AbyssChallengeOutcome
 import com.milan.game.services.AbyssStatus
 import com.milan.game.services.DailyDungeonStatus
 import com.milan.game.services.DungeonSweepOutcome
 import com.milan.game.services.GameService
-import com.milan.game.services.WriteOutcome
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -44,6 +42,11 @@ class DungeonViewModel(
         abyss = runCatching { service.getAbyssStatus() }.getOrNull(),
     )
 
+    /** 战斗层退出后强制重读（snapshot 可能已刷新，双保险）。 */
+    fun refresh() {
+        _uiState.value = buildState()
+    }
+
     fun sweep(type: DailyDungeonType, times: Int = 1) {
         viewModelScope.launch {
             when (val out = service.sweepDungeon(type, times)) {
@@ -55,31 +58,6 @@ class DungeonViewModel(
                     )
                 }
                 DungeonSweepOutcome.Rejected -> _toasts.send("次数不足或参数无效")
-            }
-        }
-    }
-
-    fun challengeAbyss(floor: Int) {
-        viewModelScope.launch {
-            when (service.challengeAbyss(floor)) {
-                is AbyssChallengeOutcome.Success -> {
-                    _uiState.value = buildState()
-                    _toasts.send("已发起深渊第 $floor 层挑战（次数 +1）")
-                }
-                AbyssChallengeOutcome.Rejected -> _toasts.send("无法挑战：次数用尽 / 楼层未解锁")
-            }
-        }
-    }
-
-    fun completeAbyss(floor: Int, stars: Int) {
-        viewModelScope.launch {
-            when (service.completeAbyssStage(floor, stars)) {
-                WriteOutcome.Success -> {
-                    _uiState.value = buildState()
-                    _toasts.send("深渊 $floor 层结算 · $stars 星")
-                }
-                WriteOutcome.Rejected -> _toasts.send("结算被拒（重复或未达标）")
-                WriteOutcome.SaveFailed -> _toasts.send("存档失败，结算已回滚")
             }
         }
     }

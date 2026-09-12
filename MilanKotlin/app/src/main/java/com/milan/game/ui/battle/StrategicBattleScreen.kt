@@ -59,11 +59,12 @@ fun StrategicBattleScreen(
     floor: Int,
     onExit: () -> Unit,
     modifier: Modifier = Modifier,
+    mode: StrategicBattleMode = StrategicBattleMode.TOWER,
 ) {
     val vm: StrategicBattleViewModel = viewModel(factory = com.milan.game.di.AppGraph.factory)
     val ui by vm.ui.collectAsStateWithLifecycle()
 
-    LaunchedEffect(floor) { vm.start(floor) }
+    LaunchedEffect(floor, mode) { vm.start(floor, mode) }
 
     // 战斗 BGM：进入切 battle，退出切回 theme（资源缺失静默）
     LaunchedEffect(Unit) {

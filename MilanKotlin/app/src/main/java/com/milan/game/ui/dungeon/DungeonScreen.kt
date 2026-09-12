@@ -18,6 +18,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -26,6 +29,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.milan.game.data.DailyDungeonType
 import com.milan.game.di.AppGraph
+import com.milan.game.ui.battle.StrategicBattleMode
+import com.milan.game.ui.battle.StrategicBattleScreen
 import com.milan.game.ui.components.PageBackground
 import com.milan.game.ui.feedback.LocalFeedback
 import com.milan.game.ui.nav.AppTopBar
@@ -33,6 +38,7 @@ import com.milan.game.ui.theme.AppTheme
 
 /**
  * 日常副本 + 深渊入口（2026-09-12 Dungeon keep：服务已有，UI 此前零调用）。
+ * 2026-09-12 起深渊走 [StrategicBattleScreen] 真战斗，胜利后自动结算星级。
  */
 @Composable
 fun DungeonScreen(onBack: () -> Unit) {
@@ -40,6 +46,9 @@ fun DungeonScreen(onBack: () -> Unit) {
     val vm: DungeonViewModel = viewModel(factory = AppGraph.factory)
     val ui by vm.uiState.collectAsStateWithLifecycle()
     LaunchedEffect(vm) { vm.toasts.collect { feedback.show(it) } }
+
+    var showBattle by rememberSaveable { mutableStateOf(false) }
+    var battleFloor by rememberSaveable { mutableStateOf(1) }
 
     PageBackground {
         Column(Modifier.fillMaxSize()) {
@@ -83,14 +92,16 @@ fun DungeonScreen(onBack: () -> Unit) {
                             color = AppTheme.Text2,
                         )
                         Spacer(Modifier.height(10.dp))
-                        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                            ActionChip("挑战本层") { vm.challengeAbyss(abyss.currentFloor) }
-                            ActionChip("结算 3★") { vm.completeAbyss(abyss.currentFloor, stars = 3) }
-                            ActionChip("结算 1★") { vm.completeAbyss(abyss.currentFloor, stars = 1) }
+                        ActionChip(
+                            "进入战斗",
+                            enabled = abyss.remainingChallenges > 0,
+                        ) {
+                            battleFloor = abyss.currentFloor
+                            showBattle = true
                         }
                         Spacer(Modifier.height(8.dp))
                         Text(
-                            "提示：挑战计入次数；结算按首通/新星发奖。完整战斗流程接入后可去掉手动结算。",
+                            "星级：无阵亡 3★ · 1 人阵亡 2★ · 其余胜局 1★；首通/新星发奖。",
                             color = AppTheme.Text3,
                         )
                     }
@@ -98,6 +109,17 @@ fun DungeonScreen(onBack: () -> Unit) {
                 Spacer(Modifier.height(32.dp))
             }
         }
+    }
+
+    if (showBattle) {
+        StrategicBattleScreen(
+            floor = battleFloor,
+            mode = StrategicBattleMode.ABYSS,
+            onExit = {
+                showBattle = false
+                vm.refresh()
+            },
+        )
     }
 }
 
