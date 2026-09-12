@@ -57,6 +57,9 @@ jobs:
       - name: Architecture gate
         run: ./gradlew checkArchitecture --stacktrace
 
+      - name: Detekt
+        run: ./gradlew detekt --stacktrace
+
       - name: Unit tests
         run: ./gradlew :app:testDebugUnitTest --stacktrace
 

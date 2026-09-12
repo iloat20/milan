@@ -14,6 +14,8 @@
   ```
 - **CI**：`.github/workflows/ci.yml`（GitHub Actions，main push/PR）。任务序：`checkArchitecture` → `:app:testDebugUnitTest` → `:app:assembleDebug`；失败上传测试报告，成功上传 Debug APK。需真机的 Macrobenchmark / baseline profile **不在** CI 内。
 - **Konsist**（2026-09-12）：`app/src/test/.../arch/ArchitectureKonsistTest.kt` 用编译期 API 锁层规则（shared domain / data / core services 无 android.*；VM 无 GameState 默认注入；ui 除 nav 无 AppGraph.service）。路径相对 **工程根** `MilanKotlin/`（如 `shared/src`）。与根任务 `checkArchitecture` 正则门禁互补，随单测进 CI。
+- **detekt**（2026-09-12）：根工程 `./gradlew detekt`（配置 `config/detekt/detekt.yml`，基线 `baseline.xml` 冻结存量）。增量违规 fail-fast；CI 在单测前跑。根 `check` 任务 = detekt + checkArchitecture。
+- **经济属性测试**：`EconomyFormulasPropertyTest`（Kotest property）锁非负/单调/预算不超支/累计经验一致性。
 - **技术栈 B 批（2026-09-12 完成）**：Gradle wrapper **9.7.1**、AGP **9.4.0**、Nav 2.10.1、Work 2.11.2、Glance 1.2.0、Benchmark 1.5.0、Konsist 0.17.3。沙箱若再遇 wrapper 下载 SSL 失败，可把发行包放进 `.gradle-home/wrapper/dists/gradle-9.7.1-bin/<hash>/` 并去掉 `.part`。
 - 产物：`MilanKotlin/app/build/outputs/apk/debug/app-debug.apk`（~90MB）/ `release/app-release.apk`（~49MB）。需 JDK 17+（PATH 上有 Temurin 17 即可）。
 - **DSH 沙箱环境专用**：`%USERPROFILE%\.gradle` 与 `%USERPROFILE%\.android` 不可写，必须用

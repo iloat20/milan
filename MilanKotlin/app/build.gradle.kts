@@ -153,6 +153,8 @@ dependencies {
     testImplementation(libs.kotlinx.coroutines.test)
     // Konsist 架构测试（与 checkArchitecture 互补：层/包依赖用编译期 API 表达）
     testImplementation(libs.konsist)
+    // 经济/保底不变量属性测试（Kotest property，可独立使用）
+    testImplementation(libs.kotest.property)
     // ── Compose UI 测试（2026-08-28 P0）──
     // 项目此前 9624 行 UI 代码零测试覆盖，UI 缺陷只能靠静态审查发现（第三轮审查 6/14 个 bug 在 UI 层）。
     // 采用 Robolectric 在 JVM 上跑 Compose：无需模拟器/真机，可进 CI。

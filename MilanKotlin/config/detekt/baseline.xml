@@ -1,0 +1,495 @@
+<?xml version="1.0" ?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>ComplexCondition:BattleStrikeFx.kt$pulse == null || !pulse.targetIsPlayer || pulse.damage &lt;= 0 || pulse.targetDefeated</ID>
+    <ID>ComplexCondition:GachaViewModel.kt$GachaViewModel$st != RevealStage.Charge &amp;&amp; st != RevealStage.Beam &amp;&amp; st != RevealStage.Single &amp;&amp; st != RevealStage.Ten</ID>
+    <ID>ComplexCondition:StrategicBattleScreen.kt$actor != null &amp;&amp; actor.hp &gt; 0 &amp;&amp; !ui.finished &amp;&amp; !ui.enemyActing</ID>
+    <ID>CyclomaticComplexMethod:AchievementScreen.kt$@Composable private fun AchievementCard( status: AchievementStatus, enabled: Boolean, onClaim: () -&gt; Unit, )</ID>
+    <ID>CyclomaticComplexMethod:BattleResultOverlay.kt$@Composable fun BattleResultOverlay( victory: Boolean, turns: Int, rewardSoft: Int, rewardHard: Int, recordAdvanced: Boolean, bestFloorAfter: Int, onDismiss: () -&gt; Unit, modifier: Modifier = Modifier, log: List&lt;StrikeEvent&gt; = emptyList(), )</ID>
+    <ID>CyclomaticComplexMethod:BattleSimulator.kt$BattleSimulator$fun simulate(teamA: Array&lt;UnitStats&gt;?, teamB: Array&lt;UnitStats&gt;?, maxTurns: Int): BattleResult</ID>
+    <ID>CyclomaticComplexMethod:CharacterDetailScreen.kt$@Composable fun CharacterDetailScreen( characterId: String, onBack: () -&gt; Unit, onOpenProgression: (String) -&gt; Unit, onOpenInspection: (String) -&gt; Unit, onSwitchCharacter: (String) -&gt; Unit, animatedVisibilityScope: androidx.compose.animation.AnimatedVisibilityScope, modifier: Modifier = Modifier, )</ID>
+    <ID>CyclomaticComplexMethod:CodexCard.kt$@Composable fun CodexCard( tier: Int, modifier: Modifier = Modifier, shape: Shape = RoundedCornerShape(CardMetrics.Corner), /** 卡边厚度（纸厚感）；网格里可传 2.dp 减负。 */ edge: Dp = CardMetrics.Edge, onClick: (() -&gt; Unit)? = null, content: @Composable BoxScope.() -&gt; Unit, )</ID>
+    <ID>CyclomaticComplexMethod:CyberBeam.kt$@Composable internal fun RiftBeam(rarity: Int = 1, modifier: Modifier = Modifier)</ID>
+    <ID>CyclomaticComplexMethod:CyberCards.kt$@Composable internal fun TenCard( result: PullResult, entered: Boolean, flipped: Boolean, onClick: () -&gt; Unit, modifier: Modifier = Modifier, )</ID>
+    <ID>CyclomaticComplexMethod:CyberCharge.kt$@Composable internal fun ChargeCore(rarity: Int = 1, modifier: Modifier = Modifier)</ID>
+    <ID>CyclomaticComplexMethod:CyberStage.kt$@Composable fun CyberRevealLayer( stage: RevealStage, singleDef: CharacterDataEntry?, singleRarity: Int, fortune: String, batch: List&lt;PullResult&gt;, cardIn: Boolean, onSkip: () -&gt; Unit, onFlip: (Int) -&gt; Unit, onOpenCharacter: (String) -&gt; Unit, modifier: Modifier = Modifier, )</ID>
+    <ID>CyclomaticComplexMethod:DamageFloatingText.kt$@Composable fun DamageFloatingText( events: List&lt;StrikeEvent&gt;, active: Boolean, modifier: Modifier = Modifier, eventDelayMs: Long = 180L, floatDurationMs: Long = 800L, )</ID>
+    <ID>CyclomaticComplexMethod:DialogueScreen.kt$@Composable fun DialogueScreen( stage: StoryStageDef, onStageComplete: () -&gt; Unit, onBack: () -&gt; Unit, /** * 选择分支跳转到指定关卡（M3 修复新增）。此前 `nextStageId` 分支直接退出整关， * 「跳转到目标关卡」的语义从未实现；现由 NavHost 侧执行「当前关完结 + 打开目标关」。 * 无内容引用该能力时保持默认空实现，不影响既有线性关卡。 */ onNavigateStage: (String) -&gt; Unit = {}, /** 好感选项落账（默认 no-op；生产由 NavHost 注入 StoryViewModel.grantAffinity）。 */ onGrantAffinity: (characterId: String, amount: Int) -&gt; Unit = { _, _ -&gt; }, /** 结局分支落档（默认 no-op；生产由 NavHost 注入 StoryViewModel.setEndingBranch）。 */ onSelectEnding: (branchId: String) -&gt; Unit = {}, /** 说话者内容查找（生产由 NavHost 注入 StoryViewModel.characterOf）。 */ characterOf: (String) -&gt; CharacterDataEntry? = { null }, )</ID>
+    <ID>CyclomaticComplexMethod:DungeonService.kt$DungeonService$override suspend fun completeAbyssStage(floor: Int, stars: Int): WriteOutcome</ID>
+    <ID>CyclomaticComplexMethod:DungeonService.kt$DungeonService$suspend fun ensureDailyReset(): WriteOutcome</ID>
+    <ID>CyclomaticComplexMethod:EventRhythmService.kt$EventRhythmService$private fun resolveEquipmentTemplate(shopItem: EventShopItem): EquipmentData?</ID>
+    <ID>CyclomaticComplexMethod:EventScreen.kt$@Composable private fun EventCard( card: EventCardUi, busy: Boolean, onSignIn: () -&gt; Unit, onClaimTask: (String) -&gt; Unit, onRedeem: (String) -&gt; Unit, )</ID>
+    <ID>CyclomaticComplexMethod:GachaScreen.kt$@Composable fun GachaScreen( onNav: (NavItem) -&gt; Unit, onOpenCharacter: (String) -&gt; Unit, onOpenHistory: () -&gt; Unit, modifier: Modifier = Modifier, testMode: Boolean = false, )</ID>
+    <ID>CyclomaticComplexMethod:GachaService.kt$GachaService$override suspend fun pull(poolId: String, tenPull: Boolean): PullOutcome</ID>
+    <ID>CyclomaticComplexMethod:GachaViewModel.kt$GachaViewModel$fun doPull( tenPull: Boolean, poolId: String, singleCost: Int, tenCost: Int, softCurrency: Int, onBuzz: (bestRarity: Int) -&gt; Unit, onSfx: (String) -&gt; Unit, onError: (String) -&gt; Unit, )</ID>
+    <ID>CyclomaticComplexMethod:GameContent.kt$GameContent$fun enrich(characters: List&lt;CharacterDataEntry&gt;)</ID>
+    <ID>CyclomaticComplexMethod:ParticleSystem.kt$@Composable fun GachaStarBurst( rarity: Int, active: Boolean, modifier: Modifier = Modifier, emitFromCenter: Boolean = true, )</ID>
+    <ID>CyclomaticComplexMethod:ParticleSystem.kt$@Composable fun ParticleSystem( config: EmitterConfig, active: Boolean = true, modifier: Modifier = Modifier, emitPosition: Offset = Offset.Unspecified, emitFromCenter: Boolean = false, emitFromCenterBottom: Boolean = false, )</ID>
+    <ID>CyclomaticComplexMethod:ProgressionPanels.kt$@Composable private fun TalentNode( node: TalentNodeData, col: Color, allocated: Boolean, canAlloc: Boolean, enabled: Boolean = true, onClick: () -&gt; Unit, )</ID>
+    <ID>CyclomaticComplexMethod:SaveData.kt$SaveData$fun sanitize()</ID>
+    <ID>CyclomaticComplexMethod:ServiceCore.kt$ServiceCore$fun loadContent(rawJson: String?)</ID>
+    <ID>CyclomaticComplexMethod:ServiceCore.kt$ServiceCore$private fun calculateEquipmentStats(characterId: String): EquipmentStatBonus</ID>
+    <ID>CyclomaticComplexMethod:SettingsScreen.kt$@Composable fun SettingsScreen( onNav: (NavItem) -&gt; Unit, )</ID>
+    <ID>CyclomaticComplexMethod:StatsCalculator.kt$StatsCalculator$fun compute( baseStats: List&lt;Int&gt;, level: Int, stage: Int, stars: Int, branchIds: List&lt;String&gt;, characterId: String, progression: ProgressionEngine, talent: TalentEngine, nodeEffectsMap: Map&lt;String, List&lt;TalentEffect&gt;&gt;? = null, allocatedNodes: List&lt;String&gt; = emptyList(), ): UnitStats</ID>
+    <ID>CyclomaticComplexMethod:StoryScreen.kt$@Composable private fun StageRow( vm: StoryViewModel, revision: Long, stage: StoryStageDef, onOpenStage: (String) -&gt; Unit, )</ID>
+    <ID>CyclomaticComplexMethod:StrategicBattleScreen.kt$@Composable fun StrategicBattleScreen( floor: Int, onExit: () -&gt; Unit, modifier: Modifier = Modifier, )</ID>
+    <ID>CyclomaticComplexMethod:StrategicBattleScreen.kt$@Composable private fun UnitTile( unit: BattleUnitState, selected: Boolean, modifier: Modifier = Modifier, isActor: Boolean = false, onClick: () -&gt; Unit = {}, )</ID>
+    <ID>CyclomaticComplexMethod:StrategicBattleSimulator.kt$StrategicBattleSimulator$fun executePlayerAction(state: BattleState, action: PlayerAction): BattleState</ID>
+    <ID>CyclomaticComplexMethod:StrategicBattleSimulator.kt$StrategicBattleSimulator$fun getAvailableActions(state: BattleState, actorIndex: Int): List&lt;PlayerAction&gt;</ID>
+    <ID>CyclomaticComplexMethod:StrategicBattleSimulator.kt$StrategicBattleSimulator$private fun tryTriggerElementReaction( attacker: BattleUnitState, defender: BattleUnitState, turn: Int, ): ElementReactionResult</ID>
+    <ID>CyclomaticComplexMethod:TalentEngine.kt$TalentEngine$fun talentEffects( allocatedNodes: List&lt;String&gt;, nodeEffectsMap: Map&lt;String, List&lt;TalentEffect&gt;&gt;, ): TalentEffectResult</ID>
+    <ID>CyclomaticComplexMethod:TowerScreen.kt$@Composable fun TowerScreen( onBack: () -&gt; Unit, onOpenDeck: () -&gt; Unit, modifier: Modifier = Modifier, )</ID>
+    <ID>CyclomaticComplexMethod:TowerService.kt$TowerService$@Deprecated("P2-11: 扫荡功能UI零调用", level = DeprecationLevel.WARNING) override suspend fun sweepTower(floor: Int, times: Int): TowerSweepOutcome</ID>
+    <ID>CyclomaticComplexMethod:TowerService.kt$TowerService$override suspend fun runTowerFloor(floor: Int): TowerOutcome</ID>
+    <ID>CyclomaticComplexMethod:TowerService.kt$TowerService$override suspend fun settleStrategicBattle( floor: Int, victory: Boolean, turns: Int, battleLog: List&lt;com.milan.game.domain.battle.StrikeEvent&gt;, ): TowerOutcome</ID>
+    <ID>DestructuringDeclarationWithTooManyEntries:CharacterDetailScreen.kt$val (eFrom, _, _, eGlyph) = ElementTheme.forElement(view.element)</ID>
+    <ID>DestructuringDeclarationWithTooManyEntries:DialogueScreen.kt$val (eFrom, _, _, _) = com.milan.game.ui.theme.ElementTheme.forElement(def.element)</ID>
+    <ID>DestructuringDeclarationWithTooManyEntries:InfoPanels.kt$val (from, _, _, _) = ElementTheme.forElement(sk.element)</ID>
+    <ID>DestructuringDeclarationWithTooManyEntries:ProgressionScreen.kt$val (eFrom, _, _, eGlyph) = ElementTheme.forElement(view.element)</ID>
+    <ID>DestructuringDeclarationWithTooManyEntries:WeaponPanel.kt$val (eFrom, _, _, eGlyph) = ElementTheme.forElement(view.element)</ID>
+    <ID>EmptyFunctionBlock:CrashReporter.kt$CrashReporter.&lt;no name provided&gt;${}</ID>
+    <ID>EmptyFunctionBlock:PortraitLoader.kt$PortraitLoader.&lt;no name provided&gt;${ }</ID>
+    <ID>FunctionOnlyReturningConstant:EconomyFormulas.kt$EconomyFormulas$fun dailyDiscountPermille(): Int</ID>
+    <ID>FunctionOnlyReturningConstant:EconomyFormulas.kt$EconomyFormulas$fun dailyFreeSupplySoft(): Int</ID>
+    <ID>FunctionOnlyReturningConstant:EconomyFormulas.kt$EconomyFormulas$fun dailyOfferSlots(): Int</ID>
+    <ID>FunctionOnlyReturningConstant:EconomyFormulas.kt$EconomyFormulas$fun dailyTicketBundleCost(): Int</ID>
+    <ID>FunctionOnlyReturningConstant:EconomyFormulas.kt$EconomyFormulas$fun dailyTicketBundleSize(): Int</ID>
+    <ID>FunctionOnlyReturningConstant:EconomyFormulas.kt$EconomyFormulas$fun dailyTicketGrant(): Int</ID>
+    <ID>FunctionOnlyReturningConstant:EconomyFormulas.kt$EconomyFormulas$fun diamondExchangeCost(): Int</ID>
+    <ID>FunctionOnlyReturningConstant:EconomyFormulas.kt$EconomyFormulas$fun diamondExchangeYield(): Int</ID>
+    <ID>FunctionOnlyReturningConstant:EconomyFormulas.kt$EconomyFormulas$fun fragmentExchangeBatch(): Int</ID>
+    <ID>FunctionOnlyReturningConstant:EconomyFormulas.kt$EconomyFormulas$fun fragmentExchangeYield(): Int</ID>
+    <ID>FunctionOnlyReturningConstant:EconomyFormulas.kt$EconomyFormulas$fun softPityRampStep(): Int</ID>
+    <ID>FunctionOnlyReturningConstant:EconomyFormulas.kt$EconomyFormulas$fun towerMaxFloor(): Int</ID>
+    <ID>FunctionOnlyReturningConstant:EconomyFormulas.kt$EconomyFormulas$fun towerRewardTickets(): Int</ID>
+    <ID>FunctionOnlyReturningConstant:EconomyFormulas.kt$EconomyFormulas$fun towerTicketCost(): Int</ID>
+    <ID>InstanceOfCheckForException:AffinityViewModel.kt$AffinityViewModel$e is kotlinx.coroutines.CancellationException</ID>
+    <ID>InstanceOfCheckForException:DeckViewModel.kt$DeckViewModel$e is kotlinx.coroutines.CancellationException</ID>
+    <ID>InstanceOfCheckForException:EventViewModel.kt$EventViewModel$e is kotlinx.coroutines.CancellationException</ID>
+    <ID>InstanceOfCheckForException:GachaViewModel.kt$GachaViewModel$e is kotlinx.coroutines.CancellationException</ID>
+    <ID>InstanceOfCheckForException:PortraitLoader.kt$PortraitLoader$t is CancellationException</ID>
+    <ID>InstanceOfCheckForException:StoryViewModel.kt$StoryViewModel$e is kotlinx.coroutines.CancellationException</ID>
+    <ID>LargeClass:GameContent.kt$GameContent</ID>
+    <ID>LargeClass:ServiceCore.kt$ServiceCore</ID>
+    <ID>LargeClass:StoryService.kt$StoryService$Companion</ID>
+    <ID>LongMethod:AffinityScreen.kt$@Composable private fun AffinityCard( characterId: String, name: String, rarity: Int, affinity: Int, claimedLevels: Set&lt;Int&gt;, giftEnabled: Boolean, onGift: () -&gt; Unit, onClaimReward: (Int) -&gt; Unit, onClick: () -&gt; Unit, )</ID>
+    <ID>LongMethod:ArenaService.kt$ArenaService$override suspend fun challengeOpponent(opponent: ArenaOpponent): ArenaChallengeOutcome</ID>
+    <ID>LongMethod:BattleReplayTimeline.kt$@Composable fun BattleReplayTimeline( log: List&lt;StrikeEvent&gt;, modifier: Modifier = Modifier, names: Map&lt;String, String&gt; = emptyMap(), /** 默认收起，避免结算首屏被战报淹没。 */ defaultExpanded: Boolean = false, )</ID>
+    <ID>LongMethod:BattleReplayTimeline.kt$@Composable private fun StrikeTimelineRow( e: StrikeEvent, names: Map&lt;String, String&gt;, )</ID>
+    <ID>LongMethod:BattleResultOverlay.kt$@Composable fun BattleResultOverlay( victory: Boolean, turns: Int, rewardSoft: Int, rewardHard: Int, recordAdvanced: Boolean, bestFloorAfter: Int, onDismiss: () -&gt; Unit, modifier: Modifier = Modifier, log: List&lt;StrikeEvent&gt; = emptyList(), )</ID>
+    <ID>LongMethod:CharacterCard.kt$@Composable fun CharacterCard( characterId: String, name: String, title: String, rarity: Int, element: String, onClick: () -&gt; Unit, modifier: Modifier = Modifier, locked: Boolean = false, animatedVisibilityScope: AnimatedVisibilityScope? = null, footer: (@Composable ColumnScope.() -&gt; Unit)? = null, )</ID>
+    <ID>LongMethod:CharacterDetailScreen.kt$@Composable fun CharacterDetailScreen( characterId: String, onBack: () -&gt; Unit, onOpenProgression: (String) -&gt; Unit, onOpenInspection: (String) -&gt; Unit, onSwitchCharacter: (String) -&gt; Unit, animatedVisibilityScope: androidx.compose.animation.AnimatedVisibilityScope, modifier: Modifier = Modifier, )</ID>
+    <ID>LongMethod:CharacterListScreen.kt$@Composable fun CharacterListScreen( onBack: () -&gt; Unit, onOpenCharacter: (String) -&gt; Unit, animatedVisibilityScope: androidx.compose.animation.AnimatedVisibilityScope, modifier: Modifier = Modifier, )</ID>
+    <ID>LongMethod:CodexCard.kt$@Composable fun CodexCard( tier: Int, modifier: Modifier = Modifier, shape: Shape = RoundedCornerShape(CardMetrics.Corner), /** 卡边厚度（纸厚感）；网格里可传 2.dp 减负。 */ edge: Dp = CardMetrics.Edge, onClick: (() -&gt; Unit)? = null, content: @Composable BoxScope.() -&gt; Unit, )</ID>
+    <ID>LongMethod:CollectionScreen.kt$@Composable fun CollectionScreen( onBack: () -&gt; Unit, onOpenCharacter: (String) -&gt; Unit, onOpenMyCharacters: () -&gt; Unit, animatedVisibilityScope: AnimatedVisibilityScope, modifier: Modifier = Modifier, )</ID>
+    <ID>LongMethod:CollectionScreen.kt$@Composable private fun CollectionProgressHeader( all: List&lt;CharacterDataEntry&gt;, owned: List&lt;OwnedCharacterView&gt;, onOpenMyCharacters: () -&gt; Unit, modifier: Modifier = Modifier, )</ID>
+    <ID>LongMethod:CyberBeam.kt$@Composable internal fun RiftBeam(rarity: Int = 1, modifier: Modifier = Modifier)</ID>
+    <ID>LongMethod:CyberCards.kt$@Composable internal fun SingleCard( def: CharacterDataEntry?, rarity: Int, fortune: String, cardIn: Boolean, onOpenCharacter: (String) -&gt; Unit, modifier: Modifier = Modifier, )</ID>
+    <ID>LongMethod:CyberCards.kt$@Composable internal fun TenCard( result: PullResult, entered: Boolean, flipped: Boolean, onClick: () -&gt; Unit, modifier: Modifier = Modifier, )</ID>
+    <ID>LongMethod:CyberCards.kt$@Composable private fun TenCardFace( result: PullResult, frame: Color, shape: RoundedCornerShape, idleGlow: Float, )</ID>
+    <ID>LongMethod:CyberCharge.kt$@Composable internal fun ChargeCore(rarity: Int = 1, modifier: Modifier = Modifier)</ID>
+    <ID>LongMethod:CyberStage.kt$@Composable fun CyberHerald( modifier: Modifier = Modifier, testMode: Boolean = false, pityRatio: Float = 0f, )</ID>
+    <ID>LongMethod:CyberStage.kt$@Composable fun CyberRevealLayer( stage: RevealStage, singleDef: CharacterDataEntry?, singleRarity: Int, fortune: String, batch: List&lt;PullResult&gt;, cardIn: Boolean, onSkip: () -&gt; Unit, onFlip: (Int) -&gt; Unit, onOpenCharacter: (String) -&gt; Unit, modifier: Modifier = Modifier, )</ID>
+    <ID>LongMethod:DamageFloatingText.kt$@Composable fun DamageFloatingText( events: List&lt;StrikeEvent&gt;, active: Boolean, modifier: Modifier = Modifier, eventDelayMs: Long = 180L, floatDurationMs: Long = 800L, )</ID>
+    <ID>LongMethod:DeckScreen.kt$@Composable fun DeckScreen( onNav: (NavItem) -&gt; Unit, onOpenCharacter: (String) -&gt; Unit, modifier: Modifier = Modifier, animatedVisibilityScope: androidx.compose.animation.AnimatedVisibilityScope? = null, )</ID>
+    <ID>LongMethod:DeckScreen.kt$@Composable private fun DeckPreviewOverlay( preview: OwnedCharacterView?, onClose: () -&gt; Unit, onOpenCharacter: (String) -&gt; Unit, inFormation: Boolean = false, onToggleFormation: (() -&gt; Unit)? = null, )</ID>
+    <ID>LongMethod:DialogueScreen.kt$@Composable fun DialogueScreen( stage: StoryStageDef, onStageComplete: () -&gt; Unit, onBack: () -&gt; Unit, /** * 选择分支跳转到指定关卡（M3 修复新增）。此前 `nextStageId` 分支直接退出整关， * 「跳转到目标关卡」的语义从未实现；现由 NavHost 侧执行「当前关完结 + 打开目标关」。 * 无内容引用该能力时保持默认空实现，不影响既有线性关卡。 */ onNavigateStage: (String) -&gt; Unit = {}, /** 好感选项落账（默认 no-op；生产由 NavHost 注入 StoryViewModel.grantAffinity）。 */ onGrantAffinity: (characterId: String, amount: Int) -&gt; Unit = { _, _ -&gt; }, /** 结局分支落档（默认 no-op；生产由 NavHost 注入 StoryViewModel.setEndingBranch）。 */ onSelectEnding: (branchId: String) -&gt; Unit = {}, /** 说话者内容查找（生产由 NavHost 注入 StoryViewModel.characterOf）。 */ characterOf: (String) -&gt; CharacterDataEntry? = { null }, )</ID>
+    <ID>LongMethod:EventScreen.kt$@Composable private fun EventCard( card: EventCardUi, busy: Boolean, onSignIn: () -&gt; Unit, onClaimTask: (String) -&gt; Unit, onRedeem: (String) -&gt; Unit, )</ID>
+    <ID>LongMethod:FormationUi.kt$@Composable fun FormationBar( members: List&lt;OwnedCharacterView&gt;, maxSlots: Int, onSlotClick: (String?) -&gt; Unit, modifier: Modifier = Modifier, /** 拖拽悬停时高亮空槽（2026-09-10 拖放反馈）。 */ dropHighlight: Boolean = false, )</ID>
+    <ID>LongMethod:GachaScreen.kt$@Composable fun GachaScreen( onNav: (NavItem) -&gt; Unit, onOpenCharacter: (String) -&gt; Unit, onOpenHistory: () -&gt; Unit, modifier: Modifier = Modifier, testMode: Boolean = false, )</ID>
+    <ID>LongMethod:GachaScreen.kt$@Composable private fun GachaChip( r: PullResult, delayMs: Int, batch: Int, onOpen: () -&gt; Unit, modifier: Modifier = Modifier, )</ID>
+    <ID>LongMethod:GachaScreen.kt$@Composable private fun PoolHeroCard( pool: GachaPoolDataEntry, featured: CharacterDataEntry?, featuredRarity: Int, pity: Int, featuredLost: Boolean, onOpenCharacter: (String) -&gt; Unit, modifier: Modifier = Modifier, )</ID>
+    <ID>LongMethod:GachaService.kt$GachaService$override suspend fun pull(poolId: String, tenPull: Boolean): PullOutcome</ID>
+    <ID>LongMethod:GachaViewModel.kt$GachaViewModel$fun doPull( tenPull: Boolean, poolId: String, singleCost: Int, tenCost: Int, softCurrency: Int, onBuzz: (bestRarity: Int) -&gt; Unit, onSfx: (String) -&gt; Unit, onError: (String) -&gt; Unit, )</ID>
+    <ID>LongMethod:GameContent.kt$GameContent$fun buildCharacters(): List&lt;CharacterDataEntry&gt;</ID>
+    <ID>LongMethod:GameContent.kt$GameContent$fun buildTalentTrees(characters: List&lt;CharacterDataEntry&gt;): List&lt;TalentTreeData&gt;</ID>
+    <ID>LongMethod:GameContent.kt$GameContent$fun enrich(characters: List&lt;CharacterDataEntry&gt;)</ID>
+    <ID>LongMethod:GameNavBar.kt$@Composable private fun NavCell( item: NavItem, selected: Boolean, onClick: () -&gt; Unit, modifier: Modifier = Modifier, )</ID>
+    <ID>LongMethod:HomeScreen.kt$@Composable fun HomeScreen( onNav: (NavItem) -&gt; Unit, onOpenGacha: () -&gt; Unit, onOpenCollection: () -&gt; Unit, onOpenCharacter: (String) -&gt; Unit, onOpenTower: () -&gt; Unit = {}, onOpenAchievements: () -&gt; Unit = {}, onOpenStory: () -&gt; Unit = {}, onOpenDailyMissions: () -&gt; Unit = {}, onOpenBattlePass: () -&gt; Unit = {}, onOpenAffinity: () -&gt; Unit = {}, onOpenArena: () -&gt; Unit = {}, onOpenEvent: () -&gt; Unit = {}, modifier: Modifier = Modifier, )</ID>
+    <ID>LongMethod:HomeScreen.kt$@Composable private fun AvatarStrip( entries: List&lt;HomeAvatarEntry&gt;, onOpenCharacter: (String) -&gt; Unit, onOpenCollection: () -&gt; Unit, )</ID>
+    <ID>LongMethod:MilanNavHost.kt$@Composable internal fun MilanNavHost(openGachaOnStart: Boolean = false)</ID>
+    <ID>LongMethod:PageComponents.kt$@Composable fun SubPageHero( view: OwnedCharacterView, rarityCol: Color, eFrom: Color, eGlyph: String, heroHeight: Dp, onBack: () -&gt; Unit, onPrev: () -&gt; Unit, onNext: () -&gt; Unit, modifier: Modifier = Modifier, fadeHeight: Dp = 140.dp, owned: Boolean = true, onOpenProgression: ((String) -&gt; Unit)? = null, onOpenInspection: ((String) -&gt; Unit)? = null, portraitModifier: Modifier = Modifier, /** 传入 NavHost 的 AnimatedVisibilityScope 后，立绘参与 `portrait_{id}` 共享元素过渡。 */ animatedVisibilityScope: AnimatedVisibilityScope? = null, )</ID>
+    <ID>LongMethod:ProgressionScreen.kt$@Composable fun ProgressionScreen( characterId: String, onBack: () -&gt; Unit, onSwitchCharacter: (String) -&gt; Unit, animatedVisibilityScope: androidx.compose.animation.AnimatedVisibilityScope? = null, modifier: Modifier = Modifier, )</ID>
+    <ID>LongMethod:SaveData.kt$SaveData$fun sanitize()</ID>
+    <ID>LongMethod:ServiceCore.kt$ServiceCore$private fun loadEquipmentFallback()</ID>
+    <ID>LongMethod:SettingsScreen.kt$@Composable fun SettingsScreen( onNav: (NavItem) -&gt; Unit, )</ID>
+    <ID>LongMethod:ShopScreen.kt$@Composable fun ShopScreen( onNav: (NavItem) -&gt; Unit, )</ID>
+    <ID>LongMethod:StoryScreen.kt$@Composable private fun StoryChapterCard( vm: StoryViewModel, revision: Long, chapter: StoryChapterDef, index: Int, unlockHint: String?, onOpenStage: (String) -&gt; Unit, )</ID>
+    <ID>LongMethod:StrategicBattleScreen.kt$@Composable fun StrategicBattleScreen( floor: Int, onExit: () -&gt; Unit, modifier: Modifier = Modifier, )</ID>
+    <ID>LongMethod:TalentEngine.kt$TalentEngine$fun talentEffects( allocatedNodes: List&lt;String&gt;, nodeEffectsMap: Map&lt;String, List&lt;TalentEffect&gt;&gt;, ): TalentEffectResult</ID>
+    <ID>LongMethod:TowerScreen.kt$@Composable fun TowerScreen( onBack: () -&gt; Unit, onOpenDeck: () -&gt; Unit, modifier: Modifier = Modifier, )</ID>
+    <ID>LongMethod:TowerScreen.kt$@Composable private fun BattlePreviewCard( myTeam: List&lt;UnitStats&gt;, myElements: List&lt;String&gt;, floor: Int, myPower: Int, enemy: TowerEnemyPreview?, )</ID>
+    <ID>LongMethod:TowerScreen.kt$@Composable private fun StrikeRow(e: StrikeEvent, names: Map&lt;String, String&gt;)</ID>
+    <ID>LongMethod:TowerService.kt$TowerService$@Deprecated("P2-11: 扫荡功能UI零调用", level = DeprecationLevel.WARNING) override suspend fun sweepTower(floor: Int, times: Int): TowerSweepOutcome</ID>
+    <ID>LongMethod:TowerService.kt$TowerService$override suspend fun runTowerFloor(floor: Int): TowerOutcome</ID>
+    <ID>LongMethod:TowerService.kt$TowerService$override suspend fun settleStrategicBattle( floor: Int, victory: Boolean, turns: Int, battleLog: List&lt;com.milan.game.domain.battle.StrikeEvent&gt;, ): TowerOutcome</ID>
+    <ID>LongParameterList:AffinityScreen.kt$( characterId: String, name: String, rarity: Int, affinity: Int, claimedLevels: Set&lt;Int&gt;, giftEnabled: Boolean, onGift: () -&gt; Unit, onClaimReward: (Int) -&gt; Unit, onClick: () -&gt; Unit, )</ID>
+    <ID>LongParameterList:ArenaSaveData.kt$ArenaSaveData$( @SerialName("ArenaPoints") var arenaPoints: Int = 1000, @SerialName("ArenaRank") var arenaRank: Int = 0, @SerialName("DefenseTeam") var defenseTeam: List&lt;String?&gt; = emptyList(), @SerialName("AttackCount") var attackCount: Int = 0, @SerialName("WinCount") var winCount: Int = 0, @SerialName("LoseCount") var loseCount: Int = 0, @SerialName("SeasonRewards") var seasonRewards: List&lt;String?&gt; = emptyList(), @SerialName("LastRefreshTime") var lastRefreshTime: Long = 0, )</ID>
+    <ID>LongParameterList:ArenaSaveData.kt$PvPBattleRecord$( @SerialName("RecordId") var recordId: String = "", @SerialName("AttackerId") var attackerId: String = "", @SerialName("DefenderId") var defenderId: String = "", @SerialName("AttackerName") var attackerName: String = "", @SerialName("DefenderName") var defenderName: String = "", @SerialName("AttackerTeam") var attackerTeam: List&lt;String?&gt; = emptyList(), @SerialName("DefenderTeam") var defenderTeam: List&lt;String?&gt; = emptyList(), @SerialName("AttackerPoints") var attackerPoints: Int = 0, @SerialName("DefenderPoints") var defenderPoints: Int = 0, @SerialName("Result") var result: String = "", // "win" / "lose" / "draw" @SerialName("Turns") var turns: Int = 0, @SerialName("Timestamp") var timestamp: Long = 0, @SerialName("PointsChanged") var pointsChanged: Int = 0, )</ID>
+    <ID>LongParameterList:BattleResultOverlay.kt$( victory: Boolean, turns: Int, rewardSoft: Int, rewardHard: Int, recordAdvanced: Boolean, bestFloorAfter: Int, onDismiss: () -&gt; Unit, modifier: Modifier = Modifier, log: List&lt;StrikeEvent&gt; = emptyList(), )</ID>
+    <ID>LongParameterList:CharacterCard.kt$( characterId: String, name: String, title: String, rarity: Int, element: String, onClick: () -&gt; Unit, modifier: Modifier = Modifier, locked: Boolean = false, animatedVisibilityScope: AnimatedVisibilityScope? = null, footer: (@Composable ColumnScope.() -&gt; Unit)? = null, )</ID>
+    <ID>LongParameterList:CharacterSaveState.kt$CharacterSaveState$( @SerialName("CharacterId") var characterId: String = "", @SerialName("Level") var level: Int = 1, @SerialName("Stage") var stage: Int = 1, @SerialName("Stars") var stars: Int = 1, @SerialName("TotalExp") var totalExp: Int = 0, @SerialName("UnspentPoints") var unspentPoints: Int = 0, @SerialName("TalentPoints") var talentPoints: List&lt;String?&gt; = emptyList(), // ── 装备系统新增（2026-08 装备系统）── /** 装备槽位（槽位ID → 装备存档ID；空槽不存储）。 */ @SerialName("Equipment") var equipment: Map&lt;String, String?&gt; = emptyMap(), )</ID>
+    <ID>LongParameterList:CyberStage.kt$( stage: RevealStage, singleDef: CharacterDataEntry?, singleRarity: Int, fortune: String, batch: List&lt;PullResult&gt;, cardIn: Boolean, onSkip: () -&gt; Unit, onFlip: (Int) -&gt; Unit, onOpenCharacter: (String) -&gt; Unit, modifier: Modifier = Modifier, )</ID>
+    <ID>LongParameterList:CyberStage.kt$CyberParticle$( val startX: Float, val startY: Float, val endX: Float, val endY: Float, val delaySec: Float, val durSec: Float, val radiusDp: Float, val color: Color, )</ID>
+    <ID>LongParameterList:EventRhythmSaveData.kt$EventRhythmSaveData$( /** 当前活跃的活动列表。 */ @SerialName("ActiveEvents") var activeEvents: List&lt;GameEvent?&gt; = emptyList(), /** 已完成的活动ID列表。 */ @SerialName("CompletedEvents") var completedEvents: List&lt;String?&gt; = emptyList(), /** 活动商店兑换记录（活动ID → 商品ID → 兑换次数）。 */ @SerialName("ShopRedemptions") var shopRedemptions: Map&lt;String, Map&lt;String, Int&gt;&gt; = emptyMap(), /** 活动任务进度（活动ID → 任务ID → 进度）。 */ @SerialName("EventTaskProgress") var eventTaskProgress: Map&lt;String, Map&lt;String, Int&gt;?&gt; = emptyMap(), /** 已领取的活动任务奖励（活动ID → 任务ID 集合）。防重复领取。 */ @SerialName("ClaimedTaskRewards") var claimedTaskRewards: Map&lt;String, List&lt;String&gt;&gt; = emptyMap(), /** 签到活动进度（活动ID → 已签到天数）。 */ @SerialName("SignInProgress") var signInProgress: Map&lt;String, Int?&gt; = emptyMap(), /** 最后每日重置时间。 */ @SerialName("LastDailyReset") var lastDailyReset: Long = 0, /** 最后每周重置时间。 */ @SerialName("LastWeeklyReset") var lastWeeklyReset: Long = 0, /** * 活动代币余额（R5-C1 补）：[EventCurrencyType] 枚举名 → 余额。 * * 此前三种活动代币（EVENT_CURRENCY / ACTIVITY_POINTS / COLLABORATION_TOKENS） * 有枚举定义却**无处存储**：任务奖励把代币当星尘发，商店扣款只扣星尘， * 活动商店因此退化为「星尘商店」，而物品定价（五星装备 3000）是按代币规模设计的。 * 补此字段后收支两侧才有统一的记账对象。 * * 默认空 Map 保证旧存档反序列化兼容（缺键 → 空余额），无需数据迁移。 */ @SerialName("EventCurrencyBalances") var eventCurrencyBalances: Map&lt;String, Int&gt; = emptyMap(), )</ID>
+    <ID>LongParameterList:GachaViewModel.kt$GachaViewModel$( tenPull: Boolean, poolId: String, singleCost: Int, tenCost: Int, softCurrency: Int, onBuzz: (bestRarity: Int) -&gt; Unit, onSfx: (String) -&gt; Unit, onError: (String) -&gt; Unit, )</ID>
+    <ID>LongParameterList:GameContent.kt$GameContent$( list: MutableList&lt;CharacterDataEntry&gt;, id: String, name: String, title: String, world: String, element: String, rarity: Int, stats: List&lt;Int&gt;, stars: Int, breakthrough: Boolean, lore: String, treeId: String, skills: List&lt;SkillData&gt;, )</ID>
+    <ID>LongParameterList:GameService.kt$GameService$( saveProvider: SaveProvider, contentJson: String? = null, private val onTrace: (String) -&gt; Unit = {}, private val rng: Random = Random.Default, /** UTC 日序号提供器（每日商店按天重置；注入便于测试固定「今天」，默认系统时钟）。 */ private val today: () -&gt; Long = { System.currentTimeMillis() / 86_400_000L }, private val core: ServiceCore = ServiceCore( saveManager = SaveManager(saveProvider, onTrace), gacha = GachaEngine(rng), talent = TalentEngine(), progression = ProgressionEngine(), rng = rng, onTrace = onTrace, today = today, ), private val gachaService: GachaService = GachaService(core), private val progressionService: ProgressionService = ProgressionService(core), private val towerService: TowerService = TowerService(core), private val economyService: EconomyService = EconomyService(core), private val metaService: MetaService = MetaService(core), private val arenaService: ArenaService = ArenaService(core, rng), private val inspectionService: InspectionService = InspectionService(core, rng), private val monetizationService: MonetizationService = MonetizationService(core, rng), private val eventRhythmService: EventRhythmService = EventRhythmService(core, rng), private val storyService: StoryService = StoryService(core, rng), private val dailyMissionService: DailyMissionService = DailyMissionService(core), private val dailyCheckInService: DailyCheckInService = DailyCheckInService(core), private val seasonService: SeasonService = SeasonService(core), private val dungeonService: DungeonService = DungeonService(core, rng), private val equipmentService: EquipmentService = EquipmentService(core, rng), private val collectionService: CollectionService = CollectionService(core), )</ID>
+    <ID>LongParameterList:HomeScreen.kt$( onNav: (NavItem) -&gt; Unit, onOpenGacha: () -&gt; Unit, onOpenCollection: () -&gt; Unit, onOpenCharacter: (String) -&gt; Unit, onOpenTower: () -&gt; Unit = {}, onOpenAchievements: () -&gt; Unit = {}, onOpenStory: () -&gt; Unit = {}, onOpenDailyMissions: () -&gt; Unit = {}, onOpenBattlePass: () -&gt; Unit = {}, onOpenAffinity: () -&gt; Unit = {}, onOpenArena: () -&gt; Unit = {}, onOpenEvent: () -&gt; Unit = {}, modifier: Modifier = Modifier, )</ID>
+    <ID>LongParameterList:HomeScreen.kt$( onOpenCollection: () -&gt; Unit, onOpenTower: () -&gt; Unit, onOpenStory: () -&gt; Unit, onOpenDailyMissions: () -&gt; Unit, onOpenBattlePass: () -&gt; Unit, onOpenAffinity: () -&gt; Unit, onOpenAchievements: () -&gt; Unit, onOpenArena: () -&gt; Unit, onOpenEvent: () -&gt; Unit, )</ID>
+    <ID>LongParameterList:ListFilterBar.kt$( searchText: String, onSearchTextChange: (String) -&gt; Unit, rarityFilter: Int, onRarityFilterChange: (Int) -&gt; Unit, elementFilter: String?, onElementFilterChange: (String?) -&gt; Unit, sort: ListSortMode, onSortChange: (ListSortMode) -&gt; Unit, elements: List&lt;String&gt;, modifier: Modifier = Modifier, )</ID>
+    <ID>LongParameterList:ListFilterBar.kt$ListFilter$( source: List&lt;T&gt;, rarityFilter: Int, elementFilter: String?, searchText: String, sort: ListSortMode, getName: (T) -&gt; String, getRarity: (T) -&gt; Int, getElement: (T) -&gt; String, getGroupKey: (T) -&gt; String, )</ID>
+    <ID>LongParameterList:MonetizationSaveData.kt$MonetizationSaveData$( // ── 月卡 ── /** 月卡是否激活。 */ @SerialName("MonthlyCardActive") var monthlyCardActive: Boolean = false, /** 月卡剩余天数（-1=无月卡）。 */ @SerialName("MonthlyCardDaysLeft") var monthlyCardDaysLeft: Int = -1, /** 月卡上次领取时间戳。 */ @SerialName("MonthlyCardLastClaim") var monthlyCardLastClaim: Long = 0, // ── 通行证 ── /** 通行证是否购买了豪华版。 */ @SerialName("BattlePassPremium") var battlePassPremium: Boolean = false, /** 当前通行证等级。 */ @SerialName("BattlePassLevel") var battlePassLevel: Int = 1, /** 当前通行证经验。 */ @SerialName("BattlePassExp") var battlePassExp: Int = 0, /** 已领取的通行证奖励等级列表。 */ @SerialName("ClaimedBPRewards") var claimedBPRewards: List&lt;Int?&gt; = emptyList(), /** 当前通行证赛季（0=从未购买）。 */ @SerialName("BattlePassSeason") var battlePassSeason: Int = 0, // ── 首充/充值 ── /** 已首充的充值档位。 */ @SerialName("FirstChargeClaimed") var firstChargeClaimed: List&lt;String?&gt; = emptyList(), /** 累计充值金额（分）。 */ @SerialName("TotalChargeAmount") var totalChargeAmount: Int = 0, /** 已领取的累计充值奖励里程碑。 */ @SerialName("ClaimedChargeMilestones") var claimedChargeMilestones: List&lt;Int?&gt; = emptyList(), // ── 限时礼包 ── /** 已购买的限时礼包ID。 */ @SerialName("PurchasedTimeLimited") var purchasedTimeLimited: List&lt;String?&gt; = emptyList(), )</ID>
+    <ID>LongParameterList:PageComponents.kt$( view: OwnedCharacterView, rarityCol: Color, eFrom: Color, eGlyph: String, heroHeight: Dp, onBack: () -&gt; Unit, onPrev: () -&gt; Unit, onNext: () -&gt; Unit, modifier: Modifier = Modifier, fadeHeight: Dp = 140.dp, owned: Boolean = true, onOpenProgression: ((String) -&gt; Unit)? = null, onOpenInspection: ((String) -&gt; Unit)? = null, portraitModifier: Modifier = Modifier, /** 传入 NavHost 的 AnimatedVisibilityScope 后，立绘参与 `portrait_{id}` 共享元素过渡。 */ animatedVisibilityScope: AnimatedVisibilityScope? = null, )</ID>
+    <ID>LongParameterList:PortraitImage.kt$( characterId: String, rarity: Int, modifier: Modifier = Modifier, name: String? = null, contentScale: ContentScale = ContentScale.Crop, target: PortraitTarget = PortraitTarget.Full, aura: Boolean = false, glowScale: Float = 1f, )</ID>
+    <ID>LongParameterList:ProgressionPanels.kt$( view: OwnedCharacterView, defMaxStage: Int, owned: Boolean, queries: ProgressionQueries, softCurrency: Int, starFragments: Int, onAscend: () -&gt; Unit, busy: Boolean = false, )</ID>
+    <ID>LongParameterList:SaveData.kt$SaveData$( // ─────────── 元信息 ─────────── @SerialName("Version") var version: Int = 1, @SerialName("UserId") var userId: String = "", @SerialName("ServerSyncStatus") var serverSyncStatus: Int = 0, // ─────────── 经济（星尘/钻石/道具）─────────── @SerialName("SoftCurrency") var softCurrency: Int = DEFAULT_SOFT_CURRENCY, @SerialName("HardCurrency") var hardCurrency: Int = 0, @SerialName("Items") var items: List&lt;ItemSaveState?&gt; = emptyList(), // ─────────── 抽卡（保底/历史/累计/UP定轨）─────────── @SerialName("GachaCounters") var gachaCounters: List&lt;GachaCounterEntry?&gt; = emptyList(), /** 抽卡历史（追加式，上限 [Companion.MAX_PULL_HISTORY] 丢最旧；仅展示用途）。 */ @SerialName("PullHistory") var pullHistory: List&lt;PullLogEntry?&gt; = emptyList(), /** * 累计抽卡次数（2026-08 三期补；**永不清零**，与 [gachaCounters] 语义严格区分）。 * [gachaCounters] 是保底计数，出货即归零——用它当「累计抽数」会让累计型成就进度 * 随出货倒退（F3）。本字段是成就「寻访百次」等累计判定的唯一口径。 */ @SerialName("TotalPullCount") var totalPullCount: Int = 0, /** UP 定轨「上次歪了」的池标记（true = 下次最高稀有度必中 UP 角色）。 */ @SerialName("GachaFeaturedLost") var gachaFeaturedLost: List&lt;PoolFlagEntry?&gt; = emptyList(), // ─────────── 角色与编队 ─────────── @SerialName("OwnedCharacters") var ownedCharacters: List&lt;CharacterSaveState?&gt; = emptyList(), @SerialName("OwnedSkins") var ownedSkins: List&lt;String?&gt; = emptyList(), /** 出战编队（characterId 有序槽位，空槽为 null；上限 [Companion.MAX_FORMATION_SIZE]）。 */ @SerialName("Formation") var formation: List&lt;String?&gt; = emptyList(), /** 无尽之塔历史最高层（0 = 尚未挑战）。 */ @SerialName("TowerBestFloor") var towerBestFloor: Int = 0, @SerialName("BattleRecords") var battleRecords: List&lt;BattleRecord?&gt; = emptyList(), /** 角色好感度数据（角色ID → 好感度等级/经验）。 */ @SerialName("CharacterAffinityData") var characterAffinityData: Map&lt;String, Int?&gt;? = null, /** * 好感等级奖励领取态（characterId → 已领取的等级档位列表，档位见 AffinityFormulas.LEVEL_REWARDS）。 * 2026-09-10：此前 UI 只展示「规划中」，无领取路径；CLAIM_AFFINITY 任务类型也因此恒死。 */ @SerialName("ClaimedAffinityRewards") var claimedAffinityRewards: Map&lt;String, List&lt;Int?&gt;?&gt;? = null, // ─────────── 设置（开关类偏好持久化，避免重启即丢失；统一默认开启）─────────── @SerialName("SoundEnabled") var soundEnabled: Boolean = true, @SerialName("VibrationEnabled") var vibrationEnabled: Boolean = true, @SerialName("PushEnabled") var pushEnabled: Boolean = true, /** * 动效减弱（无障碍，设计语言 P3）：true = 关闭高负载演出（抽卡仪式/粒子/视差等）， * 只保留必要信息动画。旧档无此键 → false（全量动效）。 */ @SerialName("ReduceMotionEnabled") var reduceMotionEnabled: Boolean = false, /** * 字号档位（设计语言 P3 §5.7）：0=标准 1=+10% 2=+20%。经 LocalDensity.fontScale 全局生效。 * 旧档无此键 → 0。 */ @SerialName("FontScaleTier") var fontScaleTier: Int = 0, // ─────────── 商店与成就领取 ─────────── /** 每日商店归属的 UTC 日序号字符串（与当日不一致 = 跨日，已购列表作废重置）。 */ @SerialName("DailyShopDate") var dailyShopDate: String = "", /** 今日已购的每日特惠槽位下标（跨日后由购买流程整体重置）。 */ @SerialName("DailyShopBought") var dailyShopBought: List&lt;Int?&gt; = emptyList(), /** 已领取奖励的成就 id（重复领取在服务层拒绝）。 */ @SerialName("ClaimedAchievements") var claimedAchievements: List&lt;String?&gt; = emptyList(), // ─────────── 装备（死字段保留，EquipmentService 已删 S2）─────────── /** 已拥有的装备列表。ServiceCore.calculateEquipmentStats 仍读此喂战斗系统。 */ @SerialName("OwnedEquipments") var ownedEquipments: List&lt;EquipmentSaveState?&gt; = emptyList(), // ─────────── PVP 竞技场 ─────────── /** 竞技场数据。 */ @SerialName("ArenaData") var arenaData: ArenaSaveData? = null, /** PVP战斗记录。 */ @SerialName("ArenaBattleRecords") var arenaBattleRecords: List&lt;PvPBattleRecord?&gt; = emptyList(), // ─────────── PVE 内容（死字段保留，PvEService 已删 S2）─────────── /** 深渊数据。 */ @SerialName("AbyssData") var abyssData: AbyssSaveData? = null, /** 日常副本数据。 */ @SerialName("DailyDungeonData") var dailyDungeonData: DailyDungeonSaveData? = null, // ─────────── 360° 检视系统 ─────────── /** 360°检视系统数据。 */ @SerialName("InspectionData") var inspectionData: InspectionSaveData? = null, // ─────────── 社交（死字段保留，SocialService 已删 S2）─────────── /** 社交系统数据（好友、公会、赠礼）。 */ @SerialName("SocialData") var socialData: SocialSaveData? = null, // ─────────── 变现模型 ─────────── /** 变现模型数据（月卡、通行证、充值）。 */ @SerialName("MonetizationData") var monetizationData: MonetizationSaveData? = null, // ─────────── 活动运营 ─────────── /** 活动运营数据（活动、任务、商店、签到）。 */ @SerialName("EventRhythmData") var eventRhythmData: EventRhythmSaveData? = null, // ─────────── 剧情系统 ─────────── /** 剧情系统数据（章节进度、关卡完成、奖励领取）。 */ @SerialName("StoryData") var storyData: StorySaveData? = null, // ─────────── 每日任务 ─────────── /** 每日任务数据（每日6个任务、活跃度宝箱）。 */ @SerialName("DailyMissionData") var dailyMissionData: DailyMissionSaveData? = null, // ─────────── 每日签到连续奖励 ─────────── /** 每日签到数据（7天周期、连续签到、累计天数）。 */ @SerialName("DailyCheckInData") var dailyCheckInData: DailyCheckInSaveData? = null, // ─────────── 赛季系统 ─────────── /** 赛季数据（竞技场赛季、排名奖励）。 */ @SerialName("SeasonData") var seasonData: SeasonSaveData? = null, // ─────────── 图鉴收集 ─────────── /** 图鉴收集数据（角色解锁/收集里程碑）。 */ @SerialName("CollectionData") var collectionData: CollectionSaveData? = null, // ─────────── 新手引导（第 8 节）─────────── /** 新手引导进度；null=未开始（旧档兼容）。 */ @SerialName("TutorialData") var tutorialData: TutorialSaveData? = null, )</ID>
+    <ID>LongParameterList:SeasonSaveData.kt$SeasonSaveData$( /** 当前赛季编号（从 1 开始）。 */ @SerialName("SeasonNumber") var seasonNumber: Int = 1, /** 当前赛季起始 UTC 日序号。 */ @SerialName("SeasonStartDay") var seasonStartDay: Long = 0, /** 赛季持续天数。 */ @SerialName("SeasonDurationDays") var seasonDurationDays: Int = 14, /** 赛季期间竞技场胜利场次。 */ @SerialName("SeasonWins") var seasonWins: Int = 0, /** 赛季期间竞技场失败场次。 */ @SerialName("SeasonLosses") var seasonLosses: Int = 0, /** 赛季期间最长连胜记录。 */ @SerialName("MaxWinStreak") var maxWinStreak: Int = 0, /** 当前连胜次数。 */ @SerialName("CurrentWinStreak") var currentWinStreak: Int = 0, /** 赛季积分（用于排名）。 */ @SerialName("SeasonPoints") var seasonPoints: Int = 0, /** 已领取的赛季奖励编号列表。 */ @SerialName("ClaimedSeasonRewards") var claimedSeasonRewards: List&lt;Int?&gt; = emptyList(), /** 赛季期间获得的称号ID列表。 */ @SerialName("EarnedTitles") var earnedTitles: List&lt;String?&gt; = emptyList(), )</ID>
+    <ID>LongParameterList:StatsCalculator.kt$StatsCalculator$( baseStats: List&lt;Int&gt;, level: Int, stage: Int, stars: Int, branchIds: List&lt;String&gt;, characterId: String, progression: ProgressionEngine, talent: TalentEngine, nodeEffectsMap: Map&lt;String, List&lt;TalentEffect&gt;&gt;? = null, allocatedNodes: List&lt;String&gt; = emptyList(), )</ID>
+    <ID>LoopWithTooManyJumpStatements:AIRecommendationEngine.kt$AIRecommendationEngine$for</ID>
+    <ID>LoopWithTooManyJumpStatements:BattleSimulator.kt$BattleSimulator$for</ID>
+    <ID>LoopWithTooManyJumpStatements:DailyMissionService.kt$DailyMissionService$for</ID>
+    <ID>LoopWithTooManyJumpStatements:EconomyFormulas.kt$EconomyFormulas$for</ID>
+    <ID>LoopWithTooManyJumpStatements:EquipmentService.kt$EquipmentService$for</ID>
+    <ID>LoopWithTooManyJumpStatements:ServiceCore.kt$ServiceCore$for</ID>
+    <ID>LoopWithTooManyJumpStatements:StrategicBattleSimulator.kt$StrategicBattleSimulator$for</ID>
+    <ID>MatchingDeclarationName:FormationDrag.kt$FormationDragState</ID>
+    <ID>MatchingDeclarationName:GameNavBar.kt$NavItem</ID>
+    <ID>MatchingDeclarationName:TutorialOverlay.kt$TutorialCopy</ID>
+    <ID>MaxLineLength:AffinityViewModel.kt$AffinityViewModel$WriteOutcome.Success -&gt; "好感 +${AffinityFormulas.GIFT_AFFINITY_AMOUNT}（扣除 ${AffinityFormulas.GIFT_COST_SOFT} 星尘）"</ID>
+    <ID>MaxLineLength:BattleSimulator.kt$BattleSimulator$val damage = if (dodged) 0 else (rawDamage * (1f - target.stats.damageReduction)).toInt().coerceAtLeast(1)</ID>
+    <ID>MaxLineLength:CharacterDetailScreen.kt$WeaponPanel(def = def, view = view, owned = owned, rarityCol = rarityCol, worldColor = world)</ID>
+    <ID>MaxLineLength:CharacterDetailScreen.kt$if (isSelected) AppTheme.Gold.copy(alpha = 0.18f) else androidx.compose.ui.graphics.Color.Transparent</ID>
+    <ID>MaxLineLength:CharacterListScreen.kt$itemsIndexed</ID>
+    <ID>MaxLineLength:CollectionScreen.kt$itemsIndexed</ID>
+    <ID>MaxLineLength:CollectionScreen.kt$text = if (ownedView != null) "★".repeat(ownedView.save.stars.coerceAtLeast(1)) else "未获得"</ID>
+    <ID>MaxLineLength:CrashReporter.kt$CrashReporter.&lt;no name provided&gt;$override fun onActivityPaused(activity: Activity)</ID>
+    <ID>MaxLineLength:CyberStage.kt$InkWashBackdrop(Modifier.fillMaxSize(), rarity = singleRarity.coerceAtLeast(batch.maxOfOrNull { it.rarity } ?: 1))</ID>
+    <ID>MaxLineLength:DailyMissionService.kt$DailyMissionService$data.activityPoints = DailyMissionFormulas.activityAfterReward(data.activityPoints, def.activityReward)</ID>
+    <ID>MaxLineLength:DeckScreen.kt$itemsIndexed</ID>
+    <ID>MaxLineLength:DungeonService.kt$DungeonSweepOutcome$Success : DungeonSweepOutcome</ID>
+    <ID>MaxLineLength:EquipmentService.kt$EquipmentDismantleOutcome$Success : EquipmentDismantleOutcome</ID>
+    <ID>MaxLineLength:EquipmentService.kt$EquipmentEnhanceOutcome$Success : EquipmentEnhanceOutcome</ID>
+    <ID>MaxLineLength:GachaEngine.kt$GachaEngine$println("[Milan] GachaEngine.rollRarity: rarityWeights.size(${rarityWeights.size}) &gt; Rarity.entries.size(${Rarity.entries.size}), excess clamped to UR")</ID>
+    <ID>MaxLineLength:GachaScreen.kt$.</ID>
+    <ID>MaxLineLength:GachaScreen.kt$Text("UP", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = AppTheme.GoldTextOn)</ID>
+    <ID>MaxLineLength:GachaScreen.kt$Text(AppTheme.rarityName(r.rarity), style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold, color = rc)</ID>
+    <ID>MaxLineLength:GachaScreen.kt$Text(ratesLabel(pool), style = MaterialTheme.typography.labelMedium, color = AppTheme.Text2, lineHeight = 15.sp)</ID>
+    <ID>MaxLineLength:GachaScreen.kt$val heraldPityRatio = if ((pool?.hardPity ?: 0) &gt; 0) pity.toFloat() / pool!!.hardPity.coerceAtLeast(1) else 0f</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$"char_r_shanxiao" to "本源：山魈本是山林小鬼，大崩解时被铁帷的机械风暴卷入工厂废墟，身体与废弃机械融合。\n\n执念：它喜欢用废旧零件布置陷阱，对体型巨大的敌人尤其兴奋。\n\n羁绊：调皮、话痨、记仇，但关键时刻会为了保护同伴拼命。"</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$"char_r_yecha" to "本源：夜叉是以太裂隙中最常见的低等虚空生物，由迷失者的影子凝聚而成。\n\n执念：它们数量庞大、单体不强，但成群出现时能让整支军队陷入恐惧。\n\n羁绊：阴郁、顺从、群体意识强——单独时怯懦，成群时残忍。"</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$"char_sr_huayao" to "本源：花妖原是浮空花园中一株千年灵植，因裂隙能量涌入而化形。\n\n执念：她性格天真，却对生死有超越人类的理解——花开花落与战争胜负一样，都是自然的呼吸。\n\n羁绊：她与飞廉相识于浮岛，一个是疾风，一个是轻风。"</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$"char_sr_jingwei" to "本源：精卫是炎帝之女，溺于东海，化为神鸟，衔木石以填海。\n\n执念：她对裂隙造成的污染深恶痛绝，相信哪怕世界破碎，也能一粒一粒补回来。\n\n羁绊：她与女娲因「修补」的理念而成为忘年之交。"</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$"char_sr_taotie" to "本源：饕餮是上古贪食凶兽，有首无身，永不餍足。\n\n执念：它被神話阵营封印于青铜巨鼎内，只在最危急的战局中被放出。贪婪而直率，只要喂饱它，它会意外地忠诚。\n\n羁绊：它与相柳并称两害，形成毒与焰的同盟。"</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$"char_ssr_baihu" to "本源：白虎是四象之一，主杀伐，镇守西方。它在神話世界沉睡了千年。\n\n执念：当裂隙中的金属风暴撕裂山林，白虎睁开金色的兽瞳。它孤傲寡言，对邪恶绝不姑息。\n\n羁绊：它与狻猊有同族之谊——狻猊司震慑，白虎司裁决。对伙伴，它有隐秘的温柔。"</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$"char_ssr_chiyou" to "本源：蚩尤是上古兵主，铜头铁额，八肱八趾，战意永不熄灭。\n\n执念：铁帷在大崩解后挖掘出蚩尤残躯，以合金与能量核心将其复活。他的复活并不完美，时常在战斗中听见远古战鼓，分不清自己是苏醒的神明，还是被操控的武器。\n\n羁绊：他与刑天并称铁帷双璧，是毁灭的长矛。"</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$"char_ssr_feilian" to "本源：飞廉鹿身雀首，是上古风伯，司掌风之神速。\n\n执念：它的速度让它能穿越未稳定的裂隙，成为神話世界最可靠的信使与斥候。\n\n羁绊：它与花妖在以太浮岛相识——一个是疾风，一个是轻风，同族却不同命。"</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$"char_ssr_fenghuang" to "本源：凤凰是神話世界的祥瑞，五色而文，德义礼仁信。它是金乌的眷属，也是最接近「不死」的圣禽。\n\n执念：当虚无吞噬九日，凤凰主动承担守护剩余光明种子的使命。它一次次坠入灰烬，又一次次在火中重生。\n\n羁绊：它的每一次涅槃都会在空中留下新的星座，被以太学者命名为「凤凰座」。"</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$"char_ssr_leishen" to "本源：雷兽龙身人头，腹中自生雷鸣，是上古雷神。铁帷以机械躯体重塑其身，令其成为城邦的能量核心。\n\n执念：他不断吸收裂隙中的电能，愈发强大也愈发不稳定。他必须时刻控制功率，压抑着体内翻涌的雷霆。\n\n羁绊：他尊敬刑天的克制，却嫉妒蚩尤——后者被允许释放全力，而他却要永远收敛锋芒。"</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$"char_ssr_shangyang" to "本源：商羊一足鸟身，是天生的预言者，能预知风雨、窥见星轨。\n\n执念：它预见了虚无与女娲的最终对决，却无法确定结局。这让它既痛苦又着迷。\n\n羁绊：它以星象为刃、以卜辞为灵，守护着「未来尚可改变」的微弱希望。"</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$"char_ssr_xiangliu" to "本源：相柳九首蛇身，是上古凶神。它不臣服于虚无，却享受毁灭本身。\n\n执念：它以大地的毒泽为乐，将瘟疫视作自己的艺术。\n\n羁绊：它与饕餮并称两害——相柳以毒泽腐蚀大地，饕餮以贪焰吞噬一切。二者形成毒与焰的毁灭同盟。"</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$"char_ur_ironman" to "本源：公输玄出身异界机巧文明的偃师世家，是百年一遇的天才匠人。一场跨维度实验将他吞入裂隙，坠入铁帷纪元。\n\n执念：他相信「凡人之躯，比肩神明」——没有天赐的神力，就用巧手造一个。他以废墟残骸重铸偃甲，每一道合金纹路都是拒绝认输的宣言。\n\n羁绊：他与刑天理念相近而路线不同——刑天在战场守护民众，公输玄则重建工坊，让每个普通人都能穿上自己的铠甲。夜晚，他的偃甲核心映亮整片工坊区，孩子们叫它「不灭的小太阳」。"</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$"char_ur_jinwu" to "本源：金乌是太阳的化身，载日而行，是光明本身的具象。\n\n执念：裂隙纪元中，十日中的九日被虚无吞噬，仅剩金乌独自照耀神話残片。它以羽翼为弦、以烈日为箭，成为唯一永不西沉的天。\n\n羁绊：它与烛龙既为盟友又为镜像——烛龙司昼夜轮转，金乌司光明本身。虚无逼近时，金乌化作第二轮烈日并肩对抗终焉。"</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$"char_ur_keqing" to "本源：曜来自异界的雷部，是一名以凡人之躯修习雷霆剑法的剑士。她不信天命，只信手中的剑。\n\n执念：她坚信人类的命运应由自己掌握，而非托付于神力。她以雷霆之势，将「人可胜天」的信念贯彻到底。\n\n羁绊：她与烛龙有过激烈争论——神明是否还应被敬畏？曜的答案是被研究、被超越。她的到来，让以太学者首次确信：裂隙连接的不仅是世界，还有不同的可能性。"</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$"char_ur_kikyo" to "本源：青璃本是异界神庭的净世巫女，以灵力守护一方、净化邪祟。她曾封印异界最凶之物，却因一场阴谋含恨而终。\n\n执念：她以陶土复生，带着前世的记忆与执念独行于乱世。她行走于生死之间，以悲悯之心超度亡魂，也以破魔之箭封印裂隙带来的邪祟。\n\n羁绊：她与女娲有某种精神共鸣——两者都与泥土/陶土重生有关。她逐渐理解，自己的复活本身可能就是一次裂隙的意志。"</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$"char_ur_nuwa" to "本源：女娲是创造人类的古神，以五色石补天。\n\n执念：裂隙纪元中，原初之环的碎片不断崩落，女娲以最后一块补天石为锚，在以太星空托起一座浮岛，庇护流离的凡人。点泥成生、化墟为壁。\n\n羁绊：她与青璃因泥土/陶土重生而精神共鸣，与精卫因修补理念成为忘年之交。她是虚无的反面——虚无吞噬存在，她创造存在。"</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$"char_ur_strange" to "本源：玄微是异界秘术殿的观星者，双手曾毁于一场意外，却因此窥见了星辰背后的秘仪。\n\n执念：他看穿裂隙与多元宇宙裂缝同源——在亿万种结局中，只有一线生机。他以结界守护此界，以秘仪缚住终焉。\n\n羁绊：他与女娲有过一次沉默的对谈，关于修补与代价——她炼石补天，他窥时换命。「我们都是拿自己的一部分去填裂缝的人。」"</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$"char_ur_thor" to "本源：苍霆是异界神庭的雷霆之子，追猎撕裂诸界的裂隙之兽时被放逐至神話天空。\n\n执念：此界雷法只认其心、不认其血。他举起雷锤的那一刻便懂了——真正的王座不是血脉赐予的，而是配得上雷霆的那颗心。\n\n羁绊：他与烛龙、金乌并立为神話三柱——一位司昼夜、一位司光明，而他司震怒。当裂隙再度撕开天幕，他第一个跃入云海，以雷霆立誓守护。"</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$"char_ur_wuxu" to "本源：虚无并非传统意义上的邪恶，它只是在执行一种宇宙规律——一切存在终将归于无。它自裂隙深处浮出，是终焉的具象。\n\n执念：以太议会曾试图封印它，却反而让它学会了人类的恐惧与野心。从此它的吞噬不再只是规律，而带上了某种冰冷的嘲弄。\n\n羁绊：它与女娲互为反面——虚无吞噬存在，女娲创造存在。二者的对决，是这个纪元的终极命题。"</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$"char_ur_xingtian" to "本源：刑天是上古战神，与天帝争神而断首，仍以乳为目、以脐为口，执干戚而不息。这份「断首犹战」的意志，让他成为铁帷兵主军团最稳定的第一代实验体。\n\n执念：他以不灭的躯体守护普通民众，而非效忠铁帷高层。愤怒时，胸口的能量核心如烈日般发亮。\n\n羁绊：他与蚩尤并称铁帷双璧——刑天是不死的盾，蚩尤是毁灭的矛。两人理念相左，却在战场上一同赴死。"</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$"char_ur_zhulong" to "本源：烛龙是神話世界最古老的神祇之一，身缠千里，人面蛇身而赤，被视为昼夜的化身。它睁眼则白昼降临，闭眼则长夜笼罩，吐息之间天火燎原。\n\n执念：当虚无自裂隙逼近，烛龙主动睁眼超过七日，以无尽白昼之力压制裂隙扩张——即便代价是神話世界河流干涸、草木焦枯。它宁背负苍生的怨，也不愿见长夜永驻。\n\n羁绊：金乌视其为兄长与对手——烛龙司光明之节律，金乌司光明之强度。两者并立，是神話世界最后的光。"</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.AtkPercent, value = 0.06f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.AtkPercent, value = 0.07f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.AtkPercent, value = 0.08f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.AtkPercent, value = 0.12f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.AtkPercent, value = 0.13f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.AtkPercent, value = 0.15f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.AtkPercent, value = 0.1f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.AtkPercent, value = 0.25f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.AtkPercent, value = 0.2f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.Bleed, value = 28.0f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.Bleed, value = 40.0f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.Bleed, value = 50f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.Bleed, value = 52.0f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.Burn, value = 21.0f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.Burn, value = 30.0f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.Burn, value = 30f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.Burn, value = 35f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.Burn, value = 39.0f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.Burn, value = 40f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.Burn, value = 45f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.Burn, value = 50f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.ChargeGain, value = 0.05f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.ChargeGain, value = 0.12f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.ChargeGain, value = 0.15f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.ChargeGain, value = 0.18f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.ChargeGain, value = 0.1f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.ChargeGain, value = 0.2f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.Chill, value = 0.14f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.Chill, value = 0.26f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.Chill, value = 0.2f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.CritDamage, value = 0.17f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.CritDamage, value = 0.25f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.CritDamage, value = 0.2f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.CritDamage, value = 0.33f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.CritRate, value = 0.07f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.CritRate, value = 0.12f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.CritRate, value = 0.13f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.CritRate, value = 0.15f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.CritRate, value = 0.1f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.CritRate, value = 0.25f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.CritRate, value = 0.2f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.DamageReduction, value = 0.08f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.DamageReduction, value = 0.12f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.DamageReduction, value = 0.15f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.DamageReduction, value = 0.16f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.DamageReduction, value = 0.1f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.DamageReduction, value = 0.2f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.DefPercent, value = 0.07f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.DefPercent, value = 0.08f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.DefPercent, value = 0.12f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.DefPercent, value = 0.13f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.DefPercent, value = 0.15f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.DefPercent, value = 0.16f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.DefPercent, value = 0.1f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.Disarm, value = 0.08f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.Disarm, value = 0.12f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.Disarm, value = 0.15f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.Disarm, value = 0.16f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.Disarm, value = 0.1f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.Disarm, value = 0.2f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.DodgeRate, value = 0.06f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.DodgeRate, value = 0.08f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.DodgeRate, value = 0.12f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.DodgeRate, value = 0.1f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.HpPercent, value = 0.01f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.HpPercent, value = 0.02f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.HpPercent, value = 0.03f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.HpPercent, value = 0.13f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.HpPercent, value = 0.15f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.HpPercent, value = 0.18f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.HpPercent, value = 0.1f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.HpPercent, value = 0.23f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.HpPercent, value = 0.2f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.IgnoreDefense, value = 0.07f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.IgnoreDefense, value = 0.08f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.IgnoreDefense, value = 0.12f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.IgnoreDefense, value = 0.13f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.IgnoreDefense, value = 0.15f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.IgnoreDefense, value = 0.16f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.IgnoreDefense, value = 0.18f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.IgnoreDefense, value = 0.1f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.IgnoreDefense, value = 0.2f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.Lifesteal, value = 0.06f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.Lifesteal, value = 0.07f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.Lifesteal, value = 0.08f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.Lifesteal, value = 0.12f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.Lifesteal, value = 0.13f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.Lifesteal, value = 0.15f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.Lifesteal, value = 0.1f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.Lifesteal, value = 0.3f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.Poison, value = 0.02f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.Poison, value = 0.03f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.Poison, value = 0.04f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.SpdPercent, value = 0.06f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.SpdPercent, value = 0.07f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.SpdPercent, value = 0.08f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.SpdPercent, value = 0.12f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.SpdPercent, value = 0.13f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.SpdPercent, value = 0.14f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.SpdPercent, value = 0.15f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.SpdPercent, value = 0.1f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.SpdPercent, value = 0.26f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.SpdPercent, value = 0.2f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.Stiff, value = 0.08f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.Stiff, value = 0.12f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.Stiff, value = 0.16f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.Stun, value = 0.07f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.Stun, value = 0.12f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.Stun, value = 0.13f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.Stun, value = 0.1f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.Taunt, value = 0.12f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.Taunt, value = 0.15f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.Taunt, value = 0.1f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.Taunt, value = 0.2f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.Thorn, value = 0.07f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.Thorn, value = 0.12f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.Thorn, value = 0.13f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.Thorn, value = 0.15f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.Thorn, value = 0.1f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.Thorn, value = 0.2f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.UltimateDamage, value = 0.17f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.UltimateDamage, value = 0.21f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.UltimateDamage, value = 0.24f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.UltimateDamage, value = 0.25f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.UltimateDamage, value = 0.33f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.UltimateDamage, value = 0.35f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.UltimateDamage, value = 0.39f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.UltimateDamage, value = 0.3f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.UltimateDamage, value = 0.45f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.UltimateDamage, value = 0.4f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.Unstoppable, value = 0.7f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.Unstoppable, value = 1.0f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.Unstoppable, value = 1.3f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$effects = listOf(TalentEffect(type = TalentEffectType.Unstoppable, value = 1f, chance = 0f, duration = 0))</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$sk("baihu_1", "西方白虎杀", "化作银色残影连续斩击单体，无视部分防御", "Metal", "Ultimate", 82)</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$sk("bifang_1", "焚羽俯冲", "自高空俯冲，对路径上敌人造成雷电伤害", "Thunder", "Active", 53)</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$sk("chiyou_1", "虎魄裂天", "挥舞虎魄魔刀劈出金属碎片风暴，对前方敌人造成范围伤害", "Metal", "Ultimate", 84)</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$sk("dangang_1", "丰穗冲撞", "蓄力冲撞单体，造成伤害并击退", "Wood", "Active", 43)</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$sk("feilian_1", "神速连斩", "以超越视觉的速度连续斩击单体12次", "Wood", "Ultimate", 78)</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$sk("fenghuang_1", "涅槃之火", "以凤凰真火焚烧全体，命中目标灼烧5秒", "Flame", "Ultimate", 82)</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$sk("huayao_1", "千瓣愈风", "召唤花瓣之风为全队回复生命并提升速度", "Wood", "Active", 52)</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$sk("ironman_1", "掌心雷暴", "聚变光束贯直线，重击并击退", "Metal", "Ultimate", 93)</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$sk("jingwei_1", "衔石连射", "连续发射碎石攻击单体，每次伤害递增", "Wood", "Active", 52)</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$sk("jinwu_1", "日轮天罚", "日核离弦，单体焚尽并灼烧周围", "Flame", "Ultimate", 94)</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$sk("keqing_1", "天街游移", "雷霆穿阵多段雷伤，瞬至终点", "Thunder", "Ultimate", 91)</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$sk("kikyo_1", "破魂之箭", "破魔一矢，真伤封技", "Shadow", "Ultimate", 90)</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$sk("leishen_1", "雷霆万钧", "召唤巨型闪电劈向敌阵，主目标伤害翻倍", "Thunder", "Ultimate", 84)</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$sk("lili_1", "遁地突袭", "潜入地下后从敌人脚下突袭，必定暴击", "Earth", "Active", 40)</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$sk("luoyu_1", "寒流冲击", "喷射寒流造成伤害并减速目标30%", "Water", "Active", 44)</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$sk("nuwa_1", "五色补天", "以五色石重塑战场，为全队回复大量生命并清除负面状态", "Earth", "Ultimate", 88)</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$sk("qinyuan_1", "毒蜂连射", "连续发射毒针攻击单体3次", "Metal", "Active", 42)</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$sk("qiongqi_1", "噬罪撕咬", "撕咬单体造成真实伤害，无视防御", "Metal", "Active", 56)</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$sk("shangyang_1", "星轨预言", "揭示敌方弱点，全队暴击率+30%持续6秒", "Light", "Ultimate", 76)</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$sk("shanxiao_1", "零件陷阱", "布置机械陷阱，触发时造成伤害并眩晕", "Earth", "Active", 40)</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$sk("sishu_1", "蛛丝束缚", "发射蛛丝缠绕单体，使其无法行动2秒", "Shadow", "Active", 41)</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$sk("strange_1", "绯红枷锁", "召唤绯红魔力锁链缚住全体敌人，造成光耀伤害并封印其技能", "Light", "Ultimate", 90)</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$sk("suanni_1", "狮王怒吼", "狮吼震慑前方敌人，造成伤害并降低其攻击", "Flame", "Active", 55)</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$sk("taotie_1", "贪食天地", "吞噬前方敌人，造成火焰伤害并回复自身生命", "Flame", "Active", 54)</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$sk("thor_1", "诸界黄昏", "召唤九界雷霆灌入雷锤，对全体敌人造成巨额雷伤并麻痹", "Thunder", "Ultimate", 94)</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$sk("wuxu_1", "湮灭奇点", "在敌阵制造黑洞，持续吸引并撕裂范围内所有目标", "Shadow", "Ultimate", 92)</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$sk("xiangliu_1", "九首噬天", "九首齐出撕咬前方，造成多段伤害并叠加中毒", "Shadow", "Ultimate", 80)</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$sk("xingtian_1", "干戚狂舞", "挥舞巨斧横扫前方，造成范围伤害并击退", "Metal", "Ultimate", 90)</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$sk("xuanwu_1", "玄甲护体", "为全队施加护盾，吸收伤害持续6秒", "Earth", "Active", 54)</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$sk("yecha_1", "影袭", "从阴影中突袭单体，造成暗影伤害", "Shadow", "Active", 42)</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$sk("zhulong_1", "烛照八荒", "以烛龙真火焚烧全体敌人，造成巨额火焰伤害", "Flame", "Ultimate", 95)</ID>
+    <ID>MaxLineLength:GameContent.kt$GameContent$val outlanderIds = setOf("char_ur_kikyo", "char_ur_keqing", "char_ur_ironman", "char_ur_thor", "char_ur_strange")</ID>
+    <ID>MaxLineLength:GlassDialog.kt$scaleIn(initialScale = 0.95f, animationSpec = spring(dampingRatio = 0.7f, stiffness = Spring.StiffnessMedium))</ID>
+    <ID>MaxLineLength:HomeScreen.kt$.</ID>
+    <ID>MaxLineLength:InfoPanels.kt$.</ID>
+    <ID>MaxLineLength:PortraitLoader.kt$PortraitLoader.&lt;no name provided&gt;$@Deprecated("Deprecated in Java", ReplaceWith("onTrimMemory(android.content.ComponentCallbacks2.TRIM_MEMORY_COMPLETE)"))</ID>
+    <ID>MaxLineLength:ProgressionPanels.kt$Text(r.cn, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold, color = AppTheme.Text2)</ID>
+    <ID>MaxLineLength:SaveData.kt$SaveData$*</ID>
+    <ID>MaxLineLength:SeasonService.kt$SeasonService$if</ID>
+    <ID>MaxLineLength:SeasonService.kt$SeasonService$points += (points * SeasonSaveData.WIN_STREAK_BONUS_MULTIPLIER * (data.currentWinStreak - 1)).toInt()</ID>
+    <ID>MaxLineLength:ServiceCore.kt$ServiceCore$goldPerLevel = listOf(1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000, 5500, 6000, 6500, 7000, 7500, 8000)</ID>
+    <ID>MaxLineLength:ServiceCore.kt$ServiceCore$goldPerLevel = listOf(1200, 1800, 2400, 3000, 3600, 4200, 4800, 5400, 6000, 6600, 7200, 7800, 8400, 9000, 9600)</ID>
+    <ID>MaxLineLength:ServiceCore.kt$ServiceCore$goldPerLevel = listOf(1500, 2200, 2900, 3600, 4300, 5000, 5700, 6400, 7100, 7800, 8500, 9200, 9900, 10600, 11300)</ID>
+    <ID>MaxLineLength:SettingsScreen.kt$Text(subtitle, color = AppTheme.Text2, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Normal)</ID>
+    <ID>MaxLineLength:ShopScreen.kt$Text("${formatCount(batch)} ❖ → ${formatCount(yield)} ✦", color = AppTheme.Text2, style = MaterialTheme.typography.bodySmall)</ID>
+    <ID>MaxLineLength:ShopScreen.kt$Text("${formatCount(cost)} ◆ → ${formatCount(gain)} ✦", color = AppTheme.Text2, style = MaterialTheme.typography.bodySmall)</ID>
+    <ID>MaxLineLength:ShopScreen.kt$Text("${formatCount(cost)} ✦", color = AppTheme.Gold, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold)</ID>
+    <ID>MaxLineLength:ShopScreen.kt$Text("钻石暂无获取途径", color = AppTheme.Text2.copy(alpha = 0.6f), style = MaterialTheme.typography.labelMedium)</ID>
+    <ID>MaxLineLength:StoryService.kt$StoryService.Companion$enemyIds = listOf("rift_riftsoldier", "rift_riftsoldier", "rift_riftsoldier", "rift_riftsoldier")</ID>
+    <ID>MaxLineLength:StrategicBattleScreen.kt$Text("我方", style = MaterialTheme.typography.labelLarge, color = AppTheme.Frost, fontWeight = FontWeight.Bold)</ID>
+    <ID>MaxLineLength:StrategicBattleScreen.kt$Text("敌方", style = MaterialTheme.typography.labelLarge, color = AppTheme.Danger, fontWeight = FontWeight.Bold)</ID>
+    <ID>MaxLineLength:StrategicBattleScreen.kt$Text(elem.glyph, style = MaterialTheme.typography.labelSmall, color = elem.glow, fontWeight = FontWeight.Bold)</ID>
+    <ID>MaxLineLength:StrategicBattleScreen.kt$color = if (hpRatio &gt; 0.5f) AppTheme.Success else if (hpRatio &gt; 0.25f) AppTheme.Warning else AppTheme.Danger</ID>
+    <ID>MaxLineLength:StrategicBattleScreen.kt$text = "行动：${actor.stats.characterId.ifEmpty { "单位${ui.currentActor + 1}" }} · 能量 ${actor.energy}/${actor.maxEnergy}"</ID>
+    <ID>MaxLineLength:StrategicBattleSimulator.kt$StrategicBattleSimulator$newActor = newActor.copy(buffs = newActor.buffs + BuffDebuff(effect.type, effect.value, effect.duration))</ID>
+    <ID>MaxLineLength:StrategicBattleSimulator.kt$StrategicBattleSimulator$newAttacker = newAttacker.copy(buffs = newAttacker.buffs + BuffDebuff(reaction.effectType, reaction.effectValue, reaction.effectDuration))</ID>
+    <ID>MaxLineLength:StrategicBattleSimulator.kt$StrategicBattleSimulator$newAttacker = newAttacker.copy(hp = (newAttacker.hp + reaction.effectValue).coerceAtMost(newAttacker.maxHp))</ID>
+    <ID>MaxLineLength:StrategicBattleSimulator.kt$StrategicBattleSimulator$newDefender = newDefender.copy(debuffs = newDefender.debuffs + BuffDebuff(EffectType.POISON, reaction.effectValue, reaction.effectDuration))</ID>
+    <ID>MaxLineLength:StrategicBattleSimulator.kt$StrategicBattleSimulator$newDefender = newDefender.copy(debuffs = newDefender.debuffs + BuffDebuff(reaction.effectType, reaction.effectValue, reaction.effectDuration))</ID>
+    <ID>MaxLineLength:StrategicBattleViewModel.kt$StrategicBattleViewModel$kind = if (e.damage &gt;= 120) StrikeFxKind.ULTIMATE else if (e.damage &gt;= 60) StrikeFxKind.SKILL else StrikeFxKind.NORMAL</ID>
+    <ID>MaxLineLength:TalentEngine.kt$TalentEngine$TalentEffectType.DamageReduction -&gt; damageReduction = (damageReduction + effect.value).coerceAtMost(1f)</ID>
+    <ID>MaxLineLength:TowerApi.kt$TowerApi$fun</ID>
+    <ID>MaxLineLength:TowerScreen.kt$GlyphBadge(glyph = "⚔", from = AppTheme.Text1, to = AppTheme.Text3, glyphColor = AppTheme.Text2)</ID>
+    <ID>MaxLineLength:TowerScreen.kt$Text(text = "×$count", style = MaterialTheme.typography.labelSmall, color = color, modifier = Modifier.padding(start = 2.dp))</ID>
+    <ID>MaxLineLength:TowerScreen.kt$Text(text = "纪录推进至第 ${done.bestFloorAfter} 层", style = MaterialTheme.typography.bodySmall, color = AppTheme.Text2)</ID>
+    <ID>MaxLineLength:WoWStatsPanel.kt$Primary</ID>
+    <ID>MaxLineLength:WoWStatsPanel.kt$Secondary</ID>
+    <ID>MaxLineLength:WoWStatsPanel.kt$Secondary("甲", AppTheme.FrostDeep, "护甲", "Armor", secCur.armor.toString(), secCur.armor - secBase.armor)</ID>
+    <ID>MaxLineLength:WoWStatsPanel.kt$Text(cn, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold, color = AppTheme.Text1)</ID>
+    <ID>NestedBlockDepth:EventBus.kt$EventBus$fun dispatch()</ID>
+    <ID>NestedBlockDepth:SaveData.kt$SaveData$fun sanitize()</ID>
+    <ID>NestedBlockDepth:SaveManager.kt$SaveManager$fun load(): SaveData</ID>
+    <ID>NestedBlockDepth:ServiceCore.kt$ServiceCore$fun loadContent(rawJson: String?)</ID>
+    <ID>NestedBlockDepth:TalentEngine.kt$TalentEngine$fun talentEffects( allocatedNodes: List&lt;String&gt;, nodeEffectsMap: Map&lt;String, List&lt;TalentEffect&gt;&gt;, ): TalentEffectResult</ID>
+    <ID>NewLineAtEndOfFile:HomeViewModel.kt$com.milan.game.ui.home.HomeViewModel.kt</ID>
+    <ID>NewLineAtEndOfFile:PullHistoryViewModel.kt$com.milan.game.ui.gacha.PullHistoryViewModel.kt</ID>
+    <ID>NewLineAtEndOfFile:StatsCalculator.kt$com.milan.game.domain.progression.StatsCalculator.kt</ID>
+    <ID>RethrowCaughtException:GpuEffects.kt$throw e</ID>
+    <ID>ReturnCount:EquipmentService.kt$EquipmentService$override suspend fun enhanceEquipment(equipmentId: String, times: Int): EquipmentEnhanceOutcome</ID>
+    <ID>ReturnCount:EventRhythmService.kt$EventRhythmService$override suspend fun redeemEventShopItem(eventId: String, itemId: String, amount: Int): WriteOutcome</ID>
+    <ID>ReturnCount:ProgressionService.kt$ProgressionService$private fun talentCheck(charId: String, nodeId: String): TalentCheck?</ID>
+    <ID>ReturnCount:StrategicBattleSimulator.kt$StrategicBattleSimulator$fun executePlayerAction(state: BattleState, action: PlayerAction): BattleState</ID>
+    <ID>ReturnCount:StrategicBattleSimulator.kt$StrategicBattleSimulator$private fun tryTriggerElementReaction( attacker: BattleUnitState, defender: BattleUnitState, turn: Int, ): ElementReactionResult</ID>
+    <ID>ReturnCount:StrategicBattleViewModel.kt$StrategicBattleViewModel$fun confirm()</ID>
+    <ID>SwallowedException:AndroidSaveProvider.kt$AndroidSaveProvider$e: Exception</ID>
+    <ID>SwallowedException:SaveData.kt$SaveData.Companion$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:AffinityViewModel.kt$AffinityViewModel$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:AndroidSaveProvider.kt$AndroidSaveProvider$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:DeckViewModel.kt$DeckViewModel$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:EventBus.kt$EventBus$ex: Exception</ID>
+    <ID>TooGenericExceptionCaught:EventBus.kt$EventBus$logEx: Exception</ID>
+    <ID>TooGenericExceptionCaught:EventViewModel.kt$EventViewModel$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:GachaViewModel.kt$GachaViewModel$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:MilanApp.kt$MilanApp$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:PortraitLoader.kt$PortraitLoader$t: Throwable</ID>
+    <ID>TooGenericExceptionCaught:SaveData.kt$SaveData.Companion$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:SaveManager.kt$SaveManager$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:ServiceCore.kt$ServiceCore$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:ServiceCore.kt$ServiceCore$rt: Throwable</ID>
+    <ID>TooGenericExceptionCaught:ServiceCore.kt$ServiceCore$t: Throwable</ID>
+    <ID>TooGenericExceptionCaught:StoryViewModel.kt$StoryViewModel$e: Exception</ID>
+    <ID>TooManyFunctions:CrashReporter.kt$CrashReporter</ID>
+    <ID>TooManyFunctions:EconomyFormulas.kt$EconomyFormulas</ID>
+    <ID>TooManyFunctions:EventRhythmApi.kt$EventRhythmApi</ID>
+    <ID>TooManyFunctions:EventRhythmService.kt$EventRhythmService : EventRhythmApi</ID>
+    <ID>TooManyFunctions:GameService.kt$GameService : GachaApiEconomyApiProgressionApiTowerApiMetaApiArenaApiInspectionApiMonetizationApiEventRhythmApiStoryApiDailyMissionApiDailyCheckInApiSeasonApiDungeonApiEquipmentApiCollectionApi</ID>
+    <ID>TooManyFunctions:HapticManager.kt$HapticManager</ID>
+    <ID>TooManyFunctions:MetaApi.kt$MetaApi</ID>
+    <ID>TooManyFunctions:MetaService.kt$MetaService : MetaApi</ID>
+    <ID>TooManyFunctions:ServiceCore.kt$ServiceCore</ID>
+    <ID>TooManyFunctions:StoryApi.kt$StoryApi</ID>
+    <ID>UnusedParameter:BattleStrikeFx.kt$modifier: Modifier = Modifier</ID>
+    <ID>UnusedParameter:CyberCards.kt$frame: Color</ID>
+    <ID>UnusedParameter:DialogueScreen.kt$onBack: () -&gt; Unit</ID>
+    <ID>UnusedParameter:GachaScreen.kt$hardPity: Int</ID>
+    <ID>UnusedParameter:GachaScreen.kt$pity: Int</ID>
+    <ID>UnusedParameter:InkSkeleton.kt$fraction: Float = 1f</ID>
+    <ID>UnusedParameter:PortraitImage.kt$contentDescription: String</ID>
+    <ID>UnusedParameter:PortraitImage.kt$contentScale: ContentScale</ID>
+    <ID>UnusedParameter:SaveManager.kt$SaveManager$data: SaveData</ID>
+    <ID>UnusedParameter:ServiceCore.kt$ServiceCore$rawJson: String</ID>
+    <ID>UnusedParameter:StrategicBattleSimulator.kt$StrategicBattleSimulator$characterId: String</ID>
+    <ID>UnusedParameter:TowerScreen.kt$myTeam: List&lt;UnitStats&gt;</ID>
+    <ID>UnusedPrivateMember:UIComponents.kt$private fun inkBorderPath( width: Float, height: Float, radius: Float, strokeWidth: Float, ): Path</ID>
+    <ID>UnusedPrivateProperty:AchievementViewModel.kt$AchievementViewModel$val outcome = service.claimAchievement(id)</ID>
+    <ID>UnusedPrivateProperty:DailyMissionScreen.kt$val borderColor = when { status.claimed -&gt; AppTheme.Gold status.unlocked -&gt; AppTheme.Gold.copy(alpha = 0.5f) else -&gt; AppTheme.Text3.copy(alpha = 0.3f) }</ID>
+    <ID>UnusedPrivateProperty:DungeonService.kt$DungeonService$private val rng: Random</ID>
+    <ID>UnusedPrivateProperty:EconomyFormulas.kt$EconomyFormulas$i</ID>
+    <ID>UnusedPrivateProperty:EffectPalettes.kt$val hi = grad.last()</ID>
+    <ID>UnusedPrivateProperty:EventBus.kt$EventBus$i</ID>
+    <ID>UnusedPrivateProperty:EventRhythmService.kt$EventRhythmService$private val rng: Random = Random.Default</ID>
+    <ID>UnusedPrivateProperty:GachaScreen.kt$private val PullResultsSaver = listSaver&lt;List&lt;PullResult&gt;, String&gt;( save = { list -&gt; list.map { r -&gt; "${r.success}|${r.characterId.orEmpty()}|${r.characterName}|${r.rarity}|${r.isNew}|${r.fragmentsAwarded}" } }, restore = { strs -&gt; strs.mapNotNull { s -&gt; val p = s.split('|', limit = 6) if (p.size &lt; 6) null else PullResult( success = p[0].toBooleanStrictOrNull() ?: false, characterId = p[1].ifEmpty { null }, characterName = p[2], rarity = p[3].toIntOrNull() ?: 0, isNew = p[4].toBooleanStrictOrNull() ?: false, fragmentsAwarded = p[5].toIntOrNull() ?: 0, ) } }, )</ID>
+    <ID>UnusedPrivateProperty:GameContent.kt$GameContent$val all = characters.map(::entryFor)</ID>
+    <ID>UnusedPrivateProperty:MonetizationService.kt$MonetizationService$private val rng: Random = Random.Default</ID>
+    <ID>UnusedPrivateProperty:SaveData.kt$SaveData$val now = System.currentTimeMillis()</ID>
+    <ID>UnusedPrivateProperty:StoryService.kt$StoryService$private val rng: Random = Random.Default</ID>
+    <ID>WildcardImport:AffinityScreen.kt$import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:AffinityScreen.kt$import androidx.compose.runtime.*</ID>
+    <ID>WildcardImport:BattlePassScreen.kt$import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:BattlePassScreen.kt$import androidx.compose.runtime.*</ID>
+    <ID>WildcardImport:CollectionService.kt$import com.milan.game.data.*</ID>
+    <ID>WildcardImport:DailyCheckInService.kt$import com.milan.game.data.*</ID>
+    <ID>WildcardImport:DailyMissionScreen.kt$import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:DailyMissionScreen.kt$import androidx.compose.runtime.*</ID>
+    <ID>WildcardImport:DailyMissionService.kt$import com.milan.game.data.*</ID>
+    <ID>WildcardImport:DialogueScreen.kt$import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:DialogueScreen.kt$import androidx.compose.runtime.*</ID>
+    <ID>WildcardImport:DungeonService.kt$import com.milan.game.data.*</ID>
+    <ID>WildcardImport:EquipmentService.kt$import com.milan.game.data.*</ID>
+    <ID>WildcardImport:EventRhythmService.kt$import com.milan.game.data.*</ID>
+    <ID>WildcardImport:InkSplashTransition.kt$import androidx.compose.animation.core.*</ID>
+    <ID>WildcardImport:InkSplashTransition.kt$import androidx.compose.runtime.*</ID>
+    <ID>WildcardImport:InspectionService.kt$import com.milan.game.data.*</ID>
+    <ID>WildcardImport:MonetizationService.kt$import com.milan.game.data.*</ID>
+    <ID>WildcardImport:SeasonService.kt$import com.milan.game.data.*</ID>
+    <ID>WildcardImport:StoryScreen.kt$import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:StoryScreen.kt$import androidx.compose.runtime.*</ID>
+    <ID>WildcardImport:StoryService.kt$import com.milan.game.data.*</ID>
+  </CurrentIssues>
+</SmellBaseline>

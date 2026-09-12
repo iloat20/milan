@@ -1,0 +1,43 @@
+# detekt 基线配置（2026-09-12）。buildUponDefaultConfig=true，这里只做项目定制。
+build:
+  maxIssues: 0
+  excludeCorrectable: false
+
+complexity:
+  LongMethod:
+    active: true
+    threshold: 80
+  LongParameterList:
+    active: true
+    functionThreshold: 8
+    constructorThreshold: 8
+  TooManyFunctions:
+    active: true
+    thresholdInFiles: 20
+    thresholdInClasses: 20
+    thresholdInInterfaces: 15
+    thresholdInObjects: 20
+
+naming:
+  FunctionNaming:
+    # 测试与 Compose 语境允许反引号/首字母大写
+    ignoreAnnotated: ['Composable', 'Test']
+
+exceptions:
+  TooGenericExceptionCaught:
+    active: true
+  SwallowedException:
+    # 存档/内容加载路径有意吞异常并回退（AGENTS 红线），基线会覆盖存量
+    active: true
+
+style:
+  MagicNumber:
+    active: false
+  ReturnCount:
+    active: true
+    max: 4
+  UnusedPrivateMember:
+    active: true
+
+console-reports:
+  active: true

@@ -2,6 +2,29 @@ plugins {
     alias(libs.plugins.android.application) apply false
     alias(libs.plugins.kotlin.compose) apply false
     alias(libs.plugins.kotlin.serialization) apply false
+    alias(libs.plugins.detekt)
+}
+
+// ── detekt（2026-09-12 B 批）：静态分析基线，挂进 check ──
+// 用法: ./gradlew detekt（或 check）。配置 config/detekt/detekt.yml；
+// 首次接入用 baseline 冻结存量，增量违规 fail-fast。
+detekt {
+    buildUponDefaultConfig = true
+    config.setFrom(rootProject.file("config/detekt/detekt.yml"))
+    baseline = rootProject.file("config/detekt/baseline.xml")
+    source.from(
+        "app/src/main/java",
+        "core/src/main/java",
+        "data/src/main/java",
+        "shared/src/commonMain",
+    )
+}
+
+// 根工程无 java/android lifecycle，自建 verification 入口供 CI 与本地 check 语义对齐。
+tasks.register("check") {
+    group = "verification"
+    description = "根工程 verification 门禁（detekt + checkArchitecture）"
+    dependsOn("detekt", "checkArchitecture")
 }
 
 // AGP 9 内置 Kotlin（built-in Kotlin）默认携带 KGP 2.2.10；
