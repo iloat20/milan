@@ -62,7 +62,7 @@ class R7P0RegressionTest {
         assertEquals(WriteOutcome.Success, svc.completeAbyssStage(1, 3))
         val afterFirst = svc.saveData.softCurrency
         assertEquals(before + 1500, afterFirst)
-        // 同层同星再结算：不发奖
+        // 同层同星再结算：不发奖（奖励决策在 writeMutex 内重读 stars，见 DungeonService）
         assertEquals(WriteOutcome.Success, svc.completeAbyssStage(1, 3))
         assertEquals("重复结算不得再发星尘", afterFirst, svc.saveData.softCurrency)
     }

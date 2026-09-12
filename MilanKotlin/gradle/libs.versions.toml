@@ -1,16 +1,16 @@
 [versions]
-# AGP 9.3.0（2026-07，AS Narwhal 3 兼容线；需 Gradle >= 9.5.0，wrapper 9.5.0 满足；支持 compileSdk 37）
-agp = "9.3.0"
-kotlin = "2.4.10"
+# AGP 9.3.2（2026-09 patch；需 Gradle >= 9.5.0，wrapper 9.5.0 满足；支持 compileSdk 37）
+agp = "9.3.2"
+kotlin = "2.4.20"
 coreKtx = "1.19.0"
 lifecycle = "2.11.0"
 activityCompose = "1.13.0"
-composeBom = "2026.08.00"
+composeBom = "2026.09.00"
 serialization = "1.11.0"
 coroutines = "1.11.0"
 junit = "4.13.2"
 profileinstaller = "1.4.1"
-media3 = "1.11.0"
+media3 = "1.11.1"
 materialIcons = "1.7.8"
 navigationCompose = "2.9.8"
 glance = "1.1.1"
@@ -34,7 +34,7 @@ androidx-compose-bom = { group = "androidx.compose", name = "compose-bom", versi
 androidx-ui = { group = "androidx.compose.ui", name = "ui" }
 androidx-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling" }
 androidx-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview" }
-# Compose BOM 2026.08.00 默认 material3 = 1.4.0（稳定版），MaterialExpressiveTheme 已毕业为非实验。
+# Compose BOM 2026.09.00 默认 material3 = 1.4.0（稳定版），MaterialExpressiveTheme 已毕业为非实验。
 # 此前 BOM 2026.06.01 的 material3 仍为 alpha，需显式覆盖到 1.5.0-alpha22；现已无需覆盖。
 androidx-material3 = { group = "androidx.compose.material3", name = "material3" }
 androidx-compose-material-icons-core = { group = "androidx.compose.material", name = "material-icons-core", version.ref = "materialIcons" }
@@ -60,6 +60,6 @@ robolectric = { group = "org.robolectric", name = "robolectric", version.ref = "
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 # AGP 9 默认启用 built-in Kotlin，org.jetbrains.kotlin.android 插件不再应用（AGP 内置 KGP 2.2.10，
-# 版本由根 build.gradle.kts 的 buildscript classpath 提升到 2.4.10，与 [versions] kotlin 对齐）
+# 版本由根 build.gradle.kts 的 buildscript classpath 提升到 2.4.20，与 [versions] kotlin 对齐）
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }

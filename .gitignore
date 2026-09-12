@@ -77,6 +77,7 @@ docs/superpowers/art-direction/portraits-v2/*.err
 *.tmp
 
 # Local audio encode tool (not for repo)
+tools/_py/
 .ffmpeg-win/
 .ffmpeg-tmp/
 

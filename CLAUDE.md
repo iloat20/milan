@@ -10,7 +10,7 @@ The summon art style is a **dimensional rift / portal** (characters cross over f
 
 ## Implementation
 
-The game is a **Kotlin / Jetpack Compose native Android** app in `MilanKotlin/` (Gradle 9.5.0 + AGP 9.3.0 + Kotlin 2.4.10 — AGP 9 has built-in Kotlin, no kotlin-android plugin — `com.milan.game`). Single-`Activity` architecture with type-safe Navigation Compose 2.9 routes (`@Serializable` route classes in `ui/nav/Routes.kt`), Material3 theming (BOM 2026.06.01 + material3 1.5.0-alpha22), kotlinx.serialization for save/content JSON, coroutines for async work, **KMP `:shared` module for the domain layer** (shared with `desktopApp`). APK at `MilanKotlin/app/build/outputs/apk/debug/app-debug.apk`.
+The game is a **Kotlin / Jetpack Compose native Android** app in `MilanKotlin/` (Gradle 9.5.0 + AGP 9.3.2 + Kotlin 2.4.20 — AGP 9 has built-in Kotlin, no kotlin-android plugin — `com.milan.game`). Single-`Activity` architecture with type-safe Navigation Compose 2.9 routes (`@Serializable` route classes in `ui/nav/Routes.kt`), Material3 theming (BOM 2026.09.00 + material3 1.4.0), kotlinx.serialization for save/content JSON, coroutines for async work, **multi-module: `:shared` KMP domain + `:core` services + `:data` save models**. APK at `MilanKotlin/app/build/outputs/apk/debug/app-debug.apk`.
 
 > This is the third implementation. A Unity C# version (`Assets/_Project/`) and a .NET 10 native-Android version (`MauiMilan/` + `Tests/`) used to live in the repo and were removed on 2026-08-07 in favor of the Kotlin rewrite. Old logic can be recovered from git history; code comments still carry "C# 某某翻译" cross-references — keep those.
 
@@ -20,27 +20,27 @@ The game is a **Kotlin / Jetpack Compose native Android** app in `MilanKotlin/` 
 ./gradlew.bat :app:testDebugUnitTest      # unit tests (JUnit4 + coroutines-test)
 ./gradlew.bat :desktopApp:run             # desktop simulator (reuses :shared engines)
 ```
-JDK 17+ is required. Versions live in `MilanKotlin/gradle/libs.versions.toml`. `minSdk=29, targetSdk=37, compileSdk=37` (37 is forced by BOM 2026.06.01's ui 1.12.0-alpha03). **In the DSH sandbox use `pwsh -NoProfile -File .\run-gradle.ps1 <args>`** (redirects GRADLE_USER_HOME/ANDROID_USER_HOME into the workspace; see AGENTS.md).
+JDK 17+ is required. Versions live in `MilanKotlin/gradle/libs.versions.toml`. `minSdk=29, targetSdk=37, compileSdk=37`. **In the DSH sandbox use `pwsh -NoProfile -File .\run-gradle.ps1 <args>`** (redirects GRADLE_USER_HOME/ANDROID_USER_HOME into the workspace; see AGENTS.md). CI: `.github/workflows/ci.yml` (architecture gate + unit tests + Debug APK on main push/PR).
 
 ### Project layout
 ```
-MilanKotlin/
+MilanKotlin/ 
 ├── shared/src/commonMain/kotlin/com/milan/game/   # KMP domain layer — NO android.* imports
 │   ├── domain/gacha/          # GachaEngine · PityCounter (kotlin.random.Random)
 │   ├── domain/progression/    # EconomyFormulas · ProgressionEngine · TalentEngine
-│   ├── domain/battle/         # BattleSimulator · BattleUnits
+│   ├── domain/battle/         # BattleSimulator · BattleUnits · StrategicBattleSimulator
+│   ├── domain/deck|monetization|mission/
 │   └── data/Rarity.kt
+├── core/                      # GameService + 16 XxxApi + EventBus/Crash/Audio/Worker
+├── data/                      # save models (@Serializable) · SaveManager · SaveProvider
+│   └── AndroidSaveProvider.kt # filesDir/save/save.json + .bak/.tmp (Android layer)
 ├── desktopApp/                # desktop simulator demo reusing :shared (application plugin)
 ├── benchmark/                 # macrobenchmark (wired into settings; needs device for :benchmarkRelease)
 └── app/src/main/java/com/milan/game/
     ├── MainActivity.kt        # single host Activity + MilanNavHost (type-safe routes)
     ├── MilanApp.kt            # Application: CrashReporter.install → bootTrace → GameState.ensureInitialized
-    ├── data/                  # save models (@Serializable) · SaveManager · SaveProvider (interface)
-    │   └── AndroidSaveProvider.kt  # filesDir/save/save.json + .bak/.tmp atomic write (Android layer)
-    ├── infrastructure/        # CrashReporter · eventbus/ (EventBus, Events) · MilanAudio
-    ├── services/              # GameService (orchestration) · GameContent (fallback) · ContentModels
-    │   └── WriteOutcome.kt    # sealed WriteOutcome / PullOutcome (typed write results)
-    └── ui/                    # GameState (process singleton + snapshot StateFlow) · screens/ · components/ · nav/ · theme/
+    ├── di/AppGraph.kt         # composition root
+    └── ui/                    # GameState · screens/ · components/ · nav/ · theme/
 ```
 
 ## Architecture

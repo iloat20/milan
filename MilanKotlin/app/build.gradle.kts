@@ -1,3 +1,4 @@
+import java.io.File
 import java.util.Properties
 
 plugins {
@@ -17,7 +18,7 @@ val keystoreProps = Properties().apply {
 
 android {
     namespace = "com.milan.game"
-    // compileSdk 37：Compose BOM 2026.08.00 (Compose 1.12) 要求；AGP 9.1.0+
+    // compileSdk 37：Compose BOM 2026.09.00 (Compose 1.12) 要求；AGP 9.1.0+
     compileSdk = 37
 
     signingConfigs {
@@ -48,11 +49,15 @@ android {
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
         // Macrobenchmark 专用构建类型（:benchmark 模块的 targetProjectPath 按此 variant 消费 :app；
-        // 对齐官方模板：非 debuggable + debug 签名，基准化时用 release 等价代码路径）
+        // 对齐官方模板：非 debuggable + debug 签名 + 与 release 相同的 R8 路径——
+        // 此前未开 minify，StartupBenchmark 测到的不是生产收缩结果，2026-09-11 性能报告 P2）。
         create("benchmark") {
             isDebuggable = false
             signingConfig = signingConfigs.getByName("debug")
             matchingFallbacks += listOf("release")
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
     }
     compileOptions {
@@ -70,6 +75,38 @@ android {
         }
     }
     // 架构红线（checkArchitecture）：见文件末尾 registerArchitectureCheck
+}
+
+// 打包守卫：禁止 .bak / 带日期后缀的备份文件进入 source set（会原样打进 APK/AAB）。
+// 备份请放 tools/backup/，不要放 src/main/assets 或 res。
+// configuration cache 友好：配置期捕获路径字符串，不在 doLast 闭包捕获 project。
+tasks.register("checkNoPackagedBackups") {
+    group = "verification"
+    description = "拒绝 src/main 中的 .bak / *.webp.YYYYMMDD 等备份残留"
+    val appDirPath = projectDir.absolutePath
+    val assetsDir = file("src/main/assets")
+    val resDir = file("src/main/res")
+    inputs.dir(assetsDir).optional()
+    inputs.dir(resDir).optional()
+    doLast {
+        val banned = Regex("""\.bak$|\.webp\.\d{8}$|\.png\.\d{8}$|\.json\.\d{8}$""", RegexOption.IGNORE_CASE)
+        val appRoot = File(appDirPath)
+        val offenders = listOf(assetsDir, resDir)
+            .filter { it.exists() }
+            .flatMap { dir -> dir.walkTopDown().filter { it.isFile } }
+            .filter { banned.containsMatchIn(it.name) }
+            .map { it.relativeTo(appRoot).path }
+        if (offenders.isNotEmpty()) {
+            throw GradleException(
+                "发现会打进包的备份残留（请移到 tools/backup/）：\n" + offenders.joinToString("\n")
+            )
+        }
+        logger.lifecycle("checkNoPackagedBackups: 通过")
+    }
+}
+
+tasks.named("preBuild") {
+    dependsOn("checkNoPackagedBackups")
 }
 
 kotlin {

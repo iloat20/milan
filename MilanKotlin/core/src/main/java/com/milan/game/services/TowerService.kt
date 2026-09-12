@@ -609,14 +609,24 @@ class TowerService(private val core: ServiceCore) : TowerApi {
 
             val streakBonusMultiplier = 1.0 + ((times - 1) / 3) * 0.5
 
+            // R7-P1 残留（2026-09-11）：baseExp*times 仍为 Int 乘法，先扩到 Long 再钳制。
+            // 票务 Long 护栏已挡住极端 times，此处补经验/好感路径，防重开扫荡时溢出为负。
+            val totalExpLong = (baseExp.toLong() * times.toLong() * streakBonusMultiplier).toLong()
+            val totalAffinityLong =
+                affinityPerWin.toLong() * times.toLong() * teamIds.size.toLong()
+            if (totalExpLong > Int.MAX_VALUE || totalAffinityLong > Int.MAX_VALUE) {
+                return@withWriteLock TowerSweepOutcome.Rejected
+            }
+            val totalExp = totalExpLong.toInt()
+            val totalAffinity = totalAffinityLong.toInt()
+
             val outcome = core.transactionLocked(
                 tag = "tower.sweep",
                 mutate = {
                     // 扣战票
                     core.addItemDelta(ServiceCore.BattleTicketItemId, -ticketCost)
 
-                    // 经验发放（含连胜加成）
-                    val totalExp = (baseExp * times * streakBonusMultiplier).toInt()
+                    // 经验发放（含连胜加成；totalExp 已 Long 钳制）
                     for (snap in expSnapshots) {
                         val s = snap.save
                         s.totalExp += totalExp
@@ -627,7 +637,7 @@ class TowerService(private val core: ServiceCore) : TowerApi {
                         }
                     }
 
-                    // 好感发放（每扫荡一次全员+好感）
+                    // 好感发放（每扫荡一次全员+好感；总量已 Long 钳制后按次发放）
                     repeat(times) {
                         for (id in teamIds) {
                             core.addAffinityDelta(id, affinityPerWin)
@@ -667,8 +677,8 @@ class TowerService(private val core: ServiceCore) : TowerApi {
                 WriteOutcome.Success -> TowerSweepOutcome.Success(
                     floor = floor,
                     times = times,
-                    totalExp = (baseExp * times * streakBonusMultiplier).toInt(),
-                    totalAffinity = affinityPerWin * times * teamIds.size,
+                    totalExp = totalExp,
+                    totalAffinity = totalAffinity,
                     costTickets = ticketCost,
                 )
                 WriteOutcome.Rejected -> TowerSweepOutcome.Rejected

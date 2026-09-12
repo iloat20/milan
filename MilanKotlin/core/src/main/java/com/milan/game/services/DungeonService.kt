@@ -213,19 +213,20 @@ class DungeonService(
         val origSC = saveData.softCurrency
         val origHC = saveData.hardCurrency
 
-        // R7-P0-3：仅「本层首次通关」或「星数刷新纪录」才发奖。
-        // 旧逻辑每次都发 floor*500*stars，可反复 completeAbyssStage(1,3) 刷星尘。
-        val prevStars = data.stars.getOrNull(floor - 1) ?: 0
-        val isNewClear = prevStars <= 0 && clampedStars >= 1
-        val isNewBestStars = clampedStars > prevStars
-        val shouldReward = isNewClear || isNewBestStars
-        val softReward = if (shouldReward) floor * 500 * clampedStars else 0
-        val hardReward =
-            if (shouldReward && floor % 5 == 0 && clampedStars >= 2) floor * 10 else 0
-
         return core.transaction(
             tag = "abyss.complete",
             mutate = {
+                // R7-P0-3：仅「本层首次通关」或「星数刷新纪录」才发奖。
+                // 奖励决策必须在 writeMutex 临界区内重读 stars——锁外预计算是 TOCTOU：
+                // 并发双 complete 会用同一 prevStars 各自判定 shouldReward 双发。
+                val prevStars = data.stars.getOrNull(floor - 1) ?: 0
+                val isNewClear = prevStars <= 0 && clampedStars >= 1
+                val isNewBestStars = clampedStars > prevStars
+                val shouldReward = isNewClear || isNewBestStars
+                val softReward = if (shouldReward) floor * 500 * clampedStars else 0
+                val hardReward =
+                    if (shouldReward && floor % 5 == 0 && clampedStars >= 2) floor * 10 else 0
+
                 val starsList = data.stars.toMutableList()
                 while (starsList.size < floor) starsList.add(0)
                 if (clampedStars > (starsList[floor - 1] ?: 0)) {

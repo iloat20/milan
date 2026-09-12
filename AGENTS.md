@@ -5,18 +5,20 @@
 
 ## 构建与测试（环境事实）
 
-- 工程在 `MilanKotlin/`（Gradle 9 系 + AGP 9.3.0 + Kotlin 2.4.10，AGP 9 内置 built-in Kotlin，不再应用 kotlin-android 插件），用 wrapper，无需本地安装 Gradle：
+- 工程在 `MilanKotlin/`（Gradle 9 系 + AGP 9.3.2 + Kotlin 2.4.20，AGP 9 内置 built-in Kotlin，不再应用 kotlin-android 插件），用 wrapper，无需本地安装 Gradle：
   ```powershell
   .\gradlew.bat :app:assembleDebug          # 构建 Debug APK
   .\gradlew.bat :app:assembleRelease        # 构建 Release APK（minify+shrinkResources）
+  .\gradlew.bat :app:bundleRelease          # 构建 AAB（Play 分发；本地/内测仍可用 APK）
   .\gradlew.bat :app:testDebugUnitTest      # 运行单测（JUnit4 + kotlinx-coroutines-test）
   ```
+- **CI**：`.github/workflows/ci.yml`（GitHub Actions，main push/PR）。任务序：`checkArchitecture` → `:app:testDebugUnitTest` → `:app:assembleDebug`；失败上传测试报告，成功上传 Debug APK。需真机的 Macrobenchmark / baseline profile **不在** CI 内。
 - 产物：`MilanKotlin/app/build/outputs/apk/debug/app-debug.apk`（~90MB）/ `release/app-release.apk`（~49MB）。需 JDK 17+（PATH 上有 Temurin 17 即可）。
 - **DSH 沙箱环境专用**：`%USERPROFILE%\.gradle` 与 `%USERPROFILE%\.android` 不可写，必须用
   `pwsh -NoProfile -File .\run-gradle.ps1 <gradle 参数>`（内部把 GRADLE_USER_HOME / ANDROID_USER_HOME
   重定向到 workspace 内 `.gradle-home/`、`.android-home/`，两者已入根 .gitignore）。Kotlin daemon
   标记写入 `%LOCALAPPDATA%\kotlin\daemon` 被拒会自动回退 in-process 编译（有噪音，构建仍成功）。
-- 版本号集中在 `MilanKotlin/gradle/libs.versions.toml`（AGP / Kotlin / Compose BOM 2026.06.01 / kotlinx-serialization 1.11.0 / coroutines 1.11.0 / navigation-compose 2.9.8 / media3 1.11.0 / glance 1.1.1 / lifecycle 2.11.0）；`minSdk=29, targetSdk=37, compileSdk=37`（compileSdk 37 为 BOM 2026.06.01 的 ui 1.12.0-alpha03 强制要求），JVM target 17。
+- 版本号集中在 `MilanKotlin/gradle/libs.versions.toml`（AGP 9.3.2 / Kotlin 2.4.20 / Compose BOM 2026.09.00 / kotlinx-serialization 1.11.0 / coroutines 1.11.0 / navigation-compose 2.9.8 / media3 1.11.1 / glance 1.1.1 / lifecycle 2.11.0）；`minSdk=29, targetSdk=37, compileSdk=37`，JVM target 17。
 - Release 构建开 minify + shrinkResources。`MilanKotlin/app/proguard-rules.pro` 除 kotlinx.serialization 规则外，**必须保留 WorkManager keep 规则**（`androidx.work.impl.WorkDatabase_Impl` + `ListenableWorker` 构造器）：AGP 9 R8 严格化会把反射实例化的 WorkDatabase_Impl 裁掉，导致 release 启动闪退 `Failed to create an instance of androidx.work.impl.WorkDatabase`（debug 正常；Google Issue 348590028，2026-02 社区 workaround）。
 
 ## Compose 编译陷阱（高频踩坑）
@@ -28,11 +30,12 @@
 
 ## 代码红线（动它们会破坏构建/运行）
 
-- **领域层纯净性（2026-08-13 KMP 下沉后）**：领域层已迁入 **`:shared` 模块的 `commonMain`**
-  （`shared/src/commonMain/kotlin/com/milan/game/`：`domain/gacha|progression|battle` + `data/Rarity.kt`），
+- **领域层纯净性（2026-08-13 KMP 下沉后）**：领域层在 **`:shared` 模块的 `commonMain`**
+  （`shared/src/commonMain/kotlin/com/milan/game/`：`domain/gacha|progression|battle|deck|monetization|mission` + `data/Rarity.kt`），
   跨端共用、**禁止 `import android.*`**；app 依赖 `implementation(project(":shared"))`。
-  `data/`（存档模型 + SaveManager）、`infrastructure/eventbus/` 仍在 app 且同为纯 Kotlin。
-  Android 依赖只允许出现在接入层：`MainActivity.kt`、`MilanApp.kt`、`data/AndroidSaveProvider.kt`、`ui/` 可绘制部分。
+  **多模块布局（2026-09 P2-9 后）**：存档模型 + SaveManager 在 **`:data`**（Android library 插件但源码零 android.*）；
+  聚合服务 + EventBus + CrashReporter + Audio + Worker 在 **`:core`**；UI/组合根在 **`:app`**。
+  Android 依赖只允许出现在接入层：`MainActivity.kt`、`MilanApp.kt`、`:data` 的 `AndroidSaveProvider`、`:core` 基础设施、`ui/` 可绘制部分。
   SaveProvider 是接口，Android 实现注入。随机源一律 `kotlin.random.Random`（KMP 可移植；`java.util.Random` 已清除）。
 - **`shared/.../domain/progression/EconomyFormulas.kt` 是养成数值的单一事实来源**——任何「升级/突破/升星/重复碎片」公式必须调用它，禁止就地写数字（源码注释明示铁律；桌面模拟器与 App 共用同一份）。
 - 货币/养成写操作是事务范式：先预算/校验可支付 → 改内存 → 落盘；落盘失败回滚本次内存改动并返回非 Success（`WriteOutcome`，见 `services/WriteOutcome.kt`），回滚路径**不广播事件**。写操作统一走 `core.transaction(tag, mutate, rollback, onCommit)` 模板；`pull` 返回 `PullOutcome`。UI 刷新优先订阅 `GameService.snapshot`（StateFlow）而非 EventBus 轻标记。
@@ -45,11 +48,11 @@
 
 ## 架构要点
 
-- **单 Activity**：`MainActivity` + Navigation Compose 2.9 类型安全路由（`NavHost` + `ui/nav/Routes.kt` 的 `@Serializable` 路由类，替代早期自研状态路由；`RoutesTest` 覆盖 `NavItem.toNavRoute()` 映射）。底部 5 tab：`Home 主页 / Gacha 抽卡 / Deck 卡组 / Shop 商店 / Settings 设置`（`ui/nav/GameNavBar.kt` 的 `NavItem` 枚举，Material 标准图标）。子页盖住 tab：神谱图鉴（占位）→ 我的角色（CharacterListScreen）→ 角色详情（CharacterDetailScreen）→ 角色养成（ProgressionScreen），顶栏返回/系统返回（Predictive Back）逐层退出。立绘共享元素过渡：`SharedTransitionLayout` 包 `NavHost`（作用域经 `ui/SharedTransitionLocals.kt` 的 `LocalSharedTransitionScope` 注入）。
+- **单 Activity**：`MainActivity` + Navigation Compose 2.9 类型安全路由（`NavHost` + `ui/nav/Routes.kt` 的 `@Serializable` 路由类，替代早期自研状态路由；`RoutesTest` 覆盖 `NavItem.toNavRoute()` 映射）。底部 5 tab：`Home 主页 / Gacha 抽卡 / Deck 卡组 / Shop 商店 / Settings 设置`（`ui/nav/GameNavBar.kt` 的 `NavItem` 枚举，Material 标准图标）。子页盖住 tab：神谱图鉴（CollectionScreen）→ 我的角色（CharacterListScreen）→ 角色详情（CharacterDetailScreen）→ 角色养成（ProgressionScreen），顶栏返回/系统返回（Predictive Back）逐层退出。立绘共享元素过渡：`SharedTransitionLayout` 包 `NavHost`（作用域经 `ui/SharedTransitionLocals.kt` 的 `LocalSharedTransitionScope` 注入）。
 - `ui/GameState.kt` 是**进程级启动门控**（`ensureInitialized` 幂等、双检锁 + `ready`/`failure`）：成功后 `AppGraph.install(service)`。**Compose 层禁止再摸 `GameState.service`**——Screen 一律 `viewModel(factory = AppGraph.factory)` / `AppGraph.xxxFactory(id)`；属性推导走 `ui/stats/CharacterStats`；`OwnedCharacterView.talent` 构造时注入（经 `GameService.ownedView`）。Application / Worker / 测试仍可读 `GameState.service`。
 - **组合根 `di/AppGraph.kt`**：进程内唯一持有 `GameService` 的装配点；ViewModel 构造函数**必填** `GameService`（无 `= GameState.service` 默认参数）。`GameState.resetForTest()` 会 `AppGraph.clear()`。层间规则可用 `./gradlew checkArchitecture` 校验（领域 `android.*` / VM 默认注入 / UI 业务单例直连，违规 fail-fast）。
 - `MilanApp`（Application）启动顺序敏感：`CrashReporter.install` → `beginBootTrace` → `GameState.ensureInitialized(saveProvider = AndroidSaveProvider, contentJson, onTrace)`（内部装 AppGraph）。
-- 分层（2026-08-13 KMP 下沉后）：`ui/` → `services/`（GameService）→ **`:shared` commonMain**（`domain/` battle/gacha/progression + `data/Rarity`）→ `data/`（存档，app 内）+ `infrastructure/`（EventBus、CrashReporter）。桌面/未来 iOS 与 App 共用同一份领域实现（`desktopApp` 即演示）。
+- 分层（P2-9 多模块后）：`ui/`（:app）→ **`:core`**（GameService + 16 域 Api + EventBus/Crash）→ **`:shared` commonMain**（battle/gacha/progression/deck/… + `data/Rarity`）→ **`:data`**（存档模型 + SaveManager）+ `:core` 基础设施。桌面/未来 iOS 与 App 共用同一份领域实现（`desktopApp` 即演示）。`AGENTS.md`/`CLAUDE.md` 若再与树不一致，以 `settings.gradle.kts` 与实际源码路径为准。
 - 代码注释常带「C# 某某翻译」对照标注（从 .NET 版迁移而来），历史坑因注释请保留，改相关代码前先读。
 
 ## 测试（app/src/test/java/com/milan/game/ 与 shared/commonTest）
