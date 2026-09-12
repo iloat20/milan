@@ -39,6 +39,10 @@ data class StrategicBattleUi(
     val abyssStars: Int? = null,
     /** 深渊局写档结果。 */
     val abyssWrite: com.milan.game.services.WriteOutcome? = null,
+    /** 自动战斗：玩家回合由 VM 自动选技能/确认。 */
+    val autoBattle: Boolean = false,
+    /** 演出/敌方回合延迟倍率：1=原速，2=二倍速。 */
+    val speedMul: Float = 1f,
 )
 
 /**
@@ -99,6 +103,54 @@ class StrategicBattleViewModel(
         _ui.value = _ui.value.copy(fxPulses = emptyList())
     }
 
+    fun toggleAuto() {
+        val next = !_ui.value.autoBattle
+        _ui.value = _ui.value.copy(autoBattle = next)
+        if (next) maybeAutoAct()
+    }
+
+    fun toggleSpeed() {
+        _ui.value = _ui.value.copy(speedMul = if (_ui.value.speedMul >= 2f) 1f else 2f)
+    }
+
+    private fun frameDelay(baseMs: Long): Long =
+        (baseMs / _ui.value.speedMul.coerceAtLeast(1f)).toLong()
+
+    /**
+     * 自动战斗：为当前行动单位挑「能量够、未冷却、power 最高」技能并确认。
+     * 敌方回合/结算/未自动时直接返回。
+     */
+    private fun maybeAutoAct() {
+        val cur = _ui.value
+        if (!cur.autoBattle || cur.finished || cur.settling || cur.enemyActing) return
+        val st = cur.state ?: return
+        val actor = st.playerTeam.getOrNull(cur.currentActor) ?: return
+        if (actor.hp <= 0) {
+            advanceActor(st)
+            return
+        }
+        val ready = actor.skills.filter { skill ->
+            actor.energy >= skill.energyCost && (actor.cooldowns[skill.skillId] ?: 0) <= 0
+        }
+        val skill = ready.maxByOrNull { it.power } ?: return
+        val need = skill.target == SkillTarget.SINGLE_ENEMY || skill.target == SkillTarget.SINGLE_ALLY
+        val target = when (skill.target) {
+            SkillTarget.SINGLE_ENEMY -> firstAliveEnemy(st) ?: 0
+            SkillTarget.SINGLE_ALLY -> cur.currentActor
+            else -> 0
+        }
+        _ui.value = cur.copy(
+            selectedSkillId = skill.skillId,
+            needTarget = need,
+            selectedTarget = if (need) target else null,
+        )
+        viewModelScope.launch {
+            delay(frameDelay(280))
+            if (!_ui.value.autoBattle || _ui.value.finished || _ui.value.enemyActing) return@launch
+            confirm()
+        }
+    }
+
     private fun buildPulses(
         events: List<com.milan.game.domain.battle.StrikeEvent>,
         energyCost: Int,
@@ -121,6 +173,7 @@ class StrategicBattleViewModel(
     }
 
     fun selectSkill(skillId: String) {
+        if (_ui.value.autoBattle) return // 自动战斗时忽略手动点技能
         if (_ui.value.enemyActing || _ui.value.finished || _ui.value.settling) return
         val st = _ui.value.state ?: return
         val actor = st.playerTeam.getOrNull(_ui.value.currentActor) ?: return
@@ -185,6 +238,7 @@ class StrategicBattleViewModel(
         }
         if (next != null) {
             _ui.value = _ui.value.copy(currentActor = next)
+            if (_ui.value.autoBattle) maybeAutoAct()
             return
         }
         // 玩家阶段结束 → 敌方回合（先上锁，防 delay 窗口双击）
@@ -196,7 +250,7 @@ class StrategicBattleViewModel(
             logLines = _ui.value.logLines + "—— 敌方回合 ——",
         )
         battleJob = viewModelScope.launch {
-            delay(350)
+            delay(frameDelay(350))
             var s = service.executeStrategicEnemyTurn(st)
             val eEvents = s.log.drop(st.log.size)
             val eLines = eEvents.map { strikeLabel(it) }
@@ -245,6 +299,7 @@ class StrategicBattleViewModel(
                             )
                         }
                     }
+                    if (_ui.value.autoBattle) maybeAutoAct()
                 }
             }
         }

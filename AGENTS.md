@@ -21,6 +21,7 @@
 - **EventBus**（2026-09-12）：生产 UI 零订阅（全走 StateFlow/snapshot）；`publishRaw` 无订阅者直接丢弃。保留给测试与未来命令通道。
 - **检视深化**（2026-09-12）：拍照模式（姿势/背景/滤镜 + savePhoto）已接；手势视差在 `InspectHero`。
 - **动画时钟**：`ui/effects/AnimClock.kt` `rememberAnimTime` 仅 RESUMED 推进；抽卡 Charge/Backdrop 已接。
+- **战斗 QoL**（2026-09-12）：策略战斗顶栏「自动」自动选技能出招；「×1/×2」缩放敌方回合与自动间隔延迟。
 - **Robolectric 4.17**：已升；Compose UI 测试仍 `@Config(sdk=[34])`（JDK17 沙箱限制，4.17 具备 SDK 37 能力，升 JDK 21 后可抬档）。
 - **技术栈 B 批（2026-09-12 完成）**：Gradle wrapper **9.7.1**、AGP **9.4.0**、Nav 2.10.1、Work 2.11.2、Glance 1.2.0、Benchmark 1.5.0、Konsist 0.17.3。沙箱若再遇 wrapper 下载 SSL 失败，可把发行包放进 `.gradle-home/wrapper/dists/gradle-9.7.1-bin/<hash>/` 并去掉 `.part`。
 - 产物：`MilanKotlin/app/build/outputs/apk/debug/app-debug.apk`（~90MB）/ `release/app-release.apk`（~49MB）。需 JDK 17+（PATH 上有 Temurin 17 即可）。

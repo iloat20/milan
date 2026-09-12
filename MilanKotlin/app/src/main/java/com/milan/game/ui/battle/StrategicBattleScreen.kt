@@ -95,7 +95,20 @@ fun StrategicBattleScreen(
                         style = MaterialTheme.typography.labelLarge,
                         color = AppTheme.Gold,
                     )
-                    Spacer(Modifier.width(12.dp))
+                    Spacer(Modifier.width(8.dp))
+                    // 自动 / 倍速（2026-09-12 游戏性）
+                    SpeedToggle(
+                        label = if (ui.speedMul >= 2f) "×2" else "×1",
+                        active = ui.speedMul >= 2f,
+                        onClick = { vm.toggleSpeed() },
+                    )
+                    Spacer(Modifier.width(6.dp))
+                    SpeedToggle(
+                        label = "自动",
+                        active = ui.autoBattle,
+                        onClick = { vm.toggleAuto() },
+                    )
+                    Spacer(Modifier.width(8.dp))
                     InkButton(
                         text = "退出",
                         color = AppTheme.Text3,
@@ -234,7 +247,7 @@ fun StrategicBattleScreen(
 
                 // 技能条
                 val actor = st.playerTeam.getOrNull(ui.currentActor)
-                if (actor != null && actor.hp > 0 && !ui.finished && !ui.enemyActing) {
+                if (actor != null && actor.hp > 0 && !ui.finished && !ui.enemyActing && !ui.autoBattle) {
                     Text(
                         text = "行动：${actor.stats.characterId.ifEmpty { "单位${ui.currentActor + 1}" }} · 能量 ${actor.energy}/${actor.maxEnergy}",
                         style = MaterialTheme.typography.labelLarge,
@@ -436,4 +449,29 @@ private fun StrategicResultDialog(
     GlassDialog(show = true, onDismiss = onDismiss, title = title, body = body) {
         GoldButton(text = "知道了", onClick = onDismiss)
     }
+}
+
+/** 顶栏小开关：自动战斗 / 倍速。 */
+@Composable
+private fun SpeedToggle(
+    label: String,
+    active: Boolean,
+    onClick: () -> Unit,
+) {
+    Text(
+        text = label,
+        style = MaterialTheme.typography.labelLarge,
+        fontWeight = FontWeight.Bold,
+        color = if (active) AppTheme.GoldHi else AppTheme.Text3,
+        modifier = Modifier
+            .clip(RoundedCornerShape(8.dp))
+            .background(if (active) AppTheme.Gold.copy(alpha = 0.22f) else AppTheme.BgMid)
+            .border(
+                1.dp,
+                if (active) AppTheme.Gold else AppTheme.Stroke,
+                RoundedCornerShape(8.dp),
+            )
+            .clickable(onClick = onClick)
+            .padding(horizontal = 10.dp, vertical = 6.dp),
+    )
 }
