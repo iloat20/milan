@@ -141,6 +141,8 @@ data class GameSnapshot(
     val reduceMotionEnabled: Boolean = false,
     /** 字号档位 0=标准 1=+10% 2=+20%。 */
     val fontScaleTier: Int = 0,
+    /** 自动战斗策略 0=均衡 1=激进 2=保守。 */
+    val autoBattleStrategy: Int = 0,
     // 路径 B（2026-08）：角色级数据纳入快照，UI 从快照读替代 saveData 直读 firstOrNull。
     // pityByPool：poolId → 保底计数（GachaScreen 保底进度显示/余额预拦截）；
     // ownedSaves：characterId → 角色存档拷贝（CharacterSaveState 为可变字段，拷贝防快照持有陈旧引用）。
@@ -221,6 +223,8 @@ data class MetaSlice(
     val pushEnabled: Boolean = true,
     val reduceMotionEnabled: Boolean = false,
     val fontScaleTier: Int = 0,
+    /** 自动战斗策略：0=均衡 1=激进 2=保守。 */
+    val autoBattleStrategy: Int = 0,
 )
 
 /**

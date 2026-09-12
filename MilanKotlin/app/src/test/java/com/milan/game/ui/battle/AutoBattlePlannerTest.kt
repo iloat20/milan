@@ -99,4 +99,25 @@ class AutoBattlePlannerTest {
         assertEquals("aoe", plan!!.skillId)
         assertTrue(!plan.needTarget)
     }
+
+    @Test
+    fun `保守策略更早治疗`() {
+        val heal = skill(
+            "heal",
+            power = 0,
+            target = SkillTarget.SINGLE_ALLY,
+            cost = 20,
+            effects = listOf(com.milan.game.domain.battle.SkillEffect(EffectType.HEAL, 100)),
+        )
+        val strike = skill("strike", power = 150, cost = 30)
+        val actor = unit("p0", skills = listOf(strike, heal))
+        // 40% 血：保守(阈值 0.45)会治疗，激进(0.25)不会
+        val wounded = unit("p1", hp = 400, maxHp = 1000, skills = emptyList())
+        val enemy = unit("e0", hp = 900, skills = emptyList(), energy = 0).copy(isPlayer = false)
+        val st = state(listOf(actor, wounded), listOf(enemy))
+        val cons = AutoBattlePlanner.plan(actor, st, AutoBattleStrategy.CONSERVATIVE)
+        assertEquals("heal", cons!!.skillId)
+        val agg = AutoBattlePlanner.plan(actor, st, AutoBattleStrategy.AGGRESSIVE)
+        assertTrue(agg == null || agg.skillId != "heal")
+    }
 }

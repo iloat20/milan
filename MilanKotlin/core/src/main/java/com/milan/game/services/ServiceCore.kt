@@ -125,6 +125,7 @@ class ServiceCore(
             pushEnabled = saveData.pushEnabled,
             reduceMotionEnabled = saveData.reduceMotionEnabled,
             fontScaleTier = saveData.fontScaleTier.coerceIn(0, 2),
+            autoBattleStrategy = saveData.autoBattleStrategy.coerceIn(0, 2),
             pityByPool = pools.associate { it.poolId to saveData.getGachaCounter(it.poolId) },
             ownedSaves = ownedSaves,
             formation = saveData.getFormationIds(),
@@ -167,6 +168,7 @@ class ServiceCore(
                 pushEnabled = snap.pushEnabled,
                 reduceMotionEnabled = snap.reduceMotionEnabled,
                 fontScaleTier = snap.fontScaleTier,
+                autoBattleStrategy = snap.autoBattleStrategy,
             )
         )
     }

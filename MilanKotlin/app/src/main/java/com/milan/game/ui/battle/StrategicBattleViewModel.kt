@@ -129,7 +129,11 @@ class StrategicBattleViewModel(
             advanceActor(st)
             return
         }
-        val plan = AutoBattlePlanner.plan(actor, st) ?: return
+        val plan = AutoBattlePlanner.plan(
+            actor = actor,
+            state = st,
+            strategy = AutoBattleStrategy.fromId(service.snapshot.value.autoBattleStrategy),
+        ) ?: return
         _ui.value = cur.copy(
             selectedSkillId = plan.skillId,
             needTarget = plan.needTarget,

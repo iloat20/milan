@@ -187,6 +187,36 @@ fun SettingsScreen(
                         }
                     }
                 }
+                EntranceItem(index = 5) {
+                    Column {
+                        Text(
+                            text = "自动战斗策略",
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = AppTheme.Text1,
+                        )
+                        Text(
+                            text = "保守：更早治疗 · 激进：更早开大/群攻",
+                            color = AppTheme.Text3,
+                        )
+                        Spacer(Modifier.height(8.dp))
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            listOf(
+                                0 to "均衡",
+                                1 to "激进",
+                                2 to "保守",
+                            ).forEach { (id, label) ->
+                                val selected = meta.autoBattleStrategy == id
+                                InkButton(
+                                    text = label,
+                                    color = if (selected) AppTheme.Gold else AppTheme.Text3,
+                                    onClick = { vm.setAutoBattleStrategy(id) },
+                                    modifier = Modifier.weight(1f),
+                                )
+                            }
+                        }
+                    }
+                }
 
                 SectionTitle("数据管理")
                 EntranceItem(index = 3) {

@@ -25,6 +25,9 @@ interface MetaApi {
     /** 字号档位持久化（0=标准 1=+10% 2=+20%）。 */
     suspend fun setFontScaleTier(tier: Int): WriteOutcome
 
+    /** 自动战斗策略（0=均衡 1=激进 2=保守）。 */
+    suspend fun setAutoBattleStrategy(strategy: Int): WriteOutcome
+
     /** 重置存档为新档（删除失败返回 false 且不动内存）。 */
     suspend fun resetSave(): Boolean
 

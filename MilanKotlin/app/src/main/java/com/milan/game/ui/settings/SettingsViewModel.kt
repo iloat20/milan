@@ -80,6 +80,11 @@ class SettingsViewModel(
         mapWrite(service.setFontScaleTier(tier), failHint = "字号档位无效")
     }
 
+    /** 自动战斗策略：0=均衡 1=激进 2=保守。 */
+    fun setAutoBattleStrategy(strategy: Int) = runWrite {
+        mapWrite(service.setAutoBattleStrategy(strategy), failHint = "策略无效")
+    }
+
     /**
      * 推送开关。[onSuccess] 由 Screen 排程 WorkManager / 请求通知权限
      *（权限拒绝不回滚开关，与原实现一致）。

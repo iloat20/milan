@@ -76,6 +76,16 @@ class MetaService(private val core: ServiceCore) : MetaApi {
         )
     }
 
+    /** 自动战斗策略：0=均衡 1=激进 2=保守。 */
+    override suspend fun setAutoBattleStrategy(strategy: Int): WriteOutcome {
+        if (strategy !in 0..2) return WriteOutcome.Rejected
+        return persistSetting(
+            read = { saveData.autoBattleStrategy },
+            write = { saveData.autoBattleStrategy = it },
+            newValue = strategy,
+        )
+    }
+
     /**
      * 重置存档为新档：删除存档文件并重载默认档，整体替换 saveData 引用，
      * 成功后广播货币/养成变更（各页面据此刷新）。

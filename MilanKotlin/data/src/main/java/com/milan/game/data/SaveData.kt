@@ -93,6 +93,11 @@ class SaveData(
      * 旧档无此键 → 0。
      */
     @SerialName("FontScaleTier") var fontScaleTier: Int = 0,
+    /**
+     * 自动战斗策略：0=均衡 1=激进 2=保守（2026-09-12）。
+     * 旧档无此键 → 0。UI/VM 经 [com.milan.game.ui.battle.AutoBattleStrategy] 消费。
+     */
+    @SerialName("AutoBattleStrategy") var autoBattleStrategy: Int = 0,
 
     // ─────────── 商店与成就领取 ───────────
     /** 每日商店归属的 UTC 日序号字符串（与当日不一致 = 跨日，已购列表作废重置）。 */
