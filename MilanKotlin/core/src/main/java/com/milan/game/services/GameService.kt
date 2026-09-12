@@ -218,6 +218,13 @@ class GameService constructor(
     EquipmentApi by equipmentService,
     CollectionApi by collectionService {
 
+    /**
+     * 深渊策略战斗初始化（2026-09-12）：敌队走 [EconomyFormulas.floorEnemyStatScale]
+     * / [EconomyFormulas.floorEnemyCount] 深渊档；塔层仍用 [initializeStrategicBattle]。
+     */
+    fun initializeAbyssStrategicBattle(floor: Int): com.milan.game.domain.battle.BattleState =
+        towerService.initializeFloorBattle(floor, isAbyss = true)
+
     init {
         loadContent(contentJson)
         // 初始快照：载入存档后立即发布一次真实值，避免 UI 在首次写操作前看到全 0

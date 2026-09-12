@@ -74,8 +74,12 @@ class StrategicBattleViewModel(
     }
 
     private fun openBattle(floor: Int, mode: StrategicBattleMode) {
-        // 敌队生成沿用塔层曲线：深渊层数与塔层数值同源，后续可单独调系数
-        val state = service.initializeStrategicBattle(floor)
+        // 深渊走 EconomyFormulas 深渊档（属性 ×1.25、人数 +1、seed 盐不同）
+        val state = if (mode == StrategicBattleMode.ABYSS) {
+            service.initializeAbyssStrategicBattle(floor)
+        } else {
+            service.initializeStrategicBattle(floor)
+        }
         actedThisTurn = mutableSetOf()
         fxSeq = 0L
         _ui.value = StrategicBattleUi(

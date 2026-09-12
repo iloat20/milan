@@ -125,6 +125,24 @@ object EconomyFormulas {
     fun towerEnemyCount(floor: Int): Int = (1 + floor.coerceAtLeast(1) / 10).coerceAtMost(5)
 
     /**
+     * 深渊敌人数值相对塔层的额外倍率（2026-09-12 Dungeon keep）。
+     * 深渊同层更难：属性 ×1.25，人数 +1（仍受 5 封顶），种子盐不同保证元素分布可复现且与塔错开。
+     */
+    fun abyssEnemyStatScaleMul(): Double = 1.25
+
+    /** 统一层敌人数：塔走 [towerEnemyCount]；深渊 +1 后仍封顶 5。 */
+    fun floorEnemyCount(floor: Int, isAbyss: Boolean): Int {
+        val base = towerEnemyCount(floor)
+        return if (isAbyss) (base + 1).coerceAtMost(5) else base
+    }
+
+    /** 统一层敌人属性缩放：塔走 [towerEnemyStatScale]；深渊再乘 [abyssEnemyStatScaleMul]。 */
+    fun floorEnemyStatScale(floor: Int, isAbyss: Boolean): Double {
+        val base = towerEnemyStatScale(floor)
+        return if (isAbyss) base * abyssEnemyStatScaleMul() else base
+    }
+
+    /**
      * 爬塔敌人基础属性模板 [atk, def, hp, spd]（未经层数缩放；缩放走 [towerEnemyStatScale]）。
      * 基准对齐 StatsCalculator 的角色兜底值量级（100/80/1000/12），略压攻防让首层可平推。
      */

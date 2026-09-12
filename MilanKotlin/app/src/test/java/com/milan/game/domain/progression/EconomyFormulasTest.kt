@@ -29,6 +29,20 @@ class EconomyFormulasTest {
         assertEquals(50, EconomyFormulas.levelCost(-3))
     }
 
+    @Test
+    fun floorEnemies_abyssHarderThanTower() {
+        // 塔：1 + floor/10 封顶 5；深渊 +1 仍封顶 5
+        assertEquals(1, EconomyFormulas.floorEnemyCount(1, isAbyss = false))
+        assertEquals(2, EconomyFormulas.floorEnemyCount(1, isAbyss = true))
+        assertEquals(5, EconomyFormulas.floorEnemyCount(99, isAbyss = false))
+        assertEquals(5, EconomyFormulas.floorEnemyCount(99, isAbyss = true))
+        // 属性：深渊 = 塔 × 1.25
+        val tower = EconomyFormulas.floorEnemyStatScale(10, isAbyss = false)
+        val abyss = EconomyFormulas.floorEnemyStatScale(10, isAbyss = true)
+        assertEquals(tower * EconomyFormulas.abyssEnemyStatScaleMul(), abyss, 1e-9)
+        assertTrue(abyss > tower)
+    }
+
     // [Theory] (1,20,500) (3,60,1500) (0,20,500)
     @Test
     fun ascendCosts_scaleWithStage() {

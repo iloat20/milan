@@ -138,7 +138,7 @@ class TowerService(private val core: ServiceCore) : TowerApi {
         val myUnits = teamIds.mapNotNull { core.unitStatsFor(it) }
         if (myUnits.isEmpty()) return@withWriteLock TowerOutcome.Rejected
         val team = TeamResonance.apply(myUnits).toTypedArray()
-        val enemyTeam = buildTowerEnemies(floor)
+        val enemyTeam = buildFloorEnemies(floor, isAbyss = false)
 
         // 战斗 rng 从主 rng 派生：同 seed 注入下整个流程仍确定可复现。
         val result = BattleSimulator(Random(core.rng.nextLong())).simulate(team, enemyTeam, 50)
@@ -294,21 +294,25 @@ class TowerService(private val core: ServiceCore) : TowerApi {
     /**
      * 程序化生成第 [floor] 层敌队：数量/缩放/基础模板全部走 EconomyFormulas（单一事实来源），
      * 元素按 floor 派生的 seed 随机分布——同层完全可复现，克制关系成为爬塔的策略维度。
+     *
+     * @param isAbyss 深渊层：更高属性/人数、不同 seed 盐（2026-09-12 Dungeon keep）。
      */
-    private fun buildTowerEnemies(floor: Int): Array<UnitStats> {
-        val towerRng = Random(floor * 1_000_003L + 7L)
-        val scale = EconomyFormulas.towerEnemyStatScale(floor)
+    private fun buildFloorEnemies(floor: Int, isAbyss: Boolean): Array<UnitStats> {
+        val seedSalt = if (isAbyss) 13L else 7L
+        val floorRng = Random(floor * 1_000_003L + seedSalt)
+        val scale = EconomyFormulas.floorEnemyStatScale(floor, isAbyss)
         val base = EconomyFormulas.towerEnemyBaseStats()
         val elements = listOf("Metal", "Wood", "Water", "Flame", "Earth", "Light", "Shadow", "Thunder")
-        return Array(EconomyFormulas.towerEnemyCount(floor)) { i ->
+        val idPrefix = if (isAbyss) "abyss" else "tower"
+        return Array(EconomyFormulas.floorEnemyCount(floor, isAbyss)) { i ->
             UnitStats(
                 atk = (base[0] * scale).toInt(),
                 def = (base[1] * scale).toInt(),
                 hp = (base[2] * scale).toInt(),
                 // P3-7：速度也随层数缩放，否则玩家永远先手、克制定位被架空
                 spd = (base[3] * scale).toInt(),
-                characterId = "tower_f${floor}_e$i",
-                element = elements[towerRng.nextInt(elements.size)],
+                characterId = "${idPrefix}_f${floor}_e$i",
+                element = elements[floorRng.nextInt(elements.size)],
             )
         }
     }
@@ -328,17 +332,25 @@ class TowerService(private val core: ServiceCore) : TowerApi {
     // ─────────────────────────── 策略战斗系统 ───────────────────────────
     
     /**
-     * 初始化策略战斗状态。
+     * 初始化策略战斗状态（塔层；兼容 [TowerApi]）。
      *
      * @param floor 无尽之塔层数
-     * @return 初始战斗状态
      */
-    override fun initializeStrategicBattle(floor: Int): com.milan.game.domain.battle.BattleState {
+    override fun initializeStrategicBattle(floor: Int): com.milan.game.domain.battle.BattleState =
+        initializeFloorBattle(floor, isAbyss = false)
+
+    /**
+     * 初始化任意楼层策略战斗（塔 / 深渊共用）。
+     * @param isAbyss 深渊：走 [EconomyFormulas.floorEnemyStatScale] / [EconomyFormulas.floorEnemyCount] 的深渊档。
+     */
+    fun initializeFloorBattle(
+        floor: Int,
+        isAbyss: Boolean,
+    ): com.milan.game.domain.battle.BattleState {
         val teamIds = saveData.getFormationIds()
         val myUnits = teamIds.mapNotNull { core.unitStatsFor(it) }
         val team = TeamResonance.apply(myUnits).toTypedArray()
-        val enemyTeam = buildTowerEnemies(floor)
-        
+        val enemyTeam = buildFloorEnemies(floor, isAbyss)
         return strategicSimulator.initializeBattle(team.toList(), enemyTeam.toList())
     }
     
