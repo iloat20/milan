@@ -1,5 +1,6 @@
 [versions]
-# AGP 9.3.2（2026-09 patch；需 Gradle >= 9.5.0，wrapper 9.5.0 满足；支持 compileSdk 37）
+# AGP：9.4.0 需更新 Gradle wrapper；沙箱下载 Gradle 9.7.1 失败（SSL），暂留 9.3.2。
+# 升 wrapper 可达后再跟 AGP minor（见 upgrade report Wave B）。
 agp = "9.3.2"
 kotlin = "2.4.20"
 coreKtx = "1.19.0"
@@ -12,16 +13,18 @@ junit = "4.13.2"
 profileinstaller = "1.4.1"
 media3 = "1.11.1"
 materialIcons = "1.7.8"
-navigationCompose = "2.9.8"
-glance = "1.1.1"
+navigationCompose = "2.10.1"
+glance = "1.2.0"
 # WorkManager 显式接入（2026-08 每日补给本地提醒）：此前仅经 Glance 传递携带，app 无法引用其 API
-work = "2.10.0"
-benchmark = "1.4.1"
+work = "2.11.2"
+benchmark = "1.5.0"
 uiautomator = "2.4.0"
 testRunner = "1.6.2"
 testExtJunit = "1.3.0"
 # Robolectric：在 JVM 上运行 Compose UI 测试（无需模拟器/真机），支持 compileSdk 37
 robolectric = "4.16.1"
+# Konsist：编译期架构测试（层规则 / 包依赖），替代纯正则 checkArchitecture 的增量门禁
+konsist = "0.17.3"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -56,6 +59,7 @@ androidx-test-ext-junit = { group = "androidx.test.ext", name = "junit", version
 androidx-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
 androidx-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest" }
 robolectric = { group = "org.robolectric", name = "robolectric", version.ref = "robolectric" }
+konsist = { group = "com.lemonappdev", name = "konsist", version.ref = "konsist" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

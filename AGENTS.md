@@ -13,6 +13,8 @@
   .\gradlew.bat :app:testDebugUnitTest      # 运行单测（JUnit4 + kotlinx-coroutines-test）
   ```
 - **CI**：`.github/workflows/ci.yml`（GitHub Actions，main push/PR）。任务序：`checkArchitecture` → `:app:testDebugUnitTest` → `:app:assembleDebug`；失败上传测试报告，成功上传 Debug APK。需真机的 Macrobenchmark / baseline profile **不在** CI 内。
+- **Konsist**（2026-09-12）：`app/src/test/.../arch/ArchitectureKonsistTest.kt` 用编译期 API 锁层规则（shared domain / data / core services 无 android.*；VM 无 GameState 默认注入；ui 除 nav 无 AppGraph.service）。路径相对 **工程根** `MilanKotlin/`（如 `shared/src`）。与根任务 `checkArchitecture` 正则门禁互补，随单测进 CI。
+- **技术栈 B 批备注**：Nav 2.10.1 / Work 2.11.2 / Glance 1.2.0 / Benchmark 1.5.0 / Konsist 0.17.3 已升。**Gradle wrapper 仍 9.5.0、AGP 9.3.2**——沙箱下载 Gradle 9.7.1 失败（SSL），且 AGP 9.4.0 需更新 wrapper；网络可达后先升 wrapper 再跟 AGP minor。
 - 产物：`MilanKotlin/app/build/outputs/apk/debug/app-debug.apk`（~90MB）/ `release/app-release.apk`（~49MB）。需 JDK 17+（PATH 上有 Temurin 17 即可）。
 - **DSH 沙箱环境专用**：`%USERPROFILE%\.gradle` 与 `%USERPROFILE%\.android` 不可写，必须用
   `pwsh -NoProfile -File .\run-gradle.ps1 <gradle 参数>`（内部把 GRADLE_USER_HOME / ANDROID_USER_HOME
