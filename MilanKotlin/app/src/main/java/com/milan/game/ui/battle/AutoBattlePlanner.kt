@@ -36,61 +36,59 @@ internal object AutoBattlePlanner {
         val allies = state.playerTeam.mapIndexedNotNull { i, u -> if (u.hp > 0) i to u else null }
         if (enemies.isEmpty() && ready.none { isHeal(it) }) return null
 
-        val lowestAlly = allies.minByOrNull { (_, u) -> u.hpRatio() }
-        val criticalAlly = lowestAlly != null && lowestAlly.second.hpRatio() < CRITICAL_HP_RATIO
+        return pickHeal(ready, allies)
+            ?: pickKill(actor, ready, enemies)
+            ?: pickAoe(ready, enemies)
+            ?: pickSingleLowest(ready, enemies)
+            ?: pickFallback(ready, enemies, allies)
+    }
 
-        // ── 1) 保命治疗 ──
-        if (criticalAlly && lowestAlly != null) {
-            val heal = ready
-                .filter { isHealSkill(it) }
-                .maxByOrNull { healPower(it) }
-            if (heal != null) {
-                return when (heal.target) {
-                    SkillTarget.SINGLE_ALLY -> Plan(heal.skillId, true, lowestAlly.first)
-                    SkillTarget.ALL_ALLIES, SkillTarget.SELF -> Plan(heal.skillId, false, null)
-                    else -> Plan(heal.skillId, true, lowestAlly.first)
-                }
-            }
+    private fun pickHeal(ready: List<BattleSkill>, allies: List<Pair<Int, BattleUnitState>>): Plan? {
+        val lowest = allies.minByOrNull { (_, u) -> u.hpRatio() } ?: return null
+        if (lowest.second.hpRatio() >= CRITICAL_HP_RATIO) return null
+        val heal = ready.filter { isHealSkill(it) }.maxByOrNull { healPower(it) } ?: return null
+        return when (heal.target) {
+            SkillTarget.ALL_ALLIES, SkillTarget.SELF -> Plan(heal.skillId, false, null)
+            else -> Plan(heal.skillId, true, lowest.first)
         }
+    }
 
-        // ── 2) 斩杀：单体伤害能带走最低血敌人 ──
-        if (enemies.isNotEmpty()) {
-            val killable = enemies
-                .filter { (idx, e) ->
-                    ready.any { sk ->
-                        sk.target == SkillTarget.SINGLE_ENEMY && estimateDamage(actor, sk) >= e.hp
-                    } && e.hp > 0
-                }
-                .minByOrNull { it.second.hp }
-            if (killable != null) {
-                val sk = ready
-                    .filter {
-                        it.target == SkillTarget.SINGLE_ENEMY &&
-                            estimateDamage(actor, it) >= killable.second.hp
-                    }
-                    .maxByOrNull { it.power }!!
-                return Plan(sk.skillId, needTarget = true, targetIndex = killable.first)
-            }
-        }
+    private fun pickKill(
+        actor: BattleUnitState,
+        ready: List<BattleSkill>,
+        enemies: List<Pair<Int, BattleUnitState>>,
+    ): Plan? {
+        if (enemies.isEmpty()) return null
+        fun canKill(sk: BattleSkill, e: BattleUnitState): Boolean =
+            sk.target == SkillTarget.SINGLE_ENEMY && estimateDamage(actor, sk) >= e.hp
 
-        // ── 3) 群攻（≥2 存活敌人）──
-        if (enemies.size >= 2) {
-            val aoe = ready.filter { it.target == SkillTarget.ALL_ENEMIES }.maxByOrNull { it.power }
-            if (aoe != null) return Plan(aoe.skillId, needTarget = false, targetIndex = null)
-        }
+        val killable = enemies.filter { (_, e) -> ready.any { canKill(it, e) } }
+            .minByOrNull { it.second.hp } ?: return null
+        val sk = ready.filter { canKill(it, killable.second) }.maxByOrNull { it.power } ?: return null
+        return Plan(sk.skillId, needTarget = true, targetIndex = killable.first)
+    }
 
-        // ── 4) 单体最高 power → 打最低血 ──
-        if (enemies.isNotEmpty()) {
-            val single = ready
-                .filter { it.target == SkillTarget.SINGLE_ENEMY }
-                .maxByOrNull { it.power }
-            if (single != null) {
-                val lowestEnemy = enemies.minByOrNull { it.second.hp }!!
-                return Plan(single.skillId, needTarget = true, targetIndex = lowestEnemy.first)
-            }
-        }
+    private fun pickAoe(ready: List<BattleSkill>, enemies: List<Pair<Int, BattleUnitState>>): Plan? {
+        if (enemies.size < 2) return null
+        val aoe = ready.filter { it.target == SkillTarget.ALL_ENEMIES }.maxByOrNull { it.power } ?: return null
+        return Plan(aoe.skillId, needTarget = false, targetIndex = null)
+    }
 
-        // ── 5) 兜底 ──
+    private fun pickSingleLowest(
+        ready: List<BattleSkill>,
+        enemies: List<Pair<Int, BattleUnitState>>,
+    ): Plan? {
+        if (enemies.isEmpty()) return null
+        val single = ready.filter { it.target == SkillTarget.SINGLE_ENEMY }.maxByOrNull { it.power } ?: return null
+        val lowest = enemies.minByOrNull { it.second.hp } ?: return null
+        return Plan(single.skillId, needTarget = true, targetIndex = lowest.first)
+    }
+
+    private fun pickFallback(
+        ready: List<BattleSkill>,
+        enemies: List<Pair<Int, BattleUnitState>>,
+        allies: List<Pair<Int, BattleUnitState>>,
+    ): Plan? {
         val fallback = ready.maxByOrNull { it.power } ?: return null
         val need = fallback.target == SkillTarget.SINGLE_ENEMY || fallback.target == SkillTarget.SINGLE_ALLY
         val idx = when (fallback.target) {
