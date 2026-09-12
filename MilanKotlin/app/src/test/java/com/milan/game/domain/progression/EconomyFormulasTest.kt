@@ -39,7 +39,7 @@ class EconomyFormulasTest {
         // 属性：深渊 = 塔 × 1.25
         val tower = EconomyFormulas.floorEnemyStatScale(10, isAbyss = false)
         val abyss = EconomyFormulas.floorEnemyStatScale(10, isAbyss = true)
-        assertEquals(tower * EconomyFormulas.abyssEnemyStatScaleMul(), abyss, 1e-9)
+        assertEquals(tower * EconomyFormulas.ABYSS_ENEMY_STAT_SCALE_MUL, abyss, 1e-9)
         assertTrue(abyss > tower)
     }
 
