@@ -19,6 +19,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
@@ -288,59 +289,67 @@ private fun InkWashPortrait(
     // 宣纸噪点Paint
     val grainPaint = remember { Paint(Paint.ANTI_ALIAS_FLAG) }
 
-    Canvas(modifier = modifier) {
-        val w = size.width
-        val h = size.height
-
-        drawIntoCanvas { canvas ->
-            canvas.nativeCanvas.apply {
-                // ── 第 1 层：水墨滤镜立绘 ──
-                save()
-                val scale = maxOf(w / bitmap.width, h / bitmap.height)
-                val dx = (w - bitmap.width * scale) / 2f
-                val dy = (h - bitmap.height * scale) / 2f
-                translate(dx, dy)
-                scale(scale, scale)
-                drawBitmap(bitmap, 0f, 0f, portraitPaint)
-                restore()
-
-                // ── 第 2 层：平滑墨迹暗角（单次径向渐变）──
-                // 从画布中心透明到边缘浓墨，一笔完成，无逐层圆环的带状伪影
-                val cx = w / 2f
-                val cy = h / 2f
-                val radius = maxOf(w, h) * 0.72f
-                vignettePaint.shader = android.graphics.RadialGradient(
-                    cx, cy, radius,
-                    intArrayOf(0x000A0A0F.toInt(), 0x000A0A0F.toInt(), 0x300A0A0F.toInt(), 0x600A0A0F.toInt()),
-                    floatArrayOf(0f, 0.45f, 0.75f, 1f),
-                    android.graphics.Shader.TileMode.CLAMP,
-                )
-                drawCircle(cx, cy, radius, vignettePaint)
-
-                // ── 第 3 层：宣纸纤维噪点 ──
-                // 确定性散列生成稀疏白点，模拟生宣纸面的纤维纹理
-                // R6-P2：步长随尺寸放大并封顶点数——大图 Full 每帧 drawPoint 上千次会掉帧
-                grainPaint.color = 0x0AFFFFFF.toInt()
-                grainPaint.alpha = 10
-                grainPaint.style = Paint.Style.FILL
-                val step = (maxOf(w, h) / 48f).coerceIn(14f, 36f)
-                val maxGrainPoints = 900
-                var grainPoints = 0
-                var gy = 0f
-                while (gy < h && grainPoints < maxGrainPoints) {
-                    var gx = 0f
-                    while (gx < w && grainPoints < maxGrainPoints) {
-                        val hash = ((gx * 73856093).toInt() xor (gy * 19349663).toInt()) and 0xFF
-                        if (hash < 14) {
-                            grainPaint.alpha = 6 + (hash and 0x07)
-                            drawPoint(gx, gy, grainPaint)
-                            grainPoints++
-                        }
-                        gx += step
+    // 2026-09-12：shader / 噪点坐标随 size 缓存，避免 Home hero 无限浮动时每帧重建
+    // RadialGradient + 重扫 grain 网格（性能报告 F5）。
+    Canvas(
+        modifier = modifier.drawWithCache {
+            val w = size.width
+            val h = size.height
+            val cx = w / 2f
+            val cy = h / 2f
+            val radius = maxOf(w, h) * 0.72f
+            vignettePaint.shader = android.graphics.RadialGradient(
+                cx, cy, radius,
+                intArrayOf(0x000A0A0F.toInt(), 0x000A0A0F.toInt(), 0x300A0A0F.toInt(), 0x600A0A0F.toInt()),
+                floatArrayOf(0f, 0.45f, 0.75f, 1f),
+                android.graphics.Shader.TileMode.CLAMP,
+            )
+            grainPaint.color = 0x0AFFFFFF.toInt()
+            grainPaint.style = Paint.Style.FILL
+            val step = (maxOf(w, h) / 48f).coerceIn(14f, 36f)
+            val maxGrainPoints = 900
+            val grains = ArrayList<FloatArray>(maxGrainPoints) // [gx, gy, alpha]
+            var gy = 0f
+            while (gy < h && grains.size < maxGrainPoints) {
+                var gx = 0f
+                while (gx < w && grains.size < maxGrainPoints) {
+                    val hash = ((gx * 73856093).toInt() xor (gy * 19349663).toInt()) and 0xFF
+                    if (hash < 14) {
+                        grains.add(floatArrayOf(gx, gy, (6 + (hash and 0x07)).toFloat()))
                     }
-                    gy += step
+                    gx += step
+                }
+                gy += step
+            }
+
+            onDrawBehind {
+                drawIntoCanvas { canvas ->
+                    canvas.nativeCanvas.apply {
+                        // ── 第 1 层：水墨滤镜立绘 ──
+                        save()
+                        val scale = maxOf(w / bitmap.width, h / bitmap.height)
+                        val dx = (w - bitmap.width * scale) / 2f
+                        val dy = (h - bitmap.height * scale) / 2f
+                        translate(dx, dy)
+                        scale(scale, scale)
+                        drawBitmap(bitmap, 0f, 0f, portraitPaint)
+                        restore()
+
+                        // ── 第 2 层：平滑墨迹暗角（缓存 shader）──
+                        drawCircle(cx, cy, radius, vignettePaint)
+
+                        // ── 第 3 层：宣纸纤维噪点（缓存坐标）──
+                        var i = 0
+                        while (i < grains.size) {
+                            grainPaint.alpha = grains[i][2].toInt()
+                            drawPoint(grains[i][0], grains[i][1], grainPaint)
+                            i++
+                        }
+                    }
                 }
             }
-        }
+        },
+    ) {
+        // 绘制全部走 drawWithCache 的 onDrawBehind；Canvas 体为空。
     }
 }

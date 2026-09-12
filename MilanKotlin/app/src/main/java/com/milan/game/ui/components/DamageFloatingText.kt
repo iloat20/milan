@@ -51,6 +51,38 @@ fun DamageFloatingText(
 
     // R6-P1：remember 槽位必须固定——用 remember(events) 托管列表，避免 map 内 remember 数量变化。
     val progresses = remember(events) { List(events.size) { Animatable(0f) } }
+    // 2026-09-12：文案与 TextLayoutResult 预计算，Canvas 内不再每帧 buildString+measure
+    val damageTexts = remember(events) {
+        events.map { event ->
+            if (event.damage == 0) "MISS"
+            else buildString {
+                append("-${event.damage}")
+                if (event.targetDefeated) append(" †")
+            }
+        }
+    }
+    val measuredLayouts = remember(events, textMeasurer) {
+        events.mapIndexed { index, event ->
+            val isCounter = event.damage > 0
+            val baseColor = when {
+                event.targetDefeated -> AppTheme.SealRed
+                isCounter -> AppTheme.Gold
+                else -> AppTheme.Text1
+            }
+            textMeasurer.measure(
+                text = damageTexts[index],
+                style = TextStyle(
+                    fontWeight = FontWeight.Bold,
+                    color = baseColor,
+                    shadow = Shadow(
+                        color = Color.Black.copy(alpha = 0.7f),
+                        offset = Offset(2f, 2f),
+                        blurRadius = 4f,
+                    ),
+                ),
+            )
+        }
+    }
 
     LaunchedEffect(active, events) {
         // R7-P1：并行推进而非串行 delay+animateTo——旧实现 30 条日志会拖到 ~25s
@@ -104,23 +136,13 @@ fun DamageFloatingText(
                 else -> AppTheme.Text1 // 普通=白色
             }
 
-            val damageText = if (event.damage == 0) {
-                "MISS"
-            } else {
-                buildString {
-                    append("-${event.damage}")
-                    if (event.targetDefeated) append(" †")
-                }
-            }
-
             drawDamageText(
-                text = damageText,
+                layout = measuredLayouts[index],
                 x = baseX,
                 y = floatY,
                 scale = scale,
                 alpha = alpha,
                 color = baseColor,
-                textMeasurer = textMeasurer,
             )
         }
     }
@@ -128,27 +150,17 @@ fun DamageFloatingText(
 
 /**
  * 绘制单条伤害飘字：描边 + 填充 + 阴影。
+ * [layout] 已在 remember(events) 中预计算；颜色/透明度在 draw 阶段覆盖。
  */
 private fun DrawScope.drawDamageText(
-    text: String,
+    layout: androidx.compose.ui.text.TextLayoutResult,
     x: Float,
     y: Float,
     scale: Float,
     alpha: Float,
     color: Color,
-    textMeasurer: androidx.compose.ui.text.TextMeasurer,
 ) {
-    val style = TextStyle(
-        fontWeight = FontWeight.Bold,
-        color = color.copy(alpha = alpha),
-        shadow = Shadow(
-            color = Color.Black.copy(alpha = 0.7f * alpha),
-            offset = Offset(2f, 2f),
-            blurRadius = 4f,
-        ),
-    )
-
-    val measured = textMeasurer.measure(text, style)
+    val measured = layout
     val textWidth = measured.size.width.toFloat()
     val textHeight = measured.size.height.toFloat()
 
