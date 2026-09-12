@@ -18,6 +18,7 @@
     <ID>CyclomaticComplexMethod:DialogueScreen.kt$@Composable fun DialogueScreen( stage: StoryStageDef, onStageComplete: () -&gt; Unit, onBack: () -&gt; Unit, /** * 选择分支跳转到指定关卡（M3 修复新增）。此前 `nextStageId` 分支直接退出整关， * 「跳转到目标关卡」的语义从未实现；现由 NavHost 侧执行「当前关完结 + 打开目标关」。 * 无内容引用该能力时保持默认空实现，不影响既有线性关卡。 */ onNavigateStage: (String) -&gt; Unit = {}, /** 好感选项落账（默认 no-op；生产由 NavHost 注入 StoryViewModel.grantAffinity）。 */ onGrantAffinity: (characterId: String, amount: Int) -&gt; Unit = { _, _ -&gt; }, /** 结局分支落档（默认 no-op；生产由 NavHost 注入 StoryViewModel.setEndingBranch）。 */ onSelectEnding: (branchId: String) -&gt; Unit = {}, /** 说话者内容查找（生产由 NavHost 注入 StoryViewModel.characterOf）。 */ characterOf: (String) -&gt; CharacterDataEntry? = { null }, )</ID>
     <ID>CyclomaticComplexMethod:DungeonService.kt$DungeonService$override suspend fun completeAbyssStage(floor: Int, stars: Int): WriteOutcome</ID>
     <ID>CyclomaticComplexMethod:DungeonService.kt$DungeonService$suspend fun ensureDailyReset(): WriteOutcome</ID>
+    <ID>CyclomaticComplexMethod:EquipmentEngine.kt$EquipmentEngine$fun calculateEquipmentStatBonus( templates: List&lt;EquipmentData&gt;, sets: List&lt;EquipmentSetData&gt;, equippedIds: List&lt;String&gt;, findEquipment: (String) -&gt; EquipmentSaveState?, ): EquipmentStatBonus</ID>
     <ID>CyclomaticComplexMethod:EventRhythmService.kt$EventRhythmService$private fun resolveEquipmentTemplate(shopItem: EventShopItem): EquipmentData?</ID>
     <ID>CyclomaticComplexMethod:EventScreen.kt$@Composable private fun EventCard( card: EventCardUi, busy: Boolean, onSignIn: () -&gt; Unit, onClaimTask: (String) -&gt; Unit, onRedeem: (String) -&gt; Unit, )</ID>
     <ID>CyclomaticComplexMethod:GachaScreen.kt$@Composable fun GachaScreen( onNav: (NavItem) -&gt; Unit, onOpenCharacter: (String) -&gt; Unit, onOpenHistory: () -&gt; Unit, modifier: Modifier = Modifier, testMode: Boolean = false, )</ID>
@@ -29,7 +30,6 @@
     <ID>CyclomaticComplexMethod:ProgressionPanels.kt$@Composable private fun TalentNode( node: TalentNodeData, col: Color, allocated: Boolean, canAlloc: Boolean, enabled: Boolean = true, onClick: () -&gt; Unit, )</ID>
     <ID>CyclomaticComplexMethod:SaveData.kt$SaveData$fun sanitize()</ID>
     <ID>CyclomaticComplexMethod:ServiceCore.kt$ServiceCore$fun loadContent(rawJson: String?)</ID>
-    <ID>CyclomaticComplexMethod:ServiceCore.kt$ServiceCore$private fun calculateEquipmentStats(characterId: String): EquipmentStatBonus</ID>
     <ID>CyclomaticComplexMethod:SettingsScreen.kt$@Composable fun SettingsScreen( onNav: (NavItem) -&gt; Unit, )</ID>
     <ID>CyclomaticComplexMethod:StatsCalculator.kt$StatsCalculator$fun compute( baseStats: List&lt;Int&gt;, level: Int, stage: Int, stars: Int, branchIds: List&lt;String&gt;, characterId: String, progression: ProgressionEngine, talent: TalentEngine, nodeEffectsMap: Map&lt;String, List&lt;TalentEffect&gt;&gt;? = null, allocatedNodes: List&lt;String&gt; = emptyList(), ): UnitStats</ID>
     <ID>CyclomaticComplexMethod:StoryScreen.kt$@Composable private fun StageRow( vm: StoryViewModel, stage: StoryStageDef, onOpenStage: (String) -&gt; Unit, )</ID>
@@ -71,7 +71,6 @@
     <ID>InstanceOfCheckForException:PortraitLoader.kt$PortraitLoader$t is CancellationException</ID>
     <ID>InstanceOfCheckForException:StoryViewModel.kt$StoryViewModel$e is kotlinx.coroutines.CancellationException</ID>
     <ID>LargeClass:GameContent.kt$GameContent</ID>
-    <ID>LargeClass:ServiceCore.kt$ServiceCore</ID>
     <ID>LargeClass:StoryService.kt$StoryService$Companion</ID>
     <ID>LongMethod:AffinityScreen.kt$@Composable private fun AffinityCard( characterId: String, name: String, rarity: Int, affinity: Int, claimedLevels: Set&lt;Int&gt;, giftEnabled: Boolean, onGift: () -&gt; Unit, onClaimReward: (Int) -&gt; Unit, onClick: () -&gt; Unit, )</ID>
     <ID>LongMethod:ArenaService.kt$ArenaService$override suspend fun challengeOpponent(opponent: ArenaOpponent): ArenaChallengeOutcome</ID>
@@ -95,6 +94,7 @@
     <ID>LongMethod:DeckScreen.kt$@Composable fun DeckScreen( onNav: (NavItem) -&gt; Unit, onOpenCharacter: (String) -&gt; Unit, modifier: Modifier = Modifier, animatedVisibilityScope: androidx.compose.animation.AnimatedVisibilityScope? = null, )</ID>
     <ID>LongMethod:DeckScreen.kt$@Composable private fun DeckPreviewOverlay( preview: OwnedCharacterView?, onClose: () -&gt; Unit, onOpenCharacter: (String) -&gt; Unit, inFormation: Boolean = false, onToggleFormation: (() -&gt; Unit)? = null, )</ID>
     <ID>LongMethod:DialogueScreen.kt$@Composable fun DialogueScreen( stage: StoryStageDef, onStageComplete: () -&gt; Unit, onBack: () -&gt; Unit, /** * 选择分支跳转到指定关卡（M3 修复新增）。此前 `nextStageId` 分支直接退出整关， * 「跳转到目标关卡」的语义从未实现；现由 NavHost 侧执行「当前关完结 + 打开目标关」。 * 无内容引用该能力时保持默认空实现，不影响既有线性关卡。 */ onNavigateStage: (String) -&gt; Unit = {}, /** 好感选项落账（默认 no-op；生产由 NavHost 注入 StoryViewModel.grantAffinity）。 */ onGrantAffinity: (characterId: String, amount: Int) -&gt; Unit = { _, _ -&gt; }, /** 结局分支落档（默认 no-op；生产由 NavHost 注入 StoryViewModel.setEndingBranch）。 */ onSelectEnding: (branchId: String) -&gt; Unit = {}, /** 说话者内容查找（生产由 NavHost 注入 StoryViewModel.characterOf）。 */ characterOf: (String) -&gt; CharacterDataEntry? = { null }, )</ID>
+    <ID>LongMethod:EquipmentEngine.kt$EquipmentEngine$fun fallbackTemplates(): List&lt;EquipmentData&gt;</ID>
     <ID>LongMethod:EventScreen.kt$@Composable private fun EventCard( card: EventCardUi, busy: Boolean, onSignIn: () -&gt; Unit, onClaimTask: (String) -&gt; Unit, onRedeem: (String) -&gt; Unit, )</ID>
     <ID>LongMethod:FormationUi.kt$@Composable fun FormationBar( members: List&lt;OwnedCharacterView&gt;, maxSlots: Int, onSlotClick: (String?) -&gt; Unit, modifier: Modifier = Modifier, /** 拖拽悬停时高亮空槽（2026-09-10 拖放反馈）。 */ dropHighlight: Boolean = false, )</ID>
     <ID>LongMethod:GachaScreen.kt$@Composable fun GachaScreen( onNav: (NavItem) -&gt; Unit, onOpenCharacter: (String) -&gt; Unit, onOpenHistory: () -&gt; Unit, modifier: Modifier = Modifier, testMode: Boolean = false, )</ID>
@@ -113,7 +113,6 @@
     <ID>LongMethod:PageComponents.kt$@Composable fun SubPageHero( view: OwnedCharacterView, rarityCol: Color, eFrom: Color, eGlyph: String, heroHeight: Dp, onBack: () -&gt; Unit, onPrev: () -&gt; Unit, onNext: () -&gt; Unit, modifier: Modifier = Modifier, fadeHeight: Dp = 140.dp, owned: Boolean = true, onOpenProgression: ((String) -&gt; Unit)? = null, onOpenInspection: ((String) -&gt; Unit)? = null, portraitModifier: Modifier = Modifier, /** 传入 NavHost 的 AnimatedVisibilityScope 后，立绘参与 `portrait_{id}` 共享元素过渡。 */ animatedVisibilityScope: AnimatedVisibilityScope? = null, )</ID>
     <ID>LongMethod:ProgressionScreen.kt$@Composable fun ProgressionScreen( characterId: String, onBack: () -&gt; Unit, onSwitchCharacter: (String) -&gt; Unit, animatedVisibilityScope: androidx.compose.animation.AnimatedVisibilityScope? = null, modifier: Modifier = Modifier, )</ID>
     <ID>LongMethod:SaveData.kt$SaveData$fun sanitize()</ID>
-    <ID>LongMethod:ServiceCore.kt$ServiceCore$private fun loadEquipmentFallback()</ID>
     <ID>LongMethod:SettingsScreen.kt$@Composable fun SettingsScreen( onNav: (NavItem) -&gt; Unit, )</ID>
     <ID>LongMethod:ShopScreen.kt$@Composable fun ShopScreen( onNav: (NavItem) -&gt; Unit, )</ID>
     <ID>LongMethod:StoryScreen.kt$@Composable private fun StoryChapterCard( vm: StoryViewModel, chapter: StoryChapterDef, index: Int, unlocked: Boolean, progress: Float, unlockHint: String?, onOpenStage: (String) -&gt; Unit, )</ID>
@@ -154,7 +153,6 @@
     <ID>LoopWithTooManyJumpStatements:DailyMissionService.kt$DailyMissionService$for</ID>
     <ID>LoopWithTooManyJumpStatements:EconomyFormulas.kt$EconomyFormulas$for</ID>
     <ID>LoopWithTooManyJumpStatements:EquipmentService.kt$EquipmentService$for</ID>
-    <ID>LoopWithTooManyJumpStatements:ServiceCore.kt$ServiceCore$for</ID>
     <ID>LoopWithTooManyJumpStatements:StrategicBattleSimulator.kt$StrategicBattleSimulator$for</ID>
     <ID>MatchingDeclarationName:FormationDrag.kt$FormationDragState</ID>
     <ID>MatchingDeclarationName:GameNavBar.kt$NavItem</ID>
@@ -171,6 +169,11 @@
     <ID>MaxLineLength:DailyMissionService.kt$DailyMissionService$data.activityPoints = DailyMissionFormulas.activityAfterReward(data.activityPoints, def.activityReward)</ID>
     <ID>MaxLineLength:DeckScreen.kt$itemsIndexed</ID>
     <ID>MaxLineLength:DungeonService.kt$DungeonSweepOutcome$Success : DungeonSweepOutcome</ID>
+    <ID>MaxLineLength:EquipmentEngine.kt$EquipmentEngine$for (bonus in setData.fourPieceBonus.statBonuses) applyStat(bonus.statType, bonus.value, bonus.isPercentage)</ID>
+    <ID>MaxLineLength:EquipmentEngine.kt$EquipmentEngine$for (bonus in setData.twoPieceBonus.statBonuses) applyStat(bonus.statType, bonus.value, bonus.isPercentage)</ID>
+    <ID>MaxLineLength:EquipmentEngine.kt$EquipmentEngine$goldPerLevel = listOf(1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000, 5500, 6000, 6500, 7000, 7500, 8000)</ID>
+    <ID>MaxLineLength:EquipmentEngine.kt$EquipmentEngine$goldPerLevel = listOf(1200, 1800, 2400, 3000, 3600, 4200, 4800, 5400, 6000, 6600, 7200, 7800, 8400, 9000, 9600)</ID>
+    <ID>MaxLineLength:EquipmentEngine.kt$EquipmentEngine$goldPerLevel = listOf(1500, 2200, 2900, 3600, 4300, 5000, 5700, 6400, 7100, 7800, 8500, 9200, 9900, 10600, 11300)</ID>
     <ID>MaxLineLength:EquipmentService.kt$EquipmentDismantleOutcome$Success : EquipmentDismantleOutcome</ID>
     <ID>MaxLineLength:EquipmentService.kt$EquipmentEnhanceOutcome$Success : EquipmentEnhanceOutcome</ID>
     <ID>MaxLineLength:GachaEngine.kt$GachaEngine$println("[Milan] GachaEngine.rollRarity: rarityWeights.size(${rarityWeights.size}) &gt; Rarity.entries.size(${Rarity.entries.size}), excess clamped to UR")</ID>
@@ -375,9 +378,6 @@
     <ID>MaxLineLength:SaveData.kt$SaveData$*</ID>
     <ID>MaxLineLength:SeasonService.kt$SeasonService$if</ID>
     <ID>MaxLineLength:SeasonService.kt$SeasonService$points += (points * SeasonSaveData.WIN_STREAK_BONUS_MULTIPLIER * (data.currentWinStreak - 1)).toInt()</ID>
-    <ID>MaxLineLength:ServiceCore.kt$ServiceCore$goldPerLevel = listOf(1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000, 5500, 6000, 6500, 7000, 7500, 8000)</ID>
-    <ID>MaxLineLength:ServiceCore.kt$ServiceCore$goldPerLevel = listOf(1200, 1800, 2400, 3000, 3600, 4200, 4800, 5400, 6000, 6600, 7200, 7800, 8400, 9000, 9600)</ID>
-    <ID>MaxLineLength:ServiceCore.kt$ServiceCore$goldPerLevel = listOf(1500, 2200, 2900, 3600, 4300, 5000, 5700, 6400, 7100, 7800, 8500, 9200, 9900, 10600, 11300)</ID>
     <ID>MaxLineLength:SettingsScreen.kt$Text(subtitle, color = AppTheme.Text2, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Normal)</ID>
     <ID>MaxLineLength:ShopScreen.kt$Text("${formatCount(batch)} ❖ → ${formatCount(yield)} ✦", color = AppTheme.Text2, style = MaterialTheme.typography.bodySmall)</ID>
     <ID>MaxLineLength:ShopScreen.kt$Text("${formatCount(cost)} ◆ → ${formatCount(gain)} ✦", color = AppTheme.Text2, style = MaterialTheme.typography.bodySmall)</ID>
