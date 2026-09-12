@@ -45,20 +45,6 @@ import kotlinx.serialization.decodeFromString
  * 预算/校验 → 改内存 → 落盘 → 失败回滚 → 仅成功广播；回滚路径不广播事件。
  */
 
-/** 装备属性加成聚合（含暴击，UnitStats 无此字段，由 [calculateEquipmentStats] 返回）。 */
-private data class EquipmentStatBonus(
-    val atk: Int = 0,
-    val def: Int = 0,
-    val hp: Int = 0,
-    val spd: Int = 0,
-    val critRate: Double = 0.0,
-    val critDmg: Double = 0.0,
-    /** 套装百分比（R6-P1：isPercentage=true 时按基数百分比加成，不可当 flat 加）。 */
-    val atkPct: Float = 0f,
-    val defPct: Float = 0f,
-    val hpPct: Float = 0f,
-)
-
 class ServiceCore(
     val saveManager: SaveManager,
     val gacha: GachaEngine,
@@ -245,84 +231,18 @@ class ServiceCore(
             }
         }
     
-    // ── 装备系统新增 ──
+    // ── 装备系统（业务规则在 [EquipmentEngine]，此处仅持有内容实例 + rng）──
+    // 2026-09-12：模板表/掉落/词条汇总全部委托 EquipmentEngine，ServiceCore 不再内联硬编码模板。
     var equipmentTemplates: List<EquipmentData> = emptyList()
     var equipmentSets: List<EquipmentSetData> = emptyList()
 
-    /**
-     * 按模板实例化装备（主属性 + 按稀有度随机副词条）。纯函数，不写存档。
-     * 放在 ServiceCore：模板与 rng 在此，且 TowerService 等聚合服务**互不调用**，
-     * 掉落生成只能经内核共用（C3，2026-09-09）。
-     */
-    fun rollEquipmentFromTemplate(template: EquipmentData, level: Int = 1): EquipmentSaveState {
-        val instanceId =
-            "eq_${template.equipmentId}_${System.currentTimeMillis()}_${rng.nextInt(100000)}"
-        val mainSource = template.baseStats.firstOrNull()
-            ?: StatData(StatValue.STAT_ATTACK, 1, 1, false, 100)
-        val mainStat = StatValue(
-            statType = mainSource.statType,
-            value = rollRange(mainSource.minValue, mainSource.maxValue),
-            isPercentage = mainSource.isPercentage,
-        )
-        val wantSubs = when (template.rarity) {
-            4 -> 4
-            3 -> 3
-            2 -> 2
-            else -> 1
-        }.coerceAtMost(EquipmentSaveState.MAX_SUB_STATS)
+    /** 按模板实例化装备。委托 [EquipmentEngine.rollFromTemplate]（注入本核 rng）。 */
+    fun rollEquipmentFromTemplate(template: EquipmentData, level: Int = 1): EquipmentSaveState =
+        EquipmentEngine.rollFromTemplate(rng, template, level)
 
-        val pool = template.subStatPool.filter { it.statType != mainStat.statType }
-        val rolled = mutableMapOf<String, StatValue>()
-        val remaining = pool.toMutableList()
-        while (rolled.size < wantSubs && remaining.isNotEmpty()) {
-            val totalWeight = remaining.sumOf { it.weight.coerceAtLeast(1) }.coerceAtLeast(1)
-            var pick = rng.nextInt(totalWeight)
-            var chosen = remaining[0]
-            for (stat in remaining) {
-                pick -= stat.weight.coerceAtLeast(1)
-                if (pick < 0) {
-                    chosen = stat
-                    break
-                }
-            }
-            remaining.remove(chosen)
-            rolled[chosen.statType] = StatValue(
-                statType = chosen.statType,
-                value = rollRange(chosen.minValue, chosen.maxValue),
-                isPercentage = chosen.isPercentage,
-            )
-        }
-        return EquipmentSaveState(
-            equipmentId = instanceId,
-            templateId = template.equipmentId,
-            level = level.coerceIn(1, template.maxLevel),
-            exp = 0,
-            mainStat = mainStat,
-            subStats = rolled.values.toList(),
-            locked = false,
-        )
-    }
-
-    private fun rollRange(min: Int, max: Int): Int =
-        if (max > min) rng.nextInt(min, max + 1) else min
-
-    /**
-     * 爬塔里程碑掉落：仅「层数为 10 的倍数」时产出。不入库、不加锁。
-     * 稀有度随层数：≥50 UR / ≥30 SSR / ≥15 SR / 其余 R。
-     */
-    fun rollTowerEquipmentDrop(floor: Int): EquipmentSaveState? {
-        if (floor <= 0 || floor % 10 != 0) return null
-        if (equipmentTemplates.isEmpty()) return null
-        val rarity = when {
-            floor >= 50 -> 4
-            floor >= 30 -> 3
-            floor >= 15 -> 2
-            else -> 1
-        }
-        val candidates = equipmentTemplates.filter { it.rarity == rarity }
-            .ifEmpty { equipmentTemplates }
-        return rollEquipmentFromTemplate(candidates[rng.nextInt(candidates.size)], level = 1)
-    }
+    /** 爬塔里程碑掉落。委托 [EquipmentEngine.rollTowerDrop]。 */
+    fun rollTowerEquipmentDrop(floor: Int): EquipmentSaveState? =
+        EquipmentEngine.rollTowerDrop(rng, equipmentTemplates, floor)
 
     private var charactersById: Map<String, CharacterDataEntry> = emptyMap()
     private var talentTreesById: Map<String, TalentTreeData> = emptyMap()
@@ -586,118 +506,14 @@ class ServiceCore(
     private fun calculateEquipmentStats(characterId: String): EquipmentStatBonus {
         val save = saveData.ownedCharacters.firstOrNull { it?.characterId == characterId }
             ?: return EquipmentStatBonus()
-        
-        var atk = 0
-        var def = 0
-        var hp = 0
-        var spd = 0
-        var critRate = 0.0
-        var critDmg = 0.0
-        var atkPct = 0f
-        var defPct = 0f
-        var hpPct = 0f
-
-        // 收集所有装备的属性
-        for (equipId in save.getEquippedIds()) {
-            val equipment = saveData.ownedEquipments.firstOrNull { it?.equipmentId == equipId }
-                ?: continue
-
-            // R7-P1：主/副词条 isPercentage 与套装同口径——true 时按基数百分比记账
-            fun applyStat(statType: String, value: Int, isPercentage: Boolean) {
-                when (statType) {
-                    StatValue.STAT_ATTACK ->
-                        if (isPercentage) atkPct += value / 100f else atk += value
-                    StatValue.STAT_DEFENSE ->
-                        if (isPercentage) defPct += value / 100f else def += value
-                    StatValue.STAT_HP ->
-                        if (isPercentage) hpPct += value / 100f else hp += value
-                    StatValue.STAT_SPEED -> spd += value
-                    StatValue.STAT_CRIT_RATE -> critRate += value / 100.0
-                    StatValue.STAT_CRIT_DMG -> critDmg += value / 100.0
-                    else -> {}
-                }
-            }
-
-            // 主属性
-            applyStat(
-                equipment.mainStat.statType,
-                equipment.mainStat.value,
-                equipment.mainStat.isPercentage,
-            )
-
-            // 副属性
-            for (subStat in equipment.subStats.filterNotNull()) {
-                applyStat(subStat.statType, subStat.value, subStat.isPercentage)
-            }
-        }
-
-        // 计算套装效果
-        val setBonuses = calculateSetBonuses(characterId)
-        for (bonus in setBonuses) {
-            // R6-P1：isPercentage 必须按百分比记账；此前一律当 flat 加，「攻击力+15%」变成 +15 点。
-            when (bonus.statType) {
-                StatValue.STAT_ATTACK ->
-                    if (bonus.isPercentage) atkPct += bonus.value / 100f else atk += bonus.value
-                StatValue.STAT_DEFENSE ->
-                    if (bonus.isPercentage) defPct += bonus.value / 100f else def += bonus.value
-                StatValue.STAT_HP ->
-                    if (bonus.isPercentage) hpPct += bonus.value / 100f else hp += bonus.value
-                StatValue.STAT_SPEED -> spd += bonus.value
-                StatValue.STAT_CRIT_RATE -> critRate += bonus.value / 100.0
-                StatValue.STAT_CRIT_DMG -> critDmg += bonus.value / 100.0
-                else -> {}
-            }
-        }
-
-        return EquipmentStatBonus(
-            atk = atk,
-            def = def,
-            hp = hp,
-            spd = spd,
-            critRate = critRate,
-            critDmg = critDmg,
-            atkPct = atkPct,
-            defPct = defPct,
-            hpPct = hpPct,
+        return EquipmentEngine.calculateEquipmentStatBonus(
+            templates = equipmentTemplates,
+            sets = equipmentSets,
+            equippedIds = save.getEquippedIds(),
+            findEquipment = { id ->
+                saveData.ownedEquipments.firstOrNull { it?.equipmentId == id }
+            },
         )
-    }
-    
-    /**
-     * 计算套装效果（**战斗属性计算辅助**，[calculateEquipmentStats] 的子计算）。
-     * 同 S3 KDoc 更新：非"装备业务规则"，是战斗单位属性计算的私有辅助。
-     */
-    private fun calculateSetBonuses(characterId: String): List<StatBonus> {
-        val save = saveData.ownedCharacters.firstOrNull { it?.characterId == characterId }
-            ?: return emptyList()
-        
-        // 统计套装数量
-        val setCounts = mutableMapOf<String, Int>()
-        for (equipId in save.getEquippedIds()) {
-            val equipment = saveData.ownedEquipments.firstOrNull { it?.equipmentId == equipId }
-                ?: continue
-            val template = equipmentTemplates.firstOrNull { it.equipmentId == equipment.templateId }
-                ?: continue
-            
-            if (template.setId.isNotEmpty()) {
-                setCounts[template.setId] = (setCounts[template.setId] ?: 0) + 1
-            }
-        }
-        
-        // 计算套装加成
-        val bonuses = mutableListOf<StatBonus>()
-        for ((setId, count) in setCounts) {
-            val setData = equipmentSets.firstOrNull { it.setId == setId }
-                ?: continue
-            
-            if (count >= 2) {
-                bonuses.addAll(setData.twoPieceBonus.statBonuses)
-            }
-            if (count >= 4) {
-                bonuses.addAll(setData.fourPieceBonus.statBonuses)
-            }
-        }
-        
-        return bonuses
     }
 
     /** 当日 UTC 日序号字符串（存档内跨日比对键）。 */
@@ -820,174 +636,11 @@ class ServiceCore(
     }
     
     /**
-     * 加载装备兜底数据。
+     * 加载装备兜底数据（内容在 [EquipmentEngine]）。
      */
     private fun loadEquipmentFallback() {
-        // 定义基础装备模板
-        equipmentTemplates = listOf(
-            // 武器
-            EquipmentData(
-                equipmentId = "eq_weapon_r_001",
-                displayName = "铁剑",
-                description = "普通的铁剑",
-                rarity = 1,
-                type = "weapon",
-                setId = "",
-                baseStats = listOf(StatData(StatValue.STAT_ATTACK, 10, 15, false, 100)),
-                subStatPool = listOf(
-                    StatData(StatValue.STAT_HP, 20, 50, false, 100),
-                    StatData(StatValue.STAT_DEFENSE, 5, 15, false, 100),
-                    StatData(StatValue.STAT_CRIT_RATE, 1, 3, false, 50),
-                ),
-                maxLevel = 15,
-                expPerLevel = listOf(100, 150, 200, 250, 300, 350, 400, 450, 500, 550, 600, 650, 700, 750, 800),
-                goldPerLevel = listOf(1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000, 5500, 6000, 6500, 7000, 7500, 8000),
-            ),
-            EquipmentData(
-                equipmentId = "eq_weapon_sr_001",
-                displayName = "精钢剑",
-                description = "精钢打造的长剑",
-                rarity = 2,
-                type = "weapon",
-                setId = "set_attack",
-                baseStats = listOf(StatData(StatValue.STAT_ATTACK, 20, 30, false, 100)),
-                subStatPool = listOf(
-                    StatData(StatValue.STAT_HP, 30, 80, false, 100),
-                    StatData(StatValue.STAT_DEFENSE, 10, 25, false, 100),
-                    StatData(StatValue.STAT_CRIT_RATE, 2, 5, false, 75),
-                    StatData(StatValue.STAT_CRIT_DMG, 4, 10, false, 50),
-                ),
-                maxLevel = 15,
-                expPerLevel = listOf(100, 150, 200, 250, 300, 350, 400, 450, 500, 550, 600, 650, 700, 750, 800),
-                goldPerLevel = listOf(1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000, 5500, 6000, 6500, 7000, 7500, 8000),
-            ),
-            // SSR 武器（爬塔 ≥30 层 / 活动商店高价档）
-            EquipmentData(
-                equipmentId = "eq_weapon_ssr_001",
-                displayName = "玄铁重剑",
-                description = "山海秘境所出，剑脊隐有雷纹",
-                rarity = 3,
-                type = "weapon",
-                setId = "set_attack",
-                baseStats = listOf(StatData(StatValue.STAT_ATTACK, 40, 60, false, 100)),
-                subStatPool = listOf(
-                    StatData(StatValue.STAT_HP, 50, 120, false, 100),
-                    StatData(StatValue.STAT_DEFENSE, 15, 35, false, 100),
-                    StatData(StatValue.STAT_CRIT_RATE, 3, 7, false, 80),
-                    StatData(StatValue.STAT_CRIT_DMG, 6, 14, false, 70),
-                ),
-                maxLevel = 15,
-                expPerLevel = listOf(120, 180, 240, 300, 360, 420, 480, 540, 600, 660, 720, 780, 840, 900, 960),
-                goldPerLevel = listOf(1200, 1800, 2400, 3000, 3600, 4200, 4800, 5400, 6000, 6600, 7200, 7800, 8400, 9000, 9600),
-            ),
-            // UR 武器（爬塔 ≥50 层）
-            EquipmentData(
-                equipmentId = "eq_weapon_ur_001",
-                displayName = "烛龙之锋",
-                description = "以烛龙鳞锻成，出鞘如见晨昏",
-                rarity = 4,
-                type = "weapon",
-                setId = "set_attack",
-                baseStats = listOf(StatData(StatValue.STAT_ATTACK, 70, 100, false, 100)),
-                subStatPool = listOf(
-                    StatData(StatValue.STAT_HP, 80, 180, false, 100),
-                    StatData(StatValue.STAT_DEFENSE, 25, 50, false, 100),
-                    StatData(StatValue.STAT_CRIT_RATE, 5, 10, false, 90),
-                    StatData(StatValue.STAT_CRIT_DMG, 10, 20, false, 80),
-                    StatData(StatValue.STAT_SPEED, 3, 8, false, 60),
-                ),
-                maxLevel = 15,
-                expPerLevel = listOf(150, 220, 290, 360, 430, 500, 570, 640, 710, 780, 850, 920, 990, 1060, 1130),
-                goldPerLevel = listOf(1500, 2200, 2900, 3600, 4300, 5000, 5700, 6400, 7100, 7800, 8500, 9200, 9900, 10600, 11300),
-            ),
-            // 头盔
-            EquipmentData(
-                equipmentId = "eq_head_r_001",
-                displayName = "皮盔",
-                description = "普通的皮质头盔",
-                rarity = 1,
-                type = "head",
-                setId = "",
-                baseStats = listOf(StatData(StatValue.STAT_HP, 50, 100, false, 100)),
-                subStatPool = listOf(
-                    StatData(StatValue.STAT_ATTACK, 5, 15, false, 100),
-                    StatData(StatValue.STAT_DEFENSE, 5, 15, false, 100),
-                    StatData(StatValue.STAT_CRIT_RATE, 1, 3, false, 50),
-                ),
-                maxLevel = 15,
-                expPerLevel = listOf(100, 150, 200, 250, 300, 350, 400, 450, 500, 550, 600, 650, 700, 750, 800),
-                goldPerLevel = listOf(1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000, 5500, 6000, 6500, 7000, 7500, 8000),
-            ),
-            // 铠甲
-            EquipmentData(
-                equipmentId = "eq_body_r_001",
-                displayName = "皮甲",
-                description = "普通的皮质铠甲",
-                rarity = 1,
-                type = "body",
-                setId = "",
-                baseStats = listOf(StatData(StatValue.STAT_DEFENSE, 10, 20, false, 100)),
-                subStatPool = listOf(
-                    StatData(StatValue.STAT_ATTACK, 5, 15, false, 100),
-                    StatData(StatValue.STAT_HP, 20, 50, false, 100),
-                    StatData(StatValue.STAT_CRIT_RATE, 1, 3, false, 50),
-                ),
-                maxLevel = 15,
-                expPerLevel = listOf(100, 150, 200, 250, 300, 350, 400, 450, 500, 550, 600, 650, 700, 750, 800),
-                goldPerLevel = listOf(1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000, 5500, 6000, 6500, 7000, 7500, 8000),
-            ),
-            // 饰品
-            EquipmentData(
-                equipmentId = "eq_accessory_r_001",
-                displayName = "生命戒指",
-                description = "增加生命值的戒指",
-                rarity = 1,
-                type = "accessory",
-                setId = "",
-                baseStats = listOf(
-                    StatData(StatValue.STAT_HP, 30, 60, false, 100),
-                    StatData(StatValue.STAT_ATTACK, 5, 10, false, 50),
-                ),
-                subStatPool = listOf(
-                    StatData(StatValue.STAT_DEFENSE, 5, 15, false, 100),
-                    StatData(StatValue.STAT_SPEED, 2, 5, false, 75),
-                    StatData(StatValue.STAT_CRIT_RATE, 1, 3, false, 50),
-                ),
-                maxLevel = 15,
-                expPerLevel = listOf(100, 150, 200, 250, 300, 350, 400, 450, 500, 550, 600, 650, 700, 750, 800),
-                goldPerLevel = listOf(1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000, 5500, 6000, 6500, 7000, 7500, 8000),
-            ),
-        )
-        
-        // 定义套装效果
-        equipmentSets = listOf(
-            EquipmentSetData(
-                setId = "set_attack",
-                displayName = "攻击套",
-                description = "2件套：攻击力+15%；4件套：暴击率+10%",
-                twoPieceBonus = SetBonus(
-                    description = "攻击力+15%",
-                    statBonuses = listOf(StatBonus(StatValue.STAT_ATTACK, 15, true)),
-                ),
-                fourPieceBonus = SetBonus(
-                    description = "暴击率+10%",
-                    statBonuses = listOf(StatBonus(StatValue.STAT_CRIT_RATE, 10, true)),
-                ),
-            ),
-            EquipmentSetData(
-                setId = "set_defense",
-                displayName = "防御套",
-                description = "2件套：防御力+15%；4件套：生命值+20%",
-                twoPieceBonus = SetBonus(
-                    description = "防御力+15%",
-                    statBonuses = listOf(StatBonus(StatValue.STAT_DEFENSE, 15, true)),
-                ),
-                fourPieceBonus = SetBonus(
-                    description = "生命值+20%",
-                    statBonuses = listOf(StatBonus(StatValue.STAT_HP, 20, true)),
-                ),
-            ),
-        )
+        equipmentTemplates = EquipmentEngine.fallbackTemplates()
+        equipmentSets = EquipmentEngine.fallbackSets()
     }
 
     companion object {
