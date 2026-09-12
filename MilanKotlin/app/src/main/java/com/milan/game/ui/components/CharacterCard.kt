@@ -126,7 +126,9 @@ fun CharacterCard(
                     rarity = rarity,
                     name = name,
                     modifier = Modifier.fillMaxSize(),
-                    target = PortraitTarget.Full,
+                    // 列表/图鉴/卡组网格：Thumb（4x）——Full 约 0.95MB/张会打穿 24MB LRU
+                    // （2026-09-11 性能报告；详情/Hero/抽卡 reveal 仍用 Full）。
+                    target = PortraitTarget.Thumb,
                     contentScale = ContentScale.Crop,
                     aura = true,
                     glowScale = 0.65f,
