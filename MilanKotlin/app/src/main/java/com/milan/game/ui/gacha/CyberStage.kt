@@ -459,6 +459,16 @@ fun CyberRevealLayer(
                     )
                 }
                 RevealStage.Single -> {
+                    // 2026-09-12 UR 全屏幕：叠在卡面之上，1.6s 自动收
+                    var urCurtain by remember { mutableStateOf(singleRarity >= 4) }
+                    if (urCurtain) {
+                        UrCurtainReveal(
+                            characterName = singleDef?.displayName.orEmpty(),
+                            visible = true,
+                            onDismiss = { urCurtain = false },
+                            modifier = Modifier.fillMaxSize(),
+                        )
+                    }
                     SingleCard(
                         def = singleDef,
                         rarity = singleRarity,
@@ -506,6 +516,17 @@ fun CyberRevealLayer(
                                 .align(Alignment.TopCenter)
                                 .padding(top = 28.dp),
                         )
+                        if (maxR >= 4) {
+                            var urCurtainTen by remember { mutableStateOf(true) }
+                            if (urCurtainTen) {
+                                UrCurtainReveal(
+                                    characterName = batch.maxByOrNull { it.rarity }?.characterName.orEmpty(),
+                                    visible = true,
+                                    onDismiss = { urCurtainTen = false },
+                                    modifier = Modifier.fillMaxSize(),
+                                )
+                            }
+                        }
                     }
                     if (tenSettled) {
                         TenCurtainCall(

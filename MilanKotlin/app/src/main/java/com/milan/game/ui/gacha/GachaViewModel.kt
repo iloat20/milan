@@ -150,7 +150,8 @@ class GachaViewModel(
                         4 -> 7200L; 3 -> 6400L; else -> 5600L
                     }
                     else -> when (best.rarity) {
-                        4 -> 3000L; 3 -> 2400L; 2 -> 1500L; else -> 1000L
+                        // 4 → UR 幕布（约 1.6s）+ 卡面停留
+                        4 -> 3600L; 3 -> 2400L; 2 -> 1500L; else -> 1000L
                     }
                 }
                 val fortune = bestDef?.let {
