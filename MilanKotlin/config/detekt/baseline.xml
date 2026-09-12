@@ -4,7 +4,8 @@
   <CurrentIssues>
     <ID>ComplexCondition:BattleStrikeFx.kt$pulse == null || !pulse.targetIsPlayer || pulse.damage &lt;= 0 || pulse.targetDefeated</ID>
     <ID>ComplexCondition:GachaViewModel.kt$GachaViewModel$st != RevealStage.Charge &amp;&amp; st != RevealStage.Beam &amp;&amp; st != RevealStage.Single &amp;&amp; st != RevealStage.Ten</ID>
-    <ID>ComplexCondition:StrategicBattleScreen.kt$actor != null &amp;&amp; actor.hp &gt; 0 &amp;&amp; !ui.finished &amp;&amp; !ui.enemyActing</ID>
+    <ID>ComplexCondition:StrategicBattleScreen.kt$actor != null &amp;&amp; actor.hp &gt; 0 &amp;&amp; !ui.finished &amp;&amp; !ui.enemyActing &amp;&amp; !ui.autoBattle</ID>
+    <ID>ComplexCondition:StrategicBattleViewModel.kt$StrategicBattleViewModel$!cur.autoBattle || cur.finished || cur.settling || cur.enemyActing</ID>
     <ID>CyclomaticComplexMethod:AchievementScreen.kt$@Composable private fun AchievementCard( status: AchievementStatus, enabled: Boolean, onClaim: () -&gt; Unit, )</ID>
     <ID>CyclomaticComplexMethod:BattleResultOverlay.kt$@Composable fun BattleResultOverlay( victory: Boolean, turns: Int, rewardSoft: Int, rewardHard: Int, recordAdvanced: Boolean, bestFloorAfter: Int, onDismiss: () -&gt; Unit, modifier: Modifier = Modifier, log: List&lt;StrikeEvent&gt; = emptyList(), )</ID>
     <ID>CyclomaticComplexMethod:BattleSimulator.kt$BattleSimulator$fun simulate(teamA: Array&lt;UnitStats&gt;?, teamB: Array&lt;UnitStats&gt;?, maxTurns: Int): BattleResult</ID>
@@ -38,6 +39,8 @@
     <ID>CyclomaticComplexMethod:StrategicBattleSimulator.kt$StrategicBattleSimulator$fun executePlayerAction(state: BattleState, action: PlayerAction): BattleState</ID>
     <ID>CyclomaticComplexMethod:StrategicBattleSimulator.kt$StrategicBattleSimulator$fun getAvailableActions(state: BattleState, actorIndex: Int): List&lt;PlayerAction&gt;</ID>
     <ID>CyclomaticComplexMethod:StrategicBattleSimulator.kt$StrategicBattleSimulator$private fun tryTriggerElementReaction( attacker: BattleUnitState, defender: BattleUnitState, turn: Int, ): ElementReactionResult</ID>
+    <ID>CyclomaticComplexMethod:StrategicBattleViewModel.kt$StrategicBattleViewModel$private fun advanceActor(st: BattleState)</ID>
+    <ID>CyclomaticComplexMethod:StrategicBattleViewModel.kt$StrategicBattleViewModel$private fun maybeAutoAct()</ID>
     <ID>CyclomaticComplexMethod:TalentEngine.kt$TalentEngine$fun talentEffects( allocatedNodes: List&lt;String&gt;, nodeEffectsMap: Map&lt;String, List&lt;TalentEffect&gt;&gt;, ): TalentEffectResult</ID>
     <ID>CyclomaticComplexMethod:TowerScreen.kt$@Composable fun TowerScreen( onBack: () -&gt; Unit, onOpenDeck: () -&gt; Unit, modifier: Modifier = Modifier, )</ID>
     <ID>CyclomaticComplexMethod:TowerService.kt$TowerService$@Deprecated("P2-11: 扫荡功能UI零调用", level = DeprecationLevel.WARNING) override suspend fun sweepTower(floor: Int, times: Int): TowerSweepOutcome</ID>
@@ -419,6 +422,8 @@
     <ID>ReturnCount:StrategicBattleSimulator.kt$StrategicBattleSimulator$fun executePlayerAction(state: BattleState, action: PlayerAction): BattleState</ID>
     <ID>ReturnCount:StrategicBattleSimulator.kt$StrategicBattleSimulator$private fun tryTriggerElementReaction( attacker: BattleUnitState, defender: BattleUnitState, turn: Int, ): ElementReactionResult</ID>
     <ID>ReturnCount:StrategicBattleViewModel.kt$StrategicBattleViewModel$fun confirm()</ID>
+    <ID>ReturnCount:StrategicBattleViewModel.kt$StrategicBattleViewModel$fun selectSkill(skillId: String)</ID>
+    <ID>ReturnCount:StrategicBattleViewModel.kt$StrategicBattleViewModel$private fun maybeAutoAct()</ID>
     <ID>SwallowedException:AndroidSaveProvider.kt$AndroidSaveProvider$e: Exception</ID>
     <ID>SwallowedException:SaveData.kt$SaveData.Companion$e: Exception</ID>
     <ID>TooGenericExceptionCaught:AffinityViewModel.kt$AffinityViewModel$e: Exception</ID>
