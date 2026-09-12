@@ -73,48 +73,13 @@ fun DungeonScreen(onBack: () -> Unit) {
                 Spacer(Modifier.height(20.dp))
                 Text("无尽深渊", color = AppTheme.Text3)
                 Spacer(Modifier.height(8.dp))
-                val abyss = ui.abyss
-                if (abyss == null) {
-                    Text("暂无深渊数据", color = AppTheme.Text3)
-                } else {
-                    Column(
-                        Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(AppTheme.Roundness.md))
-                            .background(AppTheme.Surface.copy(alpha = 0.55f))
-                            .border(1.dp, AppTheme.Stroke, RoundedCornerShape(AppTheme.Roundness.md))
-                            .padding(14.dp),
-                    ) {
-                        Text("当前层 ${abyss.currentFloor} · 最佳 ${abyss.bestFloor}", color = AppTheme.Text1)
-                        Text(
-                            "总星数 ${abyss.totalStars} · 今日剩余 " +
-                                "${abyss.remainingChallenges}/${abyss.maxChallenges}",
-                            color = AppTheme.Text2,
-                        )
-                        Spacer(Modifier.height(10.dp))
-                        ActionChip(
-                            "进入战斗",
-                            enabled = abyss.remainingChallenges > 0,
-                        ) {
-                            battleFloor = abyss.currentFloor
-                            showBattle = true
-                        }
-                        Spacer(Modifier.height(8.dp))
-                        Text(
-                            "星级：无阵亡 3★ · 1 人阵亡 2★ · 其余胜局 1★；首通/新星发奖。",
-                            color = AppTheme.Text3,
-                        )
-                        if (com.milan.game.domain.progression.EconomyFormulas
-                                .isAbyssEliteFloor(abyss.currentFloor, isAbyss = true)
-                        ) {
-                            Spacer(Modifier.height(4.dp))
-                            Text(
-                                "本层为精英层：0 号位精英（属性 ×1.35 + 焚心词缀）",
-                                color = AppTheme.Gold,
-                            )
-                        }
-                    }
-                }
+                AbyssPanel(
+                    abyss = ui.abyss,
+                    onEnterBattle = { floor ->
+                        battleFloor = floor
+                        showBattle = true
+                    },
+                )
                 Spacer(Modifier.height(32.dp))
             }
         }
@@ -129,6 +94,51 @@ fun DungeonScreen(onBack: () -> Unit) {
                 vm.refresh()
             },
         )
+    }
+}
+
+@Composable
+private fun AbyssPanel(
+    abyss: com.milan.game.services.AbyssStatus?,
+    onEnterBattle: (Int) -> Unit,
+) {
+    if (abyss == null) {
+        Text("暂无深渊数据", color = AppTheme.Text3)
+        return
+    }
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(AppTheme.Roundness.md))
+            .background(AppTheme.Surface.copy(alpha = 0.55f))
+            .border(1.dp, AppTheme.Stroke, RoundedCornerShape(AppTheme.Roundness.md))
+            .padding(14.dp),
+    ) {
+        Text("当前层 ${abyss.currentFloor} · 最佳 ${abyss.bestFloor}", color = AppTheme.Text1)
+        Text(
+            "总星数 ${abyss.totalStars} · 今日剩余 " +
+                "${abyss.remainingChallenges}/${abyss.maxChallenges}",
+            color = AppTheme.Text2,
+        )
+        Spacer(Modifier.height(10.dp))
+        ActionChip(
+            "进入战斗",
+            enabled = abyss.remainingChallenges > 0,
+        ) { onEnterBattle(abyss.currentFloor) }
+        Spacer(Modifier.height(8.dp))
+        Text(
+            "星级：无阵亡 3★ · 1 人阵亡 2★ · 其余胜局 1★；首通/新星发奖。",
+            color = AppTheme.Text3,
+        )
+        if (com.milan.game.domain.progression.EconomyFormulas
+            .isAbyssEliteFloor(abyss.currentFloor, isAbyss = true)
+        ) {
+            Spacer(Modifier.height(4.dp))
+            Text(
+                "本层为精英层：0 号位精英（属性 ×1.35 + 焚心词缀）",
+                color = AppTheme.Gold,
+            )
+        }
     }
 }
 
