@@ -10,10 +10,9 @@ import com.milan.game.data.PhotoRecord
 /**
  * 角色检视与拍照契约（2026-09-08 P1-5 接口化）。
  *
- * ⚠️ **P2-11 (B12) 死功能**：检视/拍照系统 UI 层零调用，
- * 本接口全部方法无生产调用点。待后续接线或移除。
+ * 2026-09-11：检视次数/互动动作已接 `ui/inspection/`（手势视差骨架）；
+ * 拍照（savePhoto/poses/backgrounds/filters）仍无生产调用点，待后续接线。
  */
-@Deprecated("P2-11: 检视拍照系统UI零调用，待接线或移除", level = DeprecationLevel.WARNING)
 interface InspectionApi {
     /** 检视存档数据（各角色检视次数 / 已解锁动作 / 照片）。 */
     fun getInspectionData(): InspectionSaveData

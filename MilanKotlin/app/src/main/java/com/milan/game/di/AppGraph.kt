@@ -18,6 +18,7 @@ import com.milan.game.ui.event.EventViewModel
 import com.milan.game.ui.gacha.GachaViewModel
 import com.milan.game.ui.gacha.PullHistoryViewModel
 import com.milan.game.ui.home.HomeViewModel
+import com.milan.game.ui.inspection.InspectionViewModel
 import com.milan.game.ui.missions.DailyMissionViewModel
 import com.milan.game.ui.progression.ProgressionViewModel
 import com.milan.game.ui.settings.SettingsViewModel
@@ -92,5 +93,10 @@ object AppGraph {
     /** 角色养成：同上。 */
     fun progressionFactory(characterId: String): ViewModelProvider.Factory = viewModelFactory {
         initializer { ProgressionViewModel(characterId, service) }
+    }
+
+    /** 角色检视：按 characterId 建实例（2026-09-11 死功能接线）。 */
+    fun inspectionFactory(characterId: String): ViewModelProvider.Factory = viewModelFactory {
+        initializer { InspectionViewModel(characterId, service) }
     }
 }

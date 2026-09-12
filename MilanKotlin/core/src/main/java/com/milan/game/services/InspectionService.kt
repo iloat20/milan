@@ -5,14 +5,13 @@ import kotlin.random.Random
 
 /**
  * 360°检视系统增强服务。
- * 
+ *
  * 职责：
  * - 角色互动动作管理
- * - 拍照模式
+ * - 拍照模式（UI 未接线）
  * - 检视统计
  * - 隐藏内容解锁
  */
-@Suppress("DEPRECATION")
 class InspectionService(
     private val core: ServiceCore,
     private val rng: Random = Random.Default,

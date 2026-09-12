@@ -57,6 +57,7 @@ import com.milan.game.ui.deck.DeckScreen
 import com.milan.game.ui.gacha.GachaScreen
 import com.milan.game.ui.gacha.PullHistoryScreen
 import com.milan.game.ui.home.HomeScreen
+import com.milan.game.ui.inspection.InspectionScreen
 import com.milan.game.ui.progression.ProgressionScreen
 import com.milan.game.ui.shop.ShopScreen
 import com.milan.game.ui.settings.SettingsScreen
@@ -251,8 +252,18 @@ internal fun MilanNavHost(openGachaOnStart: Boolean = false) {
                         onOpenProgression = { id ->
                             navController.navigate(ProgressionRoute(id)) { launchSingleTop = true }
                         },
+                        onOpenInspection = { id ->
+                            navController.navigate(InspectionRoute(id)) { launchSingleTop = true }
+                        },
                         onSwitchCharacter = ::switchCharacter,
                         animatedVisibilityScope = this,
+                    )
+                }
+                composable<InspectionRoute> { entry ->
+                    val route = entry.toRoute<InspectionRoute>()
+                    InspectionScreen(
+                        characterId = route.characterId,
+                        onBack = { navController.popBackStack() },
                     )
                 }
                 composable<ProgressionRoute> { entry ->

@@ -105,6 +105,7 @@ fun SubPageHero(
     fadeHeight: Dp = 140.dp,
     owned: Boolean = true,
     onOpenProgression: ((String) -> Unit)? = null,
+    onOpenInspection: ((String) -> Unit)? = null,
     portraitModifier: Modifier = Modifier,
     /** 传入 NavHost 的 AnimatedVisibilityScope 后，立绘参与 `portrait_{id}` 共享元素过渡。 */
     animatedVisibilityScope: AnimatedVisibilityScope? = null,
@@ -237,6 +238,22 @@ fun SubPageHero(
                     .border(1.dp, AppTheme.Gold.copy(alpha = 0.65f), RoundedCornerShape(AppTheme.Roundness.xl))
                     .padding(horizontal = 16.dp, vertical = 9.dp)
                     .clickable(onClick = { onOpenProgression(view.save.characterId) }),
+            )
+        }
+        if (owned && onOpenInspection != null) {
+            Text(
+                "检 视",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = AppTheme.Gold,
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(top = 88.dp, end = 14.dp)
+                    .clip(RoundedCornerShape(AppTheme.Roundness.xl))
+                    .background(AppTheme.Surface)
+                    .border(1.dp, AppTheme.Gold.copy(alpha = 0.65f), RoundedCornerShape(AppTheme.Roundness.xl))
+                    .padding(horizontal = 16.dp, vertical = 9.dp)
+                    .clickable(onClick = { onOpenInspection(view.save.characterId) }),
             )
         }
     }

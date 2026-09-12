@@ -46,6 +46,10 @@ data class CharacterDetailRoute(val characterId: String)
 @Serializable
 data class ProgressionRoute(val characterId: String)
 
+/** 角色检视（2026-09-11 接线）：子页，盖住底部 tab，返回回角色详情。 */
+@Serializable
+data class InspectionRoute(val characterId: String)
+
 /** 无尽之塔（2026-08 终局内容）：子页，盖住底部 tab，返回逐层退出。 */
 @Serializable
 data object TowerRoute
