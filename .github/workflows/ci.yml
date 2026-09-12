@@ -8,6 +8,8 @@
 #
 # 触发：main 推送与 PR。工作目录固定 MilanKotlin/。
 # 需要真机的任务（:benchmark / BaselineProfile）不在本流水线。
+# 2026-09-12：gradlew 无 +x（exit 126）→ 索引改 100755 + 步骤内 chmod 兜底；
+# 补 Android SDK（runner 无 local.properties / 本机 sdk.dir 不可用）。
 
 name: CI
 
@@ -39,6 +41,15 @@ jobs:
         with:
           distribution: temurin
           java-version: "17"
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Point local.properties at runner SDK
+        run: |
+          echo "sdk.dir=$ANDROID_HOME" > local.properties
+          chmod +x ./gradlew
+          test -x ./gradlew
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
