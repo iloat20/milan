@@ -117,7 +117,7 @@ class StrategicBattleViewModel(
         (baseMs / _ui.value.speedMul.coerceAtLeast(1f)).toLong()
 
     /**
-     * 自动战斗：为当前行动单位挑「能量够、未冷却、power 最高」技能并确认。
+     * 自动战斗：经 [AutoBattlePlanner] 决策（残血斩杀 / 低血治疗 / 群攻 / 最高 power）。
      * 敌方回合/结算/未自动时直接返回。
      */
     private fun maybeAutoAct() {
@@ -129,20 +129,11 @@ class StrategicBattleViewModel(
             advanceActor(st)
             return
         }
-        val ready = actor.skills.filter { skill ->
-            actor.energy >= skill.energyCost && (actor.cooldowns[skill.skillId] ?: 0) <= 0
-        }
-        val skill = ready.maxByOrNull { it.power } ?: return
-        val need = skill.target == SkillTarget.SINGLE_ENEMY || skill.target == SkillTarget.SINGLE_ALLY
-        val target = when (skill.target) {
-            SkillTarget.SINGLE_ENEMY -> firstAliveEnemy(st) ?: 0
-            SkillTarget.SINGLE_ALLY -> cur.currentActor
-            else -> 0
-        }
+        val plan = AutoBattlePlanner.plan(actor, st) ?: return
         _ui.value = cur.copy(
-            selectedSkillId = skill.skillId,
-            needTarget = need,
-            selectedTarget = if (need) target else null,
+            selectedSkillId = plan.skillId,
+            needTarget = plan.needTarget,
+            selectedTarget = plan.targetIndex,
         )
         viewModelScope.launch {
             delay(frameDelay(280))
