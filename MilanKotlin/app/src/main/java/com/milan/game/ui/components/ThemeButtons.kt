@@ -20,70 +20,36 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Outline
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.Density
-import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.milan.game.infrastructure.HapticManager
-import com.milan.game.ui.effects.inkSplash
 import com.milan.game.ui.theme.AppTheme
 
 /**
- * Obsidian & Gold 按钮体系（C# ThemeButtons.cs 翻译，ui-redesign-plan.md §2.1）：
- * - GoldButton: 金色主按钮（斜切角 + 垂直渐变 + 双描边 + 周期扫光）
- * - NeonButton: 霓虹描边次按钮
- * （I2 清理：DangerButton 零调用已删；危险操作统一用 NeonButton(color = AppTheme.Danger) 染红。）
+ * 水墨进阶 v4 按钮体系：
+ * - [GoldButton] / [GildedButton]: 朱砂主 CTA（兼容旧名，视觉为印章色块）
+ * - [InkButton]: 次级单线描边
  *
- * 2026-09-10 UX：
- * - 按压微缩（0.96）+ 松手回弹，与 CodexCard 同一套「实体触感」语言
- * - 点击轻触觉（HapticManager.buttonClick）
- * - 最小可点区 48dp（Material 触达目标），小字按钮不再难点
+ * 去装饰：无斜切角、无环痕、无内双线。按压 scale 0.97 + 触觉；最小热区 48dp。
  */
 
-/** 左上/右下 6dp 斜切角形状（C# CutCornerButton.BuildPath）。
- *  显式实现 Shape 接口：density 是显式参数，`density.toPx(6.dp)` 为 Density 接口成员方法，不受 lambda 接收者推断影响。 */
-private val CutShape: Shape = object : Shape {
-    override fun createOutline(
-        size: Size,
-        layoutDirection: LayoutDirection,
-        density: Density,
-    ): Outline {
-        val cut = 6.dp.value * density.density
-        val path = Path().apply {
-            moveTo(cut, 0f)
-            lineTo(size.width, 0f)
-            lineTo(size.width, size.height - cut)
-            lineTo(size.width - cut, size.height)
-            lineTo(0f, size.height)
-            lineTo(0f, cut)
-            close()
-        }
-        return Outline.Generic(path)
-    }
-}
-
-/** 按钮按压缩放（shared press feel）。 */
+/** 按钮按压缩放。 */
 @Composable
 private fun pressScale(interactionSource: MutableInteractionSource): Float {
     val pressed by interactionSource.collectIsPressedAsState()
     return animateFloatAsState(
-        targetValue = if (pressed) 0.96f else 1f,
+        targetValue = if (pressed) 0.97f else 1f,
         animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium),
         label = "btnPress",
     ).value
 }
 
-/** v3 鎏金主 CTA（与 [GoldButton] 同实现，规范命名）。 */
+/** 兼容别名 → [GoldButton]。 */
 @Composable
 fun GildedButton(
     text: String,
@@ -93,7 +59,10 @@ fun GildedButton(
     enabled: Boolean = true,
 ) = GoldButton(text, modifier, onClick, textSize, enabled)
 
-/** 金色主按钮：召唤 / 出战 / 购买确认（熔金渐变 + 发丝高光 + 深金收边；C# ThemeButtons.Gold）。 */
+/**
+ * 主 CTA：朱砂实底印章块。
+ * API 名保留 GoldButton 以兼容全站调用；视觉为朱砂，金箔只服务稀有度。
+ */
 @Composable
 fun GoldButton(
     text: String,
@@ -105,20 +74,20 @@ fun GoldButton(
     val interactionSource = remember { MutableInteractionSource() }
     val pressScale = pressScale(interactionSource)
     val view = LocalView.current
+    val shape = RoundedCornerShape(AppTheme.Roundness.md)
+    val pressed by interactionSource.collectIsPressedAsState()
     Box(
         modifier = modifier
-            .alpha(if (enabled) 1f else 0.45f)
+            .alpha(if (enabled) 1f else 0.4f)
             .graphicsLayer {
                 scaleX = pressScale
                 scaleY = pressScale
             }
-            .clip(CutShape)
+            .clip(shape)
             .background(
-                Brush.verticalGradient(listOf(AppTheme.GoldHi, AppTheme.Gold, AppTheme.GoldDeep)),
-                CutShape,
+                if (pressed) AppTheme.ZhuShaDeep else AppTheme.ZhuSha,
+                shape,
             )
-            .border(1.dp, Color.White.copy(alpha = 0.47f), CutShape)
-            .inkSplash(interactionSource)
             .defaultMinSize(minWidth = 48.dp, minHeight = 48.dp)
             .clickable(interactionSource = interactionSource, indication = null, enabled = enabled) {
                 if (enabled) {
@@ -126,20 +95,21 @@ fun GoldButton(
                     onClick()
                 }
             }
-            .padding(horizontal = 32.dp, vertical = 13.dp),
+            .padding(horizontal = 28.dp, vertical = 13.dp),
         contentAlignment = Alignment.Center,
     ) {
         Text(
             text = text,
             fontSize = textSize,
-            fontWeight = FontWeight.Bold,
-            color = AppTheme.GoldTextOn,
+            fontWeight = FontWeight.SemiBold,
+            color = AppTheme.Text1,
+            letterSpacing = 1.sp,
         )
     }
 }
 
-/** @deprecated v3 命名为 [InkButton]。 */
-@Deprecated("v3 改名为 InkButton", ReplaceWith("InkButton(text, modifier, onClick, textSize, color, enabled)"))
+/** @deprecated v4 命名为 [InkButton]。 */
+@Deprecated("v4 改名为 InkButton", ReplaceWith("InkButton(text, modifier, onClick, textSize, color, enabled)"))
 @Composable
 fun NeonButton(
     text: String,
@@ -150,7 +120,7 @@ fun NeonButton(
     enabled: Boolean = true,
 ) = InkButton(text, modifier, onClick, textSize, color, enabled)
 
-/** 次级文字/描边按钮（原 NeonButton，v3 降为展厅次级操作，默认石青）。 */
+/** 次级按钮：单线描边 + 极淡底，无内环。 */
 @Composable
 fun InkButton(
     text: String,
@@ -163,17 +133,21 @@ fun InkButton(
     val interactionSource = remember { MutableInteractionSource() }
     val pressScale = pressScale(interactionSource)
     val view = LocalView.current
+    val shape = RoundedCornerShape(AppTheme.Roundness.md)
+    val pressed by interactionSource.collectIsPressedAsState()
     Box(
         modifier = modifier
-            .alpha(if (enabled) 1f else 0.45f)
+            .alpha(if (enabled) 1f else 0.4f)
             .graphicsLayer {
                 scaleX = pressScale
                 scaleY = pressScale
             }
-            .clip(RoundedCornerShape(AppTheme.Roundness.md))
-            .background(color.copy(alpha = 0.06f), RoundedCornerShape(AppTheme.Roundness.md))
-            .border(1.5.dp, color, RoundedCornerShape(AppTheme.Roundness.md))
-            .inkSplash(interactionSource)
+            .clip(shape)
+            .background(
+                if (pressed) color.copy(alpha = 0.12f) else Color.Transparent,
+                shape,
+            )
+            .border(1.dp, color.copy(alpha = 0.55f), shape)
             .defaultMinSize(minWidth = 48.dp, minHeight = 48.dp)
             .clickable(interactionSource = interactionSource, indication = null, enabled = enabled) {
                 if (enabled) {
@@ -181,14 +155,15 @@ fun InkButton(
                     onClick()
                 }
             }
-            .padding(horizontal = 28.dp, vertical = 12.dp),
+            .padding(horizontal = 24.dp, vertical = 12.dp),
         contentAlignment = Alignment.Center,
     ) {
         Text(
             text = text,
             fontSize = textSize,
-            fontWeight = FontWeight.Bold,
+            fontWeight = FontWeight.Medium,
             color = color,
+            letterSpacing = 0.5.sp,
         )
     }
 }

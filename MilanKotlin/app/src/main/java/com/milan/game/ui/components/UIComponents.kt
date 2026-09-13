@@ -1,5 +1,6 @@
 package com.milan.game.ui.components
 
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
@@ -38,8 +39,8 @@ import kotlin.math.cos
 import kotlin.math.sin
 
 /**
- * 水墨国风共享设计系统 v2：宣纸面板、墨迹边框、朱印、分区小标题。
- * 视觉从「暗色 + 金线」升级为「宣纸肌理 + 墨迹笔触 + 朱印点缀」。
+ * 水墨进阶 v4 共享设计系统：砚墨实底面板、极淡描边、分区小标题。
+ * 默认无金边；选中才加强描边。装饰性环纹已移除。
  */
 
 // ── 墨迹边框绘制工具 ──
@@ -98,13 +99,13 @@ enum class PanelMaterial {
     /** 玻璃（浮层/导航/胶囊）——发丝线 + 顶部内高光。 */
     Glass,
 
-    /** 纸纹暗底（典藏容器：卡组册页/详情卷轴）。 */
+    /** 纸纹暗底（仪式容器：卡组册页/详情卷轴）。 */
     Paper,
 }
 
 /**
- * 典藏展陈面板 `ArtifactPanel`（v3 §6.1）。
- * 材质默认 Ink，与 v3「界面向卡牌供奉」一致；旧名 GlassPanel 已全量迁移。
+ * 展陈面板 `ArtifactPanel`。
+ * v4：默认无金边；选中描边加强。去掉 ringPanel 内环与纸纹经纬线。
  */
 @Composable
 fun ArtifactPanel(
@@ -122,22 +123,18 @@ fun ArtifactPanel(
         material == PanelMaterial.Glass -> AppTheme.Surface
         else -> AppTheme.BgMid
     }
-    val borderColor = if (highlighted) AppTheme.Gold.copy(alpha = 0.45f) else AppTheme.Stroke
+    val borderColor = when {
+        highlighted -> AppTheme.Stroke.copy(alpha = 0.55f)
+        else -> AppTheme.Stroke
+    }
 
     Box(
         modifier = modifier
             .clip(shape)
             .background(fill, shape)
-            .then(
-                if (material == PanelMaterial.Glass || material == PanelMaterial.Ink) {
-                    Modifier.border(1.dp, borderColor, shape)
-                } else {
-                    Modifier.border(1.dp, AppTheme.Gold.copy(alpha = 0.18f), shape)
-                }
-            ),
+            .border(1.dp, borderColor, shape),
     ) {
-        if (material != PanelMaterial.Paper) {
-            // 顶部内高光：微暖白 α6% → 透明（玻璃材质托底，文字永远有实底）
+        if (material == PanelMaterial.Glass) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -145,30 +142,9 @@ fun ArtifactPanel(
                     .clip(shape)
                     .background(
                         Brush.verticalGradient(
-                            listOf(AppTheme.Text1.copy(alpha = 0.06f), Color.Transparent),
+                            listOf(AppTheme.Text1.copy(alpha = 0.04f), Color.Transparent),
                         ),
                     ),
-            )
-        } else {
-            // 纸纹：极淡金箔经纬线
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .clip(shape)
-                    .drawBehind {
-                        val step = 12.dp.toPx()
-                        val line = AppTheme.Gold.copy(alpha = 0.03f)
-                        var y = 0f
-                        while (y < size.height) {
-                            drawLine(line, Offset(0f, y), Offset(size.width, y), 1f)
-                            y += step
-                        }
-                        var x = 0f
-                        while (x < size.width) {
-                            drawLine(line, Offset(x, 0f), Offset(x, size.height), 1f)
-                            x += step
-                        }
-                    },
             )
         }
         content()
@@ -176,9 +152,8 @@ fun ArtifactPanel(
 }
 
 /**
- * 展廊底 `GalleryBackdrop`（v3 §6.1）：玄墨三阶 + 世界 ambient 氛围层。
- * 氛围只染背景光晕，永不下渗按钮/文字/形状。
- * scrollOffset 驱动背景视差（0.3x）。
+ * 展廊底 `GalleryBackdrop`：砚墨三阶 + 极淡世界光。
+ * v4：去掉同心环水印与过重光晕。
  */
 @Composable
 fun GalleryBackdrop(
@@ -196,33 +171,20 @@ fun GalleryBackdrop(
                     listOf(
                         world.background,
                         AppTheme.BgMid,
-                        world.background,
+                        AppTheme.BgDeepest,
                     ),
                 ),
             ),
     ) {
-        // 世界氛围光：自上而下极淡 glow（神话朱砂金 / 苍穹紫青 / 铁幕钢铜）
         Box(
             Modifier
                 .fillMaxSize()
                 .background(
                     Brush.verticalGradient(
                         listOf(
-                            world.glow.copy(alpha = 0.07f),
-                            Color.Transparent,
                             world.glow.copy(alpha = 0.04f),
+                            Color.Transparent,
                         ),
-                    ),
-                ),
-        )
-        // 顶部展柜射灯（固定中性，保证可读）
-        Box(
-            Modifier
-                .fillMaxSize()
-                .background(
-                    Brush.verticalGradient(
-                        listOf(AppTheme.Text1.copy(alpha = 0.035f), Color.Transparent),
-                        endY = 420f,
                     ),
                 ),
         )

@@ -7,7 +7,6 @@ import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
@@ -41,17 +40,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.milan.game.ui.theme.AppTheme
 
-/** 全局底部导航项（丹青典藏 v3：玄墨玻璃 + 金箔选中态）。 */
+/** 全局底部导航项。 */
 enum class NavItem(val icon: ImageVector, val label: String) {
     Home(Icons.Outlined.Home, "主页"),
     Gacha(Icons.Outlined.Star, "抽卡"),
@@ -61,8 +57,8 @@ enum class NavItem(val icon: ImageVector, val label: String) {
 }
 
 /**
- * 丹青典藏底部导航（5 项）。玄墨玻璃底座 + 金箔选中高亮面板 +
- * 顶部金箔指示线 + 按压缩放反馈。
+ * 底部导航（5 项）。v4：砚墨实底 + 顶部短线选中态。
+ * 无选中面板渐变、无底部圆环。
  */
 @Composable
 fun GameNavBar(
@@ -74,14 +70,8 @@ fun GameNavBar(
         modifier = modifier
             .navigationBarsPadding()
             .fillMaxWidth()
-            .background(
-                brush = Brush.verticalGradient(
-                    listOf(AppTheme.SurfaceNested, AppTheme.BgMid)
-                ),
-                shape = RoundedCornerShape(AppTheme.Roundness.xl),
-            )
-            .border(1.dp, AppTheme.Stroke, RoundedCornerShape(AppTheme.Roundness.xl))
-            .padding(horizontal = 6.dp, vertical = 6.dp),
+            .background(AppTheme.BgMid)
+            .padding(horizontal = 4.dp, vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         NavItem.entries.forEach { item ->
@@ -91,14 +81,13 @@ fun GameNavBar(
                 onClick = { onSelect(item) },
                 modifier = Modifier
                     .weight(1f)
-                    .height(56.dp)
-                    .padding(horizontal = 3.dp),
+                    .height(56.dp),
             )
         }
     }
 }
 
-/** 单个导航格：等宽长方形，图标 + 文字整体居中，选中态金箔面板 + 顶部金线。 */
+/** 单个导航格：图标 + 文字；选中朱砂 + 顶部短线。 */
 @Composable
 private fun NavCell(
     item: NavItem,
@@ -108,42 +97,22 @@ private fun NavCell(
 ) {
     val interaction = remember { MutableInteractionSource() }
     val pressed by interaction.collectIsPressedAsState()
-    val scale by animateFloatAsState(if (pressed) 0.94f else 1f, label = "navScale")
-    // 选中弹跳：从 0.92 弹到 1.0，spring(0.65) 与按压缩放同阻尼
-    val selectScale by animateFloatAsState(
-        targetValue = if (selected) 1f else 0.92f,
-        animationSpec = spring(dampingRatio = 0.65f, stiffness = Spring.StiffnessMedium),
-        label = "navSelectScale",
-    )
-    val isSelected = selected
-
-    // 金线宽度动画：选中时从 0 弹射到 32dp
-    val goldLineWidth by animateDpAsState(
-        targetValue = if (selected) 32.dp else 0.dp,
-        animationSpec = spring(dampingRatio = 0.65f, stiffness = Spring.StiffnessMedium),
-        label = "goldLineWidth",
+    val scale by animateFloatAsState(if (pressed) 0.95f else 1f, label = "navScale")
+    val barWidth by animateDpAsState(
+        targetValue = if (selected) 20.dp else 0.dp,
+        animationSpec = spring(dampingRatio = 0.8f, stiffness = Spring.StiffnessMedium),
+        label = "navBarWidth",
     )
 
-    val glyphColor = if (selected) AppTheme.Gold else AppTheme.Frost.copy(alpha = 0.7f)
-    val labelColor = if (selected) AppTheme.Gold else AppTheme.Text2
+    val glyphColor = if (selected) AppTheme.ZhuSha else AppTheme.Text3
+    val labelColor = if (selected) AppTheme.ZhuSha else AppTheme.Text3
 
     Box(
         modifier = modifier
-            .scale(scale * selectScale)
+            .scale(scale)
             .graphicsLayer { alpha = if (pressed) 0.85f else 1f }
-            .then(
-                if (selected) Modifier
-                    .background(
-                        Brush.verticalGradient(
-                            listOf(AppTheme.Gold.copy(alpha = 0.22f), AppTheme.Gold.copy(alpha = 0.10f))
-                        ),
-                        RoundedCornerShape(AppTheme.Roundness.lg),
-                    )
-                    .border(1.dp, AppTheme.Gold.copy(alpha = 0.35f), RoundedCornerShape(AppTheme.Roundness.lg))
-                else Modifier
-            )
             .semantics {
-                this[SemanticsProperties.Selected] = isSelected
+                this[SemanticsProperties.Selected] = selected
                 this[SemanticsProperties.Role] = Role.Tab
             }
             .clickable(
@@ -153,23 +122,14 @@ private fun NavCell(
             ),
         contentAlignment = Alignment.Center,
     ) {
-        // 顶部金箔指示线（宽度从 0 弹射到 32dp）
-        if (selected) {
+        if (selected && barWidth > 0.dp) {
             Box(
                 modifier = Modifier
                     .align(Alignment.TopCenter)
-                    .offset(y = 4.dp)
-                    .width(goldLineWidth)
+                    .offset(y = 2.dp)
+                    .width(barWidth)
                     .height(2.dp)
-                    .background(
-                        Brush.horizontalGradient(
-                            listOf(
-                                Color.Transparent,
-                                AppTheme.Gold,
-                                Color.Transparent,
-                            )
-                        )
-                    ),
+                    .background(AppTheme.ZhuSha, RoundedCornerShape(1.dp)),
             )
         }
 
@@ -182,12 +142,12 @@ private fun NavCell(
                 imageVector = item.icon,
                 contentDescription = item.label,
                 tint = glyphColor,
-                modifier = Modifier.size(24.dp),
+                modifier = Modifier.size(22.dp),
             )
             Text(
                 text = item.label,
                 style = MaterialTheme.typography.labelSmall,
-                fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
+                fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
                 color = labelColor,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.padding(top = 3.dp),

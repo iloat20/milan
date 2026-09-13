@@ -106,7 +106,7 @@ fun CharacterCard(
                     .padding(horizontal = 8.dp)
                     .aspectRatio(CardMetrics.Aspect)
                     .clip(RoundedCornerShape(4.dp))
-                    .border(0.75.dp, AppTheme.Gold.copy(alpha = 0.28f), RoundedCornerShape(4.dp))
+                    .border(0.75.dp, rarityCol.copy(alpha = 0.35f), RoundedCornerShape(4.dp))
                     .then(portraitModifier),
             ) {
                 Box(

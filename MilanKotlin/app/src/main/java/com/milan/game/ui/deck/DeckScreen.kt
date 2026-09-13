@@ -70,9 +70,7 @@ import androidx.compose.ui.layout.positionInRoot
 import kotlinx.coroutines.launch
 
 /**
- * 卡组屏（水墨国风版）：
- * 已拥有角色 2 列网格，点卡片弹出立绘大图预览，
- * 预览层提供「查看详情」入口；空态引导前往寻访。底部导航常驻。
+ * 卡组（v4）：编队条 + 已拥有网格；分区间距加大。
  */
 @Composable
 fun DeckScreen(
@@ -106,39 +104,34 @@ fun DeckScreen(
     PageBackground(modifier = modifier) {
         Box(Modifier.fillMaxSize()) {
         Column(Modifier.fillMaxSize()) {
-            AppTopBar(title = "卡 组", onBack = { onNav(NavItem.Home) })
-            Spacer(Modifier.height(14.dp))
-            // v3 §7.3：收藏册页眉——世界标签脊线
+            AppTopBar(title = "卡组", onBack = { onNav(NavItem.Home) })
+            Spacer(Modifier.height(12.dp))
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 18.dp),
+                    .padding(horizontal = 20.dp),
             ) {
-                Text(
-                    text = "收藏册",
-                    style = MaterialTheme.typography.titleLarge,
-                    color = AppTheme.Text1,
-                )
-                Spacer(Modifier.width(10.dp))
                 Box(
                     Modifier
-                        .weight(1f)
-                        .height(1.dp)
-                        .background(
-                            Brush.horizontalGradient(
-                                listOf(AppTheme.Gold.copy(alpha = 0.45f), Color.Transparent),
-                            ),
-                        ),
+                        .size(width = 2.dp, height = 14.dp)
+                        .background(AppTheme.ZhuSha),
                 )
                 Spacer(Modifier.width(10.dp))
                 Text(
-                    text = "已拥有 ${owned.size}",
-                    style = MaterialTheme.typography.labelLarge,
+                    text = "已拥有",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = AppTheme.Text1,
+                )
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    text = "${owned.size}",
+                    style = MaterialTheme.typography.titleMedium,
                     color = AppTheme.Text2,
                 )
             }
-            Spacer(Modifier.height(12.dp))
+            Spacer(Modifier.height(16.dp))
 
             if (owned.isNotEmpty()) {
                 FormationBar(
@@ -155,17 +148,17 @@ fun DeckScreen(
                     },
                     dropHighlight = dragState.isOverDropZone,
                     modifier = Modifier
-                        .padding(horizontal = 18.dp)
+                        .padding(horizontal = 20.dp)
                         .formationDropTarget(dragState),
                 )
-                Spacer(Modifier.height(12.dp))
+                Spacer(Modifier.height(10.dp))
                 Text(
                     text = "长按卡片拖到编队条可快速入队",
                     style = MaterialTheme.typography.labelSmall,
                     color = AppTheme.Text3,
-                    modifier = Modifier.padding(horizontal = 18.dp),
+                    modifier = Modifier.padding(horizontal = 20.dp),
                 )
-                Spacer(Modifier.height(6.dp))
+                Spacer(Modifier.height(16.dp))
             }
 
             if (owned.isEmpty()) {
@@ -191,8 +184,9 @@ fun DeckScreen(
                     modifier = Modifier
                         .weight(1f)
                         .fillMaxWidth(),
-                    contentPadding = PaddingValues(start = 13.dp, end = 13.dp, bottom = 16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(0.dp),
+                    contentPadding = PaddingValues(start = 14.dp, end = 14.dp, bottom = 20.dp),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
                     itemsIndexed(owned, key = { _, ch -> ch.save.characterId }, contentType = { _, _ -> "characterCard" }) { index, ch ->
                         val parallax by remember {
@@ -245,7 +239,6 @@ fun DeckScreen(
             GameNavBar(
                 active = NavItem.Deck,
                 onSelect = onNav,
-                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
             )
         }
 
@@ -263,7 +256,7 @@ fun DeckScreen(
 }
 
 /**
- * 立绘大图预览层（水墨国风版）：
+ * 立绘大图预览层（织环 v3.1）：
  * 全屏遮罩 + 稀有度光晕，点空白关闭；「查看详情」进详情页。
  */
 @Composable

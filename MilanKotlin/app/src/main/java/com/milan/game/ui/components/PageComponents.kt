@@ -4,7 +4,7 @@ import androidx.compose.material3.MaterialTheme
 
 import com.milan.game.OwnedCharacterView
 // 从 CharacterDetailScreen.kt / ProgressionScreen.kt 提取的角色页共享组件。
-// 2026-08 水墨国风重构：视觉风格从暗紫+熔金切换到墨色+金箔+朱砂。
+// 2026-08 材质重构：视觉风格从暗紫+熔金切换到墨色+金箔+朱砂（材质层，非全站品牌）。
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -32,10 +32,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shadow
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -69,19 +72,20 @@ fun MissingCharacter(onBack: () -> Unit, modifier: Modifier = Modifier) {
     }
 }
 
-/** 「‹ 返 回」金箔胶囊按钮（水墨国风版）。触控热区 ≥48dp（WCAG/Material3 无障碍标准）。 */
+/** 「‹ 返 回」胶囊。触控热区 ≥48dp。 */
 @Composable
 fun BackCapsule(onClick: () -> Unit, modifier: Modifier = Modifier, text: String = "‹ 返 回") {
+    val shape = RoundedCornerShape(AppTheme.Roundness.xl)
     Text(
         text,
-        fontWeight = FontWeight.Bold,
-        color = AppTheme.Gold,
+        fontWeight = FontWeight.Medium,
+        color = AppTheme.Text2,
+        letterSpacing = 0.5.sp,
         modifier = modifier
             .defaultMinSize(minWidth = 48.dp, minHeight = 48.dp)
-            .clip(RoundedCornerShape(AppTheme.Roundness.xl))
-            .background(AppTheme.Surface)
-            .border(1.dp, AppTheme.Gold.copy(alpha = 0.65f), RoundedCornerShape(AppTheme.Roundness.xl))
-            .padding(horizontal = 12.dp, vertical = 8.dp)
+            .clip(shape)
+            .background(AppTheme.SurfaceNested)
+            .padding(horizontal = 14.dp, vertical = 10.dp)
             .clickable(onClick = onClick)
             .semantics { contentDescription = "返回" },
     )
@@ -89,7 +93,7 @@ fun BackCapsule(onClick: () -> Unit, modifier: Modifier = Modifier, text: String
 
 /**
  * 角色子页 Hero 区：立绘铺满 + 底部渐隐融入 + 浮层铭牌 + 悬浮操作。
- * 水墨国风版：底部渐隐用墨色，铭牌用宣纸白文字。
+ * 织环 v3.1：底部渐隐用墨色，铭牌用宣纸白文字。
  */
 @Composable
 fun SubPageHero(
@@ -226,16 +230,15 @@ fun SubPageHero(
         GlassArrow("›", Modifier.align(Alignment.CenterEnd), onNext, contentDescription = "下一个")
         if (owned && onOpenProgression != null) {
             Text(
-                "养 成 ▲",
+                "养 成",
                 style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                color = AppTheme.Gold,
+                fontWeight = FontWeight.SemiBold,
+                color = AppTheme.Text1,
                 modifier = Modifier
                     .align(Alignment.TopEnd)
                     .padding(top = 40.dp, end = 14.dp)
-                    .clip(RoundedCornerShape(AppTheme.Roundness.xl))
-                    .background(AppTheme.Surface)
-                    .border(1.dp, AppTheme.Gold.copy(alpha = 0.65f), RoundedCornerShape(AppTheme.Roundness.xl))
+                    .clip(RoundedCornerShape(AppTheme.Roundness.md))
+                    .background(AppTheme.ZhuSha)
                     .padding(horizontal = 16.dp, vertical = 9.dp)
                     .clickable(onClick = { onOpenProgression(view.save.characterId) }),
             )
@@ -244,14 +247,14 @@ fun SubPageHero(
             Text(
                 "检 视",
                 style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                color = AppTheme.Gold,
+                fontWeight = FontWeight.SemiBold,
+                color = AppTheme.Frost,
                 modifier = Modifier
                     .align(Alignment.TopEnd)
                     .padding(top = 88.dp, end = 14.dp)
-                    .clip(RoundedCornerShape(AppTheme.Roundness.xl))
-                    .background(AppTheme.Surface)
-                    .border(1.dp, AppTheme.Gold.copy(alpha = 0.65f), RoundedCornerShape(AppTheme.Roundness.xl))
+                    .clip(RoundedCornerShape(AppTheme.Roundness.md))
+                    .background(AppTheme.BgMid)
+                    .border(1.dp, AppTheme.Frost.copy(alpha = 0.45f), RoundedCornerShape(AppTheme.Roundness.md))
                     .padding(horizontal = 16.dp, vertical = 9.dp)
                     .clickable(onClick = { onOpenInspection(view.save.characterId) }),
             )
@@ -259,7 +262,7 @@ fun SubPageHero(
     }
 }
 
-/** 左右切换箭头（水墨国风版：金箔箭头 + 墨色玻璃底）。 */
+/** 左右切换箭头。 */
 @Composable
 fun GlassArrow(
     text: String,
@@ -271,14 +274,13 @@ fun GlassArrow(
     Text(
         text,
         style = MaterialTheme.typography.displayMedium,
-        fontWeight = FontWeight.Bold,
-        color = AppTheme.Gold,
+        fontWeight = FontWeight.Medium,
+        color = AppTheme.Text1,
         textAlign = TextAlign.Center,
         modifier = modifier
             .size(48.dp)
             .clip(RoundedCornerShape(AppTheme.Roundness.xxl))
-            .background(AppTheme.Surface)
-            .border(1.dp, AppTheme.Gold.copy(alpha = 0.65f), RoundedCornerShape(AppTheme.Roundness.xxl))
+            .background(AppTheme.BgDeepest.copy(alpha = 0.55f))
             .clickable(onClick = onClick)
             .semantics { this.contentDescription = desc },
     )
@@ -351,7 +353,7 @@ fun HeroNameplate(
     }
 }
 
-/** 面板标题：左金线 + 标题（水墨国风版）。 */
+/** 面板标题：左金线 + 标题（织环 v3.1）。 */
 @Composable
 fun SectionTitle(text: String) {
     Row(

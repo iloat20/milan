@@ -102,13 +102,13 @@ fun SettingsScreen(
 
     PageBackground {
         Column(Modifier.fillMaxSize()) {
-            AppTopBar(title = "设 置", onBack = { onNav(NavItem.Home) })
+            AppTopBar(title = "设置", onBack = { onNav(NavItem.Home) })
             Column(
                 modifier = Modifier
                     .weight(1f)
                     .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 18.dp, vertical = 12.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
+                    .padding(horizontal = 20.dp, vertical = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
                 SectionTitle("音频与体验")
                 EntranceItem(index = 0) {
@@ -340,20 +340,36 @@ fun SettingsScreen(
                 SectionTitle("关于")
                 EntranceItem(index = 5) {
                     ArtifactPanel {
-                        Row(
+                        Column(
                             modifier = Modifier.fillMaxWidth().padding(14.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically,
                         ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Text(
+                                    "织环 · Ringweave",
+                                    color = AppTheme.Text1,
+                                    style = MaterialTheme.typography.titleSmall,
+                                )
+                                Text(
+                                    "版本 $version",
+                                    color = AppTheme.Text2,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                )
+                            }
                             Text(
-                                "Milan · 星陨物语",
-                                color = AppTheme.Text1,
-                                style = MaterialTheme.typography.titleSmall,
+                                "裂隙撕开三界，你是织环者——召英灵、聚环痕、重铸原初之环。",
+                                color = AppTheme.Text2,
+                                style = MaterialTheme.typography.bodySmall,
+                                modifier = Modifier.padding(top = 8.dp),
                             )
                             Text(
-                                "版本 $version",
-                                color = AppTheme.Text2,
-                                style = MaterialTheme.typography.bodyMedium,
+                                "神話 · 以太 · 铁帷｜英灵皆源自山海经与上古神话",
+                                color = AppTheme.Text3,
+                                style = MaterialTheme.typography.labelSmall,
+                                modifier = Modifier.padding(top = 4.dp),
                             )
                         }
                     }
@@ -362,7 +378,6 @@ fun SettingsScreen(
             GameNavBar(
                 active = NavItem.Settings,
                 onSelect = onNav,
-                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
             )
         }
     }

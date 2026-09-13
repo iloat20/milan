@@ -3,6 +3,7 @@ package com.milan.game.ui.collection
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -16,6 +17,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.itemsIndexed
@@ -34,7 +37,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -52,10 +58,9 @@ import com.milan.game.ui.nav.AppTopBar
 import com.milan.game.ui.theme.AppTheme
 
 /**
- * 神谱图鉴屏（替换原 PlaceholderScreen 占位）：
- * 全量角色收集总览 —— 顶部收集进度卡（X/52 + 四稀有度进度 + 「我的角色」入口），
+ * 环痕图鉴屏：全量英灵收集总览 —— 顶部收集进度卡（X/total + 四稀有度进度 + 「我的角色」入口），
  * 复用 ListFilterBar 全量筛选，2 列稀有度描边网格；
- * 已拥有：彩色立绘 + 金★星级；未拥有：立绘暗化蒙层 + 🔒 + 「未获得」。
+ * 已拥有：彩色立绘 + 金★星级；未拥有：立绘暗化蒙层 + 「未获得」。
  * 点击任意角色进详情（未拥有详情页已有遮罩，图鉴支持全量浏览）。
  */
 @Composable
@@ -93,7 +98,7 @@ fun CollectionScreen(
 
     PageBackground(modifier = modifier) {
         Column(Modifier.fillMaxSize()) {
-            AppTopBar(title = "神 谱 图 鉴", onBack = onBack)
+            AppTopBar(title = "环 痕 图 鉴", onBack = onBack)
             Spacer(Modifier.height(12.dp))
 
             CollectionProgressHeader(
@@ -162,7 +167,7 @@ fun CollectionScreen(
     }
 }
 
-/** 收集进度卡：总数 X/Y + 金色进度条 + 四稀有度统计 + 「我的角色」入口。 */
+/** 收集进度：左侧环形进度 + 右侧稀有度纬带 + 「我的角色」。 */
 @Composable
 private fun CollectionProgressHeader(
     all: List<CharacterDataEntry>,
@@ -172,92 +177,131 @@ private fun CollectionProgressHeader(
 ) {
     val got = owned.size
     val total = all.size
-    // 数值动画：进度条随收集推进平滑生长（对齐全站数值反馈语言，如 ResourceBar Chip 的 400ms 滚动）
     val fraction by animateFloatAsState(
         targetValue = if (total == 0) 0f else got.toFloat() / total,
         animationSpec = tween(400),
         label = "collectionProgress",
     )
-    // 稀有度统计动态分组（防写死数字被内容数据打脸）
     val totalByRarity = all.groupingBy { it.baseRarity }.eachCount()
     val gotByRarity = owned.groupingBy { it.rarity }.eachCount()
     val rarityOrder = listOf(4, 3, 2, 1)
 
     val shape = RoundedCornerShape(AppTheme.Roundness.xl)
-    Column(
+    Row(
         modifier = modifier
+            .fillMaxWidth()
             .clip(shape)
             .background(AppTheme.Surface, shape)
             .border(1.dp, AppTheme.Stroke, shape)
-            .padding(14.dp),
+            .padding(16.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Column(Modifier.weight(1f)) {
-                Text(
-                    text = "神谱收集",
-                    style = MaterialTheme.typography.titleSmall,
-                    color = AppTheme.Text1,
+        // 环形进度
+        Box(Modifier.size(88.dp), contentAlignment = Alignment.Center) {
+            Canvas(Modifier.fillMaxSize()) {
+                val stroke = 6.dp.toPx()
+                val inset = stroke / 2
+                val d = size.minDimension - stroke
+                val topLeft = Offset(inset, inset)
+                val sz = Size(d, d)
+                drawArc(
+                    color = AppTheme.BgDeepest,
+                    startAngle = 0f,
+                    sweepAngle = 360f,
+                    useCenter = false,
+                    topLeft = topLeft,
+                    size = sz,
+                    style = Stroke(stroke),
                 )
-                Text(
-                    text = "$got  /  $total",
-                    style = MaterialTheme.typography.headlineSmall.copy(letterSpacing = 0.sp),
+                drawArc(
                     color = AppTheme.Gold,
-                    modifier = Modifier.padding(top = 2.dp),
+                    startAngle = -90f,
+                    sweepAngle = 360f * fraction,
+                    useCenter = false,
+                    topLeft = topLeft,
+                    size = sz,
+                    style = Stroke(stroke),
+                )
+                drawCircle(
+                    color = AppTheme.Text3.copy(alpha = 0.12f),
+                    radius = d / 2 - stroke,
                 )
             }
-            // 我的角色入口（承接原占位页 actionLabel 按钮，链路不中断）
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(
+                    text = "$got",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = AppTheme.Gold,
+                )
+                Text(
+                    text = "/ $total",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = AppTheme.Text3,
+                )
+            }
+        }
+        Spacer(Modifier.width(14.dp))
+        Column(Modifier.weight(1f)) {
+            Text(
+                text = "环痕收集",
+                style = MaterialTheme.typography.titleSmall,
+                color = AppTheme.Text1,
+            )
+            Text(
+                text = "英灵归位进度",
+                style = MaterialTheme.typography.labelSmall,
+                color = AppTheme.Text3,
+            )
+            Spacer(Modifier.height(10.dp))
+            // 稀有度纬带
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                for (r in rarityOrder) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = AppTheme.rarityName(r),
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = AppTheme.rarityColor(r),
+                            modifier = Modifier.width(28.dp),
+                        )
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(4.dp)
+                                .clip(RoundedCornerShape(AppTheme.Roundness.xxs))
+                                .background(AppTheme.BgDeepest),
+                        ) {
+                            val rf = (gotByRarity[r] ?: 0).toFloat() /
+                                (totalByRarity[r] ?: 1).coerceAtLeast(1)
+                            Box(
+                                Modifier
+                                    .fillMaxWidth(rf.coerceIn(0f, 1f))
+                                    .height(4.dp)
+                                    .background(AppTheme.rarityColor(r)),
+                            )
+                        }
+                        Text(
+                            text = " ${(gotByRarity[r] ?: 0)}/${totalByRarity[r] ?: 0}",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = AppTheme.Text2,
+                            modifier = Modifier.padding(start = 6.dp),
+                        )
+                    }
+                }
+            }
+            Spacer(Modifier.height(8.dp))
             Text(
                 text = "我的角色  ›",
                 style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.Bold,
-                color = AppTheme.Gold,
+                color = AppTheme.Frost,
                 modifier = Modifier
                     .clip(RoundedCornerShape(AppTheme.Roundness.md))
+                    .border(1.dp, AppTheme.Frost.copy(alpha = 0.4f), RoundedCornerShape(AppTheme.Roundness.md))
                     .clickable(onClick = onOpenMyCharacters)
-                    .padding(horizontal = 10.dp, vertical = 8.dp),
+                    .padding(horizontal = 12.dp, vertical = 8.dp),
             )
-        }
-        Spacer(Modifier.height(10.dp))
-
-        // 进度条（自绘圆角条：金 → 金半透明渐变）
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(6.dp)
-                .clip(RoundedCornerShape(AppTheme.Roundness.xxs))
-                .background(AppTheme.BgDeepest, RoundedCornerShape(AppTheme.Roundness.xxs)),
-        ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth(fraction)
-                    .height(6.dp)
-                    .clip(RoundedCornerShape(AppTheme.Roundness.xxs))
-                    .background(
-                        Brush.horizontalGradient(
-                            listOf(AppTheme.Gold, AppTheme.Gold.copy(alpha = 0.45f)),
-                        ),
-                        RoundedCornerShape(AppTheme.Roundness.xxs),
-                    ),
-            )
-        }
-        Spacer(Modifier.height(10.dp))
-
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            for (r in rarityOrder) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        text = AppTheme.rarityName(r),
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = AppTheme.rarityColor(r),
-                    )
-                    Text(
-                        text = "  ${gotByRarity[r] ?: 0} / ${totalByRarity[r] ?: 0}",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = AppTheme.Text2,
-                    )
-                }
-            }
         }
     }
 }

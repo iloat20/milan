@@ -39,21 +39,16 @@ import com.milan.game.ui.nav.GameNavBar
 import com.milan.game.ui.nav.NavItem
 import com.milan.game.ui.feedback.LocalFeedback
 import com.milan.game.ui.theme.AppTheme
+import com.milan.game.ui.theme.CurrencyNames
 
 /**
- * 商店页（水墨国风版）。
- *
- * 结构：资源一览（星尘/钻石/星魂碎片）→ 每日特惠 → 碎片补给 → 碎片兑换 → 钻石商城。
- * 定价一律走 [EconomyFormulas]（单一事实来源）；购买走 ShopViewModel 事务方法
- * （2026-09-08 P1-6 C 批：状态与写动作收敛进 VM，Composable 只订阅与回调）。
- * 资源数字随快照自动刷新。
+ * 商店（v4）：资源一览 → 每日特惠 → 补给/兑换。分区间距加大。
  */
 @Composable
 fun ShopScreen(
     onNav: (NavItem) -> Unit,
 ) {
     val feedback = LocalFeedback.current
-    // P1-6 C 批：派生状态（经济四资源 + 每日特惠/已购）与四类购买/兑换全部在 ShopViewModel。
     val vm: ShopViewModel = viewModel(factory = com.milan.game.di.AppGraph.factory)
     val ui by vm.uiState.collectAsStateWithLifecycle()
     val busy by vm.busy.collectAsStateWithLifecycle()
@@ -67,19 +62,19 @@ fun ShopScreen(
 
     PageBackground {
         Column(Modifier.fillMaxSize()) {
-            AppTopBar(title = "商 店", onBack = { onNav(NavItem.Home) })
+            AppTopBar(title = "商店", onBack = { onNav(NavItem.Home) })
             Column(
                 modifier = Modifier
                     .weight(1f)
                     .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 18.dp, vertical = 12.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
+                    .padding(horizontal = 20.dp, vertical = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(20.dp),
             ) {
                 EntranceItem(index = 0) {
                     ResourcePanel(soft = soft, hard = hard, frags = frags, tickets = tickets)
                 }
 
-                SectionTitle("每 日 特 惠")
+                SectionTitle("每日特惠")
                 dailyOffers.forEachIndexed { i, offer ->
                     val bought = offer.index in dailyBought
                     EntranceItem(index = i + 1) {
@@ -93,12 +88,12 @@ fun ShopScreen(
                     }
                 }
 
-                SectionTitle("碎 片 补 给")
+                SectionTitle("残玦补给")
                 for (pack in 1..2) {
                     EntranceItem(index = pack + 2) {
                         FragmentPackCard(
                             pack = pack,
-                            name = if (pack == 1) "小包 · 星魂碎片" else "大包 · 星魂碎片",
+                            name = if (pack == 1) "小包 · 残玦" else "大包 · 残玦",
                             size = EconomyFormulas.fragmentPackSize(pack),
                             cost = EconomyFormulas.fragmentPackCost(pack),
                             affordable = soft >= EconomyFormulas.fragmentPackCost(pack),
@@ -108,7 +103,7 @@ fun ShopScreen(
                     }
                 }
 
-                SectionTitle("碎 片 兑 换")
+                SectionTitle("残玦兑换")
                 EntranceItem(index = 5) {
                     FragmentExchangeCard(
                         batch = EconomyFormulas.fragmentExchangeBatch(),
@@ -119,7 +114,7 @@ fun ShopScreen(
                     )
                 }
 
-                SectionTitle("钻 石 商 城")
+                SectionTitle("纯环商城")
                 EntranceItem(index = 6) {
                     DiamondCard(
                         cost = EconomyFormulas.diamondExchangeCost(),
@@ -133,20 +128,19 @@ fun ShopScreen(
             GameNavBar(
                 active = NavItem.Shop,
                 onSelect = onNav,
-                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
             )
         }
     }
 }
 
-/** 资源一览：星尘 / 钻石 / 星魂碎片 / 战票四行，水墨国风渐变徽章。 */
+/** 资源一览：环痕 / 纯环 / 残玦 / 战票。 */
 @Composable
 private fun ResourcePanel(soft: Int, hard: Int, frags: Int, tickets: Int) {
     ArtifactPanel {
-        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            ResourceRow("星尘", "✦", formatCount(soft), AppTheme.Gold, AppTheme.GoldDeep)
-            ResourceRow("钻石", "◆", formatCount(hard), AppTheme.GoldHi, AppTheme.Violet)
-            ResourceRow("星魂碎片", "❖", formatCount(frags), AppTheme.Frost, AppTheme.Violet)
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            ResourceRow("环痕", com.milan.game.ui.theme.CurrencyNames.SOFT_GLYPH, formatCount(soft), AppTheme.Gold, AppTheme.GoldDeep)
+            ResourceRow("纯环", com.milan.game.ui.theme.CurrencyNames.HARD_GLYPH, formatCount(hard), AppTheme.GoldHi, AppTheme.Violet)
+            ResourceRow("残玦", com.milan.game.ui.theme.CurrencyNames.FRAG_GLYPH, formatCount(frags), AppTheme.Frost, AppTheme.Violet)
             ResourceRow("战票", "⚔", formatCount(tickets), AppTheme.Text1, AppTheme.Text3)
         }
     }
@@ -168,7 +162,7 @@ private fun ResourceRow(label: String, symbol: String, value: String, from: Colo
     }
 }
 
-/** 每日特惠卡片（水墨国风版）：免费补给金边高亮；已购态禁用按钮并打标。 */
+/** 每日特惠卡片（织环 v3.1）：免费补给金边高亮；已购态禁用按钮并打标。 */
 @Composable
 private fun DailyOfferCard(
     offer: DailyOffer,
@@ -203,7 +197,7 @@ private fun DailyOfferCard(
             }
             Column(horizontalAlignment = Alignment.End) {
                 Text(
-                    text = if (offer.costSoft == 0) "免费" else "${formatCount(offer.costSoft)} ✦",
+                    text = if (offer.costSoft == 0) "免费" else "${formatCount(offer.costSoft)} ${CurrencyNames.SOFT_GLYPH}",
                     color = AppTheme.Gold,
                     style = MaterialTheme.typography.bodyLarge,
                     fontWeight = FontWeight.Bold,
@@ -223,7 +217,7 @@ private fun DailyOfferCard(
     }
 }
 
-/** 碎片包卡片：水墨国风玻璃底，大包金边高亮。 */
+/** 碎片包卡片：织环台玻璃底，大包金边高亮。 */
 @Composable
 private fun FragmentPackCard(
     pack: Int,
@@ -243,10 +237,10 @@ private fun FragmentPackCard(
             Column {
                 Text(name, color = AppTheme.Text1, style = MaterialTheme.typography.titleSmall)
                 Spacer(Modifier.height(4.dp))
-                Text("获得 $size 片星魂碎片", color = AppTheme.Text2, style = MaterialTheme.typography.bodySmall)
+                Text("获得 $size 片残玦", color = AppTheme.Text2, style = MaterialTheme.typography.bodySmall)
             }
             Column(horizontalAlignment = Alignment.End) {
-                Text("${formatCount(cost)} ✦", color = AppTheme.Gold, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold)
+                Text("${formatCount(cost)} ${CurrencyNames.SOFT_GLYPH}", color = AppTheme.Gold, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold)
                 Spacer(Modifier.height(6.dp))
                 GoldButton(text = "购 买", onClick = onBuy, enabled = affordable && enabled)
             }
@@ -254,7 +248,7 @@ private fun FragmentPackCard(
     }
 }
 
-/** 钻石兑换星尘卡片。 */
+/** 纯环兑换环痕卡片。 */
 @Composable
 private fun DiamondCard(
     cost: Int,
@@ -270,17 +264,21 @@ private fun DiamondCard(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Column {
-                Text("钻石兑换星尘", color = AppTheme.Text1, style = MaterialTheme.typography.titleSmall)
+                Text("纯环兑换环痕", color = AppTheme.Text1, style = MaterialTheme.typography.titleSmall)
                 Spacer(Modifier.height(4.dp))
-                Text("${formatCount(cost)} ◆ → ${formatCount(gain)} ✦", color = AppTheme.Text2, style = MaterialTheme.typography.bodySmall)
-                Text("钻石暂无获取途径", color = AppTheme.Text2.copy(alpha = 0.6f), style = MaterialTheme.typography.labelMedium)
+                Text(
+                    "${formatCount(cost)} ${CurrencyNames.HARD_GLYPH} → ${formatCount(gain)} ${CurrencyNames.SOFT_GLYPH}",
+                    color = AppTheme.Text2,
+                    style = MaterialTheme.typography.bodySmall,
+                )
+                Text("纯环暂无获取途径", color = AppTheme.Text2.copy(alpha = 0.6f), style = MaterialTheme.typography.labelMedium)
             }
             GoldButton(text = "兑 换", onClick = onExchange, enabled = affordable && enabled)
         }
     }
 }
 
-/** 碎片兑换星尘卡片（水墨国风版）。 */
+/** 碎片兑换环痕卡片（织环 v3.1）。 */
 @Composable
 private fun FragmentExchangeCard(
     batch: Int,
@@ -296,11 +294,15 @@ private fun FragmentExchangeCard(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Column(Modifier.weight(1f)) {
-                Text("星魂碎片兑换星尘", color = AppTheme.Text1, style = MaterialTheme.typography.titleSmall)
+                Text("残玦兑换环痕", color = AppTheme.Text1, style = MaterialTheme.typography.titleSmall)
                 Spacer(Modifier.height(4.dp))
-                Text("${formatCount(batch)} ❖ → ${formatCount(yield)} ✦", color = AppTheme.Text2, style = MaterialTheme.typography.bodySmall)
                 Text(
-                    "回收价低于购入价（80/片 < 100/片），持有 ${formatCount(frags)} ❖",
+                    "${formatCount(batch)} ${CurrencyNames.FRAG_GLYPH} → ${formatCount(yield)} ${CurrencyNames.SOFT_GLYPH}",
+                    color = AppTheme.Text2,
+                    style = MaterialTheme.typography.bodySmall,
+                )
+                Text(
+                    "回收价低于购入价（80/片 < 100/片），持有 ${formatCount(frags)} ${CurrencyNames.FRAG_GLYPH}",
                     color = AppTheme.Text2.copy(alpha = 0.6f),
                     style = MaterialTheme.typography.labelMedium,
                 )

@@ -39,7 +39,7 @@ import androidx.compose.ui.window.DialogProperties
 import com.milan.game.ui.theme.AppTheme
 
 /**
- * 水墨国风对话框：墨色渐变面板 + 缩放淡入弹出（240ms）。
+ * 织环台对话框：墨色渐变面板 + 缩放淡入弹出（240ms）。
  * 按钮区由调用方传 composable（全站统一 GoldButton/NeonButton）。
  */
 @Composable
@@ -90,7 +90,7 @@ fun GlassDialog(
                                     ),
                                 ),
                             )
-                            .border(1.dp, AppTheme.Gold.copy(alpha = 0.2f), RoundedCornerShape(AppTheme.Roundness.xl))
+                            .border(1.dp, AppTheme.Stroke, RoundedCornerShape(AppTheme.Roundness.xl))
                             .padding(20.dp),
                         horizontalAlignment = Alignment.CenterHorizontally,
                     ) {

@@ -22,63 +22,59 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.milan.game.R
 
-// 丹青典藏 v3 · Material 3 Expressive 配色
+// 东方新中式 · 水墨进阶 v4 · Material 3 配色
 //
-// 玄墨基底 + 金箔主强调 + 朱砂行动色 + 石青次操作。
-// 与 AppTheme.kt 单一事实来源对齐；游戏默认关闭动态取色以保品牌一致性。
+// 砚墨基底 + 朱砂主 CTA + 青瓷次操作 + 金箔仅稀有度。
+// 与 AppTheme.kt 单一事实来源对齐；游戏默认关闭动态取色。
 
 private val InkColors = darkColorScheme(
-    primary = AppTheme.Gold,                     // 金箔 = 珍贵与度量 / 主 CTA
-    onPrimary = AppTheme.GoldTextOn,
-    primaryContainer = Color(0xFF3A3020),
-    onPrimaryContainer = Color(0xFFF3E8CF),
-    inversePrimary = AppTheme.GoldDeep,
+    primary = AppTheme.ZhuSha,                  // 朱砂 = 主 CTA / 行动
+    onPrimary = AppTheme.Text1,
+    primaryContainer = Color(0xFF3A1C18),
+    onPrimaryContainer = Color(0xFFFFD9D0),
+    inversePrimary = AppTheme.ZhuShaDeep,
 
-    secondary = AppTheme.Frost,                  // 石青 = 次操作 / 导航
-    onSecondary = Color(0xFF0A1A18),
-    secondaryContainer = Color(0xFF1E3838),
-    onSecondaryContainer = Color(0xFFD0EDE8),
+    secondary = AppTheme.Frost,                 // 青瓷 = 次操作
+    onSecondary = Color(0xFF0A1614),
+    secondaryContainer = Color(0xFF1A302C),
+    onSecondaryContainer = Color(0xFFD0E8E0),
 
-    tertiary = AppTheme.SealRed,                 // 朱砂 = 行动 / 警示
-    onTertiary = Color(0xFF2A0A0A),
-    tertiaryContainer = Color(0xFF4A1A1A),
-    onTertiaryContainer = Color(0xFFFFD9D9),
+    tertiary = AppTheme.Gold,                   // 金箔 = 珍贵标识（非主 CTA）
+    onTertiary = Color(0xFF1A1208),
+    tertiaryContainer = Color(0xFF3A3020),
+    onTertiaryContainer = Color(0xFFF3E8CF),
 
-    background = AppTheme.BgDeepest,             // Ink0
+    background = AppTheme.BgDeepest,
     onBackground = AppTheme.Text1,
 
-    surface = AppTheme.BgMid,                    // Ink1
+    surface = AppTheme.BgMid,
     onSurface = AppTheme.Text1,
-    surfaceVariant = AppTheme.SurfaceNested,     // Ink2
+    surfaceVariant = AppTheme.SurfaceNested,
     onSurfaceVariant = AppTheme.Text2,
-    surfaceTint = AppTheme.Gold,
+    surfaceTint = AppTheme.ZhuSha,
 
-    outline = Color(0xFF2A2E38),
-    outlineVariant = Color(0xFF1C2028),
+    outline = Color(0xFF2A2E2B),
+    outlineVariant = Color(0xFF1C201E),
 
     scrim = Color(0xFF000000),
 
     error = AppTheme.Danger,
-    onError = Color(0xFF2A0808),
-    errorContainer = Color(0xFF4A1414),
-    onErrorContainer = Color(0xFFFFD9D9),
+    onError = AppTheme.Text1,
+    errorContainer = Color(0xFF3A1410),
+    onErrorContainer = Color(0xFFFFD9D0),
 )
 
 /**
- * 当前世界氛围调色板（v3 §5.1：三世界 ambient 层的唯一注入点）。
- * 默认神话界；详情页/主页 Hero 用
- * `CompositionLocalProvider(LocalWorldPalette provides WorldTheme.forWorld(world)) { ... }`
- * 包裹子树即可换氛围。世界调色板**只允许作用于背景氛围层**（GalleryBackdrop /
- * 光晕/粒子），永不下渗到按钮、文字、形状 token。
+ * 当前世界氛围调色板（三世界 ambient 层的唯一注入点）。
+ * 世界调色板**只允许作用于背景氛围层**，永不下渗到按钮、文字、形状 token。
  */
 val LocalWorldPalette = compositionLocalOf { AppTheme.Shinwa }
 
 /**
  * 动态主题支持（Material You）。
  *
- * @param useDynamicColor 是否启用壁纸动态取色（默认关闭，游戏保留品牌一致性）
- * @param useDarkTheme 是否使用深色主题（默认深色，游戏沉浸感）
- * @param content 内容
+ * @param useDynamicColor 是否启用壁纸动态取色（默认关闭）
+ * @param useDarkTheme 是否使用深色主题（默认深色）
  */
 @Composable
 fun MilanTheme(
@@ -87,20 +83,14 @@ fun MilanTheme(
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {
-        // 动态取色：Android 12+ 支持，从壁纸提取主题色
         useDynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
             val context = LocalContext.current
             if (useDarkTheme) dynamicDarkColorScheme(context)
             else dynamicLightColorScheme(context)
         }
-        // 默认：水墨国风自定义配色
         else -> InkColors
     }
 
-    // R7-P0-1：字号档位不在 Theme 读 AppGraph.service。
-    // MilanTheme 在 MainActivity.setContent 的最外层，Application 异步 ensureInitialized
-    // 未完成时 AppGraph.service 会 checkNotNull 闪退；且 Theme 不在 ui/nav 例外包内。
-    // 档位经 LocalFontScaleTier 由 ready 门控后的 MilanNavHost 注入（见 WithFontScale）。
     MaterialTheme(
         colorScheme = colorScheme,
         shapes = GameShapes,
@@ -110,23 +100,19 @@ fun MilanTheme(
 }
 
 /**
- * 字号档位（0=标准 1=+10% 2=+20%，设计语言 P3 §5.7）。
- * 默认 0：Theme/启动帧不依赖 GameService；就绪后由 ui/nav 的 WithFontScale 注入。
+ * 字号档位（0=标准 1=+10% 2=+20%）。
+ * 经 LocalFontScaleTier 由 ready 门控后的 MilanNavHost 注入。
  */
 val LocalFontScaleTier = compositionLocalOf { 0 }
 
-/**
- * 简化版主题入口（保持向后兼容）。
- * 游戏默认使用水墨国风配色，不启用动态取色。
- */
+/** 简化版主题入口（向后兼容）。 */
 @Composable
 fun MilanTheme(content: @Composable () -> Unit) {
     MilanTheme(useDynamicColor = false, useDarkTheme = true, content = content)
 }
 
 /**
- * 游戏形状体系：从 [AppTheme.Roundness] token 派生（单一事实来源，v3 §5.3）。
- * 历史：此处曾有独立的 6/10/14/16/20 第二套档位，与 Roundness token 矛盾，已废除。
+ * 游戏形状体系：从 [AppTheme.Roundness] token 派生。
  */
 val GameShapes = Shapes(
     extraSmall = RoundedCornerShape(AppTheme.Roundness.xs),
@@ -137,20 +123,13 @@ val GameShapes = Shapes(
 )
 
 /**
- * 马善政毛笔楷书（res/font/ma_shan_zheng_regular.ttf）。
- *
- * U-01（2026-08-30）：此前该字体文件虽已就位，但**全项目零引用**，所有文字走系统默认无衬线，
- * 「水墨」只剩配色与纹样、缺了字体这个国风识别度的主要载体。本次接入。
- *
- * ⚠️ 文件曾损坏：2026-08-28 提交的版本被截断到 1,212,416 字节（原 5,857,936，仅 20.7%），
- * fontTools 解析时报 `post` 表长度不符、表目录越界。已从上游重新下载完整版替换（SHA256 前 16 位 6d2546bb189c732a）。
+ * 马善政毛笔楷书——仅品牌「织环」二字。
+ * 楷书单一 Regular 字重，**禁止 FontWeight.Bold**。
  */
 private val MaShanZheng = FontFamily(Font(R.font.ma_shan_zheng_regular))
 
 /**
- * Noto Serif SC 可变字重（res/font/noto_serif_sc_variable.ttf）——v3 §5.4 Display/Title 档字体。
- * U-02（2026-09-09）：此前该文件为**零引用死资源**，本次排印收敛激活。
- * 可变字体经 [FontVariation.weight] 实例化 500/600 两档；字库为全集 CJK，无楷书的缺字回退问题。
+ * Noto Serif SC 可变字重——Display/Title 档。
  */
 private val NotoSerifSC = FontFamily(
     Font(
@@ -165,55 +144,50 @@ private val NotoSerifSC = FontFamily(
     ),
 )
 
-/**
- * 品牌排印（v3 §5.4：楷书仅两处——「丹青录」Logo 与抽卡仪式标题，不作页面标题用）。
- * 楷书为单一 Regular 字重，**禁止 FontWeight.Bold**（合成伪粗体笔锋糊团，见 U-01 记录）。
- */
+/** 品牌排印：仅「织环」Logo。 */
 val BrandType = TextStyle(
     fontFamily = MaShanZheng,
-    fontSize = 26.sp,
-    lineHeight = 34.sp,
-    letterSpacing = 4.sp,
+    fontSize = 22.sp,
+    lineHeight = 28.sp,
+    letterSpacing = 2.sp,
 )
 
 /** 仪式标题（抽卡揭晓等 ritual 时刻的楷书大字）。 */
 val RitualType = TextStyle(
     fontFamily = MaShanZheng,
-    fontSize = 34.sp,
-    lineHeight = 44.sp,
-    letterSpacing = 6.sp,
+    fontSize = 32.sp,
+    lineHeight = 42.sp,
+    letterSpacing = 4.sp,
 )
 
 /**
- * 游戏排版体系 v3（§5.4 Type Scale，全站唯一档位）：
+ * 排版体系 v4：
+ * - Display/Title = Noto Serif SC（克制用）
+ * - 正文/控件/数字 = 系统无衬线
+ * - 楷书只保留 [BrandType] / [RitualType]
  *
- * - Display/Title 档 = Noto Serif SC（宋体骨架衬线，典藏气质）；
- * - 正文/控件/数字 = 系统无衬线，数字档带 `tnum` 等宽；
- * - 楷书只保留 [BrandType] / [RitualType] 两个品牌位（不再进 typography 档位）。
- *
- * 历史：v2 曾把楷书放进 headline/title 档（22/20/17sp），小字号笔画粘连且 275 处裸
- * fontSize 与档位互相脱节；v3 收敛后 UI 层新代码禁止裸 fontSize，一律走本档位。
+ * UI 层新代码禁止裸 fontSize，一律走本档位。
  */
 val GameTypography = Typography(
     displayLarge = TextStyle(
         fontFamily = NotoSerifSC, fontWeight = FontWeight.SemiBold,
-        fontSize = 40.sp, lineHeight = 48.sp, fontFeatureSettings = "tnum",
+        fontSize = 36.sp, lineHeight = 44.sp, fontFeatureSettings = "tnum",
     ),
     displayMedium = TextStyle(
         fontFamily = NotoSerifSC, fontWeight = FontWeight.SemiBold,
-        fontSize = 32.sp, lineHeight = 40.sp, fontFeatureSettings = "tnum",
+        fontSize = 30.sp, lineHeight = 38.sp, fontFeatureSettings = "tnum",
     ),
     displaySmall = TextStyle(
         fontFamily = NotoSerifSC, fontWeight = FontWeight.SemiBold,
-        fontSize = 28.sp, lineHeight = 36.sp, fontFeatureSettings = "tnum",
+        fontSize = 26.sp, lineHeight = 34.sp, fontFeatureSettings = "tnum",
     ),
     headlineMedium = TextStyle(
         fontFamily = NotoSerifSC, fontWeight = FontWeight.SemiBold,
-        fontSize = 22.sp, lineHeight = 30.sp,
+        fontSize = 20.sp, lineHeight = 28.sp,
     ),
     headlineSmall = TextStyle(
         fontFamily = NotoSerifSC, fontWeight = FontWeight.SemiBold,
-        fontSize = 20.sp, lineHeight = 28.sp,
+        fontSize = 18.sp, lineHeight = 26.sp,
     ),
     titleLarge = TextStyle(
         fontFamily = NotoSerifSC, fontWeight = FontWeight.Medium,
@@ -230,7 +204,7 @@ val GameTypography = Typography(
     bodySmall = TextStyle(fontSize = 12.sp, lineHeight = 16.sp),
     labelLarge = TextStyle(
         fontWeight = FontWeight.Medium, fontSize = 12.sp, lineHeight = 16.sp,
-        letterSpacing = 0.5.sp, fontFeatureSettings = "tnum",
+        letterSpacing = 0.3.sp, fontFeatureSettings = "tnum",
     ),
     labelMedium = TextStyle(fontSize = 11.sp, lineHeight = 14.sp),
     labelSmall = TextStyle(fontSize = 11.sp, lineHeight = 14.sp),

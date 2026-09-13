@@ -68,18 +68,18 @@ fun CodexCard(
     val rarityCol = AppTheme.rarityColor(tier)
     val grad = AppTheme.rarityGradient(tier)
 
-    // 工艺框线宽 / 透明度
+    // 工艺框：v4 压低厚度与强度，金箔只给 UR
     val borderWidth = when {
-        tier >= 4 -> 2.dp
-        tier == 3 -> 1.75.dp
-        tier == 2 -> 1.25.dp
+        tier >= 4 -> 1.5.dp
+        tier == 3 -> 1.25.dp
+        tier == 2 -> 1.dp
         else -> 1.dp
     }
     val borderAlpha = when {
-        tier >= 4 -> 0.95f
-        tier == 3 -> 0.9f
-        tier == 2 -> 0.7f
-        else -> 0.45f
+        tier >= 4 -> 0.85f
+        tier == 3 -> 0.7f
+        tier == 2 -> 0.5f
+        else -> 0.32f
     }
 
     // 无限动画只在 SSR/UR 开启（2026-09-10：R/SR 卡格里十余个 infiniteTransition 会空转耗帧）
@@ -181,34 +181,22 @@ fun CodexCard(
                     ),
                     shape = innerShape,
                 )
-                // 内金线（所有稀有度都有，像烫金内框）
-                .padding(if (tier >= 3) 2.dp else 1.5.dp)
-                .border(
-                    width = if (tier >= 3) 0.75.dp else 0.5.dp,
-                    color = AppTheme.Gold.copy(alpha = if (tier >= 3) 0.45f else 0.22f),
-                    shape = innerShape,
-                )
+                .padding(if (tier >= 4) 2.dp else 1.dp)
                 .drawWithContent {
                     drawContent()
-                    // 顶部镜面高光（卡面塑料感）
+                    // 极淡顶光
                     drawRect(
                         Brush.verticalGradient(
-                            listOf(Color.White.copy(alpha = 0.07f), Color.Transparent),
-                            endY = size.height * 0.28f,
+                            listOf(Color.White.copy(alpha = 0.04f), Color.Transparent),
+                            endY = size.height * 0.22f,
                         )
                     )
                     if (tier == 3) {
                         drawSsrWeave()
-                        drawCornerBrackets(AppTheme.GoldHi.copy(alpha = 0.85f))
-                        drawGlowRing(ssrBreath * 0.45f, rarityCol)
                     }
                     if (tier >= 4) {
                         drawFoilSheen(urFlow)
-                        drawCornerBrackets(AppTheme.GoldHi)
-                        drawGlowRing(0.4f, rarityCol)
-                    }
-                    if (tier == 2) {
-                        drawGlazeSheen()
+                        drawCornerBrackets(AppTheme.GoldHi.copy(alpha = 0.7f))
                     }
                 },
         ) {

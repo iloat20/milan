@@ -54,9 +54,7 @@ import com.milan.game.ui.theme.AppTheme
 import com.milan.game.ui.theme.ElementTheme
 
 /**
- * 角色列表屏（水墨国风版）：
- * 顶部栏 + 筛选条（搜索/稀有度/元素/排序）+ 2 列稀有度描边卡片网格。
- * 筛选状态 rememberSaveable 保留；数据取自 CharacterListViewModel（AppGraph 注入）。
+ * 角色列表（v4）：筛选 + 2 列网格，边距统一 20dp。
  */
 @Composable
 fun CharacterListScreen(
@@ -96,20 +94,20 @@ fun CharacterListScreen(
 
     PageBackground(modifier = modifier, scrollOffset = scrollOffset) {
         Column(Modifier.fillMaxSize()) {
-            AppTopBar(title = "我 的 角 色", onBack = onBack)
-            Spacer(Modifier.height(14.dp))
+            AppTopBar(title = "我的角色", onBack = onBack)
+            Spacer(Modifier.height(12.dp))
 
             Text(
-                text = if (visible.size == total) "已拥有  $total  位角色"
-                else "已显示  ${visible.size} / 已拥有 $total  位角色",
-                style = MaterialTheme.typography.bodyLarge,
+                text = if (visible.size == total) "已拥有 $total 位角色"
+                else "已显示 ${visible.size} / 已拥有 $total 位角色",
+                style = MaterialTheme.typography.bodyMedium,
                 color = AppTheme.Text2,
-                modifier = Modifier.padding(horizontal = 18.dp),
+                modifier = Modifier.padding(horizontal = 20.dp),
             )
-            Spacer(Modifier.height(8.dp))
-
-            CompletionPanel(roster = roster, ownedIds = ownedIds, modifier = Modifier.padding(horizontal = 18.dp))
             Spacer(Modifier.height(12.dp))
+
+            CompletionPanel(roster = roster, ownedIds = ownedIds, modifier = Modifier.padding(horizontal = 20.dp))
+            Spacer(Modifier.height(16.dp))
 
             ListFilterBar(
                 searchText = searchText,
@@ -121,9 +119,9 @@ fun CharacterListScreen(
                 sort = sort,
                 onSortChange = { sort = it },
                 elements = elements,
-                modifier = Modifier.padding(horizontal = 18.dp),
+                modifier = Modifier.padding(horizontal = 20.dp),
             )
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(12.dp))
 
             if (owned.isEmpty() || visible.isEmpty()) {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
@@ -139,8 +137,9 @@ fun CharacterListScreen(
                     columns = GridCells.Fixed(2),
                     state = gridState,
                     modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(start = 13.dp, end = 13.dp, bottom = 16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(0.dp),
+                    contentPadding = PaddingValues(start = 14.dp, end = 14.dp, bottom = 20.dp),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
                     itemsIndexed(visible, key = { _, ch -> ch.save.characterId }, contentType = { _, _ -> "characterCard" }) { index, ch ->
                         val parallax by remember {
@@ -182,7 +181,7 @@ fun CharacterListScreen(
 }
 
 /**
- * 图鉴完成度头（水墨国风版）：总收集进度条 + 分稀有度 owned/total 徽标
+ * 图鉴完成度头（织环 v3.1）：总收集进度条 + 分稀有度 owned/total 徽标
  */
 @Composable
 private fun CompletionPanel(

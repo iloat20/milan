@@ -2,7 +2,9 @@ package com.milan.game.ui.components
 
 import androidx.compose.material3.MaterialTheme
 
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -11,24 +13,18 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
-// NeonButton replaces TextButton for consistent neon-gold styling
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.milan.game.ui.theme.AppTheme
 
 /**
- * 统一空状态占位组件（水墨国风）。
- *
- * - [icon]：顶部线性图标（可选，Material outlined；v3 §5.5 禁用 emoji 作图标）
- * - [title]：主标题（必填）
- * - [subtitle]：副标题（可选，Text2 色弱化）
- * - [actionText] / [onAction]：底部操作按钮文字与回调（可选）
+ * 统一空状态：图标 + 标题 + 可选操作。
  */
 @Composable
 fun EmptyState(
@@ -50,7 +46,7 @@ fun EmptyState(
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                modifier = Modifier.size(48.dp),
+                modifier = Modifier.size(36.dp),
                 tint = AppTheme.Text3,
             )
             Spacer(Modifier.height(AppTheme.Spacing.lg))
