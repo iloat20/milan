@@ -32,7 +32,7 @@ data class ShopUiState(
  * - 经济四资源原订阅 `service.economy` 切片、每日特惠原 `remember(snap.revision)` 重算——
  *   现统一为订阅 `service.snapshot` 每次写提交重算（语义等价：任何写提交都会推进 revision，
  *   且 MutableStateFlow 值相等时跳过发射，比旧 remember 更省重组）。
- * - 四类写动作（每日特惠 / 碎片包 / 碎片兑换 / 钻石兑换）共用同一 busy 防重入，
+ * - 四类写动作（每日特惠 / 碎片包 / 碎片兑换 / 纯环兑换）共用同一 busy 防重入，
  *   三态反馈走 [toasts]（Composable 转发 LocalFeedback）。
  */
 class ShopViewModel(
@@ -79,11 +79,11 @@ class ShopViewModel(
                     WriteOutcome.Success -> when (offer.kind) {
                         DailyOfferKind.FREE_SUPPLY -> "每日补给已领取"
                         DailyOfferKind.DISCOUNT_PACK ->
-                            "已获得 ${EconomyFormulas.fragmentPackSize(offer.pack)} 片星魂碎片"
+                            "已获得 ${EconomyFormulas.fragmentPackSize(offer.pack)} 片残玦"
                         DailyOfferKind.TICKET_BUNDLE ->
                             "已获得 ${EconomyFormulas.dailyTicketBundleSize()} 张战票"
                     }
-                    WriteOutcome.Rejected -> "星尘不足或今日已购"
+                    WriteOutcome.Rejected -> "环痕不足或今日已购"
                     WriteOutcome.SaveFailed -> "保存失败，请重试"
                 }
                 _toasts.send(msg)
@@ -100,8 +100,8 @@ class ShopViewModel(
             _busy.value = true
             try {
                 val msg = when (service.buyFragmentPack(pack)) {
-                    WriteOutcome.Success -> "已获得 ${EconomyFormulas.fragmentPackSize(pack)} 片星魂碎片"
-                    WriteOutcome.Rejected -> "星尘不足"
+                    WriteOutcome.Success -> "已获得 ${EconomyFormulas.fragmentPackSize(pack)} 片残玦"
+                    WriteOutcome.Rejected -> "环痕不足"
                     WriteOutcome.SaveFailed -> "保存失败，请重试"
                 }
                 _toasts.send(msg)
@@ -111,16 +111,16 @@ class ShopViewModel(
         }
     }
 
-    /** 碎片兑换星尘（批量回收，回收价低于购入价）。 */
+    /** 碎片兑换环痕（批量回收，回收价低于购入价）。 */
     fun exchangeFragmentsForSoft() {
         if (_busy.value) return
         viewModelScope.launch {
             _busy.value = true
             try {
                 val msg = when (service.exchangeFragmentsForSoft()) {
-                    WriteOutcome.Success -> "已兑换 ${EconomyFormulas.fragmentExchangeYield()} 星尘"
+                    WriteOutcome.Success -> "已兑换 ${EconomyFormulas.fragmentExchangeYield()} 环痕"
                     WriteOutcome.Rejected ->
-                        "碎片不足（需 ${EconomyFormulas.fragmentExchangeBatch()} 片）"
+                        "残玦不足（需 ${EconomyFormulas.fragmentExchangeBatch()} 片）"
                     WriteOutcome.SaveFailed -> "保存失败，请重试"
                 }
                 _toasts.send(msg)
@@ -130,15 +130,15 @@ class ShopViewModel(
         }
     }
 
-    /** 钻石兑换星尘。 */
+    /** 纯环兑换环痕。 */
     fun buyDiamondExchange() {
         if (_busy.value) return
         viewModelScope.launch {
             _busy.value = true
             try {
                 val msg = when (service.buyDiamondExchange()) {
-                    WriteOutcome.Success -> "已兑换 ${EconomyFormulas.diamondExchangeYield()} 星尘"
-                    WriteOutcome.Rejected -> "钻石不足"
+                    WriteOutcome.Success -> "已兑换 ${EconomyFormulas.diamondExchangeYield()} 环痕"
+                    WriteOutcome.Rejected -> "纯环不足"
                     WriteOutcome.SaveFailed -> "保存失败，请重试"
                 }
                 _toasts.send(msg)

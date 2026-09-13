@@ -606,8 +606,8 @@ internal fun TenCurtainCall(
     val title = when {
         maxR >= 4 -> "金箔 · 神谕降临"
         maxR == 3 -> "朱砂 · 名士现世"
-        maxR == 2 -> "石青 · 灵犀一点"
-        else -> "松烟 · 墨迹初成"
+        maxR == 2 -> "石青 · 环痕轻响"
+        else -> "松烟 · 初纬已成"
     }
     Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
         Text(

@@ -11,7 +11,7 @@ import com.milan.game.data.PullLogEntry
  * 逻辑在本接口实现中，行为与拆分前等价。
  */
 interface GachaApi {
-    /** 重复角色按稀有度补偿的星魂碎片数量（纯公式查询）。 */
+    /** 重复角色按稀有度补偿的残玦数量（纯公式查询）。 */
     fun fragmentsForRarity(rarity: Int): Int
 
     /** 抽卡历史快照（时间正序，最旧在前；UI 自行倒序展示）。 */

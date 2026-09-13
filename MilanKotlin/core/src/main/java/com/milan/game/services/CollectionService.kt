@@ -116,7 +116,7 @@ class CollectionService(
         core.characters.mapNotNull { getCharacterEntry(it.characterId) }
 
     companion object {
-        /** 收集里程碑（解锁 N 个角色 → 永久星尘加成）。 */
+        /** 收集里程碑（解锁 N 个角色 → 永久环痕加成）。 */
         val COLLECTION_MILESTONES = listOf(
             CollectionMilestone(5, 2000),
             CollectionMilestone(10, 5000),

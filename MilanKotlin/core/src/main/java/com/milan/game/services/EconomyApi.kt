@@ -11,24 +11,24 @@ interface EconomyApi {
     /** 当前战票数。 */
     fun battleTickets(): Int
 
-    /** 扣除星尘（amount<=0 或余额不足拒绝）。 */
+    /** 扣除环痕（amount<=0 或余额不足拒绝）。 */
     suspend fun spendSoft(amount: Int): WriteOutcome
 
-    /** 增加星尘（amount<=0 拒绝）。 */
+    /** 增加环痕（amount<=0 拒绝）。 */
     suspend fun grantSoft(amount: Int): WriteOutcome
 
-    /** 扣除钻石（amount<=0 或余额不足拒绝）。 */
+    /** 扣除纯环（amount<=0 或余额不足拒绝）。 */
     suspend fun spendHard(amount: Int): WriteOutcome
 
-    /** 增加钻石（amount<=0 拒绝）。 */
+    /** 增加纯环（amount<=0 拒绝）。 */
     suspend fun grantHard(amount: Int): WriteOutcome
 
-    /** 购买星魂碎片包（pack=1 小包 / 2 大包）。 */
+    /** 购买残玦包（pack=1 小包 / 2 大包）。 */
     suspend fun buyFragmentPack(pack: Int): WriteOutcome
 
-    /** 钻石兑换星尘。 */
+    /** 纯环兑换环痕。 */
     suspend fun buyDiamondExchange(): WriteOutcome
 
-    /** 星魂碎片兑换星尘（碎片回收阀门）。 */
+    /** 残玦兑换环痕（碎片回收阀门）。 */
     suspend fun exchangeFragmentsForSoft(): WriteOutcome
 }

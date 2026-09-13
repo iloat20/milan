@@ -321,7 +321,7 @@ class StrategicBattleViewModel(
                 } else {
                     com.milan.game.services.WriteOutcome.Rejected
                 }
-                // 结算 UI 复用 BattleResultOverlay：用合成 Completed 展示星尘/星级语义
+                // 结算 UI 复用 BattleResultOverlay：用合成 Completed 展示环痕/星级语义
                 val rewardSoft = if (write == com.milan.game.services.WriteOutcome.Success && stars > 0) {
                     floor * 500 * stars
                 } else 0

@@ -27,7 +27,7 @@ class ProgressionService(private val core: ServiceCore) : ProgressionApi {
     }
 
     /**
-     * 升级 n 级（默认 1）。星尘不足或已达等级上限时尽可能少升；一级都升不了返回 Rejected。
+     * 升级 n 级（默认 1）。环痕不足或已达等级上限时尽可能少升；一级都升不了返回 Rejected。
      * 每升 1 级 +1 天赋点。落盘失败回滚（SaveFailed）。
      * 整体持锁：planLevelUp 依赖的 level/余额必须在临界区内读取（防过期校验竞态）。
      */
@@ -112,10 +112,10 @@ class ProgressionService(private val core: ServiceCore) : ProgressionApi {
         if (outcome == WriteOutcome.Success) gained else 0
     }
 
-    /** 突破（Stage+1）。需未达 MaxStage 且星魂碎片 + 星尘充足。落盘失败回滚（SaveFailed）。
+    /** 突破（Stage+1）。需未达 MaxStage 且残玦 + 环痕充足。落盘失败回滚（SaveFailed）。
      *  P2-12：突破后按已积累经验重推导等级（上限随阶段提高）——此前玩家带「银行经验」
-     *  突破后等级停留在旧上限，再用星尘 levelUp 会为已经用经验换到的等级再付一次钱。
-     *  整体持锁：碎片/星尘余额校验必须在临界区内读取（防过期校验竞态）。 */
+     *  突破后等级停留在旧上限，再用环痕 levelUp 会为已经用经验换到的等级再付一次钱。
+     *  整体持锁：碎片/环痕余额校验必须在临界区内读取（防过期校验竞态）。 */
     override suspend fun ascend(charId: String): WriteOutcome = core.withWriteLock {
         val save = core.getSave(charId) ?: return@withWriteLock WriteOutcome.Rejected
         val def = core.character(charId) ?: return@withWriteLock WriteOutcome.Rejected
@@ -161,7 +161,7 @@ class ProgressionService(private val core: ServiceCore) : ProgressionApi {
         )
     }
 
-    /** 升星（Stars+1）。需未达 MaxStars 且星魂碎片充足。落盘失败回滚（SaveFailed）。每次仅 +1 星。
+    /** 升星（Stars+1）。需未达 MaxStars 且残玦充足。落盘失败回滚（SaveFailed）。每次仅 +1 星。
      *  整体持锁：碎片余额校验必须在临界区内读取（防过期校验竞态）。 */
     override suspend fun starUp(charId: String): WriteOutcome = core.withWriteLock {
         val save = core.getSave(charId) ?: return@withWriteLock WriteOutcome.Rejected
@@ -246,7 +246,7 @@ class ProgressionService(private val core: ServiceCore) : ProgressionApi {
     // ─────────────────────────── 角色好感度（2026-09-06 S4 自门面下沉）───────────────────────────
     // 原 GameService.grantAffinity / giftAffinity / getCharacterAffinityData 内联实现，
     // 违反"门面不含领域规则"自述。下沉到本服务（养成语义相关），门面改纯转发。
-    // 业务口径不变：满级 Rejected、满级 + 钳位兜底、星尘不足 Rejected、事务原子扣减+加好感。
+    // 业务口径不变：满级 Rejected、满级 + 钳位兜底、环痕不足 Rejected、事务原子扣减+加好感。
 
     /** 获取角色好感度数据（null 视为 0；调用方 UI 直接读，无需写事务）。 */
     override fun getCharacterAffinityData(): Map<String, Int> {
@@ -282,18 +282,18 @@ class ProgressionService(private val core: ServiceCore) : ProgressionApi {
         }
 
     /**
-     * 赠送礼物（好感度主动培养入口，2026-09-02 产品拍板：100 星尘 → +200 好感）。
+     * 赠送礼物（好感度主动培养入口，2026-09-02 产品拍板：100 环痕 → +200 好感）。
      *
-     * 事务内原子完成「扣星尘 + 加好感」（单一 transactionLocked，非两次独立写）；
+     * 事务内原子完成「扣环痕 + 加好感」（单一 transactionLocked，非两次独立写）；
      * 预算在锁内做（Mutex 临界区），避免并发下余额被先到事务扣走造成负数。
-     * Rejected 语义：星尘不足 或 已满级（调用方据此给 UI 提示，勿当异常）。
+     * Rejected 语义：环痕不足 或 已满级（调用方据此给 UI 提示，勿当异常）。
      */
     override suspend fun giftAffinity(characterId: String): WriteOutcome =
         core.withWriteLock {
             val origSoft = core.saveData.softCurrency
             val origData = core.saveData.characterAffinityData
             if (origSoft < AffinityFormulas.GIFT_COST_SOFT) {
-                return@withWriteLock WriteOutcome.Rejected // 星尘不足
+                return@withWriteLock WriteOutcome.Rejected // 环痕不足
             }
             if ((origData?.get(characterId) ?: 0) >= AffinityFormulas.MAX_AFFINITY) {
                 return@withWriteLock WriteOutcome.Rejected // 已满级

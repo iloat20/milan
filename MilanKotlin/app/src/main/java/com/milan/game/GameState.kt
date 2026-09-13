@@ -119,7 +119,7 @@ object GameState {
         get() = service.saveData.softCurrency
 
     val currencyLabel: String
-        get() = "星尘: $currency"
+        get() = "环痕: $currency"
 
     /** 出战编队槽位上限（单一事实来源：SaveData.Companion.MAX_FORMATION_SIZE）。 */
     val maxFormationSize: Int

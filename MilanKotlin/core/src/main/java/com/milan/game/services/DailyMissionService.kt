@@ -23,15 +23,15 @@ class DailyMissionService(
      * R5-I3（2026-09-03 审查修复）：只保留有生产上报点的类型。此前 15 个模板里
      * `SPEND_SOFT_CURRENCY` / `CHECK_IN` / `FRIEND_GIFT` / `CLAIM_AFFINITY` 共 5 个
      * 全项目无 reportProgress 生产点（签到/好友/好感领取本身是未接线死功能），
-     * 每日随机 6 个抽中即永不完成，极端日活跃度恒 0、30000 星尘宝箱不可达。
+     * 每日随机 6 个抽中即永不完成，极端日活跃度恒 0、30000 环痕宝箱不可达。
      */
     private val missionTemplates: List<DailyMissionDef> = listOf(
         DailyMissionDef("pull_3", "抽卡3次", "进行3次抽卡", DailyMissionType.PULL_GACHA, 3, 10, "🎰"),
         DailyMissionDef("pull_10", "抽卡10次", "进行10次抽卡", DailyMissionType.PULL_GACHA, 10, 20, "🎰"),
         DailyMissionDef("tower_1", "挑战无尽之塔", "挑战1次无尽之塔", DailyMissionType.BATTLE_TOWER, 1, 15, "🗼"),
         DailyMissionDef("tower_3", "挑战无尽之塔3次", "挑战3次无尽之塔", DailyMissionType.BATTLE_TOWER, 3, 25, "🗼"),
-        DailyMissionDef("level_1", "升级角色1次", "消耗星尘升级角色", DailyMissionType.LEVEL_UP_CHARACTER, 1, 10, "⬆️"),
-        DailyMissionDef("level_3", "升级角色3次", "消耗星尘升级角色3次", DailyMissionType.LEVEL_UP_CHARACTER, 3, 20, "⬆️"),
+        DailyMissionDef("level_1", "升级角色1次", "消耗环痕升级角色", DailyMissionType.LEVEL_UP_CHARACTER, 1, 10, "⬆️"),
+        DailyMissionDef("level_3", "升级角色3次", "消耗环痕升级角色3次", DailyMissionType.LEVEL_UP_CHARACTER, 3, 20, "⬆️"),
         DailyMissionDef("story_1", "完成剧情关卡", "完成1个剧情关卡", DailyMissionType.COMPLETE_STORY, 1, 15, "📖"),
         DailyMissionDef("arena_1", "挑战竞技场", "挑战1次竞技场", DailyMissionType.CHALLENGE_ARENA, 1, 10, "⚔️"),
         DailyMissionDef("arena_3", "挑战竞技场3次", "挑战3次竞技场", DailyMissionType.CHALLENGE_ARENA, 3, 20, "⚔️"),

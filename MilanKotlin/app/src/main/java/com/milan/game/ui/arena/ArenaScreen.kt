@@ -39,6 +39,7 @@ import com.milan.game.ui.components.PageBackground
 import com.milan.game.ui.feedback.LocalFeedback
 import com.milan.game.ui.nav.AppTopBar
 import com.milan.game.ui.theme.AppTheme
+import com.milan.game.ui.theme.CurrencyNames
 
 /**
  * PVP 竞技场界面（2026-09 死功能激活）。
@@ -284,12 +285,12 @@ private fun SeasonRewardRow(reward: com.milan.game.data.SeasonReward) {
                 modifier = Modifier.weight(1f),
             )
             Text(
-                text = "${reward.softCurrency} 金",
+                text = "${CurrencyNames.SOFT_GLYPH} ${reward.softCurrency} 环痕",
                 color = AppTheme.Text2,
             )
             Spacer(Modifier.width(8.dp))
             Text(
-                text = "${reward.hardCurrency} 碎片",
+                text = "${CurrencyNames.HARD_GLYPH} ${reward.hardCurrency} 纯环",
                 color = AppTheme.Text2,
             )
         }

@@ -113,7 +113,7 @@ class TowerService(private val core: ServiceCore) : TowerApi {
      * 挑战无尽之塔第 [floor] 层：
      * - 我方 = 当前编队（属性经 StatsCalculator 推导 + TeamResonance 共鸣加成）；
      * - 敌方 = 程序化生成（基础模板 × 层数缩放，seed 由 floor 派生 → 同层可复现、跨端一致）；
-     * - 战斗为纯内存模拟（不触存档），胜利后的星尘奖励 / 最高层推进 / 战绩追加在同一事务内落盘，
+     * - 战斗为纯内存模拟（不触存档），胜利后的环痕奖励 / 最高层推进 / 战绩追加在同一事务内落盘，
      *   失败整体回滚且不广播。
      *
      * 门票门槛（2026-08 二期）：入场扣 [EconomyFormulas.towerTicketCost] 张战票；
@@ -121,9 +121,9 @@ class TowerService(private val core: ServiceCore) : TowerApi {
      * 复刷已通层与失败局净消耗 1 张。
      * 票源由每日商店免费补给兜底，零票玩家不会死局。战票不足时在模拟前直接拒绝。
      *
-     * 奖励门控（2026-08-28 F1 修复）：星尘与里程碑钻石**一律按 newBest 门控**，
-     * 复刷已通层不再产出星尘。此前星尘按 result.victory 无条件发放，与「胜利返票（净耗 0）」
-     * 及「敌队 seed 由 floor 派生、已通层必胜」构成闭环，玩家可无限复刷同一层刷星尘。
+     * 奖励门控（2026-08-28 F1 修复）：环痕与里程碑纯环**一律按 newBest 门控**，
+     * 复刷已通层不再产出环痕。此前环痕按 result.victory 无条件发放，与「胜利返票（净耗 0）」
+     * 及「敌队 seed 由 floor 派生、已通层必胜」构成闭环，玩家可无限复刷同一层刷环痕。
      */
     override suspend fun runTowerFloor(floor: Int): TowerOutcome = core.withWriteLock {
         // M6（2026-08-28 审查修复）：补层数上下界。此前层号只校验 >=1，超大 floor 会让
@@ -146,12 +146,12 @@ class TowerService(private val core: ServiceCore) : TowerApi {
         val isDraw = result.draw
         val oldBest = saveData.towerBestFloor
         val newBest = if (result.victory && floor > oldBest) floor else null
-        // F1（2026-08-28 审查修复）：星尘奖励与里程碑钻石**一律按 newBest 门控**——
-        // 只有刷新最高层才发星尘，复刷已通层不再产出。
-        // 旧实现按 result.victory 无条件发星尘，与「胜利返票（净耗 0）」+「敌队 seed 由 floor
-        // 派生（已通层必胜）」三点构成闭环，玩家可无限复刷同一层刷星尘（经济永动机）。
+        // F1（2026-08-28 审查修复）：环痕奖励与里程碑纯环**一律按 newBest 门控**——
+        // 只有刷新最高层才发环痕，复刷已通层不再产出。
+        // 旧实现按 result.victory 无条件发环痕，与「胜利返票（净耗 0）」+「敌队 seed 由 floor
+        // 派生（已通层必胜）」三点构成闭环，玩家可无限复刷同一层刷环痕（经济永动机）。
         val reward = if (newBest != null) EconomyFormulas.towerRewardSoft(floor) else 0
-        // P3-7 里程碑钻石：遍历 oldBest+1..newBest 所有里程碑层，跳层不丢奖励
+        // P3-7 里程碑纯环：遍历 oldBest+1..newBest 所有里程碑层，跳层不丢奖励
         val rewardHard = if (newBest != null) {
             (oldBest + 1..newBest).sumOf { f -> EconomyFormulas.towerRewardHard(f) }
         } else 0
@@ -447,7 +447,7 @@ class TowerService(private val core: ServiceCore) : TowerApi {
         if (floor < 1 || floor > EconomyFormulas.towerMaxFloor()) return@withWriteLock TowerOutcome.Rejected
 
         // R6-P2：victory 仍由调用方断言（状态机在 UI），但**可达性**必须服务端把关——
-        // 否则 API 可一次 claim 远超 best 的层，刷里程碑钻石与首通奖励。
+        // 否则 API 可一次 claim 远超 best 的层，刷里程碑纯环与首通奖励。
         // 允许：复刷已通层 / 挑战 best+1；拒绝：跳跃超过一层。
         val bestAtCheck = saveData.towerBestFloor
         if (floor > bestAtCheck + 1) return@withWriteLock TowerOutcome.Rejected

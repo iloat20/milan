@@ -212,7 +212,7 @@ class StoryService(
      * 扫荡已通关的剧情关卡（跳过战斗，直接发放奖励）。
      *
      * 前置条件：关卡必须已通关（completedStages 包含该 stageId）。
-     * 每次扫荡消耗星尘（体力替代），奖励与首次通关一致。
+     * 每次扫荡消耗环痕（体力替代），奖励与首次通关一致。
      */
     @Deprecated("P2-11: UI层零调用", level = DeprecationLevel.WARNING)
     override suspend fun sweepStoryStage(stageId: String, times: Int): StorySweepOutcome {
@@ -272,7 +272,7 @@ class StoryService(
     // ─────────────────────────── 困难模式扫荡 ───────────────────────────
 
     /**
-     * 困难模式扫荡已通关的剧情关卡（2倍奖励，消耗2倍星尘）。
+     * 困难模式扫荡已通关的剧情关卡（2倍奖励，消耗2倍环痕）。
      *
      * 前置条件：关卡必须已通关（普通模式）。
      * 困难模式奖励 = 普通模式 × 2，消耗 = 普通模式 × 2。
@@ -348,7 +348,7 @@ class StoryService(
     /**
      * 领取章节全通关奖励（该章节所有关卡已完成时可领取）。
      *
-     * 每个章节全通关发放一次性额外奖励（钻石 + 星尘），鼓励推完全部关卡。
+     * 每个章节全通关发放一次性额外奖励（纯环 + 环痕），鼓励推完全部关卡。
      * 每个章节只能领取一次。
      */
     @Deprecated("P2-11: UI层零调用", level = DeprecationLevel.WARNING)
@@ -454,8 +454,8 @@ class StoryService(
                             DialogueLine("char_ur_zhulong", "拿好你的名字——织环者。环碎了，你来拼。", "serious"),
                         ),
                         rewards = listOf(
-                            StoryReward("soft_currency", 500, "星尘 ×500"),
-                            StoryReward("hard_currency", 50, "钻石 ×50"),
+                            StoryReward("soft_currency", 500, "环痕 ×500"),
+                            StoryReward("hard_currency", 50, "纯环 ×50"),
                         ),
                     ),
                     StoryStageDef(
@@ -470,7 +470,7 @@ class StoryService(
                             DialogueLine("narrator", "金乌落在断崖上，羽尖像第二轮不肯西沉的日。"),
                         ),
                         rewards = listOf(
-                            StoryReward("soft_currency", 300, "星尘 ×300"),
+                            StoryReward("soft_currency", 300, "环痕 ×300"),
                         ),
                     ),
                     StoryStageDef(
@@ -505,8 +505,8 @@ class StoryService(
                             DialogueLine("narrator", "你的回响轻轻一颤。雾里，有什么睁开了眼。"),
                         ),
                         rewards = listOf(
-                            StoryReward("soft_currency", 400, "星尘 ×400"),
-                            StoryReward("hard_currency", 30, "钻石 ×30"),
+                            StoryReward("soft_currency", 400, "环痕 ×400"),
+                            StoryReward("hard_currency", 30, "纯环 ×30"),
                         ),
                     ),
                     StoryStageDef(
@@ -517,7 +517,7 @@ class StoryService(
                         enemyIds = listOf("rift_mistling", "rift_mistling", "rift_shadowwhisper"),
                         recommendedLevel = 3,
                         rewards = listOf(
-                            StoryReward("soft_currency", 600, "星尘 ×600"),
+                            StoryReward("soft_currency", 600, "环痕 ×600"),
                         ),
                     ),
                     StoryStageDef(
@@ -533,8 +533,8 @@ class StoryService(
                             DialogueLine("narrator", "以太的星图在远方转。下一站，浮岛。"),
                         ),
                         rewards = listOf(
-                            StoryReward("soft_currency", 1000, "星尘 ×1000"),
-                            StoryReward("hard_currency", 100, "钻石 ×100"),
+                            StoryReward("soft_currency", 1000, "环痕 ×1000"),
+                            StoryReward("hard_currency", 100, "纯环 ×100"),
                         ),
                     ),
                 ),
@@ -559,8 +559,8 @@ class StoryService(
                             DialogueLine("char_ur_keqing", "别念了。命运是拿来砍的，不是拿来跪的。", "angry"),
                         ),
                         rewards = listOf(
-                            StoryReward("soft_currency", 500, "星尘 ×500"),
-                            StoryReward("hard_currency", 50, "钻石 ×50"),
+                            StoryReward("soft_currency", 500, "环痕 ×500"),
+                            StoryReward("hard_currency", 50, "纯环 ×50"),
                         ),
                     ),
                     StoryStageDef(
@@ -571,7 +571,7 @@ class StoryService(
                         enemyIds = listOf("rift_voidmite", "rift_voidmite", "rift_voidmite"),
                         recommendedLevel = 5,
                         rewards = listOf(
-                            StoryReward("soft_currency", 700, "星尘 ×700"),
+                            StoryReward("soft_currency", 700, "环痕 ×700"),
                         ),
                     ),
                     StoryStageDef(
@@ -586,7 +586,7 @@ class StoryService(
                             DialogueLine("char_ur_nuwa", "吵完了就干活。浮岛不会自己长牢。", "normal"),
                         ),
                         rewards = listOf(
-                            StoryReward("soft_currency", 500, "星尘 ×500"),
+                            StoryReward("soft_currency", 500, "环痕 ×500"),
                         ),
                     ),
                     StoryStageDef(
@@ -620,8 +620,8 @@ class StoryService(
                             DialogueLine("narrator", "星图忽然一滞。风暴心在岛下方成形。"),
                         ),
                         rewards = listOf(
-                            StoryReward("soft_currency", 500, "星尘 ×500"),
-                            StoryReward("hard_currency", 50, "钻石 ×50"),
+                            StoryReward("soft_currency", 500, "环痕 ×500"),
+                            StoryReward("hard_currency", 50, "纯环 ×50"),
                         ),
                     ),
                     StoryStageDef(
@@ -632,8 +632,8 @@ class StoryService(
                         enemyIds = listOf("rift_stormheart"),
                         recommendedLevel = 8,
                         rewards = listOf(
-                            StoryReward("soft_currency", 1200, "星尘 ×1200"),
-                            StoryReward("hard_currency", 120, "钻石 ×120"),
+                            StoryReward("soft_currency", 1200, "环痕 ×1200"),
+                            StoryReward("hard_currency", 120, "纯环 ×120"),
                         ),
                     ),
                 ),
@@ -658,8 +658,8 @@ class StoryService(
                             DialogueLine("narrator", "刑天胸口的光很稳。像有人把「护」字焊进了核里。"),
                         ),
                         rewards = listOf(
-                            StoryReward("soft_currency", 600, "星尘 ×600"),
-                            StoryReward("hard_currency", 60, "钻石 ×60"),
+                            StoryReward("soft_currency", 600, "环痕 ×600"),
+                            StoryReward("hard_currency", 60, "纯环 ×60"),
                         ),
                     ),
                     StoryStageDef(
@@ -670,7 +670,7 @@ class StoryService(
                         enemyIds = listOf("rift_gearhound", "rift_gearhound"),
                         recommendedLevel = 10,
                         rewards = listOf(
-                            StoryReward("soft_currency", 900, "星尘 ×900"),
+                            StoryReward("soft_currency", 900, "环痕 ×900"),
                         ),
                     ),
                     StoryStageDef(
@@ -706,7 +706,7 @@ class StoryService(
                             DialogueLine("narrator", "远处，一台铁卫的独眼忽然亮成红色。"),
                         ),
                         rewards = listOf(
-                            StoryReward("soft_currency", 700, "星尘 ×700"),
+                            StoryReward("soft_currency", 700, "环痕 ×700"),
                         ),
                     ),
                     StoryStageDef(
@@ -717,8 +717,8 @@ class StoryService(
                         enemyIds = listOf("rift_ironwarden"),
                         recommendedLevel = 12,
                         rewards = listOf(
-                            StoryReward("soft_currency", 1000, "星尘 ×1000"),
-                            StoryReward("hard_currency", 100, "钻石 ×100"),
+                            StoryReward("soft_currency", 1000, "环痕 ×1000"),
+                            StoryReward("hard_currency", 100, "纯环 ×100"),
                         ),
                     ),
                     StoryStageDef(
@@ -733,8 +733,8 @@ class StoryService(
                             DialogueLine("narrator", "三界的烽火同时亮起。会盟的箭，已经射出。"),
                         ),
                         rewards = listOf(
-                            StoryReward("soft_currency", 2000, "星尘 ×2000"),
-                            StoryReward("hard_currency", 200, "钻石 ×200"),
+                            StoryReward("soft_currency", 2000, "环痕 ×2000"),
+                            StoryReward("hard_currency", 200, "纯环 ×200"),
                         ),
                     ),
                 ),
@@ -761,8 +761,8 @@ class StoryService(
                             DialogueLine("narrator", "你站在三角中央——回响，是唯一能同时接住三道目光的东西。"),
                         ),
                         rewards = listOf(
-                            StoryReward("soft_currency", 800, "星尘 ×800"),
-                            StoryReward("hard_currency", 80, "钻石 ×80"),
+                            StoryReward("soft_currency", 800, "环痕 ×800"),
+                            StoryReward("hard_currency", 80, "纯环 ×80"),
                         ),
                     ),
                     StoryStageDef(
@@ -773,7 +773,7 @@ class StoryService(
                         enemyIds = listOf("rift_riftsoldier", "rift_riftsoldier", "rift_riftsoldier", "rift_riftsoldier"),
                         recommendedLevel = 15,
                         rewards = listOf(
-                            StoryReward("soft_currency", 1200, "星尘 ×1200"),
+                            StoryReward("soft_currency", 1200, "环痕 ×1200"),
                         ),
                     ),
                     StoryStageDef(
@@ -807,8 +807,8 @@ class StoryService(
                             DialogueLine("narrator", "命令落下。主影在烟里抬起了头。"),
                         ),
                         rewards = listOf(
-                            StoryReward("soft_currency", 1000, "星尘 ×1000"),
-                            StoryReward("hard_currency", 100, "钻石 ×100"),
+                            StoryReward("soft_currency", 1000, "环痕 ×1000"),
+                            StoryReward("hard_currency", 100, "纯环 ×100"),
                         ),
                     ),
                     StoryStageDef(
@@ -819,8 +819,8 @@ class StoryService(
                         enemyIds = listOf("rift_lordshade", "rift_lordshade"),
                         recommendedLevel = 18,
                         rewards = listOf(
-                            StoryReward("soft_currency", 1500, "星尘 ×1500"),
-                            StoryReward("hard_currency", 150, "钻石 ×150"),
+                            StoryReward("soft_currency", 1500, "环痕 ×1500"),
+                            StoryReward("hard_currency", 150, "纯环 ×150"),
                         ),
                     ),
                     StoryStageDef(
@@ -835,8 +835,8 @@ class StoryService(
                             DialogueLine("narrator", "坠星拖着青铜色的尾焰，砸向铁帷废土。"),
                         ),
                         rewards = listOf(
-                            StoryReward("soft_currency", 2000, "星尘 ×2000"),
-                            StoryReward("hard_currency", 200, "钻石 ×200"),
+                            StoryReward("soft_currency", 2000, "环痕 ×2000"),
+                            StoryReward("hard_currency", 200, "纯环 ×200"),
                         ),
                     ),
                 ),
@@ -861,8 +861,8 @@ class StoryService(
                             DialogueLine("char_ur_strange", "观星秘术·玄微。裂隙比卷轴上写的，更不讲理。", "serious"),
                         ),
                         rewards = listOf(
-                            StoryReward("soft_currency", 1000, "星尘 ×1000"),
-                            StoryReward("hard_currency", 100, "钻石 ×100"),
+                            StoryReward("soft_currency", 1000, "环痕 ×1000"),
+                            StoryReward("hard_currency", 100, "纯环 ×100"),
                         ),
                     ),
                     StoryStageDef(
@@ -873,7 +873,7 @@ class StoryService(
                         enemyIds = listOf("rift_elitehusk", "rift_elitehusk"),
                         recommendedLevel = 20,
                         rewards = listOf(
-                            StoryReward("soft_currency", 1800, "星尘 ×1800"),
+                            StoryReward("soft_currency", 1800, "环痕 ×1800"),
                         ),
                     ),
                     StoryStageDef(
@@ -888,8 +888,8 @@ class StoryService(
                             DialogueLine("narrator", "域外是阵营，不是第四界。他们留下，裂隙也留下了。"),
                         ),
                         rewards = listOf(
-                            StoryReward("soft_currency", 1500, "星尘 ×1500"),
-                            StoryReward("hard_currency", 150, "钻石 ×150"),
+                            StoryReward("soft_currency", 1500, "环痕 ×1500"),
+                            StoryReward("hard_currency", 150, "纯环 ×150"),
                         ),
                     ),
                     StoryStageDef(
@@ -923,8 +923,8 @@ class StoryService(
                             DialogueLine("narrator", "无论选哪条，天上的裂都比来时更宽了一寸。"),
                         ),
                         rewards = listOf(
-                            StoryReward("soft_currency", 1500, "星尘 ×1500"),
-                            StoryReward("hard_currency", 150, "钻石 ×150"),
+                            StoryReward("soft_currency", 1500, "环痕 ×1500"),
+                            StoryReward("hard_currency", 150, "纯环 ×150"),
                         ),
                     ),
                     StoryStageDef(
@@ -939,8 +939,8 @@ class StoryService(
                             DialogueLine("narrator", "边境传来毒与焰的气味。两害，出闸了。"),
                         ),
                         rewards = listOf(
-                            StoryReward("soft_currency", 3000, "星尘 ×3000"),
-                            StoryReward("hard_currency", 300, "钻石 ×300"),
+                            StoryReward("soft_currency", 3000, "环痕 ×3000"),
+                            StoryReward("hard_currency", 300, "纯环 ×300"),
                         ),
                     ),
                 ),
@@ -966,8 +966,8 @@ class StoryService(
                             DialogueLine("narrator", "被迫开鼎的人跪了一地。青璃的箭，却先一步钉进鼎耳。"),
                         ),
                         rewards = listOf(
-                            StoryReward("soft_currency", 1200, "星尘 ×1200"),
-                            StoryReward("hard_currency", 120, "钻石 ×120"),
+                            StoryReward("soft_currency", 1200, "环痕 ×1200"),
+                            StoryReward("hard_currency", 120, "纯环 ×120"),
                         ),
                     ),
                     StoryStageDef(
@@ -978,7 +978,7 @@ class StoryService(
                         enemyIds = listOf("rift_poisonbloom", "rift_poisonbloom", "rift_poisonbloom"),
                         recommendedLevel = 16,
                         rewards = listOf(
-                            StoryReward("soft_currency", 1400, "星尘 ×1400"),
+                            StoryReward("soft_currency", 1400, "环痕 ×1400"),
                         ),
                     ),
                     StoryStageDef(
@@ -993,8 +993,8 @@ class StoryService(
                             DialogueLine("narrator", "鼎还在。饕餮却已经把封条当零食嚼了。"),
                         ),
                         rewards = listOf(
-                            StoryReward("soft_currency", 1400, "星尘 ×1400"),
-                            StoryReward("hard_currency", 140, "钻石 ×140"),
+                            StoryReward("soft_currency", 1400, "环痕 ×1400"),
+                            StoryReward("hard_currency", 140, "纯环 ×140"),
                         ),
                     ),
                     StoryStageDef(
@@ -1028,8 +1028,8 @@ class StoryService(
                             DialogueLine("narrator", "贪焰忽然拔高——不是回应，是失控。"),
                         ),
                         rewards = listOf(
-                            StoryReward("soft_currency", 1400, "星尘 ×1400"),
-                            StoryReward("hard_currency", 140, "钻石 ×140"),
+                            StoryReward("soft_currency", 1400, "环痕 ×1400"),
+                            StoryReward("hard_currency", 140, "纯环 ×140"),
                         ),
                     ),
                     StoryStageDef(
@@ -1040,8 +1040,8 @@ class StoryService(
                         enemyIds = listOf("rift_flameglutton", "rift_poisonbloom"),
                         recommendedLevel = 18,
                         rewards = listOf(
-                            StoryReward("soft_currency", 2200, "星尘 ×2200"),
-                            StoryReward("hard_currency", 220, "钻石 ×220"),
+                            StoryReward("soft_currency", 2200, "环痕 ×2200"),
+                            StoryReward("hard_currency", 220, "纯环 ×220"),
                         ),
                     ),
                 ),
@@ -1067,8 +1067,8 @@ class StoryService(
                             DialogueLine("char_sr_xuanwu", "岛背上的庙还在。人也还在。这就够我再扛一夜。", "normal"),
                         ),
                         rewards = listOf(
-                            StoryReward("soft_currency", 1600, "星尘 ×1600"),
-                            StoryReward("hard_currency", 160, "钻石 ×160"),
+                            StoryReward("soft_currency", 1600, "环痕 ×1600"),
+                            StoryReward("hard_currency", 160, "纯环 ×160"),
                         ),
                     ),
                     StoryStageDef(
@@ -1079,7 +1079,7 @@ class StoryService(
                         enemyIds = listOf("rift_elitehusk", "rift_elitehusk", "rift_elitehusk"),
                         recommendedLevel = 20,
                         rewards = listOf(
-                            StoryReward("soft_currency", 1800, "星尘 ×1800"),
+                            StoryReward("soft_currency", 1800, "环痕 ×1800"),
                         ),
                     ),
                     StoryStageDef(
@@ -1113,8 +1113,8 @@ class StoryService(
                             DialogueLine("narrator", "海面忽然隆起。沉岛之潮，正从下方顶上来。"),
                         ),
                         rewards = listOf(
-                            StoryReward("soft_currency", 1600, "星尘 ×1600"),
-                            StoryReward("hard_currency", 160, "钻石 ×160"),
+                            StoryReward("soft_currency", 1600, "环痕 ×1600"),
+                            StoryReward("hard_currency", 160, "纯环 ×160"),
                         ),
                     ),
                     StoryStageDef(
@@ -1125,8 +1125,8 @@ class StoryService(
                         enemyIds = listOf("rift_stormheart", "rift_voidmite", "rift_voidmite"),
                         recommendedLevel = 22,
                         rewards = listOf(
-                            StoryReward("soft_currency", 2000, "星尘 ×2000"),
-                            StoryReward("hard_currency", 200, "钻石 ×200"),
+                            StoryReward("soft_currency", 2000, "环痕 ×2000"),
+                            StoryReward("hard_currency", 200, "纯环 ×200"),
                         ),
                     ),
                     StoryStageDef(
@@ -1141,8 +1141,8 @@ class StoryService(
                             DialogueLine("narrator", "远方，烛龙的眼皮沉了一寸。无昼之夜，近了。"),
                         ),
                         rewards = listOf(
-                            StoryReward("soft_currency", 2400, "星尘 ×2400"),
-                            StoryReward("hard_currency", 240, "钻石 ×240"),
+                            StoryReward("soft_currency", 2400, "环痕 ×2400"),
+                            StoryReward("hard_currency", 240, "纯环 ×240"),
                         ),
                     ),
                 ),
@@ -1168,8 +1168,8 @@ class StoryService(
                             DialogueLine("narrator", "你站在裂口正中。回响烫得像要从胸口跳出来。"),
                         ),
                         rewards = listOf(
-                            StoryReward("soft_currency", 2000, "星尘 ×2000"),
-                            StoryReward("hard_currency", 200, "钻石 ×200"),
+                            StoryReward("soft_currency", 2000, "环痕 ×2000"),
+                            StoryReward("hard_currency", 200, "纯环 ×200"),
                         ),
                     ),
                     StoryStageDef(
@@ -1180,7 +1180,7 @@ class StoryService(
                         enemyIds = listOf("rift_elitehusk", "rift_elitehusk", "rift_elitehusk"),
                         recommendedLevel = 23,
                         rewards = listOf(
-                            StoryReward("soft_currency", 2200, "星尘 ×2200"),
+                            StoryReward("soft_currency", 2200, "环痕 ×2200"),
                         ),
                     ),
                     StoryStageDef(
@@ -1195,8 +1195,8 @@ class StoryService(
                             DialogueLine("char_ur_nuwa", "那就再借一次。用泥，用石，用我。", "angry"),
                         ),
                         rewards = listOf(
-                            StoryReward("soft_currency", 2000, "星尘 ×2000"),
-                            StoryReward("hard_currency", 200, "钻石 ×200"),
+                            StoryReward("soft_currency", 2000, "环痕 ×2000"),
+                            StoryReward("hard_currency", 200, "纯环 ×200"),
                         ),
                     ),
                     StoryStageDef(
@@ -1207,8 +1207,8 @@ class StoryService(
                         enemyIds = listOf("rift_annihilation"),
                         recommendedLevel = 25,
                         rewards = listOf(
-                            StoryReward("soft_currency", 2800, "星尘 ×2800"),
-                            StoryReward("hard_currency", 280, "钻石 ×280"),
+                            StoryReward("soft_currency", 2800, "环痕 ×2800"),
+                            StoryReward("hard_currency", 280, "纯环 ×280"),
                         ),
                     ),
                     StoryStageDef(
@@ -1246,8 +1246,8 @@ class StoryService(
                             DialogueLine("narrator", "夜被撕开一条金线。环的遗址，在更深处亮了。"),
                         ),
                         rewards = listOf(
-                            StoryReward("soft_currency", 3000, "星尘 ×3000"),
-                            StoryReward("hard_currency", 300, "钻石 ×300"),
+                            StoryReward("soft_currency", 3000, "环痕 ×3000"),
+                            StoryReward("hard_currency", 300, "纯环 ×300"),
                         ),
                     ),
                 ),
@@ -1273,8 +1273,8 @@ class StoryService(
                             DialogueLine("narrator", "三界英灵应召而至。你的回响，第一次不再发烫，而是发稳。"),
                         ),
                         rewards = listOf(
-                            StoryReward("soft_currency", 2500, "星尘 ×2500"),
-                            StoryReward("hard_currency", 250, "钻石 ×250"),
+                            StoryReward("soft_currency", 2500, "环痕 ×2500"),
+                            StoryReward("hard_currency", 250, "纯环 ×250"),
                         ),
                     ),
                     StoryStageDef(
@@ -1285,7 +1285,7 @@ class StoryService(
                         enemyIds = listOf("rift_annihilation", "rift_lordshade"),
                         recommendedLevel = 25,
                         rewards = listOf(
-                            StoryReward("soft_currency", 2800, "星尘 ×2800"),
+                            StoryReward("soft_currency", 2800, "环痕 ×2800"),
                         ),
                     ),
                     StoryStageDef(
@@ -1305,8 +1305,8 @@ class StoryService(
                             DialogueLine("narrator", "该你了，织环者。不用台词——动手就行。"),
                         ),
                         rewards = listOf(
-                            StoryReward("soft_currency", 2500, "星尘 ×2500"),
-                            StoryReward("hard_currency", 250, "钻石 ×250"),
+                            StoryReward("soft_currency", 2500, "环痕 ×2500"),
+                            StoryReward("hard_currency", 250, "纯环 ×250"),
                         ),
                     ),
                     StoryStageDef(
@@ -1317,8 +1317,8 @@ class StoryService(
                         enemyIds = listOf("rift_annihilation", "rift_annihilation"),
                         recommendedLevel = 28,
                         rewards = listOf(
-                            StoryReward("soft_currency", 3500, "星尘 ×3500"),
-                            StoryReward("hard_currency", 350, "钻石 ×350"),
+                            StoryReward("soft_currency", 3500, "环痕 ×3500"),
+                            StoryReward("hard_currency", 350, "纯环 ×350"),
                         ),
                     ),
                     StoryStageDef(
@@ -1334,8 +1334,8 @@ class StoryService(
                             DialogueLine("narrator", "【三幕九章 · 第一纪元完】织环者，新的故事等你继续。"),
                         ),
                         rewards = listOf(
-                            StoryReward("soft_currency", 5000, "星尘 ×5000"),
-                            StoryReward("hard_currency", 500, "钻石 ×500"),
+                            StoryReward("soft_currency", 5000, "环痕 ×5000"),
+                            StoryReward("hard_currency", 500, "纯环 ×500"),
                         ),
                     ),
                 ),
@@ -1362,8 +1362,8 @@ class StoryService(
                             DialogueLine("narrator", "你没有回答。风把焦土的气味吹过来，像一声很轻的叹息。"),
                         ),
                         rewards = listOf(
-                            StoryReward("soft_currency", 800, "星尘 ×800"),
-                            StoryReward("hard_currency", 40, "钻石 ×40"),
+                            StoryReward("soft_currency", 800, "环痕 ×800"),
+                            StoryReward("hard_currency", 40, "纯环 ×40"),
                         ),
                     ),
                     StoryStageDef(
@@ -1374,7 +1374,7 @@ class StoryService(
                         enemyIds = listOf("rift_mistling", "rift_shadowwhisper"),
                         recommendedLevel = 12,
                         rewards = listOf(
-                            StoryReward("soft_currency", 1000, "星尘 ×1000"),
+                            StoryReward("soft_currency", 1000, "环痕 ×1000"),
                         ),
                     ),
                 ),
@@ -1400,8 +1400,8 @@ class StoryService(
                             DialogueLine("narrator", "羽尖的温度降了一度。又立刻升了回来。"),
                         ),
                         rewards = listOf(
-                            StoryReward("soft_currency", 800, "星尘 ×800"),
-                            StoryReward("hard_currency", 40, "钻石 ×40"),
+                            StoryReward("soft_currency", 800, "环痕 ×800"),
+                            StoryReward("hard_currency", 40, "纯环 ×40"),
                         ),
                     ),
                     StoryStageDef(
@@ -1412,7 +1412,7 @@ class StoryService(
                         enemyIds = listOf("rift_elitehusk", "rift_shadowwhisper"),
                         recommendedLevel = 14,
                         rewards = listOf(
-                            StoryReward("soft_currency", 1000, "星尘 ×1000"),
+                            StoryReward("soft_currency", 1000, "环痕 ×1000"),
                         ),
                     ),
                 ),
@@ -1438,8 +1438,8 @@ class StoryService(
                             DialogueLine("narrator", "远处铁卫的脚步声停下——似乎也在听。"),
                         ),
                         rewards = listOf(
-                            StoryReward("soft_currency", 800, "星尘 ×800"),
-                            StoryReward("hard_currency", 40, "钻石 ×40"),
+                            StoryReward("soft_currency", 800, "环痕 ×800"),
+                            StoryReward("hard_currency", 40, "纯环 ×40"),
                         ),
                     ),
                     StoryStageDef(
@@ -1450,7 +1450,7 @@ class StoryService(
                         enemyIds = listOf("rift_gearhound", "rift_gearhound"),
                         recommendedLevel = 12,
                         rewards = listOf(
-                            StoryReward("soft_currency", 1000, "星尘 ×1000"),
+                            StoryReward("soft_currency", 1000, "环痕 ×1000"),
                         ),
                     ),
                 ),

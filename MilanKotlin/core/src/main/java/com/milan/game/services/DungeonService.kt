@@ -95,7 +95,7 @@ class DungeonService(
 
     /**
      * 扫荡日常副本（已通关内容一键完成）。
-     * 仅发放星尘/钻石/道具奖励，经验由调用方编排。
+     * 仅发放环痕/纯环/道具奖励，经验由调用方编排。
      */
     override suspend fun sweepDungeon(type: DailyDungeonType, times: Int): DungeonSweepOutcome {
         if (times <= 0) return DungeonSweepOutcome.Rejected

@@ -18,7 +18,7 @@ data class CollectionUiState(
 )
 
 /**
- * 神谱图鉴页 ViewModel（2026-09-09 P1-6 D 批）。
+ * 环痕图鉴页 ViewModel（2026-09-09 P1-6 D 批）。
  *
  * 行为与 VM 化前等价（纯状态搬移，范式对齐 Detail/Progression 页）：
  * - `all` 为内容定义（进程内不变），构造时读一次；

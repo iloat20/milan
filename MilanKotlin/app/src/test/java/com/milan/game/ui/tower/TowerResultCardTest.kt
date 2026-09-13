@@ -49,8 +49,8 @@ class TowerResultCardTest {
             )
         }
         composeRule.onNodeWithText("✦ 攻克！用时 8 回合").assertIsDisplayed()
-        composeRule.onNodeWithText("星尘 +1000").assertIsDisplayed()
-        composeRule.onNodeWithText("◆ 钻石 +10（首次攻克里程碑）").assertIsDisplayed()
+        composeRule.onNodeWithText("环痕 +1000").assertIsDisplayed()
+        composeRule.onNodeWithText("◆ 纯环 +10（首次攻克里程碑）").assertIsDisplayed()
         // M1 回归：recordAdvanced=true 时必须显示纪录推进文案
         composeRule.onNodeWithText("纪录推进至第 10 层").assertIsDisplayed()
     }
@@ -69,7 +69,7 @@ class TowerResultCardTest {
             )
         }
         composeRule.onNodeWithText("纪录推进至第 10 层").assertIsNotDisplayed()
-        composeRule.onNodeWithText("星尘 +0").assertIsDisplayed()
+        composeRule.onNodeWithText("环痕 +0").assertIsDisplayed()
     }
 
     @Test
@@ -85,7 +85,7 @@ class TowerResultCardTest {
             )
         }
         composeRule.onNodeWithText("✖ 止步于此（50 回合）").assertIsDisplayed()
-        composeRule.onNodeWithText("星尘 +0").assertIsNotDisplayed()
+        composeRule.onNodeWithText("环痕 +0").assertIsNotDisplayed()
     }
 
     /**
@@ -114,14 +114,14 @@ class TowerResultCardTest {
                 TowerResultCard(done = done)
             }
         }
-        composeRule.onNodeWithText("星尘 +1000").assertIsDisplayed()
+        composeRule.onNodeWithText("环痕 +1000").assertIsDisplayed()
 
         // 下一次挑战返回平局 → 结算卡进入退出动画，期间 content 仍会重组
         result = TowerOutcome.Draw(turns = 50)
         composeRule.waitForIdle()
 
         // 动画结束后结算卡彻底移除；关键是整个过程未抛 ClassCastException
-        composeRule.onNodeWithText("星尘 +1000").assertIsNotDisplayed()
+        composeRule.onNodeWithText("环痕 +1000").assertIsNotDisplayed()
     }
 
     /** 同上：改写为 SaveFailed 时同样不得崩溃。 */
@@ -136,10 +136,10 @@ class TowerResultCardTest {
                 TowerResultCard(done = done)
             }
         }
-        composeRule.onNodeWithText("星尘 +1000").assertIsDisplayed()
+        composeRule.onNodeWithText("环痕 +1000").assertIsDisplayed()
 
         result = TowerOutcome.SaveFailed
         composeRule.waitForIdle()
-        composeRule.onNodeWithText("星尘 +1000").assertIsNotDisplayed()
+        composeRule.onNodeWithText("环痕 +1000").assertIsNotDisplayed()
     }
 }

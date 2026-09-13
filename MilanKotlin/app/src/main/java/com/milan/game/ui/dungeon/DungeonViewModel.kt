@@ -53,8 +53,8 @@ class DungeonViewModel(
                 is DungeonSweepOutcome.Success -> {
                     _uiState.value = buildState()
                     _toasts.send(
-                        "扫荡成功 ×${out.times} · 星尘 +${out.totalSoft}" +
-                            if (out.totalHard > 0) " · 钻石 +${out.totalHard}" else "",
+                        "扫荡成功 ×${out.times} · 环痕 +${out.totalSoft}" +
+                            if (out.totalHard > 0) " · 纯环 +${out.totalHard}" else "",
                     )
                 }
                 DungeonSweepOutcome.Rejected -> _toasts.send("次数不足或参数无效")

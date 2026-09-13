@@ -78,7 +78,7 @@ class BattlePassViewModel(
         }
     }
 
-    /** 购买豪华版（[PREMIUM_COST_HARD] 钻石）。 */
+    /** 购买豪华版（[PREMIUM_COST_HARD] 纯环）。 */
     fun purchasePremium() {
         if (_busy.value) return
         viewModelScope.launch {
@@ -86,7 +86,7 @@ class BattlePassViewModel(
             try {
                 val msg = when (service.purchaseBattlePass(PREMIUM_COST_HARD)) {
                     WriteOutcome.Success -> "豪华版已激活"
-                    WriteOutcome.Rejected -> "钻石不足或已购买"
+                    WriteOutcome.Rejected -> "纯环不足或已购买"
                     WriteOutcome.SaveFailed -> "保存失败，请重试"
                 }
                 _toasts.send(msg)
@@ -97,7 +97,7 @@ class BattlePassViewModel(
     }
 
     companion object {
-        /** 豪华版纪行售价（钻石）。UI 确认弹窗与购买共用，禁止就地写死。 */
+        /** 豪华版纪行售价（纯环）。UI 确认弹窗与购买共用，禁止就地写死。 */
         const val PREMIUM_COST_HARD = 680
     }
 }

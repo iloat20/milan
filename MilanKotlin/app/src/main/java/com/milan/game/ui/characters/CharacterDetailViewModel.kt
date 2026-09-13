@@ -133,7 +133,7 @@ class CharacterDetailViewModel(
     fun dismantle(equipmentId: String) = launchWrite {
         when (val r = service.dismantleEquipment(equipmentId)) {
             is EquipmentDismantleOutcome.Success ->
-                _toasts.send("分解成功：星尘 +${r.softReward}" + if (r.fragmentReward > 0) " 碎片 +${r.fragmentReward}" else "")
+                _toasts.send("分解成功：环痕 +${r.softReward}" + if (r.fragmentReward > 0) " 残玦 +${r.fragmentReward}" else "")
             EquipmentDismantleOutcome.Rejected -> _toasts.send("无法分解")
         }
     }

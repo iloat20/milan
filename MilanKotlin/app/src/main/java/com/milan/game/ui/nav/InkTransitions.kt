@@ -10,7 +10,7 @@ import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 
 /**
- * 水墨国风页面转场动画常量。
+ * 水墨页面转场动画常量（材质层：墨汁泼入/干涸）。
  * - 子页：右进左出（墨汁泼入/干涸）
  * - Tab：交叉淡入淡出（平等切换）
  * - 返回：左进右出（Predictive Back 兼容）

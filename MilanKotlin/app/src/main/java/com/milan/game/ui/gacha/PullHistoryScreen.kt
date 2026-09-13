@@ -115,7 +115,7 @@ private fun StatCell(label: String, value: String) {
     }
 }
 
-/** 单条记录：稀有度渐变徽章（SSR+ 加同色发光边框）+ 角色名/NEW 徽标 + 右侧碎片与时间。 */
+/** 单条记录：稀有度渐变徽章（SSR+ 加同色发光边框）+ 角色名/NEW 徽标 + 右侧残玦与时间。 */
 @Composable
 private fun HistoryRow(entry: PullLogEntry, timeText: String) {
     val rc = AppTheme.rarityColor(entry.rarity)
@@ -168,7 +168,7 @@ private fun HistoryRow(entry: PullLogEntry, timeText: String) {
         Spacer(Modifier.weight(1f))
         if (entry.fragmentsAwarded > 0) {
             Text(
-                text = "碎片 +${entry.fragmentsAwarded}",
+                text = "残玦 +${entry.fragmentsAwarded}",
                 style = MaterialTheme.typography.labelMedium,
                 color = AppTheme.Frost,
             )

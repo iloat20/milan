@@ -7,7 +7,7 @@ import kotlinx.serialization.Serializable
  *
  * 路由模型与旧状态路由一一对应：
  * - 5 个主 tab 目的地（底部导航，各自渲染 GameNavBar）
- * - 4 个子页目的地（神谱图鉴 → 我的角色 → 角色详情 → 角色养成），压栈覆盖 tab，
+ * - 4 个子页目的地（环痕图鉴 → 我的角色 → 角色详情 → 角色养成），压栈覆盖 tab，
  *   顶栏返回/系统返回逐层退出（Predictive Back 由 Navigation 自动接入）。
  *
  * data class 路由携带参数（characterId），编译期由 Navigation 校验，杜绝字符串路由笔误。

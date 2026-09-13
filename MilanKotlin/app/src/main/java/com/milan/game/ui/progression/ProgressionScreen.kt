@@ -33,7 +33,7 @@ import com.milan.game.ui.theme.ElementTheme
 /**
  * 养成系统全屏页（C# ProgressionActivity 翻译，暗夜神性·诸神黄昏）。
  *
- * 布局：Hero（[SubPageHero]：立绘 + 底部渐隐 + 铭牌 + 返回 / 左右切换）→ 资源条（星尘 + 星魂碎片）
+ * 布局：Hero（[SubPageHero]：立绘 + 底部渐隐 + 铭牌 + 返回 / 左右切换）→ 资源条（环痕 + 残玦）
  * → 五个玻璃面板：等级与经验 / 突破 / 升星 / 属性 / 天赋树
  * （P4-2 已拆分为同包 ProgressionPanels.kt，本文件只留编排）。
  *

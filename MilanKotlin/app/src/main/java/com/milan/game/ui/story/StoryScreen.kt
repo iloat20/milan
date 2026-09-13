@@ -54,6 +54,12 @@ fun StoryScreen(
         PageBackground {
             Column(modifier = Modifier.fillMaxSize()) {
                 AppTopBar(title = "剧情", onBack = onBack)
+                Text(
+                    text = "神話 · 以太 · 铁帷｜裂隙三界的英灵回响",
+                    color = AppTheme.Text3,
+                    style = MaterialTheme.typography.labelSmall,
+                    modifier = Modifier.padding(start = 18.dp, end = 18.dp, bottom = 4.dp),
+                )
 
                 LazyColumn(
                     modifier = Modifier

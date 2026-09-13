@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Milan CI</title>
+  <style>
+    :root {
+      --bg: #0b0e14;
+      --panel: #141a24;
+      --panel2: #1b2330;
+      --ink: #e8e6e1;
+      --muted: #9aa3b2;
+      --gold: #d4b46a;
+      --gold-dim: rgba(212, 180, 106, 0.35);
+      --ok: #5dbe8a;
+      --warn: #e0a45c;
+      --line: rgba(232, 230, 225, 0.08);
+      --radius: 16px;
+      --safe: env(safe-area-inset-top, 0px);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
+    body {
+      font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+      background: radial-gradient(120% 80% at 50% 0%, #1a2230 0%, var(--bg) 55%);
+      color: var(--ink);
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+    .phone {
+      max-width: 420px;
+      min-height: 100%;
+      margin: 0 auto;
+      padding: calc(16px + var(--safe)) 16px 28px;
+    }
+    header {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+    .brand {
+      font-family: "Songti SC", "Noto Serif SC", serif;
+      color: var(--gold);
+      font-size: 28px;
+      letter-spacing: 0.18em;
+      line-height: 1.1;
+    }
+    .sub {
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 4px;
+      letter-spacing: 0.04em;
+    }
+    .badge {
+      font-size: 11px;
+      color: var(--gold);
+      border: 1px solid var(--gold-dim);
+      background: rgba(212, 180, 106, 0.08);
+      border-radius: 999px;
+      padding: 6px 10px;
+      white-space: nowrap;
+    }
+    .hero {
+      background: linear-gradient(160deg, #1d2634, #121820);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 16px;
+      margin-bottom: 14px;
+    }
+    .hero h1 {
+      font-size: 17px;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+    .hero p {
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+    }
+    .chip {
+      font-size: 11px;
+      color: var(--ink);
+      background: var(--panel2);
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 5px 10px;
+    }
+    section { margin-bottom: 14px; }
+    .sec-title {
+      font-size: 12px;
+      color: var(--muted);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      margin: 0 0 8px 4px;
+    }
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .step {
+      display: grid;
+      grid-template-columns: 36px 1fr auto;
+      gap: 12px;
+      align-items: center;
+      padding: 14px 14px;
+      border-bottom: 1px solid var(--line);
+      cursor: pointer;
+      transition: background 0.15s ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .step:last-child { border-bottom: 0; }
+    .step:active { background: var(--panel2); }
+    .step.open { background: var(--panel2); }
+    .num {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--bg);
+      background: var(--gold);
+    }
+    .step.done .num { background: var(--ok); }
+    .step h3 {
+      font-size: 14px;
+      font-weight: 600;
+    }
+    .step .cmd {
+      color: var(--muted);
+      font-size: 11px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      margin-top: 2px;
+      word-break: break-all;
+    }
+    .tag {
+      font-size: 10px;
+      color: var(--ok);
+      border: 1px solid rgba(93, 190, 138, 0.35);
+      border-radius: 999px;
+      padding: 3px 8px;
+    }
+    .tag.warn {
+      color: var(--warn);
+      border-color: rgba(224, 164, 92, 0.4);
+    }
+    .detail {
+      display: none;
+      grid-column: 1 / -1;
+      padding: 0 4px 12px 48px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .step.open .detail { display: block; }
+    .grid2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .stat {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 14px 12px;
+    }
+    .stat .k {
+      color: var(--muted);
+      font-size: 11px;
+      margin-bottom: 6px;
+    }
+    .stat .v {
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+    .stat .v small {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--muted);
+      margin-left: 2px;
+    }
+    .note {
+      background: rgba(212, 180, 106, 0.07);
+      border: 1px solid var(--gold-dim);
+      border-radius: 14px;
+      padding: 12px 14px;
+      color: var(--ink);
+      font-size: 12px;
+    }
+    .note strong { color: var(--gold); }
+    ul {
+      margin: 8px 0 0 18px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+    li { margin-bottom: 4px; }
+    footer {
+      margin-top: 18px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 11px;
+    }
+    code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 11px;
+      color: #c8d0dc;
+      background: rgba(255,255,255,0.04);
+      border-radius: 6px;
+      padding: 1px 5px;
+    }
+  </style>
+</head>
+<body>
+  <div class="phone">
+    <header>
+      <div>
+        <div class="brand">织环</div>
+        <div class="sub">MILAN · MINIMAL CI</div>
+      </div>
+      <div class="badge">main · GitHub Actions</div>
+    </header>
+
+    <div class="hero">
+      <h1>最小流水线</h1>
+      <p>架构门禁 → 单元测试 → Debug APK。范围刻意收窄，不依赖签名密钥与真机。</p>
+      <div class="meta">
+        <span class="chip">ubuntu-latest</span>
+        <span class="chip">JDK 17 Temurin</span>
+        <span class="chip">MilanKotlin/</span>
+        <span class="chip">push / PR / 手动</span>
+      </div>
+    </div>
+
+    <section>
+      <div class="sec-title">Pipeline</div>
+      <div class="card" id="steps">
+        <div class="step done" data-detail="领域纯净 / VM 接线 / UI 无业务单例直连。失败即阻断后续步骤。">
+          <div class="num">1</div>
+          <div>
+            <h3>Architecture gate</h3>
+            <div class="cmd">./gradlew checkArchitecture</div>
+          </div>
+          <span class="tag">门禁</span>
+          <div class="detail"></div>
+        </div>
+        <div class="step done" data-detail="JUnit4 + coroutines-test + Robolectric Compose。失败时上传 HTML/XML 测试报告 artifact。">
+          <div class="num">2</div>
+          <div>
+            <h3>Unit tests</h3>
+            <div class="cmd">./gradlew :app:testDebugUnitTest</div>
+          </div>
+          <span class="tag">445 用例</span>
+          <div class="detail"></div>
+        </div>
+        <div class="step done" data-detail="preBuild 自动挂载 checkNoPackagedBackups，禁止 .bak / 带日期备份进入 source set。">
+          <div class="num">3</div>
+          <div>
+            <h3>Packaging guard</h3>
+            <div class="cmd">checkNoPackagedBackups · preBuild</div>
+          </div>
+          <span class="tag">守卫</span>
+          <div class="detail"></div>
+        </div>
+        <div class="step done" data-detail="产出可安装 Debug APK，成功后上传 artifact（保留 7 天）。不做 release 签名与 R8。">
+          <div class="num">4</div>
+          <div>
+            <h3>Assemble Debug APK</h3>
+            <div class="cmd">./gradlew :app:assembleDebug</div>
+          </div>
+          <span class="tag">产物</span>
+          <div class="detail"></div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <div class="sec-title">本地基线</div>
+      <div class="grid2">
+        <div class="stat">
+          <div class="k">单测</div>
+          <div class="v">445<small>/0</small></div>
+        </div>
+        <div class="stat">
+          <div class="k">Debug APK</div>
+          <div class="v">83<small>MB</small></div>
+        </div>
+        <div class="stat">
+          <div class="k">架构门禁</div>
+          <div class="v" style="color:var(--ok)">通过</div>
+        </div>
+        <div class="stat">
+          <div class="k">触发</div>
+          <div class="v" style="font-size:15px">push·PR</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <div class="sec-title">范围外</div>
+      <div class="note">
+        <strong>不在本流水线</strong>
+        <ul>
+          <li>Release 签名 / R8 / shrinkResources</li>
+          <li>Macrobenchmark、Baseline Profile（需真机）</li>
+          <li>AAB 上架产物与商店投递</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <div class="sec-title">配置</div>
+      <div class="card" style="padding:14px">
+        <p style="font-size:12px;color:var(--muted)">
+          工作流文件：<code>.github/workflows/ci.yml</code><br />
+          并发组会取消同 ref 的旧 run；失败上传 <code>unit-test-reports</code>，成功上传 <code>app-debug</code>。
+        </p>
+      </div>
+    </section>
+
+    <footer>tap a step to expand · Milan upgrade wave</footer>
+  </div>
+  <script>
+    document.getElementById("steps").addEventListener("click", (e) => {
+      const step = e.target.closest(".step");
+      if (!step) return;
+      const detail = step.querySelector(".detail");
+      const open = step.classList.toggle("open");
+      if (open && !detail.textContent) {
+        detail.textContent = step.dataset.detail || "";
+      }
+    });
+  </script>
+</body>
+</html>

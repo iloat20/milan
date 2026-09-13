@@ -9,7 +9,7 @@ data class AchievementDef(
     val desc: String,
     val rewardSoft: Int = 0,
     val rewardTickets: Int = 0,
-    /** 钻石奖励（2026-08 引入：与爬塔里程碑共同构成钻石产出，激活商店钻石兑换闭环）。 */
+    /** 纯环奖励（2026-08 引入：与爬塔里程碑共同构成纯环产出，激活商店纯环兑换闭环）。 */
     val rewardHard: Int = 0,
     /** 成就分类（用于 UI 分组展示）。 */
     val category: AchievementCategory = AchievementCategory.COLLECTION,
@@ -30,7 +30,7 @@ enum class AchievementCategory(val displayName: String) {
  * 奖励全部集中本文件，服务层只做「判定 + 事务发放」，UI 只做展示。
  * 禁止在别处就地写成就阈值/奖励数字。
  *
- * 奖励货币说明：星尘走 softCurrency；战票走通用道具系统（BattleTicketItemId），
+ * 奖励货币说明：环痕走 softCurrency；战票走通用道具系统（BattleTicketItemId），
  * 与爬塔门票共用同一余额——形成「成就 → 战票 → 爬塔」的循环钩子。
  */
 object Achievements {
@@ -188,7 +188,7 @@ object Achievements {
         AchievementDef(
             id = "rich_100k",
             title = "富甲一方",
-            desc = "持有星尘 100000",
+            desc = "持有环痕 100000",
             rewardSoft = 3000,
             rewardHard = EconomyFormulas.achievementRewardHard(1),
             category = AchievementCategory.PROGRESSION,
@@ -197,7 +197,7 @@ object Achievements {
         AchievementDef(
             id = "rich_500k",
             title = "富可敌国",
-            desc = "持有星尘 500000",
+            desc = "持有环痕 500000",
             rewardSoft = 10000,
             rewardHard = EconomyFormulas.achievementRewardHard(3),
             category = AchievementCategory.PROGRESSION,

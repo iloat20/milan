@@ -1,7 +1,5 @@
 package com.milan.game.ui.dungeon
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -12,7 +10,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -23,7 +20,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -32,6 +28,8 @@ import com.milan.game.di.AppGraph
 import com.milan.game.ui.battle.StrategicBattleMode
 import com.milan.game.ui.battle.StrategicBattleScreen
 import com.milan.game.ui.components.PageBackground
+import com.milan.game.ui.components.ringChip
+import com.milan.game.ui.components.ringPanel
 import com.milan.game.ui.feedback.LocalFeedback
 import com.milan.game.ui.nav.AppTopBar
 import com.milan.game.ui.theme.AppTheme
@@ -109,9 +107,7 @@ private fun AbyssPanel(
     Column(
         Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(AppTheme.Roundness.md))
-            .background(AppTheme.Surface.copy(alpha = 0.55f))
-            .border(1.dp, AppTheme.Stroke, RoundedCornerShape(AppTheme.Roundness.md))
+            .ringPanel()
             .padding(14.dp),
     ) {
         Text("当前层 ${abyss.currentFloor} · 最佳 ${abyss.bestFloor}", color = AppTheme.Text1)
@@ -148,9 +144,7 @@ private fun DailyRow(name: String, remaining: Int, max: Int, onSweep: () -> Unit
         Modifier
             .fillMaxWidth()
             .padding(vertical = 6.dp)
-            .clip(RoundedCornerShape(AppTheme.Roundness.md))
-            .background(AppTheme.Surface.copy(alpha = 0.5f))
-            .border(1.dp, AppTheme.Stroke, RoundedCornerShape(AppTheme.Roundness.md))
+            .ringPanel()
             .padding(horizontal = 14.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -169,9 +163,7 @@ private fun ActionChip(label: String, enabled: Boolean = true, onClick: () -> Un
         label,
         color = if (enabled) AppTheme.Gold else AppTheme.Text3,
         modifier = Modifier
-            .clip(RoundedCornerShape(AppTheme.Roundness.xl))
-            .background(AppTheme.Surface)
-            .border(1.dp, AppTheme.Gold.copy(alpha = 0.5f), RoundedCornerShape(AppTheme.Roundness.xl))
+            .ringChip(selected = enabled)
             .clickable(enabled = enabled, onClick = onClick)
             .padding(horizontal = 14.dp, vertical = 8.dp),
     )

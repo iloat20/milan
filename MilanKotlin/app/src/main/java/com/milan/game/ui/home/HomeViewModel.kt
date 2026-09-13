@@ -17,11 +17,11 @@ data class HomeAvatarEntry(
     val source: String,
 )
 
-/** 主页派生态：主视觉角色 + 丹青名录（随快照 revision 重算）。 */
+/** 主页派生态：主视觉角色 + 环痕名录（随快照 revision 重算）。 */
 data class HomeUiState(
     /** 主视觉：已拥有最高稀有度（内容表可解析）优先，否则内容表首位。 */
     val featured: CharacterDataEntry,
-    /** 丹青名录六宫格（PickIds 精选 + 稀有度补足）。 */
+    /** 环痕名录六宫格（PickIds 精选 + 稀有度补足）。 */
     val avatarEntries: List<HomeAvatarEntry>,
 )
 
@@ -72,7 +72,7 @@ class HomeViewModel(
                 baseStats = listOf(10, 10, 100, 10),
             )
 
-        // 丹青名录：精选 id 优先 + 稀有度补足，取 6
+        // 环痕名录：精选 id 优先 + 稀有度补足，取 6
         val all = service.characters
         val byId = all.associateBy { it.characterId }
         val picked = PickIds.mapNotNull { byId[it] }

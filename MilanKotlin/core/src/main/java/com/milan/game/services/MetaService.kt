@@ -140,7 +140,7 @@ class MetaService(private val core: ServiceCore) : MetaApi {
                 kind = DailyOfferKind.FREE_SUPPLY,
                 pack = 0,
                 title = "每日补给",
-                detail = "星尘 ${EconomyFormulas.dailyFreeSupplySoft()} ＋ 战票 ×${EconomyFormulas.dailyTicketGrant()}",
+                detail = "环痕 ${EconomyFormulas.dailyFreeSupplySoft()} ＋ 战票 ×${EconomyFormulas.dailyTicketGrant()}",
                 costSoft = 0,
             ),
             DailyOffer(
@@ -148,7 +148,7 @@ class MetaService(private val core: ServiceCore) : MetaApi {
                 kind = DailyOfferKind.DISCOUNT_PACK,
                 pack = discountPack,
                 title = "折扣碎片包 · ${if (discountPack == 2) "大" else "小"}",
-                detail = "${EconomyFormulas.fragmentPackSize(discountPack)} 片星魂碎片 · 8 折",
+                detail = "${EconomyFormulas.fragmentPackSize(discountPack)} 片残玦 · 8 折",
                 costSoft = EconomyFormulas.dailyDiscountPackCost(discountPack),
             ),
             DailyOffer(
@@ -167,7 +167,7 @@ class MetaService(private val core: ServiceCore) : MetaApi {
         if (saveData.dailyShopDate == core.dayKey()) saveData.dailyShopBought.filterNotNull() else emptyList()
 
     /**
-     * 购买每日特惠槽位 [index]：每槽每日限一次（跨日整体重置）；星尘不足 / 槽位非法 /
+     * 购买每日特惠槽位 [index]：每槽每日限一次（跨日整体重置）；环痕不足 / 槽位非法 /
      * 已购过 → [WriteOutcome.Rejected]。效果与限购记录同一事务，落盘失败整体回滚。
      */
     override suspend fun buyDailyOffer(index: Int): WriteOutcome = core.withWriteLock {
@@ -178,7 +178,7 @@ class MetaService(private val core: ServiceCore) : MetaApi {
         val bought = if (rolledOver) emptyList() else saveData.dailyShopBought.filterNotNull()
         if (index in bought) return@withWriteLock WriteOutcome.Rejected
 
-        // 效果参数（免费补给为正收入；付费档先扣星尘）
+        // 效果参数（免费补给为正收入；付费档先扣环痕）
         var softDelta = -offer.costSoft
         var fragDelta = 0
         var ticketDelta = 0

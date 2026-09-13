@@ -1,6 +1,5 @@
 package com.milan.game.ui.achievement
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -21,7 +20,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -32,6 +30,7 @@ import com.milan.game.ui.components.EntranceItem
 import com.milan.game.ui.components.GlyphBadge
 import com.milan.game.ui.components.GoldButton
 import com.milan.game.ui.components.PageBackground
+import com.milan.game.ui.components.ringPanel
 import com.milan.game.ui.feedback.LocalFeedback
 import com.milan.game.ui.nav.AppTopBar
 import com.milan.game.ui.theme.AppTheme
@@ -99,19 +98,17 @@ private fun AchievementCard(
 ) {
     val def = status.def
     val claimable = status.unlocked && !status.claimed
+    val cardStroke = when {
+        status.claimed -> AppTheme.Gold.copy(alpha = 0.55f)
+        status.unlocked -> AppTheme.Gold.copy(alpha = 0.85f)
+        else -> AppTheme.Gold.copy(alpha = 0.32f)
+    }
     Box(
         Modifier
             .fillMaxWidth()
-            .clip(MaterialTheme.shapes.medium)
-            .background(AppTheme.Surface.copy(alpha = if (status.unlocked) 0.75f else 0.45f))
-            .border(
-                1.dp,
-                when {
-                    status.claimed -> AppTheme.Gold.copy(alpha = 0.55f)
-                    status.unlocked -> AppTheme.Gold.copy(alpha = 0.85f)
-                    else -> AppTheme.Stroke
-                },
-                MaterialTheme.shapes.medium,
+            .ringPanel(
+                stroke = cardStroke,
+                fill = AppTheme.Surface.copy(alpha = if (status.unlocked) 0.75f else 0.45f),
             )
             .padding(14.dp),
     ) {
@@ -160,8 +157,8 @@ private fun AchievementCard(
 /** 奖励文案（数值取自定义，禁止就地写）。 */
 private fun rewardText(def: AchievementDef): String {
     val parts = mutableListOf<String>()
-    if (def.rewardSoft > 0) parts += "星尘 +${def.rewardSoft}"
-    if (def.rewardHard > 0) parts += "钻石 ×${def.rewardHard}"
+    if (def.rewardSoft > 0) parts += "环痕 +${def.rewardSoft}"
+    if (def.rewardHard > 0) parts += "纯环 ×${def.rewardHard}"
     if (def.rewardTickets > 0) parts += "战票 ×${def.rewardTickets}"
     return "奖励：" + parts.joinToString(" ＋ ").ifEmpty { "无" }
 }

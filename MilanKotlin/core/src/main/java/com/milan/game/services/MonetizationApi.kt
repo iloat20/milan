@@ -19,7 +19,7 @@ interface MonetizationApi {
     /** 商业化存档数据（月卡/通行证/累计充值）。 */
     fun getMonetizationData(): MonetizationSaveData
 
-    /** 购买月卡（扣钻石；生效期内续费叠加天数）。 */
+    /** 购买月卡（扣纯环；生效期内续费叠加天数）。 */
     @Deprecated("P2-11: 月卡UI零调用", level = DeprecationLevel.WARNING)
     suspend fun activateMonthlyCard(cost: Int): WriteOutcome
 
@@ -43,7 +43,7 @@ interface MonetizationApi {
     /** 通行证定义奖励列表。 */
     fun getBattlePassRewards(): List<BattlePassReward>
 
-    /** 充值（模拟支付：扣模拟档位 + 加钻石 + 累计充值进度）。 */
+    /** 充值（模拟支付：扣模拟档位 + 加纯环 + 累计充值进度）。 */
     suspend fun charge(tierId: String, hardCurrency: Int, costCents: Int): WriteOutcome
 
     /** 领取累计充值里程碑奖励。 */

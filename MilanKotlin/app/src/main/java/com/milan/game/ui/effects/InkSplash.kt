@@ -23,21 +23,10 @@ import com.milan.game.ui.theme.AppTheme
 import kotlinx.coroutines.launch
 
 /**
- * 水墨墨溅效果 Modifier：观察外部 [interactionSource] 的 Press/Release 事件，
- * 按下时从组件中心扩散金色半透明圆形波纹，释放后淡出。
+ * 织环按压涟漪：按下时从中心扩散金色环痕（描边环，非实心墨点）。
  *
  * **不拦截手势**——所有触摸事件由上游 [androidx.compose.foundation.clickable] 处理，
  * 本 Modifier 仅做 drawBehind 绘制。
- *
- * 用法：
- * ```
- * val interactionSource = remember { MutableInteractionSource() }
- * Box(
- *     modifier = Modifier
- *         .inkSplash(interactionSource)
- *         .clickable(interactionSource = interactionSource, indication = null) { onClick() }
- * )
- * ```
  */
 fun Modifier.inkSplash(interactionSource: MutableInteractionSource): Modifier = composed {
     val density = LocalDensity.current
@@ -71,10 +60,19 @@ fun Modifier.inkSplash(interactionSource: MutableInteractionSource): Modifier = 
 
     this.drawBehind {
         if (alpha > 0f) {
+            // 环痕：描边双环扩散
             drawCircle(
-                color = AppTheme.Gold.copy(alpha = alpha),
+                color = AppTheme.Gold.copy(alpha = alpha * 1.4f),
                 radius = radius,
+                style = androidx.compose.ui.graphics.drawscope.Stroke(width = 1.5.dp.toPx()),
             )
+            if (radius > 8f) {
+                drawCircle(
+                    color = AppTheme.GoldHi.copy(alpha = alpha * 0.7f),
+                    radius = radius * 0.62f,
+                    style = androidx.compose.ui.graphics.drawscope.Stroke(width = 0.8.dp.toPx()),
+                )
+            }
         }
     }
 }

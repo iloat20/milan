@@ -25,7 +25,7 @@ class GachaService(private val core: ServiceCore) : GachaApi {
 
     private val saveData get() = core.saveData
 
-    /** 重复角色按稀有度补偿的星魂碎片数量。公式在 [EconomyFormulas]（纯领域、可单测）。 */
+    /** 重复角色按稀有度补偿的残玦数量。公式在 [EconomyFormulas]（纯领域、可单测）。 */
     override fun fragmentsForRarity(rarity: Int): Int = EconomyFormulas.fragmentsForRarity(rarity)
 
     /** 抽卡历史快照（时间正序，最旧在前；UI 自行倒序展示）。读操作：列表引用替换式更新，无撕裂风险。 */
@@ -75,7 +75,7 @@ class GachaService(private val core: ServiceCore) : GachaApi {
         val results = mutableListOf<PullResult>()
         val pool = core.pools.firstOrNull { it.poolId == poolId } ?: return@withWriteLock PullOutcome.Rejected
 
-        // 空卡池一张牌也抽不出来。必须在扣款【之前】拦截，否则玩家的星尘会被静默吞掉。
+        // 空卡池一张牌也抽不出来。必须在扣款【之前】拦截，否则玩家的环痕会被静默吞掉。
         if (pool.entries.isEmpty()) return@withWriteLock PullOutcome.Rejected
 
         val count = if (tenPull) 10 else 1

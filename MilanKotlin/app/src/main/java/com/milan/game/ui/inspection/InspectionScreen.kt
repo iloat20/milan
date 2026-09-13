@@ -1,7 +1,5 @@
 package com.milan.game.ui.inspection
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -14,7 +12,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -25,7 +22,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
@@ -37,6 +33,8 @@ import com.milan.game.di.AppGraph
 import com.milan.game.ui.components.PageBackground
 import com.milan.game.ui.components.PortraitImage
 import com.milan.game.ui.components.PortraitTarget
+import com.milan.game.ui.components.ringChip
+import com.milan.game.ui.components.ringPanel
 import com.milan.game.ui.feedback.LocalFeedback
 import com.milan.game.ui.nav.AppTopBar
 import com.milan.game.ui.theme.AppTheme
@@ -153,9 +151,7 @@ private fun PhotoModeSection(
     Column(
         Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(AppTheme.Roundness.md))
-            .background(AppTheme.Surface.copy(alpha = 0.5f))
-            .border(1.dp, AppTheme.Stroke, RoundedCornerShape(AppTheme.Roundness.md))
+            .ringPanel()
             .padding(12.dp),
     ) {
         Text("已收藏 $photoCount 张", color = AppTheme.Text3)
@@ -173,9 +169,7 @@ private fun PhotoModeSection(
             "保 存 照 片",
             color = if (owned) AppTheme.Gold else AppTheme.Text3,
             modifier = Modifier
-                .clip(RoundedCornerShape(AppTheme.Roundness.xl))
-                .background(AppTheme.BgMid)
-                .border(1.dp, AppTheme.Gold.copy(alpha = 0.55f), RoundedCornerShape(AppTheme.Roundness.xl))
+                .ringChip(selected = owned)
                 .clickable(enabled = owned, onClick = onSave)
                 .padding(horizontal = 18.dp, vertical = 10.dp),
         )
@@ -198,13 +192,7 @@ private fun ChipRow(
                 label,
                 color = if (selected) AppTheme.Gold else AppTheme.Text2,
                 modifier = Modifier
-                    .clip(RoundedCornerShape(AppTheme.Roundness.xl))
-                    .background(if (selected) AppTheme.BgDeepest else AppTheme.Surface)
-                    .border(
-                        1.dp,
-                        if (selected) AppTheme.Gold else AppTheme.Stroke,
-                        RoundedCornerShape(AppTheme.Roundness.xl),
-                    )
+                    .ringChip(selected = selected)
                     .clickable { onSelect(id) }
                     .padding(horizontal = 10.dp, vertical = 6.dp),
             )
@@ -225,9 +213,7 @@ private fun InspectHero(
         Modifier
             .fillMaxWidth()
             .height(420.dp)
-            .clip(RoundedCornerShape(AppTheme.Roundness.lg))
-            .background(AppTheme.BgMid)
-            .border(1.dp, AppTheme.Gold.copy(alpha = 0.35f), RoundedCornerShape(AppTheme.Roundness.lg))
+            .ringPanel(fill = AppTheme.BgMid)
             .pointerInput(characterId) {
                 detectDragGestures { change, drag ->
                     change.consume()
@@ -255,9 +241,7 @@ private fun InspectHero(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .padding(bottom = 16.dp)
-                    .clip(RoundedCornerShape(AppTheme.Roundness.xl))
-                    .background(AppTheme.Surface)
-                    .border(1.dp, AppTheme.Gold.copy(alpha = 0.6f), RoundedCornerShape(AppTheme.Roundness.xl))
+                    .ringChip(selected = true)
                     .padding(horizontal = 20.dp, vertical = 10.dp)
                     .clickable(onClick = onInspect),
             )
@@ -281,9 +265,7 @@ private fun ActionRow(name: String, desc: String, voice: String?) {
         Modifier
             .fillMaxWidth()
             .padding(vertical = 6.dp)
-            .clip(RoundedCornerShape(AppTheme.Roundness.md))
-            .background(AppTheme.Surface.copy(alpha = 0.55f))
-            .border(1.dp, AppTheme.Stroke, RoundedCornerShape(AppTheme.Roundness.md))
+            .ringPanel()
             .padding(horizontal = 14.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,

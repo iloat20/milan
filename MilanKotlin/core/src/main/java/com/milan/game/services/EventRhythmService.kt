@@ -305,7 +305,7 @@ class EventRhythmService(
             )
     }
 
-    /** 统一货币余额查询：星尘 / 星玉 / 活动代币走同一口径。 */
+    /** 统一货币余额查询：环痕 / 星玉 / 活动代币走同一口径。 */
     private fun balanceOf(currencyType: String): Int = when (currencyType) {
         "SOFT_CURRENCY" -> core.saveData.softCurrency
         "HARD_CURRENCY" -> core.saveData.hardCurrency

@@ -55,7 +55,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 
 /**
- * 丹青典藏抽卡演出（2026-09 从赛博霓虹全面迁入典藏仪式语言）。
+ * 织环台抽卡演出（v3.1：仪式瞬间保留墨/印语言，品牌隐喻为织环）。
  *
  * 设计：
  * - 纯 Compose / Canvas，零新依赖
@@ -66,7 +66,7 @@ import kotlinx.coroutines.isActive
  */
 enum class RevealStage { Charge, Beam, Single, Ten, Done }
 
-/** 演出色板（命名 Cyan/Magenta/VioletGlow 为历史遗留，值已是水墨国风）。 */
+/** 演出色板（命名 Cyan/Magenta/VioletGlow 为历史遗留，值已是织环台墨色/金箔材质）。 */
 internal object CyberPalette {
     val Cyan = AppTheme.SealRed
     val Magenta = AppTheme.Gold
@@ -105,7 +105,7 @@ internal fun rarityLabel(r: Int): String = when (r) {
 
 /**
  * 仪式楷书标题：金/稀有度色主字 + 极淡外描边晕。
- * 替代旧 GlitchText 故障残影——典藏时刻不该「闪屏坏字」。
+ * 替代旧 GlitchText 故障残影——归位仪式不该「闪屏坏字」。
  */
 @Composable
 internal fun RitualTitle(
@@ -428,10 +428,10 @@ fun CyberRevealLayer(
                     ChargeCore(rarity = singleRarity, Modifier.fillMaxSize())
                     RitualTitle(
                         text = when {
-                            singleRarity >= 4 -> "古卷展开 · 浓墨蓄力"
-                            singleRarity == 3 -> "金箔凝聚 · 丹青觉醒"
-                            singleRarity == 2 -> "墨迹汇聚 · 灵犀涌动"
-                            else -> "敕令開陣 · 充能中"
+                            singleRarity >= 4 -> "环痕归位 · 纬光蓄力"
+                            singleRarity == 3 -> "金箔凝聚 · 织环觉醒"
+                            singleRarity == 2 -> "丝缕汇聚 · 灵犀涌动"
+                            else -> "引纬開陣 · 充能中"
                         },
                         color = CyberPalette.Cyan,
                         fontSize = 15.sp,
@@ -444,9 +444,9 @@ fun CyberRevealLayer(
                     RiftBeam(rarity = singleRarity, Modifier.fillMaxSize())
                     RitualTitle(
                         text = when {
-                            singleRarity >= 4 -> "敕令开卷 · 万古回响"
-                            singleRarity == 3 -> "敕令开卷 · 金光乍现"
-                            else -> "敕令开卷"
+                            singleRarity >= 4 -> "织环归位 · 万古回响"
+                            singleRarity == 3 -> "织环归位 · 金光乍现"
+                            else -> "织环归位"
                         },
                         color = when {
                             singleRarity >= 4 -> CyberPalette.Magenta

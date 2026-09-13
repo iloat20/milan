@@ -39,7 +39,7 @@ data class TowerUiState(
     val formationEmpty: Boolean,
     /** 战报单位名解析表（内容表静态映射，进程内不变；战报流水 unitLabel 用）。 */
     val characterNames: Map<String, String> = emptyMap(),
-    /** 下一层通关预计星尘（EconomyFormulas 预计算，Screen 禁止就地写数字）。 */
+    /** 下一层通关预计环痕（EconomyFormulas 预计算，Screen 禁止就地写数字）。 */
     val nextFloorRewardSoft: Int = 0,
     /** 编队总战力（纯展示推导）。 */
     val teamPower: Int = 0,
@@ -148,7 +148,7 @@ class TowerViewModel(
     /** 挑战「最高层 +1」。 */
     fun challengeNext() = challengeFloor(_uiState.value.nextFloor)
 
-    /** 复刷已通最高层（低层速刷拿保底星尘）。 */
+    /** 复刷已通最高层（低层速刷拿保底环痕）。 */
     fun retryBest() = challengeFloor(_uiState.value.best)
 
     /** 结算覆盖层关闭（F2：清空 result，避免退出动画期间状态残留）。 */

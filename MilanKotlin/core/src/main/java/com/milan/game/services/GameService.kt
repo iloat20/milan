@@ -17,8 +17,8 @@ import kotlinx.coroutines.withContext
  */
 sealed interface TowerOutcome {
     /**
-     * 战斗已完成。[victory] 时 [rewardSoft] 为本次发放的星尘奖励（仅刷新纪录时为正）；
-     * [rewardHard] 仅在首次攻克 5 的倍数层时>0（里程碑钻石）；
+     * 战斗已完成。[victory] 时 [rewardSoft] 为本次发放的环痕奖励（仅刷新纪录时为正）；
+     * [rewardHard] 仅在首次攻克 5 的倍数层时>0（里程碑纯环）；
      * [bestFloorAfter] 为结算后的历史最高层；[log] 为逐回合攻击事件流（不落盘）。
      */
     data class Completed(
@@ -67,7 +67,7 @@ data class DailyOffer(
     val pack: Int,
     val title: String,
     val detail: String,
-    /** 星尘售价（免费补给为 0）。 */
+    /** 环痕售价（免费补给为 0）。 */
     val costSoft: Int,
 )
 
@@ -289,19 +289,19 @@ class GameService constructor(
     /** 等级上限随突破阶段提高：Stage×20（Stage1→20 级，Stage4→80 级）。 */
     fun maxLevelForStage(stage: Int): Int = core.maxLevelForStage(stage)
 
-    /** 从 level 升到 level+1 的星尘消耗（随等级线性上升）。 */
+    /** 从 level 升到 level+1 的环痕消耗（随等级线性上升）。 */
     fun levelCost(level: Int): Int = core.levelCost(level)
 
-    /** stage→stage+1 突破所需星魂碎片。 */
+    /** stage→stage+1 突破所需残玦。 */
     fun ascendFragments(stage: Int): Int = core.ascendFragments(stage)
 
-    /** stage→stage+1 突破所需星尘。 */
+    /** stage→stage+1 突破所需环痕。 */
     fun ascendSoft(stage: Int): Int = core.ascendSoft(stage)
 
-    /** 升星（Stars+1）所需星魂碎片。 */
+    /** 升星（Stars+1）所需残玦。 */
     fun starUpFragments(stars: Int): Int = core.starUpFragments(stars)
 
-    /** 当前持有的星魂碎片。 */
+    /** 当前持有的残玦。 */
     fun getStarFragments(): Int = core.getStarFragments()
 
     /** 取角色存档；未拥有返回 null。 */

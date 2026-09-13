@@ -86,7 +86,7 @@ data class PullResult(
     val characterName: String = "",
     val rarity: Int = 0,
     val isNew: Boolean = false,
-    /** 重复角色时补偿的星魂碎片数量（新角色为 0）。 */
+    /** 重复角色时补偿的残玦数量（新角色为 0）。 */
     val fragmentsAwarded: Int = 0,
 )
 

@@ -6,7 +6,7 @@ import kotlinx.coroutines.sync.withLock
 /**
  * 经济聚合服务（2026-08-28 P1 重构：自 [GameService] 拆出）。
  *
- * 负责：星尘/钻石增减、商店购买（碎片包、钻石兑换、碎片回收）、战票查询。
+ * 负责：环痕/纯环增减、商店购买（碎片包、纯环兑换、碎片回收）、战票查询。
  * 边界：**不碰**抽卡/养成/爬塔/成就——那些分别属于其他四个聚合服务。
  *
  * 全部遵循事务范式：先校验可负担 → 改内存 → 落盘 → 失败回滚 → 仅成功才广播。
@@ -21,21 +21,21 @@ class EconomyService(private val core: ServiceCore) : EconomyApi {
     override fun battleTickets(): Int = core.itemCount(ServiceCore.BattleTicketItemId)
 
     /**
-     * 扣除星尘。amount<=0（含误传负数）或余额不足或落盘失败时不做任何变更并返回非 Success。
+     * 扣除环痕。amount<=0（含误传负数）或余额不足或落盘失败时不做任何变更并返回非 Success。
      * 负数金额防御（P2-6）：`spendSoft(-50)` 若直传会变相加钱，一律拒绝。
      */
     override suspend fun spendSoft(amount: Int): WriteOutcome =
         if (amount <= 0) WriteOutcome.Rejected else applyCurrencyDelta(-amount, 0)
 
-    /** 增加星尘。amount<=0 或落盘失败时不做任何变更并返回非 Success。 */
+    /** 增加环痕。amount<=0 或落盘失败时不做任何变更并返回非 Success。 */
     override suspend fun grantSoft(amount: Int): WriteOutcome =
         if (amount <= 0) WriteOutcome.Rejected else applyCurrencyDelta(amount, 0)
 
-    /** 扣除钻石。amount<=0 或余额不足或落盘失败时不做任何变更并返回非 Success。 */
+    /** 扣除纯环。amount<=0 或余额不足或落盘失败时不做任何变更并返回非 Success。 */
     override suspend fun spendHard(amount: Int): WriteOutcome =
         if (amount <= 0) WriteOutcome.Rejected else applyCurrencyDelta(0, -amount)
 
-    /** 增加钻石。amount<=0 或落盘失败时不做任何变更并返回非 Success。 */
+    /** 增加纯环。amount<=0 或落盘失败时不做任何变更并返回非 Success。 */
     override suspend fun grantHard(amount: Int): WriteOutcome =
         if (amount <= 0) WriteOutcome.Rejected else applyCurrencyDelta(0, amount)
 
@@ -72,7 +72,7 @@ class EconomyService(private val core: ServiceCore) : EconomyApi {
     // ─────────────────────────── 商店 ───────────────────────────
 
     /**
-     * 购买星魂碎片包（pack=1 小包 / 2 大包）。非法档位、星尘不足 → Rejected；落盘失败 → SaveFailed。
+     * 购买残玦包（pack=1 小包 / 2 大包）。非法档位、环痕不足 → Rejected；落盘失败 → SaveFailed。
      * 并发契约（2026-08 审查修复）：预算校验必须在 writeMutex 临界区内完成——
      * 校验在锁外、扣减在锁内的写法存在竞态窗口（落盘挂起点让出线程期间，
      * 另一入口可插入并通过过期校验 → 负余额）。
@@ -102,8 +102,8 @@ class EconomyService(private val core: ServiceCore) : EconomyApi {
     }
 
     /**
-     * 钻石兑换星尘。钻石不足 → Rejected；落盘失败 → SaveFailed。
-     * 整体持锁（同 buyFragmentPack 的并发契约）；星尘收入带 Int 溢出拦截
+     * 纯环兑换环痕。纯环不足 → Rejected；落盘失败 → SaveFailed。
+     * 整体持锁（同 buyFragmentPack 的并发契约）；环痕收入带 Int 溢出拦截
      * （对齐 applyCurrencyDelta 的 P2-5：接近上限时兑换会翻负，拒绝优于破坏性改写）。
      */
     override suspend fun buyDiamondExchange(): WriteOutcome = core.withWriteLock {
@@ -130,7 +130,7 @@ class EconomyService(private val core: ServiceCore) : EconomyApi {
     }
 
     /**
-     * 星魂碎片兑换星尘（2026-08 三期）：碎片过剩玩家的回收阀门。
+     * 残玦兑换环痕（2026-08 三期）：碎片过剩玩家的回收阀门。
      * 汇率单一事实来源在 [EconomyFormulas.fragmentExchangeBatch]/[fragmentExchangeYield]
      * （回收单价 80 ✦/片 < 商店购入价 100 ✦/片，双向流通必有损耗防套利）。
      */

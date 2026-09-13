@@ -24,7 +24,7 @@ data class AffinityRow(
     val claimedLevels: Set<Int> = emptySet(),
 )
 
-/** 好感度页 UI 状态（派生自角色定义 + owned + 好感数据 + 星尘，随快照 revision 重算）。 */
+/** 好感度页 UI 状态（派生自角色定义 + owned + 好感数据 + 环痕，随快照 revision 重算）。 */
 data class AffinityUiState(
     val rows: List<AffinityRow>,
     val softCurrency: Int,
@@ -81,20 +81,20 @@ class AffinityViewModel(
     /** 写操作防连点（R6-P1：与 Deck/Event 同范式）。 */
     private val busy = MutableStateFlow(false)
 
-    /** 赠送礼物（100 星尘 → +200 好感，数值见 [AffinityFormulas]）。拒绝时给针对性原因。 */
+    /** 赠送礼物（100 环痕 → +200 好感，数值见 [AffinityFormulas]）。拒绝时给针对性原因。 */
     fun gift(characterId: String) {
         if (busy.value) return
         viewModelScope.launch {
             busy.value = true
             try {
                 val msg = when (service.giftAffinity(characterId)) {
-                    WriteOutcome.Success -> "好感 +${AffinityFormulas.GIFT_AFFINITY_AMOUNT}（扣除 ${AffinityFormulas.GIFT_COST_SOFT} 星尘）"
+                    WriteOutcome.Success -> "好感 +${AffinityFormulas.GIFT_AFFINITY_AMOUNT}（扣除 ${AffinityFormulas.GIFT_COST_SOFT} 环痕）"
                     WriteOutcome.Rejected -> {
                         val current = service.getCharacterAffinityData()[characterId] ?: 0
                         if (current >= AffinityFormulas.MAX_AFFINITY) {
                             "该角色好感已满级"
                         } else {
-                            "星尘不足（赠送需 ${AffinityFormulas.GIFT_COST_SOFT}）"
+                            "环痕不足（赠送需 ${AffinityFormulas.GIFT_COST_SOFT}）"
                         }
                     }
                     WriteOutcome.SaveFailed -> "保存失败，请重试"

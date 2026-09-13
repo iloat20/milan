@@ -32,7 +32,7 @@ interface EquipmentApi {
     /** 卸下指定槽位装备。 */
     suspend fun unequipItem(characterId: String, slot: String): WriteOutcome
 
-    /** 分解装备（回收素材/星尘）。 */
+    /** 分解装备（回收素材/环痕）。 */
     suspend fun dismantleEquipment(equipmentId: String): EquipmentDismantleOutcome
 
     /** 指定角色激活的套装效果列表。 */

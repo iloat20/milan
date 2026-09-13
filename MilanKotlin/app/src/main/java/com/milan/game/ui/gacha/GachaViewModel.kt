@@ -105,7 +105,7 @@ class GachaViewModel(
         if (_busy.value) return
         val cost = if (tenPull) tenCost else singleCost
         if (softCurrency < cost) {
-            onError("星尘不足")
+            onError("环痕不足")
             return
         }
         _busy.value = true
@@ -204,7 +204,7 @@ class GachaViewModel(
         val ssr = list.count { it.rarity >= 3 }
         val frags = list.sumOf { it.fragmentsAwarded }
         val latest = list.maxByOrNull { it.rarity }?.characterName ?: ""
-        val fragPart = if (frags > 0) " · 星魂碎片 +$frags" else ""
+        val fragPart = if (frags > 0) " · 残玦 +$frags" else ""
         return "共 ${list.size} 抽 · SSR+ $ssr$fragPart ✦ 最新: $latest"
     }
 }

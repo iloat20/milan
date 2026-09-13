@@ -188,9 +188,9 @@ object AIRecommendationEngine {
         val pullCost = 300 // 单抽消耗
         val pullsAvailable = softCurrency / pullCost
         if (pullsAvailable >= 10) {
-            recommendations.add("星尘充足(${pullsAvailable}抽)，可考虑十连")
+            recommendations.add("环痕充足(${pullsAvailable}抽)，可考虑十连")
         } else if (pullsAvailable < 5) {
-            recommendations.add("星尘较少(${pullsAvailable}抽)，建议积攒后再抽")
+            recommendations.add("环痕较少(${pullsAvailable}抽)，建议积攒后再抽")
         }
 
         return GachaRecommendation(

@@ -71,8 +71,8 @@ import kotlinx.coroutines.delay
  *
  * @param victory 是否胜利
  * @param turns 回合数
- * @param rewardSoft 星尘奖励（0=无奖励）
- * @param rewardHard 钻石奖励（0=无奖励）
+ * @param rewardSoft 环痕奖励（0=无奖励）
+ * @param rewardHard 纯环奖励（0=无奖励）
  * @param recordAdvanced 是否推进了纪录
  * @param bestFloorAfter 结算后最高层
  * @param onDismiss 关闭回调
@@ -222,8 +222,8 @@ fun BattleResultOverlay(
 
                     if (rewardSoft > 0) {
                         RewardRow(
-                            icon = "✦",
-                            label = "星尘",
+                            icon = com.milan.game.ui.theme.CurrencyNames.SOFT_GLYPH,
+                            label = "环痕",
                             amount = rewardSoft,
                             color = AppTheme.Gold,
                         )
@@ -231,8 +231,8 @@ fun BattleResultOverlay(
                     if (rewardHard > 0) {
                         Spacer(Modifier.height(6.dp))
                         RewardRow(
-                            icon = "◆",
-                            label = "钻石",
+                            icon = com.milan.game.ui.theme.CurrencyNames.HARD_GLYPH,
+                            label = "纯环",
                             amount = rewardHard,
                             color = AppTheme.Frost,
                         )

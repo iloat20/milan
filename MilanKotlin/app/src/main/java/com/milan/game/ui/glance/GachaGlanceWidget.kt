@@ -32,7 +32,7 @@ import java.util.Calendar
 /**
  * Glance 桌面小组件（试验田·微创新）：展示「今日运势 / 前往召唤」入口。
  * I9 修复：不再静态占位——[provideGlance] 直接读 App 真实存档（SaveManager 载入永不抛异常），
- * 展示实际星尘/钻石/已拥有角色/主池保底进度，并按日给出确定性签文；
+ * 展示实际环痕/纯环/已拥有角色/主池保底进度，并按日给出确定性签文；
  * 点按经 actionStartActivity 打开 App，MainActivity 按 EXTRA_NAVIGATE 直达抽卡页。
  * provideGlance 运行在 Glance worker 后台线程，文件 IO 不阻塞主线程。
  */
@@ -68,7 +68,7 @@ class GachaGlanceWidget : GlanceAppWidget() {
                 )
                 Spacer(GlanceModifier.height(4.dp))
                 Text(
-                    text = "✦ 星尘 ${formatCount(save.softCurrency)} · ◆ 钻石 ${formatCount(save.hardCurrency)}",
+                    text = "◎ 环痕 ${formatCount(save.softCurrency)} · ◉ 纯环 ${formatCount(save.hardCurrency)}",
                     style = TextStyle(color = ColorProvider(TEXT_SUB)),
                 )
                 Text(

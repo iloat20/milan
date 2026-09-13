@@ -10,7 +10,7 @@ package com.milan.game.services
  * 不在 :shared 领域层——故常量定义在 app 服务层而非 EconomyFormulas（后者只管 shared 领域数值）。
  *
  * 数值口径（2026-09-02 产品拍板）：
- * - 赠送礼物：消耗 100 星尘 → +200 好感（满级 10000 = 50 次 = 5000 星尘/角色）
+ * - 赠送礼物：消耗 100 环痕 → +200 好感（满级 10000 = 50 次 = 5000 环痕/角色）
  * - 战斗胜利：出战编队全员 +20/场
  * - 剧情选择：由内容数据 StoryChoice.affinityBonus 决定（逐条配置）
  */
@@ -24,7 +24,7 @@ object AffinityFormulas {
     /** 好感经验上限（MAX_LEVEL × EXP_PER_LEVEL）。 */
     const val MAX_AFFINITY = MAX_LEVEL * EXP_PER_LEVEL
 
-    /** 赠送一次礼物的星尘消耗。 */
+    /** 赠送一次礼物的环痕消耗。 */
     const val GIFT_COST_SOFT = 100
 
     /** 赠送一次礼物的好感收益。 */
@@ -55,13 +55,13 @@ object AffinityFormulas {
     /**
      * 好感等级奖励档位（产品拍板 1/3/5/8/10）。
      *
-     * 数值口径与 EconomyFormulas 同尺度：满级累计约 1.2 万星尘 + 350 星玉 + 10 碎片，
+     * 数值口径与 EconomyFormulas 同尺度：满级累计约 1.2 万环痕 + 350 星玉 + 10 碎片，
      * 约等于 2 次十连的星玉回报，作为长期培养的保底收益，不与抽卡经济抢主轴。
      */
     val LEVEL_REWARDS: List<LevelReward> = listOf(
-        LevelReward(1, RewardKind.SOFT, 2_000, "星尘 ×2000"),
+        LevelReward(1, RewardKind.SOFT, 2_000, "环痕 ×2000"),
         LevelReward(3, RewardKind.HARD, 50, "星玉 ×50"),
-        LevelReward(5, RewardKind.FRAGMENT, 10, "星魂碎片 ×10"),
+        LevelReward(5, RewardKind.FRAGMENT, 10, "残玦 ×10"),
         LevelReward(8, RewardKind.HARD, 100, "星玉 ×100"),
         LevelReward(10, RewardKind.HARD, 200, "星玉 ×200"),
     )

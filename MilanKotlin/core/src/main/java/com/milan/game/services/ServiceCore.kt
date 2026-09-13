@@ -354,7 +354,7 @@ class ServiceCore(
 
     // ─────────────────────────── 共享原子辅助 ───────────────────────────
 
-    /** 当前持有的星魂碎片。 */
+    /** 当前持有的残玦。 */
     fun getStarFragments(): Int =
         saveData.items.firstOrNull { it?.itemId == StarFragmentItemId }?.count ?: 0
 

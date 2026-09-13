@@ -74,7 +74,7 @@ object PullShareCard {
         val bmp = Bitmap.createBitmap(WIDTH, height, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bmp)
 
-        // 背景：浓墨底色 + 顶部金箔饰线（水墨国风调性）
+        // 背景：浓墨底色 + 顶部金箔饰线（织环仪式调性）
         // U-04：全部改走 AppTheme 水墨 token（Canvas 侧取 toArgb）。
         // 原 0xFFF2F2F2 / 0xFF9AA3B5 是冷白冷灰，与宣纸暖调不符，已改为 Text1(宣纸白) / Text2。
         canvas.drawColor(AppTheme.BgDeepest.toArgb())
@@ -84,7 +84,7 @@ object PullShareCard {
         val titlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = AppTheme.Gold.toArgb(); textSize = 52f; isFakeBoldText = true
         }
-        canvas.drawText("丹青寻访 · 抽卡结果", PAD.toFloat(), (PAD + 44).toFloat(), titlePaint)
+        canvas.drawText("织环寻访 · 召灵结果", PAD.toFloat(), (PAD + 44).toFloat(), titlePaint)
 
         val cellFill = Paint().apply { color = AppTheme.BgMid.toArgb() }
         val namePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {

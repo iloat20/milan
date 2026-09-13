@@ -32,7 +32,7 @@ class DailySupplyWorker(
             val notification = NotificationCompat.Builder(context, DailySupplyNotifier.CHANNEL_ID)
                 .setSmallIcon(android.R.drawable.ic_dialog_info)
                 .setContentTitle("每日补给待领取")
-                .setContentText("今日的免费星尘与战票已经刷新，回城领取 ✦")
+                .setContentText("今日的免费环痕与战票已经刷新，回城领取 ✦")
                 .setAutoCancel(true)
                 .build()
             // canNotify 已校验权限；SecurityException 兜底静默（权限可能在检查后被撤销）

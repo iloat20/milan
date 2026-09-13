@@ -169,7 +169,7 @@ internal fun MilanNavHost(openGachaOnStart: Boolean = false) {
                 navController = navController,
                 startDestination = HomeRoute,
                 modifier = Modifier.fillMaxSize(),
-                // 水墨国风转场：墨汁泼入/干涸（InkTransitions）
+                // 水墨转场：墨汁泼入/干涸（InkTransitions，材质层）
                 enterTransition = { InkTransitions.slideInFromRight },
                 exitTransition = { InkTransitions.slideOutToLeft },
                 popEnterTransition = { InkTransitions.slideInFromLeft },

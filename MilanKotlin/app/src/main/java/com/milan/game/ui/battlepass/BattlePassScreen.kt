@@ -29,6 +29,7 @@ import com.milan.game.ui.components.InkButton
 import com.milan.game.ui.components.PageBackground
 import com.milan.game.ui.nav.AppTopBar
 import com.milan.game.ui.theme.AppTheme
+import com.milan.game.ui.theme.CurrencyNames
 
 /**
  * Battle Pass 界面。
@@ -96,7 +97,7 @@ fun BattlePassScreen(
             show = showPremiumConfirm,
             onDismiss = { showPremiumConfirm = false },
             title = "购买豪华版纪行",
-            body = "将消耗 ${BattlePassViewModel.PREMIUM_COST_HARD} 钻石解锁豪华奖励轨。是否继续？",
+            body = "将消耗 ${BattlePassViewModel.PREMIUM_COST_HARD} 纯环解锁豪华奖励轨。是否继续？",
             buttons = {
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     InkButton(
@@ -162,7 +163,7 @@ private fun BattlePassHeader(
                             .padding(horizontal = 16.dp, vertical = 8.dp),
                     ) {
                         Text(
-                            text = "购买豪华版 680💎",
+                            text = "购买豪华版 680${CurrencyNames.HARD_GLYPH}",
                             color = Color.White,
                             style = MaterialTheme.typography.labelLarge,
                             fontWeight = FontWeight.Bold,

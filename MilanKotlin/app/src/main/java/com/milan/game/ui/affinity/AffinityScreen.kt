@@ -25,9 +25,11 @@ import com.milan.game.services.AffinityFormulas
 import com.milan.game.ui.components.ArtifactPanel
 import com.milan.game.ui.components.PageBackground
 import com.milan.game.ui.components.PortraitImage
+import com.milan.game.ui.components.ringChip
 import com.milan.game.ui.feedback.LocalFeedback
 import com.milan.game.ui.nav.AppTopBar
 import com.milan.game.ui.theme.AppTheme
+import com.milan.game.ui.theme.CurrencyNames
 
 /**
  * 角色好感度界面。
@@ -264,10 +266,7 @@ private fun AffinityCard(
                 ) {
                     Box(
                         modifier = Modifier
-                            .clip(RoundedCornerShape(AppTheme.Roundness.md))
-                            .background(
-                                if (giftEnabled) AppTheme.Gold.copy(alpha = 0.18f) else AppTheme.Surface
-                            )
+                            .ringChip(selected = giftEnabled)
                             .clickable(
                                 enabled = true, // 禁用态仍可点，走 Rejected 提示（余额/满级原因）
                                 onClick = onGift,
@@ -282,7 +281,7 @@ private fun AffinityCard(
                         )
                     }
                     Text(
-                        text = "${AffinityFormulas.GIFT_COST_SOFT} 星尘",
+                        text = "${AffinityFormulas.GIFT_COST_SOFT} ${CurrencyNames.SOFT}",
                         color = AppTheme.Text3,
                     )
                 }
@@ -300,8 +299,7 @@ private fun AffinityCard(
                 claimable.forEach { reward ->
                     Box(
                         modifier = Modifier
-                            .clip(RoundedCornerShape(AppTheme.Roundness.sm))
-                            .background(AppTheme.Gold.copy(alpha = 0.22f))
+                            .ringChip(selected = true)
                             .clickable { onClaimReward(reward.level) }
                             .padding(horizontal = 10.dp, vertical = 4.dp),
                     ) {

@@ -42,7 +42,9 @@ import com.milan.game.ui.components.ArtifactPanel
 import com.milan.game.ui.components.GoldButton
 import com.milan.game.ui.components.InkButton
 import com.milan.game.ui.components.WoWDivider
+import com.milan.game.ui.components.ringPanel
 import com.milan.game.ui.theme.AppTheme
+import com.milan.game.ui.theme.CurrencyNames
 import java.util.Locale
 
 // ── 养成页五个玻璃面板 + 资源条 ──
@@ -69,14 +71,12 @@ internal fun ResourceBar(
         modifier = Modifier
             .fillMaxWidth()
             .padding(start = 16.dp, end = 16.dp, top = 10.dp, bottom = 10.dp)
-            .clip(RoundedCornerShape(AppTheme.Roundness.lg))
-            .background(AppTheme.Surface)
-            .border(1.dp, AppTheme.Stroke, RoundedCornerShape(AppTheme.Roundness.lg))
+            .ringPanel()
             .padding(start = 16.dp, end = 16.dp),
     ) {
-        Chip("✦", AppTheme.Gold, "星尘 ${n0(soft)}")
+        Chip(CurrencyNames.SOFT_GLYPH, AppTheme.Gold, "环痕 ${n0(soft)}")
         Spacer(Modifier.weight(1f))
-        Chip("❖", AppTheme.Frost, "星魂碎片 ${n0(frags)}")
+        Chip(CurrencyNames.FRAG_GLYPH, AppTheme.Frost, "残玦 ${n0(frags)}")
     }
 }
 
@@ -256,7 +256,11 @@ internal fun AscendPanel(
                 )
                 Spacer(Modifier.weight(1f))
                 Text(
-                    if (atMax) "—" else "❖ ${n0(aFrag)}  +  ✦ ${n0(aSoft)}",
+                    if (atMax) {
+                        "—"
+                    } else {
+                        "${CurrencyNames.FRAG_GLYPH} ${n0(aFrag)}  +  ${CurrencyNames.SOFT_GLYPH} ${n0(aSoft)}"
+                    },
                     color = AppTheme.Text2,
                     style = Tabular,
                 )
@@ -310,7 +314,7 @@ internal fun StarPanel(
                 )
                 Spacer(Modifier.weight(1f))
                 Text(
-                    if (starMax) "—" else "❖ ${n0(sFrag)}",
+                    if (starMax) "—" else "${CurrencyNames.FRAG_GLYPH} ${n0(sFrag)}",
                     color = AppTheme.Text2,
                     style = Tabular,
                 )

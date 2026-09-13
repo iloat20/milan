@@ -32,8 +32,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -50,14 +55,16 @@ import com.milan.game.ui.components.GlyphBadge
 import com.milan.game.ui.components.GoldButton
 import com.milan.game.ui.components.InkButton
 import com.milan.game.ui.components.PageBackground
+import com.milan.game.ui.components.ringPanel
 import com.milan.game.ui.battle.StrategicBattleScreen
 import com.milan.game.ui.nav.AppTopBar
 import com.milan.game.ui.theme.AppTheme
+import com.milan.game.ui.theme.CurrencyNames
 import com.milan.game.ui.theme.ElementTheme
 
 /**
  * 无尽之塔（2026-08 终局内容，对标 StS 进阶难度 / Balatro 无尽模式的长线留存定位）：
- * - 挑战「最高层 +1」；胜利推进纪录并发放星尘（数值走 EconomyFormulas 单一事实来源）；
+ * - 挑战「最高层 +1」；胜利推进纪录并发放环痕（数值走 EconomyFormulas 单一事实来源）；
  * - 敌队按层数程序化生成且元素随机分布——编队的元素克制与共鸣成为爬层策略；
  * - 空编队时引导去卡组页组队；战斗为服务层纯模拟，本页只做状态与结果呈现。
  */
@@ -103,13 +110,7 @@ fun TowerScreen(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clip(MaterialTheme.shapes.large)
-                        .background(
-                            Brush.verticalGradient(
-                                listOf(AppTheme.Surface.copy(alpha = 0.85f), AppTheme.BgMid.copy(alpha = 0.6f)),
-                            )
-                        )
-                        .border(1.dp, AppTheme.Gold.copy(alpha = 0.35f), MaterialTheme.shapes.large)
+                        .ringPanel()
                         .padding(16.dp),
                 ) {
                     Text(text = "历史最高", style = MaterialTheme.typography.bodySmall, color = AppTheme.Text2)
@@ -171,7 +172,7 @@ fun TowerScreen(
                 } else {
                     // 下一层挑战：奖励预览按 EconomyFormulas 计算，禁止就地写数字。
                     Text(
-                        text = "第 $nextFloor 层 · 入场 ⚔$ticketCost · 预计通关星尘 ${ui.nextFloorRewardSoft}",
+                        text = "第 $nextFloor 层 · 入场 ⚔$ticketCost · 预计通关环痕 ${ui.nextFloorRewardSoft}",
                         style = MaterialTheme.typography.bodySmall,
                         color = AppTheme.Text2,
                     )
@@ -204,7 +205,7 @@ fun TowerScreen(
                             enabled = canChallenge && !running,
                         )
                     }
-                    // 已通层的复刷入口：低层速刷拿保底星尘收益（数值线性，低层仍有意义）。
+                    // 已通层的复刷入口：低层速刷拿保底环痕收益（数值线性，低层仍有意义）。
                     if (best > 0) {
                         Spacer(Modifier.height(8.dp))
                         InkButton(
@@ -473,6 +474,8 @@ internal fun TowerResultCard(
     /** 战报单位名解析表（内容表静态映射；默认空 → 单位显示「未知」，测试内容无关）。 */
     names: Map<String, String> = emptyMap(),
 ) {
+    val resultStroke =
+        if (done.victory) AppTheme.Gold.copy(alpha = 0.6f) else AppTheme.Gold.copy(alpha = 0.32f)
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -488,11 +491,22 @@ internal fun TowerResultCard(
                     )
                 }
             )
-            .border(
-                1.dp,
-                if (done.victory) AppTheme.Gold.copy(alpha = 0.6f) else AppTheme.Stroke,
-                MaterialTheme.shapes.medium,
-            )
+            .border(1.dp, resultStroke, MaterialTheme.shapes.medium)
+            // 织环 v3.1：结算卡补内侧发丝环（与 ringPanel 同口径；渐变底不能直接套 ringPanel）
+            .drawBehind {
+                val inset = 2.dp.toPx()
+                val w = size.width - inset * 2
+                val h = size.height - inset * 2
+                if (w > 0f && h > 0f) {
+                    drawRoundRect(
+                        color = resultStroke.copy(alpha = 0.18f),
+                        topLeft = Offset(inset, inset),
+                        size = Size(w, h),
+                        cornerRadius = CornerRadius(12.dp.toPx()),
+                        style = Stroke(0.8.dp.toPx()),
+                    )
+                }
+            }
             .padding(14.dp),
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
@@ -502,10 +516,10 @@ internal fun TowerResultCard(
             color = if (done.victory) AppTheme.Gold else AppTheme.Text2,
         )
         if (done.victory) {
-            Text(text = "星尘 +${done.rewardSoft}", style = MaterialTheme.typography.bodyMedium, color = AppTheme.Text1)
+            Text(text = "环痕 +${done.rewardSoft}", style = MaterialTheme.typography.bodyMedium, color = AppTheme.Text1)
             if (done.rewardHard > 0) {
                 Text(
-                    text = "◆ 钻石 +${done.rewardHard}（首次攻克里程碑）",
+                    text = "${CurrencyNames.HARD_GLYPH} 纯环 +${done.rewardHard}（首次攻克里程碑）",
                     style = MaterialTheme.typography.bodyMedium,
                     color = AppTheme.Frost,
                 )
@@ -559,9 +573,7 @@ private fun BattlePreviewCard(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(AppTheme.Roundness.md))
-            .background(AppTheme.Surface.copy(alpha = 0.5f))
-            .border(1.dp, AppTheme.Stroke, RoundedCornerShape(AppTheme.Roundness.md))
+            .ringPanel()
             .padding(12.dp),
     ) {
         // VS 标题

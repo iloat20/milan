@@ -52,7 +52,7 @@ interface ProgressionQueries {
  * 行为与 VM 化前等价（纯状态搬移）：
  * - 订阅快照，任何成功写操作后重读最新存档（替代组合中读 revision 的重组触发）；
  * - I13 语义保留：busy in-flight 防重入，落盘期间禁用二次触发（防快速双击重复扣费）；
- * - Rejected 细分提示（满级/星尘不足/碎片不足/满星/天赋点不足）逐分支照搬；
+ * - Rejected 细分提示（满级/环痕不足/残玦不足/满星/天赋点不足）逐分支照搬；
  * - 公式/属性查询经 [ProgressionQueries] 暴露给纯面板（Screen 不再碰 GameState.service）。
  */
 class ProgressionViewModel(
@@ -133,7 +133,7 @@ class ProgressionViewModel(
             WriteOutcome.Success -> Unit
             WriteOutcome.Rejected -> {
                 val cap = service.maxLevelForStage(uiState.value.save.stage)
-                _toasts.send(if (cap <= uiState.value.save.level) "已满级" else "星尘不足")
+                _toasts.send(if (cap <= uiState.value.save.level) "已满级" else "环痕不足")
             }
             WriteOutcome.SaveFailed -> _toasts.send("保存失败，请重试")
         }
@@ -145,7 +145,7 @@ class ProgressionViewModel(
             WriteOutcome.Success -> Unit
             WriteOutcome.Rejected -> {
                 val frags = service.ascendFragments(uiState.value.save.stage)
-                _toasts.send(if (service.getStarFragments() < frags) "星魂碎片不足" else "星尘不足")
+                _toasts.send(if (service.getStarFragments() < frags) "残玦不足" else "环痕不足")
             }
             WriteOutcome.SaveFailed -> _toasts.send("保存失败，请重试")
         }
@@ -157,7 +157,7 @@ class ProgressionViewModel(
             WriteOutcome.Success -> Unit
             WriteOutcome.Rejected -> _toasts.send(
                 if (uiState.value.save.stars >= (uiState.value.def?.maxStars ?: 0)) "已满星"
-                else "星魂碎片不足"
+                else "残玦不足"
             )
             WriteOutcome.SaveFailed -> _toasts.send("保存失败，请重试")
         }
