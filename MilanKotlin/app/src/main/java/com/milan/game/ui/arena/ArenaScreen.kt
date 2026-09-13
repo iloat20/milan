@@ -106,12 +106,22 @@ fun ArenaScreen(
                     }
 
                     // 对手列表
-                    items(opponents, key = { it.characterId }) { opponent ->
-                        OpponentCard(
-                            opponent = opponent,
-                            canChallenge = attacksLeft > 0,
-                            onChallenge = { vm.challenge(opponent) },
-                        )
+                    if (opponents.isEmpty()) {
+                        item {
+                            com.milan.game.ui.components.EmptyState(
+                                glyph = "竞",
+                                title = "暂无对手",
+                                subtitle = "赛季稍后再来挑战",
+                            )
+                        }
+                    } else {
+                        items(opponents, key = { it.characterId }) { opponent ->
+                            OpponentCard(
+                                opponent = opponent,
+                                canChallenge = attacksLeft > 0,
+                                onChallenge = { vm.challenge(opponent) },
+                            )
+                        }
                     }
 
                     // 赛季奖励

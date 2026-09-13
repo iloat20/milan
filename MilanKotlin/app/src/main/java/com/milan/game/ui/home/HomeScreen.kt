@@ -17,11 +17,13 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -121,7 +123,8 @@ fun HomeScreen(
             FluidBackground(Modifier.fillMaxSize())
             Column(Modifier.fillMaxSize()) {
                 val container = LocalWindowInfo.current.containerSize
-                val heroHeight = if (container.width > container.height) 380.dp else 500.dp
+                // 收一点主视觉，保证首屏能看到「英灵名录」标题，不被底栏裁成半截
+                val heroHeight = if (container.width > container.height) 360.dp else 452.dp
                 val homeListState = rememberLazyListState()
                 val heroParallax by remember {
                     derivedStateOf {
@@ -147,21 +150,46 @@ fun HomeScreen(
                                 onOpenCharacter = onOpenCharacter,
                                 onOpenGacha = onOpenGacha,
                             )
+                            // 品牌条：半透明底，保证叠在立绘上仍可读；与 Hero 徽章分区
                             Row(
                                 modifier = Modifier
                                     .statusBarsPadding()
                                     .fillMaxWidth()
+                                    .background(
+                                        Brush.verticalGradient(
+                                            listOf(
+                                                AppTheme.BgDeepest.copy(alpha = 0.78f),
+                                                AppTheme.BgDeepest.copy(alpha = 0.2f),
+                                                Color.Transparent,
+                                            ),
+                                        ),
+                                    )
                                     .padding(horizontal = 16.dp, vertical = 10.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
+                                Box(
+                                    Modifier
+                                        .size(28.dp)
+                                        .clip(RoundedCornerShape(4.dp))
+                                        .background(AppTheme.ZhuSha),
+                                    contentAlignment = Alignment.Center,
+                                ) {
+                                    Text(
+                                        text = "织",
+                                        style = BrandType.copy(fontSize = 16.sp, lineHeight = 20.sp, letterSpacing = 0.sp),
+                                        color = AppTheme.Text1,
+                                    )
+                                }
+                                Spacer(Modifier.width(8.dp))
                                 Text(text = "织环", style = BrandType, color = AppTheme.Text1)
                                 Spacer(Modifier.width(6.dp))
                                 Text(
                                     text = "MILAN",
                                     style = MaterialTheme.typography.labelMedium,
                                     color = AppTheme.Text3,
-                                    letterSpacing = 1.5.sp,
-                                    modifier = Modifier.padding(top = 8.dp),
+                                    letterSpacing = 2.sp,
+                                    // 与「织环」中线对齐，不再用 top padding 造成错位
+                                    modifier = Modifier.alignByBaseline(),
                                 )
                                 Spacer(Modifier.weight(1f))
                                 ResourceBar(compact = true)
@@ -172,9 +200,13 @@ fun HomeScreen(
                     item { Spacer(Modifier.height(28.dp)) }
 
                     item {
-                        HomeSectionTitle("快捷入口")
+                        com.milan.game.ui.components.OrnamentSectionTitle(
+                            title = "快捷入口",
+                            subtitle = "GATES",
+                            modifier = Modifier.padding(horizontal = 20.dp),
+                        )
                     }
-                    item { Spacer(Modifier.height(12.dp)) }
+                    item { Spacer(Modifier.height(14.dp)) }
                     item {
                         QuickActions(
                             onOpenCollection, onOpenTower, onOpenStory,
@@ -185,7 +217,13 @@ fun HomeScreen(
 
                     item { Spacer(Modifier.height(28.dp)) }
 
-                    item { HomeSectionTitle("英灵名录") }
+                    item {
+                        com.milan.game.ui.components.OrnamentSectionTitle(
+                            title = "英灵名录",
+                            subtitle = "RINGMARKS",
+                            modifier = Modifier.padding(horizontal = 20.dp),
+                        )
+                    }
                     item { Spacer(Modifier.height(14.dp)) }
                     item { AvatarStrip(homeUi.avatarEntries, onOpenCharacter, onOpenCollection) }
                     item { Spacer(Modifier.height(12.dp)) }
@@ -237,33 +275,7 @@ private fun Hero(
             )
             HeroPortrait(def, rarityColor, Modifier.fillMaxSize().graphicsLayer { translationY = parallaxOffset })
 
-            Row(
-                modifier = Modifier
-                    .align(Alignment.TopStart)
-                    .padding(start = 20.dp, top = 72.dp),
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-            ) {
-                Text(
-                    text = def.world,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = AppTheme.Text2,
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(AppTheme.Roundness.sm))
-                        .background(AppTheme.BgDeepest.copy(alpha = 0.72f))
-                        .padding(horizontal = 8.dp, vertical = 3.dp),
-                )
-                Text(
-                    text = AppTheme.rarityName(def.baseRarity),
-                    style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.SemiBold,
-                    color = if (def.baseRarity >= 4) AppTheme.GoldTextOn else AppTheme.Text1,
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(AppTheme.Roundness.sm))
-                        .background(rarityColor)
-                        .padding(horizontal = 8.dp, vertical = 3.dp),
-                )
-            }
-
+            // 世界/稀有度徽章贴铭牌，不再叠在顶部品牌条下（v4 布局修复）
             Column(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
@@ -287,6 +299,30 @@ private fun Hero(
                     ) { onOpenCharacter(def.characterId) },
                 ) {
                     Column(Modifier.weight(1f)) {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            modifier = Modifier.padding(bottom = 6.dp),
+                        ) {
+                            Text(
+                                text = def.world,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = AppTheme.Text2,
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(AppTheme.Roundness.sm))
+                                    .background(AppTheme.BgDeepest.copy(alpha = 0.72f))
+                                    .padding(horizontal = 8.dp, vertical = 3.dp),
+                            )
+                            Text(
+                                text = AppTheme.rarityName(def.baseRarity),
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.SemiBold,
+                                color = if (def.baseRarity >= 4) AppTheme.GoldTextOn else AppTheme.Text1,
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(AppTheme.Roundness.sm))
+                                    .background(rarityColor)
+                                    .padding(horizontal = 8.dp, vertical = 3.dp),
+                            )
+                        }
                         Text(
                             text = def.displayName,
                             style = MaterialTheme.typography.displaySmall,
@@ -307,9 +343,8 @@ private fun Hero(
                     )
                 }
                 Spacer(Modifier.height(16.dp))
-                GoldButton(
-                    text = "召  灵",
-                    modifier = Modifier.fillMaxWidth(),
+                com.milan.game.ui.components.GoldButtonFull(
+                    text = "召灵",
                     onClick = onOpenGacha,
                 )
             }
@@ -339,33 +374,38 @@ private fun Halo(color: Color, modifier: Modifier = Modifier) {
  * 经 PortraitImage 动态加载，缺图自动回退首字占位。 */
 @Composable
 private fun HeroPortrait(def: CharacterDataEntry, rarityColor: Color, modifier: Modifier = Modifier) {
-    // v4：去掉立绘漂浮呼吸，画面更静
-    Box(
+    // v4：去掉立绘漂浮呼吸，画面更静；点按持光对光
+    com.milan.game.ui.components.PortraitTiltBox(
         modifier = modifier,
-        contentAlignment = Alignment.Center,
+        accent = rarityColor,
     ) {
         Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(
-                    Brush.radialGradient(
-                        listOf(rarityColor.copy(alpha = 0.18f), Color.Transparent),
-                        radius = 1200f,
-                    )
-                ),
-        )
-        PortraitImage(
-            characterId = def.characterId,
-            rarity = def.baseRarity,
-            name = def.displayName,
             modifier = Modifier.fillMaxSize(),
-            contentScale = ContentScale.Crop,
-            aura = true,
-        )
+            contentAlignment = Alignment.Center,
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(
+                        Brush.radialGradient(
+                            listOf(rarityColor.copy(alpha = 0.18f), Color.Transparent),
+                            radius = 1200f,
+                        )
+                    ),
+            )
+            PortraitImage(
+                characterId = def.characterId,
+                rarity = def.baseRarity,
+                name = def.displayName,
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop,
+                aura = true,
+            )
+        }
     }
 }
 
-/** 快捷入口：5×2 网格，更易扫读。 */
+/** 快捷入口：纬带横滑 chip（设计语言 §7.1，替代 5×2 瓷片网格）。 */
 @Composable
 private fun QuickActions(
     onOpenCollection: () -> Unit,
@@ -379,52 +419,94 @@ private fun QuickActions(
     onOpenEvent: () -> Unit,
     onOpenDungeon: () -> Unit,
 ) {
-    data class Action(val label: String, val onClick: () -> Unit)
     val actions = listOf(
-        Action("环痕", onOpenCollection),
-        Action("爬塔", onOpenTower),
-        Action("剧情", onOpenStory),
-        Action("日常", onOpenDailyMissions),
-        Action("纪行", onOpenBattlePass),
-        Action("好感", onOpenAffinity),
-        Action("成就", onOpenAchievements),
-        Action("竞技", onOpenArena),
-        Action("活动", onOpenEvent),
-        Action("深渊", onOpenDungeon),
+        HomeGateAction("环痕", "图鉴", AppTheme.Gold, onOpenCollection),
+        HomeGateAction("爬塔", "无尽", AppTheme.Frost, onOpenTower),
+        HomeGateAction("剧情", "回响", AppTheme.ZhuSha, onOpenStory),
+        HomeGateAction("日常", "任务", AppTheme.Gold, onOpenDailyMissions),
+        HomeGateAction("纪行", "通行证", AppTheme.Frost, onOpenBattlePass),
+        HomeGateAction("好感", "羁绊", AppTheme.ZhuSha, onOpenAffinity),
+        HomeGateAction("成就", "荣光", AppTheme.Gold, onOpenAchievements),
+        HomeGateAction("竞技", "对决", AppTheme.Frost, onOpenArena),
+        HomeGateAction("活动", "限时", AppTheme.ZhuSha, onOpenEvent),
+        HomeGateAction("深渊", "裂隙", AppTheme.Gold, onOpenDungeon),
     )
-    Column(
-        modifier = Modifier.padding(horizontal = 20.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
+    LazyRow(
+        modifier = Modifier.fillMaxWidth(),
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 20.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        actions.chunked(5).forEach { rowItems ->
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-            ) {
-                rowItems.forEach { a ->
-                    val interaction = remember { MutableInteractionSource() }
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(48.dp)
-                            .clip(RoundedCornerShape(AppTheme.Roundness.md))
-                            .background(AppTheme.BgMid)
-                            .border(1.dp, AppTheme.Stroke, RoundedCornerShape(AppTheme.Roundness.md))
-                            .clickable(interactionSource = interaction, indication = null, onClick = a.onClick),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Text(
-                            text = a.label,
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.Medium,
-                            color = AppTheme.Text1,
-                        )
-                    }
-                }
-            }
+        items(actions, key = { it.label }, contentType = { "gateChip" }) { a ->
+            GateChip(a)
         }
     }
 }
+
+/** 经纬带 chip：左色纬 + 主标/副标 + 玻璃底。 */
+@Composable
+private fun GateChip(a: HomeGateAction) {
+    val interaction = remember { MutableInteractionSource() }
+    val pressed by interaction.collectIsPressedAsState()
+    val scale by animateFloatAsState(
+        if (pressed) 0.95f else 1f,
+        spring(dampingRatio = Spring.DampingRatioMediumBouncy),
+        label = "gateChipPress",
+    )
+    val shape = RoundedCornerShape(AppTheme.Roundness.lg)
+    Row(
+        modifier = Modifier
+            .graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+            }
+            .clip(shape)
+            .background(
+                Brush.verticalGradient(
+                    listOf(
+                        if (pressed) AppTheme.SurfaceNested else AppTheme.BgMid.copy(alpha = 0.92f),
+                        AppTheme.BgDeepest.copy(alpha = 0.96f),
+                    ),
+                ),
+                shape,
+            )
+            .border(1.dp, AppTheme.Stroke, shape)
+            .clickable(interactionSource = interaction, indication = null, onClick = a.onClick)
+            .padding(start = 0.dp, end = 14.dp, top = 10.dp, bottom = 10.dp)
+            .height(44.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(
+            Modifier
+                .width(3.dp)
+                .height(22.dp)
+                .background(a.accent.copy(alpha = 0.85f)),
+        )
+        Spacer(Modifier.width(10.dp))
+        Column {
+            Text(
+                text = a.label,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = AppTheme.Text1,
+                maxLines = 1,
+            )
+            Text(
+                text = a.sub,
+                style = MaterialTheme.typography.labelSmall,
+                color = a.accent.copy(alpha = 0.8f),
+                maxLines = 1,
+            )
+        }
+    }
+}
+
+/** 纬带 chip 数据（与 QuickActions 列表对齐）。 */
+private data class HomeGateAction(
+    val label: String,
+    val sub: String,
+    val accent: Color,
+    val onClick: () -> Unit,
+)
 
 // ── 环痕名录：统一头像横滑 ──
 

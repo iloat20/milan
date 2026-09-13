@@ -67,7 +67,12 @@ fun DialogueScreen(
     /** 说话者内容查找（生产由 NavHost 注入 StoryViewModel.characterOf）。 */
     characterOf: (String) -> CharacterDataEntry? = { null },
 ) {
-    val dialogue = stage.dialogue ?: return
+    // 无对话（BATTLE 等已在 NavHost 分流；此处兜底空 dialogue 的 CHOICE/DIALOGUE 脏数据）
+    val dialogue = stage.dialogue.orEmpty()
+    if (dialogue.isEmpty()) {
+        EmptyDialogueStage(stage = stage, onBack = onBack, onStageComplete = onStageComplete)
+        return
+    }
     var currentIndex by remember { mutableStateOf(0) }
     var displayedText by remember { mutableStateOf("") }
     var isTyping by remember { mutableStateOf(true) }
@@ -168,7 +173,11 @@ fun DialogueScreen(
                             ),
                         contentAlignment = Alignment.Center,
                     ) {
-                        Text(text = "📖", style = MaterialTheme.typography.displayLarge)
+                        Text(
+                            text = "卷",
+                            style = MaterialTheme.typography.displayLarge,
+                            color = AppTheme.Gold,
+                        )
                     }
                 }
             }
@@ -432,6 +441,60 @@ fun DialogueScreen(
             isEntering = false,
             onAnimEnd = { onStageComplete() },
         )
+    }
+}
+
+/**
+ * 无对话关卡兜底：不再空屏 return。可「完成关卡」或返回。
+ */
+@Composable
+private fun EmptyDialogueStage(
+    stage: StoryStageDef,
+    onBack: () -> Unit,
+    onStageComplete: () -> Unit,
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(AppTheme.BgDeepest),
+        contentAlignment = Alignment.Center,
+    ) {
+        ArtifactPanel(modifier = Modifier.padding(24.dp)) {
+            Column(
+                modifier = Modifier.padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Text(
+                    text = stage.title,
+                    color = AppTheme.Text1,
+                    style = MaterialTheme.typography.titleLarge,
+                )
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    text = "本关暂无对话内容",
+                    color = AppTheme.Text3,
+                )
+                Spacer(Modifier.height(20.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Box(
+                        modifier = Modifier
+                            .background(AppTheme.BgMid, RoundedCornerShape(AppTheme.Roundness.md))
+                            .clickable(onClick = onBack)
+                            .padding(horizontal = 20.dp, vertical = 12.dp),
+                    ) {
+                        Text("返回", color = AppTheme.Text2)
+                    }
+                    Box(
+                        modifier = Modifier
+                            .background(AppTheme.ZhuSha, RoundedCornerShape(AppTheme.Roundness.md))
+                            .clickable(onClick = onStageComplete)
+                            .padding(horizontal = 20.dp, vertical = 12.dp),
+                    ) {
+                        Text("完成关卡", color = AppTheme.Text1)
+                    }
+                }
+            }
+        }
     }
 }
 

@@ -2,12 +2,10 @@ package com.milan.game.ui.components
 
 import android.annotation.SuppressLint
 import android.graphics.Bitmap
-import android.graphics.ColorMatrix
-import android.graphics.ColorMatrixColorFilter
-import android.graphics.Paint
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -19,13 +17,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
-import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalResources
@@ -114,11 +110,10 @@ private fun PortraitImageContent(
         return
     }
 
-    // 2026-09-10 加载提速：LRU 同步命中时直接上屏，跳过 Crossfade 的「占位闪一下再淡入」，
-    // 列表快速回滚/复用时首帧即完整立绘（观感接近同步加载，仍不阻塞主线程解码）。
+    // LRU 同步命中时直接上屏（跳过 Crossfade 占位闪烁）。
     val cachedNow = remember(portraitId, target) { PortraitLoader.peek(portraitId, target) }
-    if (cachedNow != null) {
-        InkWashPortrait(
+    if (cachedNow != null && !cachedNow.isRecycled) {
+        ColorPortrait(
             bitmap = cachedNow,
             contentDescription = name ?: characterId,
             modifier = modifier,
@@ -128,28 +123,41 @@ private fun PortraitImageContent(
     }
 
     val bitmap by produceState<Bitmap?>(initialValue = null, portraitId, target) {
-        // P1-2：key（portraitId/target）变化时先清空旧值——produceState 在 key 变化后
-        // 会保留旧 value 直到新协程产出，IO 解码至少跨一帧，切角色瞬间会闪一瞬上一张立绘。
-        // 置 null 让 Crossfade 从占位淡入新图（占位闪烁优于「显示错误角色」）。
         value = null
         value = PortraitLoader.load(resources, portraitId, target)
     }
 
-    // 首次解码：Crossfade 淡入；duration 压到 120ms，减少占位停留时间。
     Crossfade(targetState = bitmap, animationSpec = tween(120), label = "portrait") { bmp ->
-        if (bmp != null) {
-            // 水墨画滤镜：降饱和 + 提对比 + 暖色偏移，模拟宣纸上的墨彩效果
-            InkWashPortrait(
+        if (bmp != null && !bmp.isRecycled) {
+            ColorPortrait(
                 bitmap = bmp,
                 contentDescription = name ?: characterId,
                 modifier = modifier,
                 contentScale = contentScale,
             )
         } else {
-            // 解码中 / 解码失败：占位兜底（宁可难看也不能崩）。
             PortraitFallback(characterId, rarity, name, modifier)
         }
     }
+}
+
+/**
+ * 全彩立绘（v4）：直接 Compose Image 绘制，不再叠水墨 ColorMatrix。
+ * 旧 InkWashPortrait 把蓝/绿通道压到 0.25/0.38，全站立绘发灰；已废弃。
+ */
+@Composable
+private fun ColorPortrait(
+    bitmap: Bitmap,
+    contentDescription: String,
+    modifier: Modifier,
+    contentScale: ContentScale,
+) {
+    Image(
+        bitmap = bitmap.asImageBitmap(),
+        contentDescription = contentDescription,
+        modifier = modifier,
+        contentScale = contentScale,
+    )
 }
 
 /**
@@ -249,107 +257,5 @@ private fun PortraitFallback(
                     }
                 ),
         )
-    }
-}
-
-/**
- * 水墨画滤镜立绘 v3：选择性暖色保留 + 平滑墨迹暗角 + 宣纸肌理叠加。
- *
- * 通过 Android 原生 Canvas + ColorMatrix 在绘制时实时应用滤镜，不修改原始 Bitmap。
- * 滤镜分三层叠加：
- *   1. ColorMatrix：降饱和但保留朱砂/金箔暖色（水墨画中红色/金色是视觉焦点）
- *   2. RadialGradient 暗角：单次径向渐变，从中心透明到边缘浓墨，模拟墨汁自然晕染
- *   3. 宣纸噪点纹理：细微颗粒感模拟生宣纸面
- */
-@Composable
-private fun InkWashPortrait(
-    bitmap: Bitmap,
-    contentDescription: String,
-    modifier: Modifier,
-    contentScale: ContentScale,
-) {
-    // 水墨画 ColorMatrix v2：选择性降饱和
-    // 传统水墨中朱砂(红)和金箔(黄)保持鲜艳，冷色(蓝/绿)大幅降饱和
-    val inkWashFilter = remember {
-        ColorMatrixColorFilter(
-            ColorMatrix(
-                floatArrayOf(
-                    // R     G     B     A     — 保留红色通道能量，蓝色压低
-                    0.55f, 0.12f, 0.03f, 0f, 10f,   // 红通道：保留较多 R，暖色突出
-                    0.08f, 0.38f, 0.04f, 0f, 4f,     // 绿通道：中度保留
-                    0.03f, 0.08f, 0.25f, 0f, 0f,     // 蓝通道：大幅压低，冷色褪去
-                    0f, 0f, 0f, 1f, 0f,
-                ),
-            ),
-        )
-    }
-    val portraitPaint = remember { Paint().apply { colorFilter = inkWashFilter } }
-    // 暗角Paint：径向渐变模拟墨汁从边缘向内渗透
-    val vignettePaint = remember { Paint(Paint.ANTI_ALIAS_FLAG) }
-    // 宣纸噪点Paint
-    val grainPaint = remember { Paint(Paint.ANTI_ALIAS_FLAG) }
-
-    // 2026-09-12：shader / 噪点坐标随 size 缓存，避免 Home hero 无限浮动时每帧重建
-    // RadialGradient + 重扫 grain 网格（性能报告 F5）。
-    Canvas(
-        modifier = modifier.drawWithCache {
-            val w = size.width
-            val h = size.height
-            val cx = w / 2f
-            val cy = h / 2f
-            val radius = maxOf(w, h) * 0.72f
-            vignettePaint.shader = android.graphics.RadialGradient(
-                cx, cy, radius,
-                intArrayOf(0x000A0A0F.toInt(), 0x000A0A0F.toInt(), 0x300A0A0F.toInt(), 0x600A0A0F.toInt()),
-                floatArrayOf(0f, 0.45f, 0.75f, 1f),
-                android.graphics.Shader.TileMode.CLAMP,
-            )
-            grainPaint.color = 0x0AFFFFFF.toInt()
-            grainPaint.style = Paint.Style.FILL
-            val step = (maxOf(w, h) / 48f).coerceIn(14f, 36f)
-            val maxGrainPoints = 900
-            val grains = ArrayList<FloatArray>(maxGrainPoints) // [gx, gy, alpha]
-            var gy = 0f
-            while (gy < h && grains.size < maxGrainPoints) {
-                var gx = 0f
-                while (gx < w && grains.size < maxGrainPoints) {
-                    val hash = ((gx * 73856093).toInt() xor (gy * 19349663).toInt()) and 0xFF
-                    if (hash < 14) {
-                        grains.add(floatArrayOf(gx, gy, (6 + (hash and 0x07)).toFloat()))
-                    }
-                    gx += step
-                }
-                gy += step
-            }
-
-            onDrawBehind {
-                drawIntoCanvas { canvas ->
-                    canvas.nativeCanvas.apply {
-                        // ── 第 1 层：水墨滤镜立绘 ──
-                        save()
-                        val scale = maxOf(w / bitmap.width, h / bitmap.height)
-                        val dx = (w - bitmap.width * scale) / 2f
-                        val dy = (h - bitmap.height * scale) / 2f
-                        translate(dx, dy)
-                        scale(scale, scale)
-                        drawBitmap(bitmap, 0f, 0f, portraitPaint)
-                        restore()
-
-                        // ── 第 2 层：平滑墨迹暗角（缓存 shader）──
-                        drawCircle(cx, cy, radius, vignettePaint)
-
-                        // ── 第 3 层：宣纸纤维噪点（缓存坐标）──
-                        var i = 0
-                        while (i < grains.size) {
-                            grainPaint.alpha = grains[i][2].toInt()
-                            drawPoint(grains[i][0], grains[i][1], grainPaint)
-                            i++
-                        }
-                    }
-                }
-            }
-        },
-    ) {
-        // 绘制全部走 drawWithCache 的 onDrawBehind；Canvas 体为空。
     }
 }

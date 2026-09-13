@@ -128,7 +128,12 @@ fun TowerScreen(
                         )
                         Spacer(Modifier.weight(1f))
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            GlyphBadge(glyph = "⚔", from = AppTheme.Text1, to = AppTheme.Text3, glyphColor = AppTheme.Text2)
+                            GlyphBadge(
+                                glyph = com.milan.game.ui.theme.CurrencyNames.TICKET_GLYPH,
+                                from = AppTheme.Text1,
+                                to = AppTheme.Text3,
+                                glyphColor = AppTheme.Text2,
+                            )
                             Spacer(Modifier.width(6.dp))
                             Text(
                                 text = "$tickets · 战力 $teamPower",
@@ -163,7 +168,7 @@ fun TowerScreen(
 
                 if (ui.formationEmpty) {
                     com.milan.game.ui.components.EmptyState(
-                        icon = Icons.Outlined.Person,
+                        glyph = "阵",
                         title = "还没有出战编队",
                         subtitle = "先去卡组页点选角色入队",
                         actionText = "前往编队",

@@ -141,7 +141,7 @@ private fun ResourcePanel(soft: Int, hard: Int, frags: Int, tickets: Int) {
             ResourceRow("环痕", com.milan.game.ui.theme.CurrencyNames.SOFT_GLYPH, formatCount(soft), AppTheme.Gold, AppTheme.GoldDeep)
             ResourceRow("纯环", com.milan.game.ui.theme.CurrencyNames.HARD_GLYPH, formatCount(hard), AppTheme.GoldHi, AppTheme.Violet)
             ResourceRow("残玦", com.milan.game.ui.theme.CurrencyNames.FRAG_GLYPH, formatCount(frags), AppTheme.Frost, AppTheme.Violet)
-            ResourceRow("战票", "⚔", formatCount(tickets), AppTheme.Text1, AppTheme.Text3)
+            ResourceRow("战票", CurrencyNames.TICKET_GLYPH, formatCount(tickets), AppTheme.Text1, AppTheme.Text3)
         }
     }
 }
@@ -211,6 +211,7 @@ private fun DailyOfferCard(
                     },
                     onClick = onBuy,
                     enabled = !bought && affordable && enabled,
+                    compact = true,
                 )
             }
         }
@@ -242,7 +243,7 @@ private fun FragmentPackCard(
             Column(horizontalAlignment = Alignment.End) {
                 Text("${formatCount(cost)} ${CurrencyNames.SOFT_GLYPH}", color = AppTheme.Gold, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold)
                 Spacer(Modifier.height(6.dp))
-                GoldButton(text = "购 买", onClick = onBuy, enabled = affordable && enabled)
+                GoldButton(text = "购 买", onClick = onBuy, enabled = affordable && enabled, compact = true)
             }
         }
     }
@@ -273,7 +274,7 @@ private fun DiamondCard(
                 )
                 Text("纯环暂无获取途径", color = AppTheme.Text2.copy(alpha = 0.6f), style = MaterialTheme.typography.labelMedium)
             }
-            GoldButton(text = "兑 换", onClick = onExchange, enabled = affordable && enabled)
+            GoldButton(text = "兑 换", onClick = onExchange, enabled = affordable && enabled, compact = true)
         }
     }
 }
@@ -307,7 +308,7 @@ private fun FragmentExchangeCard(
                     style = MaterialTheme.typography.labelMedium,
                 )
             }
-            GoldButton(text = "兑 换", onClick = onExchange, enabled = frags >= batch && enabled)
+            GoldButton(text = "兑 换", onClick = onExchange, enabled = frags >= batch && enabled, compact = true)
         }
     }
 }

@@ -89,6 +89,12 @@ fun DeckScreen(
     val owned = ui.owned
     var previewId by rememberSaveable { mutableStateOf<String?>(null) }
     val preview = owned.firstOrNull { it.save.characterId == previewId }
+    // 活页册世界页签
+    val worlds = remember(owned) { listOf("全部") + owned.map { it.world }.distinct() }
+    var worldFilter by rememberSaveable { mutableStateOf("全部") }
+    val visibleOwned = remember(owned, worldFilter) {
+        if (worldFilter == "全部") owned else owned.filter { it.world == worldFilter }
+    }
 
     val members = ui.members
     // U2（2026-08-28 审查修复）：读-改-写整体下沉到服务层（在 writeMutex 临界区内串行）。
@@ -105,33 +111,90 @@ fun DeckScreen(
         Box(Modifier.fillMaxSize()) {
         Column(Modifier.fillMaxSize()) {
             AppTopBar(title = "卡组", onBack = { onNav(NavItem.Home) })
-            Spacer(Modifier.height(12.dp))
+            Spacer(Modifier.height(8.dp))
+            // 活页册页眉：世界带 + 编号脊
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 20.dp),
+                    .padding(horizontal = 20.dp, vertical = 4.dp),
             ) {
                 Box(
                     Modifier
-                        .size(width = 2.dp, height = 14.dp)
+                        .size(width = 3.dp, height = 18.dp)
                         .background(AppTheme.ZhuSha),
                 )
                 Spacer(Modifier.width(10.dp))
                 Text(
-                    text = "已拥有",
+                    text = "收藏册",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold,
                     color = AppTheme.Text1,
                 )
                 Spacer(Modifier.width(8.dp))
                 Text(
-                    text = "${owned.size}",
-                    style = MaterialTheme.typography.titleMedium,
+                    text = "RINGMARKS",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = AppTheme.Text3,
+                    letterSpacing = 1.sp,
+                )
+                Spacer(Modifier.weight(1f))
+                Text(
+                    text = "${owned.size} 枚",
+                    style = MaterialTheme.typography.labelMedium,
                     color = AppTheme.Text2,
                 )
             }
-            Spacer(Modifier.height(16.dp))
+            // 册页分隔发丝
+            Box(
+                Modifier
+                    .padding(horizontal = 20.dp)
+                    .fillMaxWidth()
+                    .height(1.dp)
+                    .background(
+                        Brush.horizontalGradient(
+                            listOf(
+                                AppTheme.ZhuSha.copy(alpha = 0.55f),
+                                AppTheme.Stroke,
+                                Color.Transparent,
+                            ),
+                        ),
+                    ),
+            )
+            Spacer(Modifier.height(10.dp))
+            // 世界页签（活页册分册）
+            if (worlds.size > 1) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp),
+                ) {
+                    worlds.forEach { w ->
+                        val selected = w == worldFilter
+                        val chipShape = RoundedCornerShape(AppTheme.Roundness.lg)
+                        Text(
+                            text = w,
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
+                            color = if (selected) AppTheme.Text1 else AppTheme.Text3,
+                            modifier = Modifier
+                                .clip(chipShape)
+                                .background(
+                                    if (selected) AppTheme.ZhuSha.copy(alpha = 0.18f) else Color.Transparent,
+                                )
+                                .border(
+                                    1.dp,
+                                    if (selected) AppTheme.ZhuSha.copy(alpha = 0.45f) else AppTheme.Stroke,
+                                    chipShape,
+                                )
+                                .clickable { worldFilter = w }
+                                .padding(horizontal = 10.dp, vertical = 5.dp),
+                        )
+                    }
+                }
+                Spacer(Modifier.height(10.dp))
+            }
 
             if (owned.isNotEmpty()) {
                 FormationBar(
@@ -169,7 +232,7 @@ fun DeckScreen(
                     contentAlignment = Alignment.Center,
                 ) {
                     com.milan.game.ui.components.EmptyState(
-                        icon = Icons.Outlined.Person,
+                        glyph = "灵",
                         title = "还没有角色",
                         subtitle = "去寻访吧",
                         actionText = "前往寻访",
@@ -178,17 +241,35 @@ fun DeckScreen(
                 }
             } else {
                 val deckGridState = rememberLazyGridState()
-                LazyVerticalGrid(
-                    columns = GridCells.Fixed(2),
-                    state = deckGridState,
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxWidth(),
-                    contentPadding = PaddingValues(start = 14.dp, end = 14.dp, bottom = 20.dp),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp),
-                ) {
-                    itemsIndexed(owned, key = { _, ch -> ch.save.characterId }, contentType = { _, _ -> "characterCard" }) { index, ch ->
+                Box(Modifier.weight(1f).fillMaxWidth()) {
+                    // 活页册脊线：网格左缘装订
+                    Box(
+                        Modifier
+                            .align(Alignment.CenterStart)
+                            .padding(start = 8.dp, top = 4.dp, bottom = 20.dp)
+                            .width(2.dp)
+                            .fillMaxSize()
+                            .background(
+                                Brush.verticalGradient(
+                                    listOf(
+                                        AppTheme.ZhuSha.copy(alpha = 0.35f),
+                                        AppTheme.Stroke,
+                                        Color.Transparent,
+                                    ),
+                                ),
+                            ),
+                    )
+                    LazyVerticalGrid(
+                        columns = GridCells.Fixed(2),
+                        state = deckGridState,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(start = 4.dp),
+                        contentPadding = PaddingValues(start = 14.dp, end = 14.dp, bottom = 20.dp),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp),
+                    ) {
+                    itemsIndexed(visibleOwned, key = { _, ch -> ch.save.characterId }, contentType = { _, _ -> "characterCard" }) { index, ch ->
                         val parallax by remember {
                             derivedStateOf {
                                 val first = deckGridState.layoutInfo.visibleItemsInfo.firstOrNull()
@@ -234,6 +315,7 @@ fun DeckScreen(
                         )
                     }
                 }
+            }
             }
 
             GameNavBar(

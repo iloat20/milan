@@ -309,32 +309,42 @@ internal fun MilanNavHost(openGachaOnStart: Boolean = false) {
                 // 剧情关卡（2026-09）：子页盖 tab，返回回章节列表
                 composable<DialogueRoute> { entry ->
                     val route = entry.toRoute<DialogueRoute>()
-                    // 剧情查询/完结统一走 StoryViewModel（AppGraph 注入），NavHost 不再摸 GameState.service
                     val storyVm: com.milan.game.ui.story.StoryViewModel =
                         androidx.lifecycle.viewmodel.compose.viewModel(factory = com.milan.game.di.AppGraph.factory)
                     val stage = remember(route.stageId) { storyVm.findStage(route.stageId) }
                     if (stage != null) {
-                        DialogueScreen(
-                            stage = stage,
-                            onStageComplete = {
-                                storyVm.completeStage(route.stageId)
-                                navController.popBackStack()
-                            },
-                            // M3 修复：选择分支跳转到目标关卡——当前关完结（标记+发奖），
-                            // 再压入目标关。目标为悬空引用（内容无此关）时兜底退出，避免黑屏。
-                            onNavigateStage = { targetId ->
-                                storyVm.completeStage(route.stageId)
-                                if (storyVm.findStage(targetId) != null) {
-                                    navController.navigate(DialogueRoute(targetId))
-                                } else {
+                        // BATTLE 关卡走策略战斗（此前 DialogueScreen 对无 dialogue 直接空屏卡死）
+                        if (stage.type == com.milan.game.data.StoryStageType.BATTLE) {
+                            com.milan.game.ui.battle.StrategicBattleScreen(
+                                floor = stage.recommendedLevel.coerceAtLeast(1),
+                                onExit = { navController.popBackStack() },
+                                mode = com.milan.game.ui.battle.StrategicBattleMode.STORY,
+                                storyStageId = stage.stageId,
+                            )
+                        } else {
+                            DialogueScreen(
+                                stage = stage,
+                                onStageComplete = {
+                                    storyVm.completeStage(route.stageId)
                                     navController.popBackStack()
-                                }
-                            },
-                            onGrantAffinity = storyVm::grantAffinity,
-                            onSelectEnding = storyVm::setEndingBranch,
-                            characterOf = storyVm::characterOf,
-                            onBack = { navController.popBackStack() },
-                        )
+                                },
+                                onNavigateStage = { targetId ->
+                                    storyVm.completeStage(route.stageId)
+                                    if (storyVm.findStage(targetId) != null) {
+                                        navController.navigate(DialogueRoute(targetId))
+                                    } else {
+                                        navController.popBackStack()
+                                    }
+                                },
+                                onGrantAffinity = storyVm::grantAffinity,
+                                onSelectEnding = storyVm::setEndingBranch,
+                                characterOf = storyVm::characterOf,
+                                onBack = { navController.popBackStack() },
+                            )
+                        }
+                    } else {
+                        // 悬空 stageId：提示并退出，避免空白路由
+                        LaunchedEffect(Unit) { navController.popBackStack() }
                     }
                 }
                 // 每日任务（2026-09）：子页盖 tab，返回回主页

@@ -340,16 +340,16 @@ private fun RewardItem(
     }
 }
 
-/** 奖励物品ID转emoji。 */
+/** 奖励物品 ID → 印记字形（禁 emoji）。 */
 private fun rewardItemIdToEmoji(itemId: String): String = when {
-    itemId.startsWith("soft") -> "💰"
-    itemId.startsWith("hard") -> "💎"
-    itemId.startsWith("exp") -> "📖"
-    itemId.startsWith("eq") -> "⚔️"
-    itemId.startsWith("skin") -> "🎨"
-    itemId.startsWith("char") -> "👤"
-    itemId.startsWith("mat") -> "📦"
-    else -> "🎁"
+    itemId.startsWith("soft") -> com.milan.game.ui.theme.CurrencyNames.SOFT_GLYPH
+    itemId.startsWith("hard") -> com.milan.game.ui.theme.CurrencyNames.HARD_GLYPH
+    itemId.startsWith("exp") -> "卷"
+    itemId.startsWith("eq") -> com.milan.game.ui.theme.CurrencyNames.TICKET_GLYPH
+    itemId.startsWith("skin") -> "彩"
+    itemId.startsWith("char") -> "灵"
+    itemId.startsWith("mat") -> "匣"
+    else -> "印"
 }
 
 /** 格式化奖励数量。 */

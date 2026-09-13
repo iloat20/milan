@@ -208,15 +208,15 @@ private fun RowScope.LevelButton(
                 text = text,
                 modifier = Modifier.fillMaxWidth(),
                 onClick = onClick,
-                textSize = 15.sp,
                 enabled = enabled,
+                compact = true,
             )
         } else {
             InkButton(
                 text = text,
                 modifier = Modifier.fillMaxWidth(),
                 onClick = onClick,
-                textSize = 15.sp,
+                textSize = 13.sp,
                 enabled = enabled,
             )
         }

@@ -20,8 +20,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.grid.LazyGridItemScope
+import androidx.compose.foundation.lazy.grid.LazyGridScope
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Search
@@ -127,43 +129,89 @@ fun CollectionScreen(
                 // 空态：全量页只在筛选无结果时出现
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
                     com.milan.game.ui.components.EmptyState(
-                        icon = Icons.Outlined.Search,
+                        glyph = "筛",
                         title = "没有符合条件的角色",
                         subtitle = "试试调整筛选条件",
                         modifier = Modifier.padding(top = 60.dp),
                     )
                 }
             } else {
+                // 按稀有度分册：UR→R 各自 section，底色随档位
+                val byRarity = remember(visible) {
+                    listOf(4, 3, 2, 1).mapNotNull { r ->
+                        val list = visible.filter { it.baseRarity == r }
+                        if (list.isEmpty()) null else r to list
+                    }
+                }
                 LazyVerticalGrid(
                     columns = GridCells.Fixed(2),
                     modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(start = 13.dp, end = 13.dp, bottom = 16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(0.dp),
+                    contentPadding = PaddingValues(start = 12.dp, end = 12.dp, bottom = 20.dp),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
-                    itemsIndexed(visible, key = { _, def -> def.characterId }, contentType = { _, _ -> "characterCard" }) { _, def ->
-                        val ownedView = ownedById[def.characterId]
-                        CharacterCard(
-                            characterId = def.characterId,
-                            name = def.displayName,
-                            title = def.title,
-                            rarity = def.baseRarity,
-                            element = def.element,
-                            onClick = { onOpenCharacter(def.characterId) },
-                            locked = ownedView == null,
-                            animatedVisibilityScope = animatedVisibilityScope,
-                            footer = {
-                                Text(
-                                    text = if (ownedView != null) "★".repeat(ownedView.save.stars.coerceAtLeast(1)) else "未获得",
-                                    style = MaterialTheme.typography.labelMedium,
-                                    color = if (ownedView != null) AppTheme.Gold else AppTheme.Text3,
-                                    modifier = Modifier.padding(top = 3.dp),
-                                )
-                            },
-                        )
+                    byRarity.forEach { (rarity, list) ->
+                        item(span = { GridItemSpan(maxLineSpan) }, key = "hdr_$rarity") {
+                            RaritySectionHeader(rarity = rarity, count = list.size)
+                        }
+                        items(list.size, key = { list[it].characterId }, contentType = { "characterCard" }) { i ->
+                            val def = list[i]
+                            val ownedView = ownedById[def.characterId]
+                            CharacterCard(
+                                characterId = def.characterId,
+                                name = def.displayName,
+                                title = def.title,
+                                rarity = def.baseRarity,
+                                element = def.element,
+                                onClick = { onOpenCharacter(def.characterId) },
+                                locked = ownedView == null,
+                                animatedVisibilityScope = animatedVisibilityScope,
+                                footer = {
+                                    Text(
+                                        text = if (ownedView != null) "★".repeat(ownedView.save.stars.coerceAtLeast(1)) else "未获得",
+                                        style = MaterialTheme.typography.labelMedium,
+                                        color = if (ownedView != null) AppTheme.Gold else AppTheme.Text3,
+                                        modifier = Modifier.padding(top = 3.dp),
+                                    )
+                                },
+                            )
+                        }
                     }
                 }
             }
         }
+    }
+}
+
+/** 稀有度分册页眉：色条 + 档名 + 数量。 */
+@Composable
+private fun RaritySectionHeader(rarity: Int, count: Int) {
+    val col = AppTheme.rarityColor(rarity)
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 8.dp, bottom = 2.dp, start = 4.dp, end = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(
+            Modifier
+                .width(3.dp)
+                .height(16.dp)
+                .background(col),
+        )
+        Spacer(Modifier.width(10.dp))
+        Text(
+            text = AppTheme.rarityName(rarity),
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.SemiBold,
+            color = col,
+        )
+        Spacer(Modifier.width(8.dp))
+        Text(
+            text = "$count 张",
+            style = MaterialTheme.typography.labelMedium,
+            color = AppTheme.Text3,
+        )
     }
 }
 

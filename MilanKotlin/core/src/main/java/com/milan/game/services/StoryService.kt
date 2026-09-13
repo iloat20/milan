@@ -101,6 +101,49 @@ class StoryService(
     }
 
     /**
+     * 初始化剧情战斗（BATTLE 关卡）。
+     *
+     * 我方 = 当前编队；敌方按 [StoryStageDef.enemyIds] 程序化生成，
+     * 属性以 [EconomyFormulas.towerEnemyBaseStats] 为底、按推荐等级缩放。
+     * 编队为空时返回 null（调用方提示先编队，避免空队黑屏）。
+     */
+    override fun initializeStoryBattle(stageId: String): com.milan.game.domain.battle.BattleState? {
+        val stage = findStoryStageDef(stageId) ?: return null
+        val teamIds = core.saveData.getFormationIds()
+        if (teamIds.isEmpty()) return null
+        val myUnits = teamIds.mapNotNull { core.unitStatsFor(it) }
+        if (myUnits.isEmpty()) return null
+        val team = com.milan.game.domain.battle.TeamResonance.apply(myUnits)
+
+        val enemies = buildStoryEnemies(stage)
+        if (enemies.isEmpty()) return null
+        val sim = com.milan.game.domain.battle.StrategicBattleSimulator(rng)
+        return sim.initializeBattle(team, enemies)
+    }
+
+    /** 按关卡 enemyIds 生成敌队（元素/id 稳定可复现）。 */
+    private fun buildStoryEnemies(stage: StoryStageDef): List<com.milan.game.domain.battle.UnitStats> {
+        val ids = stage.enemyIds.orEmpty().filter { it.isNotBlank() }
+        if (ids.isEmpty()) return emptyList()
+        val base = com.milan.game.domain.progression.EconomyFormulas.towerEnemyBaseStats()
+        val level = stage.recommendedLevel.coerceIn(1, 80)
+        // 推荐等级 → 属性倍率（与塔层同量级：每级约 +8%）
+        val scale = 1.0 + (level - 1) * 0.08
+        val elements = listOf("Metal", "Wood", "Water", "Flame", "Earth", "Light", "Shadow", "Thunder")
+        return ids.mapIndexed { i, enemyId ->
+            val elem = elements[(enemyId.hashCode() + i).mod(elements.size)]
+            com.milan.game.domain.battle.UnitStats(
+                atk = (base[0] * scale).toInt(),
+                def = (base[1] * scale).toInt(),
+                hp = (base[2] * scale).toInt(),
+                spd = (base[3] * scale).toInt(),
+                characterId = enemyId,
+                element = elem,
+            )
+        }
+    }
+
+    /**
      * 完成关卡（标记完成 + 一步到位发放奖励）。
      *
      * 事务范式：校验 → 改内存 → 落盘 → 失败回滚。

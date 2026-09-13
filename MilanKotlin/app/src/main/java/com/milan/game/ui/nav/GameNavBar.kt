@@ -7,6 +7,7 @@ import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
@@ -39,12 +40,16 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.milan.game.ui.theme.AppTheme
 
 /** 全局底部导航项。 */
@@ -57,8 +62,10 @@ enum class NavItem(val icon: ImageVector, val label: String) {
 }
 
 /**
- * 底部导航（5 项）。v4：砚墨实底 + 顶部短线选中态。
- * 无选中面板渐变、无底部圆环。
+ * 底部导航（5 项）· 玻璃浮层。
+ *
+ * 材质：半透明砚墨 + 顶发丝 + 选中格釉光垫 + 朱砂短铭牌。
+ * 不再是实心 BgMid 砖——内容从栏下透出一点，才像「浮在织环台上」。
  */
 @Composable
 fun GameNavBar(
@@ -66,28 +73,57 @@ fun GameNavBar(
     onSelect: (NavItem) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Row(
+    Column(
         modifier = modifier
-            .navigationBarsPadding()
             .fillMaxWidth()
-            .background(AppTheme.BgMid)
-            .padding(horizontal = 4.dp, vertical = 4.dp),
-        verticalAlignment = Alignment.CenterVertically,
+            // 顶发丝：与内容的分界，比硬切边柔和
+            .background(
+                Brush.verticalGradient(
+                    listOf(
+                        Color.Transparent,
+                        AppTheme.BgDeepest.copy(alpha = 0.35f),
+                    ),
+                ),
+            ),
     ) {
-        NavItem.entries.forEach { item ->
-            NavCell(
-                item = item,
-                selected = item == active,
-                onClick = { onSelect(item) },
-                modifier = Modifier
-                    .weight(1f)
-                    .height(56.dp),
-            )
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .height(1.dp)
+                .background(AppTheme.Stroke),
+        )
+        Row(
+            modifier = Modifier
+                .navigationBarsPadding()
+                .fillMaxWidth()
+                .background(
+                    Brush.verticalGradient(
+                        listOf(
+                            AppTheme.SurfaceNested.copy(alpha = 0.94f),
+                            AppTheme.BgMid.copy(alpha = 0.98f),
+                        ),
+                    ),
+                )
+                .padding(horizontal = 8.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            NavItem.entries.forEach { item ->
+                NavCell(
+                    item = item,
+                    selected = item == active,
+                    onClick = { onSelect(item) },
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(56.dp),
+                )
+            }
         }
     }
 }
 
-/** 单个导航格：图标 + 文字；选中朱砂 + 顶部短线。 */
+/**
+ * 单个导航格：图标 + 字标；选中 = 釉光垫 + 朱砂铭牌短线 + 金顶丝。
+ */
 @Composable
 private fun NavCell(
     item: NavItem,
@@ -97,20 +133,27 @@ private fun NavCell(
 ) {
     val interaction = remember { MutableInteractionSource() }
     val pressed by interaction.collectIsPressedAsState()
-    val scale by animateFloatAsState(if (pressed) 0.95f else 1f, label = "navScale")
+    val scale by animateFloatAsState(if (pressed) 0.94f else 1f, label = "navScale")
+    val plateAlpha by animateFloatAsState(
+        targetValue = if (selected) 1f else 0f,
+        animationSpec = spring(dampingRatio = 0.85f, stiffness = Spring.StiffnessMediumLow),
+        label = "navPlate",
+    )
     val barWidth by animateDpAsState(
-        targetValue = if (selected) 20.dp else 0.dp,
+        targetValue = if (selected) 18.dp else 0.dp,
         animationSpec = spring(dampingRatio = 0.8f, stiffness = Spring.StiffnessMedium),
         label = "navBarWidth",
     )
 
-    val glyphColor = if (selected) AppTheme.ZhuSha else AppTheme.Text3
+    val glyphColor = if (selected) AppTheme.ZhuShaHi else AppTheme.Text3
     val labelColor = if (selected) AppTheme.ZhuSha else AppTheme.Text3
+    val plateShape = RoundedCornerShape(12.dp)
 
     Box(
         modifier = modifier
             .scale(scale)
-            .graphicsLayer { alpha = if (pressed) 0.85f else 1f }
+            .padding(horizontal = 3.dp)
+            .graphicsLayer { alpha = if (pressed) 0.88f else 1f }
             .semantics {
                 this[SemanticsProperties.Selected] = selected
                 this[SemanticsProperties.Role] = Role.Tab
@@ -122,14 +165,48 @@ private fun NavCell(
             ),
         contentAlignment = Alignment.Center,
     ) {
+        // 选中釉光垫
+        if (plateAlpha > 0.01f) {
+            Box(
+                Modifier
+                    .fillMaxSize()
+                    .graphicsLayer { alpha = plateAlpha * 0.9f }
+                    .clip(plateShape)
+                    .background(
+                        Brush.verticalGradient(
+                            listOf(
+                                AppTheme.ZhuSha.copy(alpha = 0.16f),
+                                AppTheme.ZhuSha.copy(alpha = 0.04f),
+                            ),
+                        ),
+                        plateShape,
+                    )
+                    .border(
+                        1.dp,
+                        AppTheme.ZhuSha.copy(alpha = 0.22f),
+                        plateShape,
+                    ),
+            )
+        }
+
+        // 顶金丝（仅选中）
         if (selected && barWidth > 0.dp) {
             Box(
                 modifier = Modifier
                     .align(Alignment.TopCenter)
-                    .offset(y = 2.dp)
+                    .offset(y = 1.dp)
                     .width(barWidth)
                     .height(2.dp)
-                    .background(AppTheme.ZhuSha, RoundedCornerShape(1.dp)),
+                    .background(
+                        Brush.horizontalGradient(
+                            listOf(
+                                AppTheme.Gold.copy(alpha = 0.2f),
+                                AppTheme.GoldHi,
+                                AppTheme.Gold.copy(alpha = 0.2f),
+                            ),
+                        ),
+                        RoundedCornerShape(1.dp),
+                    ),
             )
         }
 
@@ -142,7 +219,9 @@ private fun NavCell(
                 imageVector = item.icon,
                 contentDescription = item.label,
                 tint = glyphColor,
-                modifier = Modifier.size(22.dp),
+                modifier = Modifier
+                    .size(if (selected) 23.dp else 21.dp)
+                    .graphicsLayer { alpha = if (selected) 1f else 0.78f },
             )
             Text(
                 text = item.label,
@@ -150,7 +229,19 @@ private fun NavCell(
                 fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
                 color = labelColor,
                 textAlign = TextAlign.Center,
-                modifier = Modifier.padding(top = 3.dp),
+                letterSpacing = if (selected) 1.sp else 0.5.sp,
+                modifier = Modifier.padding(top = 4.dp),
+            )
+            // 选中铭牌短横（字下）
+            Box(
+                Modifier
+                    .padding(top = 3.dp)
+                    .width(if (selected) 10.dp else 0.dp)
+                    .height(1.5.dp)
+                    .background(
+                        AppTheme.ZhuSha.copy(alpha = if (selected) 0.9f else 0f),
+                        RoundedCornerShape(1.dp),
+                    ),
             )
         }
     }

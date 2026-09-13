@@ -167,7 +167,7 @@ private fun PhotoModeSection(
         Spacer(Modifier.height(12.dp))
         Text(
             "保 存 照 片",
-            color = if (owned) AppTheme.Gold else AppTheme.Text3,
+            color = if (owned) AppTheme.ZhuSha else AppTheme.Text3,
             modifier = Modifier
                 .ringChip(selected = owned)
                 .clickable(enabled = owned, onClick = onSave)
@@ -182,15 +182,17 @@ private fun ChipRow(
     selectedId: String,
     onSelect: (String) -> Unit,
 ) {
-    Row(
+    // 横滑：姿势/背景/滤镜项多，单行 Row 挤压易溢出
+    androidx.compose.foundation.lazy.LazyRow(
         horizontalArrangement = Arrangement.spacedBy(6.dp),
         modifier = Modifier.fillMaxWidth(),
     ) {
-        for ((id, label) in options) {
+        items(options.size) { i ->
+            val (id, label) = options[i]
             val selected = id == selectedId
             Text(
                 label,
-                color = if (selected) AppTheme.Gold else AppTheme.Text2,
+                color = if (selected) AppTheme.ZhuSha else AppTheme.Text2,
                 modifier = Modifier
                     .ringChip(selected = selected)
                     .clickable { onSelect(id) }
@@ -212,7 +214,7 @@ private fun InspectHero(
     Box(
         Modifier
             .fillMaxWidth()
-            .height(420.dp)
+            .height(360.dp)
             .ringPanel(fill = AppTheme.BgMid)
             .pointerInput(characterId) {
                 detectDragGestures { change, drag ->
@@ -226,6 +228,7 @@ private fun InspectHero(
             characterId = characterId,
             rarity = rarity,
             name = characterId,
+            // 检视页用 Full 大图；加载失败/回收时 PortraitImage 已兜底占位
             target = PortraitTarget.Full,
             modifier = Modifier
                 .fillMaxSize()

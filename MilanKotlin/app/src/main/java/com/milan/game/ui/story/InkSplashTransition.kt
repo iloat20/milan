@@ -33,25 +33,16 @@ fun InkSplashTransition(
 ) {
     if (!isActive) return
 
-    val infiniteTransition = rememberInfiniteTransition(label = "ink_splash")
-
-    // 主进度 0→1
-    val progress by infiniteTransition.animateFloat(
-        initialValue = 0f,
+    // 主进度 0→1（一次跑完；end 回调只触发一次）
+    val progress by animateFloatAsState(
         targetValue = 1f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(
-                durationMillis = 800,
-                easing = FastOutSlowInEasing,
-            ),
-            repeatMode = RepeatMode.Restart,
-        ),
+        animationSpec = tween(durationMillis = 800, easing = FastOutSlowInEasing),
         label = "ink_progress",
     )
-
-    // 触发结束回调
+    var ended by remember { mutableStateOf(false) }
     LaunchedEffect(progress) {
-        if (progress > 0.95f) {
+        if (!ended && progress > 0.95f) {
+            ended = true
             onAnimEnd()
         }
     }

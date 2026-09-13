@@ -43,41 +43,75 @@ class InspectionViewModel(
     private val service: GameService,
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(buildState())
+    /**
+     * ⚠️ 初始化顺序：不可在 `_uiState` 字段初始化器里调 [buildState]——
+     * buildState 会读 `_uiState.value` 保留已选 pose/bg/filter，彼时字段尚未赋值 → NPE 闪退
+     * （2026-09-13 OPPO 真机 UncaughtException，R8 栈 pf1.<init> → getValue）。
+     */
+    private val _uiState = MutableStateFlow(
+        InspectionUiState(
+            characterId = characterId,
+            displayName = characterId,
+            rarity = 1,
+            inspectionCount = 0,
+            actions = emptyList(),
+            hiddenUnlocked = false,
+            owned = false,
+        ),
+    )
     val uiState: StateFlow<InspectionUiState> = _uiState.asStateFlow()
 
     private val _toasts = Channel<String>(Channel.BUFFERED)
     val toasts: Flow<String> = _toasts.receiveAsFlow()
 
     init {
+        _uiState.value = buildState()
         viewModelScope.launch {
             service.snapshot.collect { _uiState.value = buildState() }
         }
     }
 
     private fun buildState(): InspectionUiState {
-        val def = service.characters.firstOrNull { it.characterId == characterId }
-        val owned = service.saveData.ownedCharacters.any { it?.characterId == characterId }
-        val inspection = service.getInspectionData()
-        val actions = service.getAvailableActions(characterId)
-        val hidden = service.checkHiddenInteraction(characterId)
-        val prev = _uiState.value
-        return InspectionUiState(
-            characterId = characterId,
-            displayName = def?.displayName ?: characterId,
-            rarity = def?.baseRarity ?: 1,
-            inspectionCount = inspection.inspectionCounts[characterId] ?: 0,
-            actions = actions,
-            hiddenUnlocked = hidden,
-            owned = owned,
-            poses = service.getPoses(),
-            backgrounds = service.getBackgrounds(),
-            filters = service.getFilters(),
-            photoCount = inspection.photoCollection.size,
-            selectedPoseId = prev.selectedPoseId,
-            selectedBackgroundId = prev.selectedBackgroundId,
-            selectedFilterId = prev.selectedFilterId,
-        )
+        // 任一查询失败不得炸页面：返回兜底态，让 UI 空态可退出
+        return try {
+            val def = service.characters.firstOrNull { it.characterId == characterId }
+            val owned = service.saveData.ownedCharacters.any { it?.characterId == characterId }
+            val inspection = service.getInspectionData()
+            val actions = service.getAvailableActions(characterId)
+            val hidden = service.checkHiddenInteraction(characterId)
+            val prev = _uiState.value
+            InspectionUiState(
+                characterId = characterId,
+                displayName = def?.displayName ?: characterId,
+                rarity = def?.baseRarity ?: 1,
+                inspectionCount = inspection.inspectionCounts[characterId] ?: 0,
+                actions = actions,
+                hiddenUnlocked = hidden,
+                owned = owned,
+                poses = service.getPoses(),
+                backgrounds = service.getBackgrounds(),
+                filters = service.getFilters(),
+                photoCount = inspection.photoCollection.size,
+                selectedPoseId = prev.selectedPoseId,
+                selectedBackgroundId = prev.selectedBackgroundId,
+                selectedFilterId = prev.selectedFilterId,
+            )
+        } catch (t: Throwable) {
+            if (t is kotlinx.coroutines.CancellationException) throw t
+            com.milan.game.infrastructure.CrashReporter.traceNonFatal(
+                "InspectionViewModel.buildState($characterId)",
+                t,
+            )
+            InspectionUiState(
+                characterId = characterId,
+                displayName = characterId,
+                rarity = 1,
+                inspectionCount = 0,
+                actions = emptyList(),
+                hiddenUnlocked = false,
+                owned = false,
+            )
+        }
     }
 
     fun selectPose(id: String) {

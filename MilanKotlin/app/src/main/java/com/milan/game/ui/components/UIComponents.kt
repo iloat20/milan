@@ -5,11 +5,14 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -104,8 +107,7 @@ enum class PanelMaterial {
 }
 
 /**
- * 展陈面板 `ArtifactPanel`。
- * v4：默认无金边；选中描边加强。去掉 ringPanel 内环与纸纹经纬线。
+ * 展陈面板：砚墨实底 + 斜光 + 四角角标（高亮时朱砂/金）。
  */
 @Composable
 fun ArtifactPanel(
@@ -123,37 +125,51 @@ fun ArtifactPanel(
         material == PanelMaterial.Glass -> AppTheme.Surface
         else -> AppTheme.BgMid
     }
-    val borderColor = when {
-        highlighted -> AppTheme.Stroke.copy(alpha = 0.55f)
-        else -> AppTheme.Stroke
-    }
+    val borderColor = if (highlighted) AppTheme.ZhuSha.copy(alpha = 0.45f) else AppTheme.Stroke
+    val cornerCol = if (highlighted) AppTheme.Gold else AppTheme.Text3
 
     Box(
         modifier = modifier
             .clip(shape)
-            .background(fill, shape)
-            .border(1.dp, borderColor, shape),
-    ) {
-        if (material == PanelMaterial.Glass) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(radius)
-                    .clip(shape)
-                    .background(
-                        Brush.verticalGradient(
-                            listOf(AppTheme.Text1.copy(alpha = 0.04f), Color.Transparent),
-                        ),
-                    ),
+            .background(
+                Brush.linearGradient(
+                    listOf(fill, fill.copy(alpha = 0.92f), AppTheme.SurfaceNested.copy(alpha = 0.95f)),
+                ),
+                shape,
             )
-        }
+            .border(1.dp, borderColor, shape)
+            .drawBehind {
+                // 左上→右下斜光
+                drawRect(
+                    brush = Brush.linearGradient(
+                        listOf(
+                            Color.White.copy(alpha = 0.045f),
+                            Color.Transparent,
+                            Color.Black.copy(alpha = 0.12f),
+                        ),
+                        start = Offset.Zero,
+                        end = Offset(size.width, size.height),
+                    )
+                )
+                // 四角 L 角标
+                val inset = 6.dp.toPx()
+                val len = 10.dp.toPx()
+                val sw = 1.dp.toPx()
+                val a = cornerCol.copy(alpha = if (highlighted) 0.7f else 0.28f)
+                // 左上
+                drawLine(a, Offset(inset, inset), Offset(inset + len, inset), sw)
+                drawLine(a, Offset(inset, inset), Offset(inset, inset + len), sw)
+                // 右下
+                drawLine(a, Offset(size.width - inset - len, size.height - inset), Offset(size.width - inset, size.height - inset), sw)
+                drawLine(a, Offset(size.width - inset, size.height - inset - len), Offset(size.width - inset, size.height - inset), sw)
+            },
+    ) {
         content()
     }
 }
 
 /**
- * 展廊底 `GalleryBackdrop`：砚墨三阶 + 极淡世界光。
- * v4：去掉同心环水印与过重光晕。
+ * 展廊底：多层砚墨 + 世界晕 + 斜向光带 + 边缘压暗。
  */
 @Composable
 fun GalleryBackdrop(
@@ -166,25 +182,51 @@ fun GalleryBackdrop(
         modifier = modifier
             .fillMaxSize()
             .graphicsLayer { translationY = scrollOffset * 0.3f }
-            .background(
-                Brush.verticalGradient(
-                    listOf(
-                        world.background,
-                        AppTheme.BgMid,
-                        AppTheme.BgDeepest,
-                    ),
-                ),
-            ),
+            .background(AppTheme.BgDeepest),
     ) {
+        // 1) 垂直三阶
         Box(
             Modifier
                 .fillMaxSize()
                 .background(
                     Brush.verticalGradient(
+                        listOf(world.background, AppTheme.BgMid.copy(alpha = 0.9f), AppTheme.BgDeepest),
+                    ),
+                ),
+        )
+        // 2) 世界色顶晕
+        Box(
+            Modifier
+                .fillMaxSize()
+                .background(
+                    Brush.verticalGradient(
+                        listOf(world.glow.copy(alpha = 0.09f), Color.Transparent, world.glow.copy(alpha = 0.03f)),
+                    ),
+                ),
+        )
+        // 3) 斜向光带（像展厅顶灯）
+        Box(
+            Modifier
+                .fillMaxSize()
+                .background(
+                    Brush.linearGradient(
                         listOf(
-                            world.glow.copy(alpha = 0.04f),
+                            Color.White.copy(alpha = 0.03f),
+                            Color.Transparent,
+                            Color.White.copy(alpha = 0.015f),
                             Color.Transparent,
                         ),
+                    ),
+                ),
+        )
+        // 4) 四角压暗（聚焦中心）
+        Box(
+            Modifier
+                .fillMaxSize()
+                .background(
+                    Brush.radialGradient(
+                        listOf(Color.Transparent, Color.Black.copy(alpha = 0.35f)),
+                        radius = 900f,
                     ),
                 ),
         )
@@ -200,7 +242,7 @@ fun PageBackground(
     content: @Composable BoxScope.() -> Unit,
 ) = GalleryBackdrop(modifier = modifier, scrollOffset = scrollOffset, content = content)
 
-/** 分区小标题（labelLarge）。 */
+/** 分区小标题。 */
 @Composable
 fun SectionLabel(text: String, modifier: Modifier = Modifier) {
     Text(
@@ -210,6 +252,56 @@ fun SectionLabel(text: String, modifier: Modifier = Modifier) {
         color = AppTheme.Text2,
         modifier = modifier.padding(bottom = 4.dp),
     )
+}
+
+/**
+ * 装饰分区标题：朱砂短竖 + 标题 + 渐隐横线 + 可选副标。
+ * 全站统一「册页页眉」语言。
+ */
+@Composable
+fun OrnamentSectionTitle(
+    title: String,
+    modifier: Modifier = Modifier,
+    subtitle: String? = null,
+    accent: Color = AppTheme.ZhuSha,
+) {
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(
+            Modifier
+                .size(width = 3.dp, height = 16.dp)
+                .background(accent),
+        )
+        Spacer(Modifier.width(10.dp))
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.SemiBold,
+            color = AppTheme.Text1,
+        )
+        if (subtitle != null) {
+            Spacer(Modifier.width(8.dp))
+            Text(
+                text = subtitle,
+                style = MaterialTheme.typography.labelSmall,
+                color = AppTheme.Text3,
+                letterSpacing = 1.sp,
+            )
+        }
+        Spacer(Modifier.width(12.dp))
+        Box(
+            Modifier
+                .weight(1f)
+                .height(1.dp)
+                .background(
+                    Brush.horizontalGradient(
+                        listOf(accent.copy(alpha = 0.45f), Color.Transparent),
+                    )
+                ),
+        )
+    }
 }
 
 /** 朱印（方形红色印章装饰）— 用于页面角落点缀。mergeDescendants 合并子节点语义，TalkBack 读「印章 印」。 */

@@ -174,11 +174,25 @@ fun GachaScreen(
                 .graphicsLayer { alpha = entranceAlpha },
         ) {
             Row(Modifier.statusBarsPadding().fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    Modifier
+                        .size(3.dp, 18.dp)
+                        .background(AppTheme.ZhuSha),
+                )
+                Spacer(Modifier.width(10.dp))
                 Text(
                     text = "寻访",
                     style = MaterialTheme.typography.headlineMedium,
-                    fontWeight = FontWeight.Medium,
+                    fontWeight = FontWeight.SemiBold,
                     color = AppTheme.Text1,
+                )
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    text = "GACHA",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = AppTheme.Text3,
+                    letterSpacing = 2.sp,
+                    modifier = Modifier.padding(top = 6.dp),
                 )
                 Spacer(Modifier.weight(1f))
                 ResourceBar()
@@ -187,27 +201,42 @@ fun GachaScreen(
 
             if (pool != null) {
                 if (pools.size > 1) {
+                    // 卡池纬带 chip：与主页快捷入口同语言
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         pools.forEach { p ->
                             val selected = p.poolId == pool.poolId
-                            Text(
-                                text = p.displayName.ifEmpty { "常驻卡池" },
-                                style = MaterialTheme.typography.labelLarge,
-                                fontWeight = FontWeight.Medium,
-                                color = if (selected) AppTheme.Text1 else AppTheme.Text2,
+                            val chipShape = RoundedCornerShape(AppTheme.Roundness.lg)
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
                                 modifier = Modifier
-                                    .clip(RoundedCornerShape(AppTheme.Roundness.md))
+                                    .clip(chipShape)
                                     .background(
-                                        if (selected) AppTheme.ZhuSha.copy(alpha = 0.22f) else AppTheme.BgMid
+                                        if (selected) AppTheme.ZhuSha.copy(alpha = 0.18f) else AppTheme.BgMid.copy(alpha = 0.92f),
                                     )
                                     .border(
                                         1.dp,
                                         if (selected) AppTheme.ZhuSha.copy(alpha = 0.55f) else AppTheme.Stroke,
-                                        RoundedCornerShape(AppTheme.Roundness.md),
+                                        chipShape,
                                     )
                                     .clickable { selectedPoolId = p.poolId }
-                                    .padding(horizontal = 14.dp, vertical = 8.dp),
-                            )
+                                    .padding(end = 12.dp, top = 8.dp, bottom = 8.dp),
+                            ) {
+                                Box(
+                                    Modifier
+                                        .width(3.dp)
+                                        .height(16.dp)
+                                        .background(
+                                            if (selected) AppTheme.ZhuSha else AppTheme.Text3.copy(alpha = 0.5f),
+                                        ),
+                                )
+                                Spacer(Modifier.width(10.dp))
+                                Text(
+                                    text = p.displayName.ifEmpty { "常驻卡池" },
+                                    style = MaterialTheme.typography.labelLarge,
+                                    fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
+                                    color = if (selected) AppTheme.Text1 else AppTheme.Text2,
+                                )
+                            }
                         }
                     }
                     Spacer(Modifier.height(14.dp))
@@ -236,7 +265,7 @@ fun GachaScreen(
                 testMode = testMode,
                 pityRatio = heraldPityRatio,
             )
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(20.dp))
 
             // ── CTA：单抽 / 十连（主按钮 + 消耗副标）──
             Row(
@@ -371,22 +400,20 @@ fun GachaScreen(
         val isRevealActive = reveal.stage == RevealStage.Beam ||
             reveal.stage == RevealStage.Single ||
             reveal.stage == RevealStage.Ten
-        if (isRevealActive && reveal.rarity >= 2) {
-            RarityMeshBackdrop(
-                rarity = reveal.rarity,
-                modifier = Modifier.fillMaxSize(),
-            )
-            GachaStarBurst(
-                rarity = reveal.rarity,
-                active = true,
-                modifier = Modifier.fillMaxSize(),
-                emitFromCenter = true,
-            )
-            GachaBeamParticles(
-                rarity = reveal.rarity,
-                active = reveal.stage == RevealStage.Beam,
-                modifier = Modifier.fillMaxSize(),
-                emitFromCenterBottom = true,
+        // v4：去掉 Mesh 星云与多层粒子，只留一层极淡稀有度底光（CyberStage 内已有墨韵）
+        if (isRevealActive && reveal.rarity >= 3) {
+            Box(
+                Modifier
+                    .fillMaxSize()
+                    .background(
+                        Brush.radialGradient(
+                            listOf(
+                                AppTheme.rarityColor(reveal.rarity).copy(alpha = 0.16f),
+                                Color.Transparent,
+                            ),
+                            radius = 1200f,
+                        )
+                    ),
             )
         }
 
@@ -413,7 +440,7 @@ fun GachaScreen(
     }
 }
 
-/** UP 英雄环台：上大立绘 + 下池信息/保底（织环台构图，弃左右挤排）。 */
+/** UP 展签：全幅立绘 + 底部信息叠层（与主页 Hero 同构图）。 */
 @Composable
 private fun PoolHeroCard(
     pool: GachaPoolDataEntry,
@@ -425,22 +452,53 @@ private fun PoolHeroCard(
     modifier: Modifier = Modifier,
 ) {
     val rc = AppTheme.rarityColor(featuredRarity)
-    val shape = RoundedCornerShape(AppTheme.Roundness.xl)
-    Column(
-        modifier = modifier
-            .clip(shape)
-            .background(AppTheme.BgMid)
-            .border(1.dp, rc.copy(alpha = 0.35f), shape),
-    ) {
-        // 大立绘舞台
+    val shape = RoundedCornerShape(AppTheme.Roundness.lg)
+    // 展签工艺：卡砖 offset + 稀有度染边 + 顶金丝（CodexCard 同语言，放大版）
+    val stock = 5.dp
+    Box(modifier = modifier.padding(end = stock, bottom = stock)) {
         Box(
             Modifier
                 .fillMaxWidth()
-                .height(220.dp)
-                .clip(RoundedCornerShape(topStart = AppTheme.Roundness.xl, topEnd = AppTheme.Roundness.xl))
-                .background(rc.copy(alpha = 0.10f))
+                .height(360.dp)
+                .graphicsLayer {
+                    translationX = stock.toPx() * 0.55f
+                    translationY = stock.toPx()
+                    shadowElevation = 16f
+                    ambientShadowColor = Color.Black
+                    spotShadowColor = rc.copy(alpha = 0.45f)
+                }
+                .clip(shape)
+                .background(
+                    Brush.linearGradient(
+                        listOf(
+                            rc.copy(alpha = 0.35f),
+                            Color(0xFF2A2E34),
+                            Color(0xFF12151A),
+                            Color(0xFF0A0C10),
+                        ),
+                    ),
+                    shape,
+                ),
+        )
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .height(360.dp)
+                .clip(shape)
+                .background(AppTheme.BgMid)
+                .border(1.dp, rc.copy(alpha = 0.55f), shape)
                 .clickable(enabled = featured != null) { featured?.let { onOpenCharacter(it.characterId) } },
         ) {
+            Box(
+                Modifier
+                    .fillMaxSize()
+                    .background(
+                        Brush.radialGradient(
+                            listOf(rc.copy(alpha = 0.18f), Color.Transparent),
+                            radius = 1000f,
+                        )
+                    ),
+            )
             if (featured != null) {
                 PortraitImage(
                     characterId = featured.characterId,
@@ -448,92 +506,107 @@ private fun PoolHeroCard(
                     name = featured.displayName,
                     target = PortraitTarget.Full,
                     aura = true,
-                    glowScale = 1.2f,
+                    glowScale = 1.1f,
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Crop,
                 )
             }
+            // 顶金丝 + 底厚条
+            Box(
+                Modifier
+                    .fillMaxWidth()
+                    .height(1.dp)
+                    .align(Alignment.TopCenter)
+                    .background(AppTheme.GoldHi.copy(alpha = 0.4f)),
+            )
+            Box(
+                Modifier
+                    .fillMaxWidth()
+                    .height(3.dp)
+                    .align(Alignment.BottomCenter)
+                    .background(Color.Black.copy(alpha = 0.3f)),
+            )
             Box(
                 Modifier
                     .align(Alignment.TopStart)
-                    .padding(10.dp)
+                    .padding(12.dp)
                     .clip(RoundedCornerShape(AppTheme.Roundness.sm))
-                    .background(AppTheme.Gold)
+                    .background(AppTheme.ZhuSha)
                     .padding(horizontal = 8.dp, vertical = 3.dp),
             ) {
-                Text("UP", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = AppTheme.GoldTextOn)
+                Text(
+                    "UP",
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.SemiBold,
+                    color = AppTheme.Text1,
+                )
             }
-            Box(
+
+            Column(
                 Modifier
                     .align(Alignment.BottomCenter)
                     .fillMaxWidth()
-                    .height(72.dp)
                     .background(
-                        Brush.verticalGradient(listOf(Color.Transparent, AppTheme.BgDeepest.copy(alpha = 0.92f))),
-                    ),
+                        Brush.verticalGradient(
+                            listOf(Color.Transparent, AppTheme.BgDeepest.copy(alpha = 0.88f), AppTheme.BgDeepest),
+                        )
+                    )
+                    .padding(start = 16.dp, top = 36.dp, end = 16.dp, bottom = 14.dp),
+            ) {
+                Text(
+                    text = featured?.displayName ?: "环痕",
+                    style = MaterialTheme.typography.headlineMedium,
+                    color = AppTheme.Text1,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Spacer(Modifier.height(2.dp))
+                Text(
+                    text = pool.displayName.ifEmpty { "常驻卡池" },
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = AppTheme.Text2,
             )
-            Text(
-                text = featured?.displayName ?: "环痕",
-                style = MaterialTheme.typography.titleLarge,
-                color = AppTheme.Text1,
-                fontWeight = FontWeight.Bold,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier
-                    .align(Alignment.BottomStart)
-                    .padding(start = 14.dp, bottom = 12.dp),
-            )
-        }
-        Column(Modifier.fillMaxWidth().padding(14.dp)) {
-            Text(
-                text = pool.displayName.ifEmpty { "常驻卡池" },
-                style = MaterialTheme.typography.bodyLarge,
-                fontWeight = FontWeight.Bold,
-                color = AppTheme.Gold,
-            )
-            Spacer(Modifier.height(6.dp))
-            Text(ratesLabel(pool), style = MaterialTheme.typography.labelMedium, color = AppTheme.Text2, lineHeight = 15.sp)
+            Spacer(Modifier.height(8.dp))
+            Text(ratesLabel(pool), style = MaterialTheme.typography.labelMedium, color = AppTheme.Text3, lineHeight = 16.sp)
             if (pool.hardPity > 0) {
                 Spacer(Modifier.height(10.dp))
                 val softStart = EconomyFormulas.softPityStart(pool.hardPity)
                 val inSoft = softStart > 0 && pity >= softStart
                 val nearSoft = softStart > 0 && !inSoft && pity >= softStart - 5
                 val pityColor = when {
-                    inSoft -> AppTheme.GoldHi
-                    nearSoft -> AppTheme.Warning
+                    inSoft -> AppTheme.ZhuSha
+                    nearSoft -> AppTheme.Gold
                     else -> AppTheme.Frost
                 }
                 LinearProgressIndicator(
                     progress = { pity.toFloat() / pool.hardPity.coerceAtLeast(1) },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(5.dp)
-                        .clip(RoundedCornerShape(AppTheme.Roundness.xxs)),
+                        .height(4.dp)
+                        .clip(RoundedCornerShape(2.dp)),
                     color = pityColor,
                     trackColor = AppTheme.SurfaceNested,
                 )
-                Spacer(Modifier.height(4.dp))
-                Text(
-                    text = buildString {
-                        append("保底 $pity / ${pool.hardPity}")
-                        when {
-                            inSoft -> append(" · 爬坡中")
-                            nearSoft -> append(" · 差 ${softStart - pity} 抽进软保底")
-                        }
-                    },
-                    style = MaterialTheme.typography.labelMedium,
-                    color = pityColor,
-                )
-            }
-            if (featuredLost) {
                 Spacer(Modifier.height(6.dp))
-                Text(
-                    text = "上次歪了 · 下次必中",
-                    fontWeight = FontWeight.Bold,
-                    color = AppTheme.Frost,
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = "保底 $pity / ${pool.hardPity}",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = pityColor,
+                    )
+                    if (featuredLost) {
+                        Spacer(Modifier.width(10.dp))
+                        Text(
+                            text = "下次必中",
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Medium,
+                            color = AppTheme.Frost,
+                        )
+                    }
+                }
             }
         }
+    }
     }
 }
 
@@ -549,9 +622,19 @@ private fun PullCtaButton(
 ) {
     Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
         if (primary) {
-            GoldButton(text = label, modifier = Modifier.fillMaxWidth(), enabled = enabled, onClick = onClick)
+            com.milan.game.ui.components.GoldButtonFull(
+                text = label,
+                enabled = enabled,
+                onClick = onClick,
+            )
         } else {
-            InkButton(text = label, modifier = Modifier.fillMaxWidth(), enabled = enabled, onClick = onClick)
+            InkButton(
+                text = label,
+                modifier = Modifier.fillMaxWidth(),
+                enabled = enabled,
+                onClick = onClick,
+                textSize = 15.sp,
+            )
         }
         Spacer(Modifier.height(4.dp))
         Text(
@@ -630,7 +713,7 @@ private val PullResultsSaver = listSaver<List<PullResult>, String>(
     } },
 )
 
-/** 单张结果卡：立绘 + 稀有度名 + 角色名，高稀有度发光。 */
+/** 单张结果卡：立绘 + 稀有度名，SSR+ 静态稀有度色边（v4 去呼吸光）。 */
 @Composable
 private fun GachaChip(
     r: PullResult,
@@ -642,19 +725,7 @@ private fun GachaChip(
     val rc = AppTheme.rarityColor(r.rarity)
     val isEpic = r.rarity >= 3
     val isUr = r.rarity >= 4
-    val glowA by if (isEpic) {
-        rememberInfiniteTransition(label = "chipGlow").animateFloat(
-            initialValue = if (isUr) 0.45f else 0.35f,
-            targetValue = 1f,
-            animationSpec = infiniteRepeatable(
-                tween(if (isUr) 600 else 900),
-                RepeatMode.Reverse,
-            ),
-            label = "chipGlowA",
-        )
-    } else {
-        remember { mutableStateOf(0.7f) }
-    }
+    val glowA = if (isUr) 0.55f else if (isEpic) 0.4f else 0.55f
     var shown by remember(batch) { mutableStateOf(false) }
     LaunchedEffect(batch) {
         delay(delayMs.toLong())
@@ -714,14 +785,19 @@ private fun GachaChip(
                         .align(Alignment.TopEnd)
                         .padding(end = 2.dp, top = 2.dp)
                         .clip(RoundedCornerShape(AppTheme.Roundness.xs))
-                        .background(AppTheme.Gold)
+                        .background(
+                            Brush.linearGradient(
+                                listOf(AppTheme.GoldHi, AppTheme.Gold, AppTheme.GoldDeep)
+                            )
+                        )
+                        .border(0.5.dp, AppTheme.GoldHi.copy(alpha = 0.7f), RoundedCornerShape(AppTheme.Roundness.xs))
                         .padding(horizontal = 3.dp, vertical = 1.dp),
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(
                         text = "NEW",
                         fontSize = 7.sp,
-                        fontWeight = FontWeight.Bold,
+                        fontWeight = FontWeight.ExtraBold,
                         color = AppTheme.GoldTextOn,
                     )
                 }

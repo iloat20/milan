@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -178,26 +179,14 @@ private fun InkWashBackdrop(
                 radius = size.maxDimension * 0.72f,
             ),
         )
-        // 发丝经纬（静）
-        val step = 48.dp.toPx()
-        var y = step
-        while (y < size.height) {
-            drawLine(CyberPalette.Grid, Offset(0f, y), Offset(size.width, y), 1f)
-            y += step
-        }
-        var x = step
-        while (x < size.width) {
-            drawLine(CyberPalette.Grid, Offset(x, 0f), Offset(x, size.height), 1f)
-            x += step
-        }
-        // 漂浮墨尘
+        // 极淡漂浮墨尘（去掉经纬网格）
         dust.forEach { (px, py, phase) ->
             val tw = (sin(time * 1.4f + phase * 6.28f) + 1f) * 0.5f
             val ox = sin(time * 0.35f + phase * 4f) * 12f
             val oy = cos(time * 0.28f + phase * 3f) * 10f
             drawCircle(
-                color = CyberPalette.BeamCore.copy(alpha = 0.08f + tw * 0.18f),
-                radius = (1.1f + tw * 1.4f).dp.toPx(),
+                color = CyberPalette.BeamCore.copy(alpha = 0.06f + tw * 0.12f),
+                radius = (1.1f + tw * 1.2f).dp.toPx(),
                 center = Offset(px * size.width + ox, py * size.height + oy),
             )
         }
@@ -219,9 +208,8 @@ private fun InkWashBackdrop(
 }
 
 /**
- * 待机召唤法阵（主界面抽卡区）：
- * 稀有度驱动的金箔敕令环 + 朱砂印核 + 轨道墨点；
- * pityRatio 越高脉动越快、金色越浓。
+ * 待机法印（v4）：朱砂印核 + 极淡金环；pity 越高环越亮。
+ * 去掉轨道粒子与多层描边，只留一枚「印」。
  */
 @Composable
 fun CyberHerald(
@@ -229,14 +217,7 @@ fun CyberHerald(
     testMode: Boolean = false,
     pityRatio: Float = 0f,
 ) {
-    val pulseDuration = (1800 - (pityRatio * 900f)).toInt().coerceIn(900, 1800)
-    val spin by if (testMode) remember { mutableFloatStateOf(0f) }
-    else rememberInfiniteTransition(label = "herald").animateFloat(
-        initialValue = 0f,
-        targetValue = 360f,
-        animationSpec = infiniteRepeatable(tween(14000, easing = LinearEasing)),
-        label = "heraldSpin",
-    )
+    val pulseDuration = (2200 - (pityRatio * 800f)).toInt().coerceIn(1200, 2200)
     val pulse by if (testMode) remember { mutableFloatStateOf(0.5f) }
     else rememberInfiniteTransition(label = "heraldPulse").animateFloat(
         initialValue = 0f,
@@ -244,77 +225,74 @@ fun CyberHerald(
         animationSpec = infiniteRepeatable(tween(pulseDuration, easing = LinearEasing), RepeatMode.Reverse),
         label = "heraldPulse",
     )
-    val ringAlpha = 0.4f + pityRatio * 0.4f
+    val ringAlpha = 0.25f + pityRatio * 0.35f + pulse * 0.1f
+    // 匣感：外匣框 + 内印核（开匣仪式）
     Box(
         modifier = modifier
-            .size(220.dp)
-            .clip(CircleShape)
-            .background(
-                Brush.radialGradient(
-                    listOf(
-                        CyberPalette.Cyan.copy(alpha = 0.12f + pityRatio * 0.1f),
-                        CyberPalette.DeepBg.copy(alpha = 0.92f),
-                    ),
-                ),
-            )
-            .border(1.5.dp, CyberPalette.Cyan.copy(alpha = ringAlpha), CircleShape),
+            .size(188.dp)
+            .padding(10.dp),
         contentAlignment = Alignment.Center,
     ) {
+        // 外匣：双层圆角框
         Box(
             Modifier
                 .fillMaxSize()
-                .drawWithCache {
-                    val d = size.minDimension.coerceAtLeast(1f)
-                    val c = Offset(d / 2f, d / 2f)
-                    val glowBrush = Brush.radialGradient(HeraldGlowColors, center = c, radius = d * 2f)
-                    onDrawBehind {
-                        // 外虚线敕令环
-                        drawCircle(
-                            color = CyberPalette.Magenta.copy(alpha = 0.35f + pityRatio * 0.25f),
-                            radius = d * 0.47f,
-                            center = c,
-                            style = Stroke(
-                                width = 1.dp.toPx(),
-                                pathEffect = PathEffect.dashPathEffect(floatArrayOf(8.dp.toPx(), 6.dp.toPx())),
+                .clip(RoundedCornerShape(18.dp))
+                .background(
+                    Brush.verticalGradient(
+                        listOf(
+                            AppTheme.SurfaceNested.copy(alpha = 0.55f),
+                            AppTheme.BgDeepest.copy(alpha = 0.85f),
+                        ),
+                    ),
+                )
+                .border(1.dp, AppTheme.Gold.copy(alpha = ringAlpha * 0.55f), RoundedCornerShape(18.dp)),
+        )
+        Box(
+            Modifier
+                .fillMaxSize(0.92f)
+                .border(1.dp, AppTheme.Stroke, RoundedCornerShape(14.dp)),
+        )
+        // 内召印
+        Box(
+            Modifier
+                .size(148.dp)
+                .clip(CircleShape)
+                .background(AppTheme.BgDeepest)
+                .border(1.dp, AppTheme.Gold.copy(alpha = ringAlpha), CircleShape),
+            contentAlignment = Alignment.Center,
+        ) {
+            Box(
+                Modifier
+                    .fillMaxSize()
+                    .background(
+                        Brush.radialGradient(
+                            listOf(
+                                AppTheme.ZhuSha.copy(alpha = 0.08f + pityRatio * 0.12f + pulse * 0.06f),
+                                Color.Transparent,
                             ),
                         )
-                        // 旋转金弧
-                        val arcSweep = 120f + pityRatio * 70f
-                        drawArc(
-                            color = CyberPalette.Magenta.copy(alpha = 0.5f + pityRatio * 0.25f),
-                            startAngle = spin,
-                            sweepAngle = arcSweep,
-                            useCenter = false,
-                            topLeft = Offset(d * 0.08f, d * 0.08f),
-                            size = Size(d * 0.84f, d * 0.84f),
-                            style = Stroke(2.dp.toPx()),
-                        )
-                        // 反向细弧
-                        drawArc(
-                            color = CyberPalette.Cyan.copy(alpha = 0.35f),
-                            startAngle = -spin * 0.7f,
-                            sweepAngle = 60f,
-                            useCenter = false,
-                            topLeft = Offset(d * 0.16f, d * 0.16f),
-                            size = Size(d * 0.68f, d * 0.68f),
-                            style = Stroke(1.2.dp.toPx()),
-                        )
-                        val r = d * (0.16f + 0.03f * pulse + pityRatio * 0.02f)
-                        scale(scaleX = r / d, scaleY = r / d, pivot = c) {
-                            drawCircle(brush = glowBrush, radius = d, center = c)
-                        }
-                    }
-                },
-        )
-        if (!testMode) InkParticles(Modifier.fillMaxSize())
-        Text(
-            text = "敕",
-            style = RitualType.copy(
-                fontSize = 34.sp,
-                lineHeight = 40.sp,
-                color = AppTheme.Text1,
-            ),
-        )
+                    ),
+            )
+            Box(
+                Modifier
+                    .size(72.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(AppTheme.ZhuSha.copy(alpha = 0.92f + pulse * 0.08f)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    text = "召",
+                    style = RitualType.copy(fontSize = 28.sp, lineHeight = 34.sp),
+                    color = AppTheme.Text1,
+                )
+            }
+            Box(
+                Modifier
+                    .fillMaxSize(0.78f)
+                    .border(1.dp, AppTheme.Gold.copy(alpha = 0.18f + pityRatio * 0.2f), CircleShape),
+            )
+        }
     }
 }
 

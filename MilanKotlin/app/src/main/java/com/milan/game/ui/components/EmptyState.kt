@@ -24,13 +24,15 @@ import androidx.compose.ui.unit.dp
 import com.milan.game.ui.theme.AppTheme
 
 /**
- * 统一空状态：图标 + 标题 + 可选操作。
+ * 统一空状态：印记/图标 + 标题 + 可选操作。
+ * [glyph] 优先（印章字形，对齐全站印记语言）；无 glyph 时用 [icon]。
  */
 @Composable
 fun EmptyState(
     title: String,
     modifier: Modifier = Modifier,
     icon: ImageVector? = null,
+    glyph: String? = null,
     subtitle: String? = null,
     actionText: String? = null,
     onAction: (() -> Unit)? = null,
@@ -42,14 +44,25 @@ fun EmptyState(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
-        if (icon != null) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                modifier = Modifier.size(36.dp),
-                tint = AppTheme.Text3,
-            )
-            Spacer(Modifier.height(AppTheme.Spacing.lg))
+        when {
+            glyph != null -> {
+                GlyphBadge(
+                    glyph = glyph,
+                    from = AppTheme.Text3,
+                    to = AppTheme.Stroke,
+                    glyphColor = AppTheme.Text2,
+                )
+                Spacer(Modifier.height(AppTheme.Spacing.lg))
+            }
+            icon != null -> {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    modifier = Modifier.size(36.dp),
+                    tint = AppTheme.Text3,
+                )
+                Spacer(Modifier.height(AppTheme.Spacing.lg))
+            }
         }
 
         Text(

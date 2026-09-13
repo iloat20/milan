@@ -1,6 +1,25 @@
 package com.milan.game.ui.battle
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 
 /**
  * 对弈台 · Battle HUD 独立主题。
@@ -30,5 +49,80 @@ object BattleTheme {
         ratio > 0.55f -> HpHigh
         ratio > 0.28f -> HpMid
         else -> HpLow
+    }
+}
+
+/**
+ * 对弈台原生小按钮：实底战术片，禁玻璃/金丝（§7.4）。
+ * 战斗内退出、确认等一律用本组件，不走菜单 GoldButton/InkButton。
+ */
+@Composable
+fun BattleFlatChip(
+    text: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    active: Boolean = false,
+    tone: Color = BattleTheme.TextDim,
+) {
+    val interaction = remember { MutableInteractionSource() }
+    val pressed by interaction.collectIsPressedAsState()
+    val shape = RoundedCornerShape(6.dp)
+    val bg = when {
+        pressed -> BattleTheme.Stage2
+        active -> BattleTheme.Focus
+        else -> BattleTheme.Stage1
+    }
+    val fg = if (active) BattleTheme.Stage0 else tone
+    Text(
+        text = text,
+        style = MaterialTheme.typography.labelLarge,
+        fontWeight = FontWeight.Bold,
+        color = fg,
+        modifier = modifier
+            .clip(shape)
+            .background(bg)
+            .border(1.dp, if (active) BattleTheme.Focus else BattleTheme.Line, shape)
+            .clickable(interactionSource = interaction, indication = null, onClick = onClick)
+            .padding(horizontal = 10.dp, vertical = 6.dp),
+    )
+}
+
+/** 对弈台主确认：朱砂实底，无金丝。 */
+@Composable
+fun BattlePrimaryButton(
+    text: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+) {
+    val interaction = remember { MutableInteractionSource() }
+    val pressed by interaction.collectIsPressedAsState()
+    val shape = RoundedCornerShape(8.dp)
+    Box(
+        modifier = modifier
+            .clip(shape)
+            .background(
+                when {
+                    !enabled -> BattleTheme.Stage2
+                    pressed -> BattleTheme.EnemyDeep
+                    else -> BattleTheme.Focus
+                },
+            )
+            .border(
+                1.dp,
+                if (enabled) BattleTheme.Focus else BattleTheme.Line,
+                shape,
+            )
+            .clickable(interactionSource = interaction, indication = null, enabled = enabled, onClick = onClick)
+            .padding(vertical = 14.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = text,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            color = if (enabled) BattleTheme.Stage0 else BattleTheme.TextDim,
+            letterSpacing = 2.sp,
+        )
     }
 }

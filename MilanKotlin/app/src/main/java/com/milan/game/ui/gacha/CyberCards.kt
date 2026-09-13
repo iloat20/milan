@@ -69,7 +69,7 @@ import kotlinx.coroutines.delay
 // P4-2（2026-08-27）：揭晓卡牌族从 CyberStage.kt 拆出（分镜 3/4：Single / Ten）。
 // 2026-09 重做：十连改为「卡背阶梯入场 → 蓄势停顿 → 逐张 3D 翻面 → 高稀有度爆点」。
 
-/** 装裱册页卡背：玄墨绫绢 + 金箔内框 + 朱砂「丹」印。 */
+/** 卡背（v4）：砚墨底 + 朱砂印，去金边与经纬线。 */
 @Composable
 internal fun CyberCardBack(
     modifier: Modifier = Modifier,
@@ -80,40 +80,22 @@ internal fun CyberCardBack(
     Box(
         modifier = modifier
             .clip(shape)
-            .background(
-                Brush.verticalGradient(listOf(AppTheme.SurfaceNested, AppTheme.BgDeepest)),
-                shape,
-            )
-            .border(1.dp, AppTheme.Gold.copy(alpha = 0.45f), shape),
+            .background(AppTheme.SurfaceNested, shape)
+            .border(1.dp, AppTheme.Stroke, shape),
         contentAlignment = Alignment.Center,
     ) {
-        Canvas(Modifier.fillMaxSize()) {
-            val sp = 10.dp.toPx()
-            val line = Color.White.copy(alpha = 0.04f)
-            var y = sp
-            while (y < size.height) {
-                drawLine(line, Offset(0f, y), Offset(size.width, y), 1f)
-                y += sp
-            }
-            var x = sp
-            while (x < size.width) {
-                drawLine(line, Offset(x, 0f), Offset(x, size.height), 1f)
-                x += sp
-            }
-        }
-        Box(
-            Modifier
-                .fillMaxSize()
-                .padding(7.dp)
-                .border(0.75.dp, AppTheme.Gold.copy(alpha = 0.28f), RoundedCornerShape(4.dp)),
-        )
         Box(
             Modifier
                 .size(sealSize)
-                .background(AppTheme.SealRed.copy(alpha = 0.92f), RoundedCornerShape(3.dp)),
+                .background(AppTheme.ZhuSha, RoundedCornerShape(3.dp)),
             contentAlignment = Alignment.Center,
         ) {
-            Text("丹", color = AppTheme.Text1, fontSize = (sealSize.value * 0.48f).sp, fontWeight = FontWeight.Bold)
+            Text(
+                "丹",
+                color = AppTheme.Text1,
+                fontSize = (sealSize.value * 0.48f).sp,
+                fontWeight = FontWeight.SemiBold,
+            )
         }
     }
 }
@@ -136,11 +118,13 @@ internal fun SingleCard(
     val animRot = remember { Animatable(-6f) }
     LaunchedEffect(cardIn) {
         if (!cardIn) return@LaunchedEffect
-        animOff.animateTo(0f, tween(360, easing = FastOutSlowInEasing))
-        animY.animateTo(1f, spring(dampingRatio = 0.58f, stiffness = 240f))
-        animX.animateTo(1.04f, tween(110))
-        animX.animateTo(1f, tween(200))
-        animRot.animateTo(0f, tween(280))
+        animOff.animateTo(0f, tween(320, easing = FastOutSlowInEasing))
+        // 翻牌：更明显过冲回弹
+        animY.animateTo(1.06f, spring(dampingRatio = 0.45f, stiffness = 280f))
+        animY.animateTo(1f, spring(dampingRatio = 0.8f, stiffness = 200f))
+        animX.animateTo(1.05f, tween(100))
+        animX.animateTo(1f, tween(220))
+        animRot.animateTo(0f, spring(dampingRatio = 0.7f, stiffness = 180f))
     }
     val frame = AppTheme.rarityColor(rarity).copy(alpha = 0.9f)
     val isUr = rarity >= 4
@@ -161,8 +145,7 @@ internal fun SingleCard(
                 scaleY = animY.value
                 translationY = animOff.value
                 rotationZ = animRot.value
-            }
-            .clickable { def?.let { onOpenCharacter(it.characterId) } },
+            },
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Box(
@@ -171,11 +154,14 @@ internal fun SingleCard(
                 .height(320.dp),
             contentAlignment = Alignment.Center,
         ) {
-            // v3：卡壳统一 CodexCard 工艺（R 素线 / SR 釉 / SSR 鎏金 / UR 箔+AGSL）
+            // v3：卡壳统一 CodexCard 工艺；揭晓后可持卡对光，松手进详情
             CodexCard(
                 tier = rarity,
                 modifier = Modifier.fillMaxSize(),
-                onClick = null,
+                element = def?.element,
+                characterId = def?.characterId,
+                onClick = { def?.let { onOpenCharacter(it.characterId) } },
+                enableTilt = true,
             ) {
                 Box(Modifier.fillMaxSize()) {
                     PortraitImage(
@@ -437,8 +423,7 @@ internal fun TenCard(
                 scaleX = popAnim.value
                 scaleY = popAnim.value
             }
-            .clip(shape)
-            .clickable(enabled = faceUp) { onClick() },
+            .clip(shape),
         contentAlignment = Alignment.Center,
     ) {
         val showFace = flip.value > 90f
@@ -449,7 +434,13 @@ internal fun TenCard(
                     .matchParentSize()
                     .graphicsLayer { scaleX = -1f },
             ) {
-                TenCardFace(result = result, frame = frame, shape = shape, idleGlow = idleGlow)
+                TenCardFace(
+                    result = result,
+                    frame = frame,
+                    shape = shape,
+                    idleGlow = idleGlow,
+                    onClick = { if (result.success) onClick() },
+                )
             }
             if (flashAnim.value > 0f) {
                 Box(
@@ -506,6 +497,7 @@ private fun TenCardFace(
     frame: Color,
     shape: RoundedCornerShape,
     idleGlow: Float,
+    onClick: () -> Unit,
 ) {
     val rarity = result.rarity
     val isUr = rarity >= 4
@@ -519,7 +511,9 @@ private fun TenCardFace(
             modifier = Modifier.fillMaxSize(),
             shape = shape,
             edge = 2.dp,
-            onClick = null,
+            characterId = result.characterId,
+            onClick = onClick,
+            enableTilt = true,
         ) {
             Box(Modifier.fillMaxSize()) {
                 PortraitImage(
@@ -593,7 +587,7 @@ private fun TenCardFace(
     }
 }
 
-/** 十连收场条：最高稀有度仪式字 + SSR+/UR 计数。 */
+/** 十连收场：仪式字 + 计数 + 「典藏」朱印落章。 */
 @Composable
 internal fun TenCurtainCall(
     batch: List<PullResult>,
@@ -609,13 +603,53 @@ internal fun TenCurtainCall(
         maxR == 2 -> "石青 · 环痕轻响"
         else -> "松烟 · 初纬已成"
     }
+    // 落印：scale 1.35→1 + 轻微转正，末帧 30ms 静止顿挫（§5.6 动有重量）
+    val seal = remember { Animatable(0f) }
+    LaunchedEffect(batch) {
+        seal.snapTo(0f)
+        seal.animateTo(1f, tween(280, easing = FastOutSlowInEasing))
+        delay(30)
+    }
+    val sealScale = 1.35f - 0.35f * seal.value
+    val sealRot = -8f * (1f - seal.value)
+    val sealAlpha = seal.value.coerceIn(0f, 1f)
+
     Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
+        Box(contentAlignment = Alignment.Center) {
+            // 印章：双层方框 + 篆意「典藏」
+            Box(
+                Modifier
+                    .graphicsLayer {
+                        scaleX = sealScale
+                        scaleY = sealScale
+                        rotationZ = sealRot
+                        alpha = sealAlpha
+                    }
+                    .size(56.dp)
+                    .border(2.5.dp, AppTheme.ZhuSha.copy(alpha = 0.92f), RoundedCornerShape(4.dp))
+                    .border(1.dp, AppTheme.ZhuSha.copy(alpha = 0.45f), RoundedCornerShape(6.dp))
+                    .padding(3.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    text = "典\n藏",
+                    style = RitualType.copy(
+                        fontSize = 16.sp,
+                        lineHeight = 18.sp,
+                        letterSpacing = 0.sp,
+                        color = AppTheme.ZhuSha,
+                    ),
+                    textAlign = TextAlign.Center,
+                )
+            }
+        }
         Text(
             text = title,
             style = RitualType.copy(
                 lineHeight = 36.sp,
                 color = AppTheme.rarityColor(maxR),
             ),
+            modifier = Modifier.padding(top = 10.dp),
         )
         Text(
             text = buildString {

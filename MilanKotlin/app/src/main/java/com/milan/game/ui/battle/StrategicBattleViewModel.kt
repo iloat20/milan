@@ -15,13 +15,15 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-/** 战斗场景：塔层 vs 深渊层（2026-09-12 Dungeon keep 接真战斗）。 */
-enum class StrategicBattleMode { TOWER, ABYSS }
+/** 战斗场景：塔层 / 深渊 / 剧情关卡。 */
+enum class StrategicBattleMode { TOWER, ABYSS, STORY }
 
 /** 战斗 UI 状态（供 Screen 纯渲染）。 */
 data class StrategicBattleUi(
     val floor: Int = 0,
     val mode: StrategicBattleMode = StrategicBattleMode.TOWER,
+    /** 剧情关卡 ID（mode==STORY 时有效）。 */
+    val storyStageId: String? = null,
     val state: BattleState? = null,
     val currentActor: Int = 0,
     val selectedSkillId: String? = null,
@@ -63,37 +65,58 @@ class StrategicBattleViewModel(
     /** 本局敌方回合/结算协程（R7-P0-4：重进必须取消旧局，防止覆盖新状态）。 */
     private var battleJob: kotlinx.coroutines.Job? = null
 
-    fun start(floor: Int, mode: StrategicBattleMode = StrategicBattleMode.TOWER) {
+    fun start(
+        floor: Int,
+        mode: StrategicBattleMode = StrategicBattleMode.TOWER,
+        storyStageId: String? = null,
+    ) {
         battleJob?.cancel()
         battleJob = null
         if (mode == StrategicBattleMode.ABYSS) {
             // 深渊：先计入挑战次数，再开策略战斗（结算在 settle 里 completeAbyssStage）
             viewModelScope.launch {
                 service.challengeAbyss(floor)
-                openBattle(floor, mode)
+                openBattle(floor, mode, storyStageId)
             }
         } else {
-            openBattle(floor, mode)
+            openBattle(floor, mode, storyStageId)
         }
     }
 
-    private fun openBattle(floor: Int, mode: StrategicBattleMode) {
-        // 深渊走 EconomyFormulas 深渊档（属性 ×1.25、人数 +1、seed 盐不同）
-        val state = if (mode == StrategicBattleMode.ABYSS) {
-            service.initializeAbyssStrategicBattle(floor)
-        } else {
-            service.initializeStrategicBattle(floor)
+    private fun openBattle(floor: Int, mode: StrategicBattleMode, storyStageId: String? = null) {
+        val state = when (mode) {
+            StrategicBattleMode.ABYSS -> service.initializeAbyssStrategicBattle(floor)
+            StrategicBattleMode.STORY -> {
+                val sid = storyStageId
+                if (sid == null) null else service.initializeStoryBattle(sid)
+            }
+            else -> service.initializeStrategicBattle(floor)
+        }
+        // 剧情关无编队/无敌人：标 finished 让 Screen 弹提示并退出，避免空状态卡死
+        if (state == null) {
+            _ui.value = StrategicBattleUi(
+                floor = floor,
+                mode = mode,
+                storyStageId = storyStageId,
+                finished = true,
+                logLines = listOf("无法开始战斗：请先在卡组中编队"),
+            )
+            return
         }
         actedThisTurn = mutableSetOf()
         fxSeq = 0L
         _ui.value = StrategicBattleUi(
             floor = floor,
             mode = mode,
+            storyStageId = storyStageId,
             state = state,
             currentActor = firstAlivePlayer(state) ?: 0,
             logLines = listOf(
-                if (mode == StrategicBattleMode.ABYSS) "深渊第 $floor 层 · 战斗开始"
-                else "第 $floor 层 · 战斗开始",
+                when (mode) {
+                    StrategicBattleMode.ABYSS -> "深渊第 $floor 层 · 战斗开始"
+                    StrategicBattleMode.STORY -> "剧情战斗 · 开始"
+                    else -> "第 $floor 层 · 战斗开始"
+                },
             ),
         )
     }
@@ -305,9 +328,32 @@ class StrategicBattleViewModel(
         val victory = st.phase == BattlePhase.VICTORY
         val floor = _ui.value.floor
         val mode = _ui.value.mode
+        val storyStageId = _ui.value.storyStageId
         battleJob = viewModelScope.launch {
             _ui.value = _ui.value.copy(settling = true)
-            if (mode == StrategicBattleMode.ABYSS) {
+            if (mode == StrategicBattleMode.STORY) {
+                // 剧情：胜局 completeStoryStage（发奖+标记）；败局不落档
+                val write = if (victory && storyStageId != null) {
+                    service.completeStoryStage(storyStageId)
+                } else {
+                    com.milan.game.services.WriteOutcome.Rejected
+                }
+                val synthetic = TowerOutcome.Completed(
+                    victory = victory,
+                    turns = st.turn,
+                    rewardSoft = 0,
+                    rewardHard = 0,
+                    bestFloorAfter = floor,
+                    log = st.log,
+                    rewardExp = 0,
+                    recordAdvanced = write == com.milan.game.services.WriteOutcome.Success,
+                )
+                _ui.value = _ui.value.copy(
+                    settling = false,
+                    outcome = synthetic,
+                    finished = true,
+                )
+            } else if (mode == StrategicBattleMode.ABYSS) {
                 // 星级：无阵亡 3★ / 1 人阵亡 2★ / 其余胜局 1★；失败不发奖
                 val dead = st.playerTeam.count { it.hp <= 0 }
                 val stars = when {

@@ -4,7 +4,10 @@ import android.Manifest
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -14,7 +17,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.ui.draw.clip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -184,6 +189,27 @@ fun SettingsScreen(
                                     modifier = Modifier.weight(1f),
                                 )
                             }
+                        }
+                        // 字号预览：所见即所得（§5.7）
+                        Spacer(Modifier.height(10.dp))
+                        val previewSp = when (meta.fontScaleTier) {
+                            1 -> 17.6f
+                            2 -> 19.2f
+                            else -> 16f
+                        }
+                        Box(
+                            Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(AppTheme.Roundness.sm))
+                                .background(AppTheme.SurfaceNested.copy(alpha = 0.65f))
+                                .border(1.dp, AppTheme.Stroke, RoundedCornerShape(AppTheme.Roundness.sm))
+                                .padding(horizontal = 12.dp, vertical = 10.dp),
+                        ) {
+                            Text(
+                                text = "织环者，召英灵，重铸原初之环。",
+                                style = MaterialTheme.typography.bodyLarge.copy(fontSize = previewSp.sp),
+                                color = AppTheme.Text1,
+                            )
                         }
                     }
                 }

@@ -42,8 +42,6 @@ import com.milan.game.domain.battle.SkillTarget
 import com.milan.game.services.TowerOutcome
 import com.milan.game.ui.components.BattleResultOverlay
 import com.milan.game.ui.components.GlassDialog
-import com.milan.game.ui.components.GoldButton
-import com.milan.game.ui.components.InkButton
 import com.milan.game.ui.theme.AppTheme
 import com.milan.game.ui.theme.ElementTheme
 import androidx.compose.runtime.mutableStateMapOf
@@ -60,11 +58,12 @@ fun StrategicBattleScreen(
     onExit: () -> Unit,
     modifier: Modifier = Modifier,
     mode: StrategicBattleMode = StrategicBattleMode.TOWER,
+    storyStageId: String? = null,
 ) {
     val vm: StrategicBattleViewModel = viewModel(factory = com.milan.game.di.AppGraph.factory)
     val ui by vm.ui.collectAsStateWithLifecycle()
 
-    LaunchedEffect(floor, mode) { vm.start(floor, mode) }
+    LaunchedEffect(floor, mode, storyStageId) { vm.start(floor, mode, storyStageId) }
 
     LaunchedEffect(Unit) {
         com.milan.game.infrastructure.MilanAudio.playBgm("battle")
@@ -104,7 +103,11 @@ fun StrategicBattleScreen(
                     .padding(horizontal = 10.dp, vertical = 6.dp),
             ) {
                 Text(
-                    text = if (mode == StrategicBattleMode.ABYSS) "深渊 · 第 ${ui.floor} 层" else "对弈 · 第 ${ui.floor} 层",
+                    text = when (mode) {
+                        StrategicBattleMode.ABYSS -> "深渊 · 第 ${ui.floor} 层"
+                        StrategicBattleMode.STORY -> "剧情 · 战斗"
+                        else -> "对弈 · 第 ${ui.floor} 层"
+                    },
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = BattleTheme.Text,
@@ -129,10 +132,9 @@ fun StrategicBattleScreen(
                     onClick = { vm.toggleAuto() },
                 )
                 Spacer(Modifier.width(8.dp))
-                InkButton(
+                BattleFlatChip(
                     text = "退出",
-                    textSize = 12.sp,
-                    color = BattleTheme.TextDim,
+                    tone = BattleTheme.TextDim,
                     onClick = onExit,
                 )
             }
@@ -297,7 +299,7 @@ fun StrategicBattleScreen(
                         val selected = ui.selectedSkillId == skill.skillId
                         val label = buildString {
                             append(skill.name)
-                            if (skill.energyCost > 0) append("\n⚡${skill.energyCost}")
+                            if (skill.energyCost > 0) append("\n能${skill.energyCost}")
                             val cd = actor.cooldowns[skill.skillId] ?: 0
                             if (cd > 0) append("\nCD$cd")
                         }
@@ -338,26 +340,12 @@ fun StrategicBattleScreen(
                     }
                 }
                 Spacer(Modifier.height(8.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    // 战斗确认：Focus 高对比实底，不用菜单金钮
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(BattleTheme.Focus)
-                            .clickable { vm.confirm() }
-                            .padding(vertical = 14.dp),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Text(
-                            text = "确认行动",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = BattleTheme.Stage0,
-                            letterSpacing = 2.sp,
-                        )
-                    }
-                }
+                // 战斗确认：对弈台原生主按钮（Focus 实底，无金丝）
+                BattlePrimaryButton(
+                    text = "确认行动",
+                    onClick = { vm.confirm() },
+                    modifier = Modifier.fillMaxWidth(),
+                )
             }
         }
 
@@ -498,7 +486,11 @@ private fun StrategicResultDialog(
         is TowerOutcome.SaveFailed -> "存档失败，请重试。"
     }
     GlassDialog(show = true, onDismiss = onDismiss, title = title, body = body) {
-        GoldButton(text = "知道了", onClick = onDismiss)
+        BattlePrimaryButton(
+            text = "知道了",
+            onClick = onDismiss,
+            modifier = Modifier.fillMaxWidth(),
+        )
     }
 }
 

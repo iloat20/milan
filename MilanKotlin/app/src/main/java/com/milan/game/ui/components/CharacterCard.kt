@@ -81,17 +81,24 @@ fun CharacterCard(
         }
     } else Modifier
 
-    CodexCard(
-        tier = rarity,
-        modifier = modifier,
-        onClick = onClick,
+    // 装裱底：CodexCard 自带厚度砖，这里只垫一层深色托，避免网格里互相吃投影
+    Box(
+        modifier = modifier
+            .padding(bottom = 4.dp, end = 4.dp),
     ) {
+        CodexCard(
+            tier = rarity,
+            modifier = Modifier,
+            element = element,
+            characterId = characterId,
+            onClick = onClick,
+        ) {
         Column(Modifier.fillMaxWidth()) {
-            // 顶栏：稀有度 + 元素
+            // 顶栏：稀有度章 + 元素徽
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 8.dp, vertical = 6.dp),
+                    .padding(horizontal = 10.dp, vertical = 7.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 RarityChip(rarity, rarityCol)
@@ -99,14 +106,14 @@ fun CharacterCard(
                 ElementDot(elem.glyph, elem.glow)
             }
 
-            // 画心窗（内衬金线）
+            // 画心：元素色衬底 + 立绘（卡面主角）
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 8.dp)
+                    .padding(horizontal = 10.dp)
                     .aspectRatio(CardMetrics.Aspect)
                     .clip(RoundedCornerShape(4.dp))
-                    .border(0.75.dp, rarityCol.copy(alpha = 0.35f), RoundedCornerShape(4.dp))
+                    .border(1.dp, elem.glow.copy(alpha = 0.45f), RoundedCornerShape(4.dp))
                     .then(portraitModifier),
             ) {
                 Box(
@@ -115,8 +122,8 @@ fun CharacterCard(
                         .background(
                             Brush.verticalGradient(
                                 listOf(
-                                    elem.from.copy(alpha = 0.22f),
-                                    AppTheme.BgDeepest.copy(alpha = 0.4f),
+                                    elem.from.copy(alpha = 0.32f),
+                                    AppTheme.BgDeepest.copy(alpha = 0.55f),
                                 )
                             )
                         )
@@ -126,22 +133,19 @@ fun CharacterCard(
                     rarity = rarity,
                     name = name,
                     modifier = Modifier.fillMaxSize(),
-                    // 列表/图鉴/卡组网格：Thumb（4x）——Full 约 0.95MB/张会打穿 24MB LRU
-                    // （2026-09-11 性能报告；详情/Hero/抽卡 reveal 仍用 Full）。
                     target = PortraitTarget.Thumb,
                     contentScale = ContentScale.Crop,
                     aura = true,
                     glowScale = 0.65f,
                 )
-                // 画心底衬渐变
                 Box(
                     Modifier
                         .align(Alignment.BottomCenter)
                         .fillMaxWidth()
-                        .height(36.dp)
+                        .height(40.dp)
                         .background(
                             Brush.verticalGradient(
-                                listOf(Color.Transparent, AppTheme.BgDeepest.copy(alpha = 0.75f))
+                                listOf(Color.Transparent, AppTheme.BgDeepest.copy(alpha = 0.8f))
                             )
                         )
                 )
@@ -162,17 +166,17 @@ fun CharacterCard(
                 }
             }
 
-            // 鎏金分隔线
+            // 分隔线：元素色（区分角色）
             Box(
                 Modifier
-                    .padding(horizontal = 10.dp, vertical = 7.dp)
+                    .padding(horizontal = 12.dp, vertical = 8.dp)
                     .fillMaxWidth()
                     .height(1.dp)
                     .background(
                         Brush.horizontalGradient(
                             listOf(
                                 Color.Transparent,
-                                AppTheme.Gold.copy(alpha = 0.55f),
+                                elem.glow.copy(alpha = 0.55f),
                                 Color.Transparent,
                             )
                         )
@@ -180,7 +184,7 @@ fun CharacterCard(
             )
 
             // 铭牌
-            Column(Modifier.fillMaxWidth().padding(horizontal = 10.dp).padding(bottom = 10.dp)) {
+            Column(Modifier.fillMaxWidth().padding(horizontal = 12.dp).padding(bottom = 12.dp)) {
                 Text(
                     text = name,
                     style = MaterialTheme.typography.titleMedium,
@@ -197,10 +201,9 @@ fun CharacterCard(
                     modifier = Modifier.padding(top = 2.dp),
                 )
                 Row(
-                    modifier = Modifier.padding(top = 6.dp),
+                    modifier = Modifier.padding(top = 7.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    // 稀有度点：数量 = 星级
                     repeat(rarity) {
                         Box(
                             Modifier
@@ -210,16 +213,17 @@ fun CharacterCard(
                                 .background(rarityCol)
                         )
                     }
-                    Spacer(Modifier.width(6.dp))
+                    Spacer(Modifier.width(8.dp))
                     Text(
-                        text = AppTheme.rarityName(rarity),
+                        text = "${AppTheme.rarityName(rarity)} · ${elem.glyph}",
                         style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.Bold,
+                        fontWeight = FontWeight.SemiBold,
                         color = rarityCol,
                     )
                 }
                 footer?.invoke(this)
             }
+        }
         }
     }
 }

@@ -126,7 +126,7 @@ fun CharacterListScreen(
             if (owned.isEmpty() || visible.isEmpty()) {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
                     com.milan.game.ui.components.EmptyState(
-                        icon = if (owned.isEmpty()) Icons.Outlined.Person else Icons.Outlined.Search,
+                        glyph = if (owned.isEmpty()) "灵" else "筛",
                         title = if (owned.isEmpty()) "还没有角色" else "没有符合条件的角色",
                         subtitle = if (owned.isEmpty()) "去寻访吧" else "试试调整筛选条件",
                         modifier = Modifier.padding(top = 60.dp),

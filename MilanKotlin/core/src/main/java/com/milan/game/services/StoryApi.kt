@@ -44,6 +44,12 @@ interface StoryApi {
     /** 按 ID 找关卡定义。 */
     fun findStoryStageDef(stageId: String): StoryStageDef?
 
+    /**
+     * 初始化剧情战斗（BATTLE 关卡）。
+     * 我方=当前编队，敌方按 enemyIds + 推荐等级生成；无编队/无敌人返回 null。
+     */
+    fun initializeStoryBattle(stageId: String): com.milan.game.domain.battle.BattleState?
+
     /** 通关剧情关卡（写盘 + 首通奖励）。 */
     suspend fun completeStoryStage(stageId: String): WriteOutcome
 

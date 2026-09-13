@@ -11,7 +11,11 @@ import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -49,8 +53,7 @@ val LocalEconomySlice = compositionLocalOf<StateFlow<EconomySlice>> {
 }
 
 /**
- * 统一顶栏（子页面用）：返回 + 标题 + 资源。
- * v4：静态标题，无金影、无呼吸浮动。
+ * 统一顶栏：返回 + 朱砂竖线 + 标题 + 资源。
  */
 @Composable
 fun AppTopBar(
@@ -63,7 +66,7 @@ fun AppTopBar(
         modifier = modifier
             .statusBarsPadding()
             .fillMaxWidth()
-            .padding(start = 8.dp, top = 8.dp, end = 12.dp, bottom = 4.dp),
+            .padding(start = 4.dp, top = 8.dp, end = 12.dp, bottom = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(
@@ -80,6 +83,12 @@ fun AppTopBar(
                 color = AppTheme.Text2,
             )
         }
+        Box(
+            Modifier
+                .size(width = 3.dp, height = 16.dp)
+                .background(AppTheme.ZhuSha),
+        )
+        Spacer(Modifier.width(10.dp))
         AnimatedContent(
             targetState = title,
             transitionSpec = {
@@ -91,7 +100,7 @@ fun AppTopBar(
             Text(
                 text = t,
                 style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Medium,
+                fontWeight = FontWeight.SemiBold,
                 color = AppTheme.Text1,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
@@ -106,16 +115,26 @@ fun AppTopBar(
 
 /**
  * 资源胶囊：字形 + 数值。
- * v4：无边框，仅极淡底。
+ * v4.1：玻璃淡底 + 顶发丝，与导航/浮层同材质语言。
  */
 @Composable
 fun ResourceBar(modifier: Modifier = Modifier, compact: Boolean = false) {
     val economyFlow = LocalEconomySlice.current
     val eco by economyFlow.collectAsStateWithLifecycle()
+    val shape = RoundedCornerShape(AppTheme.Roundness.lg)
 
     Row(
         modifier = modifier
-            .background(AppTheme.SurfaceNested, RoundedCornerShape(AppTheme.Roundness.lg))
+            .background(
+                Brush.verticalGradient(
+                    listOf(
+                        AppTheme.SurfaceNested.copy(alpha = 0.92f),
+                        AppTheme.BgMid.copy(alpha = 0.96f),
+                    ),
+                ),
+                shape,
+            )
+            .border(1.dp, AppTheme.Stroke, shape)
             .padding(horizontal = 12.dp, vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Center,
@@ -127,7 +146,7 @@ fun ResourceBar(modifier: Modifier = Modifier, compact: Boolean = false) {
             Spacer(Modifier.width(10.dp))
             Chip(com.milan.game.ui.theme.CurrencyNames.FRAG_GLYPH, eco.starFragments, AppTheme.Frost)
             Spacer(Modifier.width(10.dp))
-            Chip("⚔", eco.battleTickets, AppTheme.Text2)
+            Chip(com.milan.game.ui.theme.CurrencyNames.TICKET_GLYPH, eco.battleTickets, AppTheme.Text2)
         }
     }
 }

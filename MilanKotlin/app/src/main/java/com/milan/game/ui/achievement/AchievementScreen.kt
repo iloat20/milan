@@ -148,7 +148,12 @@ private fun AchievementCard(
             }
             if (claimable) {
                 Spacer(Modifier.width(8.dp))
-                GoldButton(text = "领 取", onClick = onClaim, enabled = enabled, textSize = 13.sp)
+                GoldButton(
+                    text = "领 取",
+                    onClick = onClaim,
+                    enabled = enabled,
+                    compact = true,
+                )
             }
         }
     }

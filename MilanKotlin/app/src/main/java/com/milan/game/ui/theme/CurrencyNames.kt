@@ -13,7 +13,10 @@ object CurrencyNames {
     const val SOFT = "环痕"
     const val HARD = "纯环"
     const val FRAG = "残玦"
+    const val TICKET = "战票"
     const val SOFT_GLYPH = "◎"
     const val HARD_GLYPH = "◉"
     const val FRAG_GLYPH = "◇"
+    /** 战票：角形印记，替代 emoji ⚔。 */
+    const val TICKET_GLYPH = "▣"
 }

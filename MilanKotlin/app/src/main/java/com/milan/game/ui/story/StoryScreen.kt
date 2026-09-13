@@ -243,10 +243,15 @@ private fun StageRow(
     val isCompleted = remember(revision) { vm.isStageCompleted(stage.stageId) }
     val canEnter = remember(revision) { vm.canEnterStage(stage.stageId) }
 
-    val stageIcon = when (stage.type) {
-        StoryStageType.DIALOGUE -> "💬"
-        StoryStageType.BATTLE -> "⚔️"
-        StoryStageType.CHOICE -> "🔀"
+    val stageGlyph = when (stage.type) {
+        StoryStageType.DIALOGUE -> "言"
+        StoryStageType.BATTLE -> "战"
+        StoryStageType.CHOICE -> "择"
+    }
+    val stageFrom = when (stage.type) {
+        StoryStageType.DIALOGUE -> AppTheme.Frost
+        StoryStageType.BATTLE -> AppTheme.ZhuSha
+        StoryStageType.CHOICE -> AppTheme.Violet
     }
 
     Row(
@@ -272,10 +277,21 @@ private fun StageRow(
             .padding(horizontal = 12.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(
-            text = if (isCompleted) "✅" else stageIcon,
-            style = MaterialTheme.typography.titleMedium,
-        )
+        if (isCompleted) {
+            com.milan.game.ui.components.GlyphBadge(
+                glyph = "成",
+                from = AppTheme.Gold,
+                to = AppTheme.GoldHi,
+                glyphColor = AppTheme.GoldTextOn,
+            )
+        } else {
+            com.milan.game.ui.components.GlyphBadge(
+                glyph = stageGlyph,
+                from = stageFrom,
+                to = stageFrom.copy(alpha = 0.55f),
+                glyphColor = if (canEnter) AppTheme.Text1 else AppTheme.Text3,
+            )
+        }
 
         Spacer(Modifier.width(12.dp))
 
@@ -298,8 +314,8 @@ private fun StageRow(
             Text(
                 text = stageRewards.joinToString(" ") { reward ->
                     when (reward.type) {
-                        "soft_currency" -> "💎${reward.amount}"
-                        "hard_currency" -> "💰${reward.amount}"
+                        "soft_currency" -> "${com.milan.game.ui.theme.CurrencyNames.SOFT_GLYPH}${reward.amount}"
+                        "hard_currency" -> "${com.milan.game.ui.theme.CurrencyNames.HARD_GLYPH}${reward.amount}"
                         else -> ""
                     }
                 },

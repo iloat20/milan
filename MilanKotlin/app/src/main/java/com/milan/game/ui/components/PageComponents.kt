@@ -32,6 +32,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -48,6 +49,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.SharedTransitionScope.ResizeMode
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -126,10 +130,14 @@ fun SubPageHero(
     } else {
         Modifier
     }
-    // 「对视时刻」（v3 §7.5）：立绘触摸光响应（径向高光跟手）
+    // 3D 倾角 + 触摸光：拖动立像轻微侧倾，像拿在手里
     var lightX by remember { mutableFloatStateOf(0.5f) }
     var lightY by remember { mutableFloatStateOf(0.38f) }
     var lightOn by remember { mutableStateOf(false) }
+    var tiltX by remember { mutableFloatStateOf(0f) }
+    var tiltY by remember { mutableFloatStateOf(0f) }
+    val animTiltX by animateFloatAsState(tiltX, spring(dampingRatio = 0.75f), label = "heroTiltX")
+    val animTiltY by animateFloatAsState(tiltY, spring(dampingRatio = 0.75f), label = "heroTiltY")
 
     Box(modifier.fillMaxWidth().height(heroHeight)) {
         PortraitImage(
@@ -140,14 +148,28 @@ fun SubPageHero(
                 .fillMaxSize()
                 .then(sharedPortraitMod)
                 .then(portraitModifier)
+                .graphicsLayer {
+                    rotationY = animTiltY
+                    rotationX = animTiltX
+                    cameraDistance = 14f * density
+                }
                 .pointerInput(view.save.characterId) {
                     awaitPointerEventScope {
                         while (true) {
                             val event = awaitPointerEvent()
                             val change = event.changes.firstOrNull() ?: continue
-                            lightX = (change.position.x / size.width.toFloat().coerceAtLeast(1f)).coerceIn(0f, 1f)
-                            lightY = (change.position.y / size.height.toFloat().coerceAtLeast(1f)).coerceIn(0f, 1f)
+                            val nx = (change.position.x / size.width.toFloat().coerceAtLeast(1f)).coerceIn(0f, 1f)
+                            val ny = (change.position.y / size.height.toFloat().coerceAtLeast(1f)).coerceIn(0f, 1f)
+                            lightX = nx
+                            lightY = ny
                             lightOn = change.pressed
+                            if (change.pressed) {
+                                tiltY = (nx - 0.5f) * 16f
+                                tiltX = (0.5f - ny) * 10f
+                            } else {
+                                tiltY = 0f
+                                tiltX = 0f
+                            }
                         }
                     }
                 },
